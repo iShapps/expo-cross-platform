@@ -1,2 +1,2 @@
-# expo-multiplatform
-This is the multi platform app built  with react native and expo
+# expo-cross-platform.
+This is the cross platform app built  with react native and expo
