@@ -1,28 +1,32 @@
-import { StyleSheet, Text, View } from "react-native";
+import { Platform, StyleSheet, Text } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Shifts() {
   return (
-    <View style={styles.stepContainer}>
+    <SafeAreaView
+      style={Platform.OS === "ios" ? styles.container : styles.androidContainer}
+    >
       <Text>Shifts Screen</Text>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
+  container: {
+    flex: 1,
+    height: "100%",
+    width: "100%",
+    display: "flex",
+    flexDirection: "column",
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: "absolute",
+
+  androidContainer: {
+    flex: 1,
+    height: "100%",
+    width: "100%",
+    display: "flex",
+    flexDirection: "column",
+    paddingTop: 50,
+    paddingBottom: 70,
   },
 });
