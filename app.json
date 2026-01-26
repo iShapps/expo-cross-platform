@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "dds-expo",
-    "slug": "dds-expo",
+    "name": "iShapps",
+    "slug": "ishapps",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
-    "scheme": "ddsexpo",
+    "icon": "./assets/images/smhealth.png",
+    "scheme": "ishapps",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -13,27 +13,27 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        "backgroundColor": "#70C601",
+        "foregroundImage": "./assets/images/ishapps.png",
+        "backgroundImage": "./assets/images/ishapps.png",
+        "monochromeImage": "./assets/images/ishapps.png"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/smhealth.png"
     },
     "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
+          "image": "./assets/images/ishapps.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
+          "backgroundColor": "#70C601",
           "dark": {
             "backgroundColor": "#000000"
           }
