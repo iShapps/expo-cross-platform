@@ -1,12 +1,12 @@
 import { Platform, StyleSheet, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-export default function HomeScreen() {
+export default function Shifts() {
   return (
     <SafeAreaView
       style={Platform.OS === "ios" ? styles.container : styles.androidContainer}
     >
-      <Text>Home Screen</Text>
+      <Text>Shifts Screen</Text>
     </SafeAreaView>
   );
 }
@@ -19,11 +19,6 @@ const styles = StyleSheet.create({
     display: "flex",
     flexDirection: "column",
     backgroundColor: "#ffffff",
-    // justifyContent:"center",
-    // alignContent:"center",
-    // alignItems:"center",
-    // paddingHorizontal:20,
-    // paddingVertical:40
   },
 
   androidContainer: {
@@ -33,10 +28,6 @@ const styles = StyleSheet.create({
     display: "flex",
     flexDirection: "column",
     backgroundColor: "#ffffff",
-    // justifyContent:"center",
-    // alignContent:"center",
-    // alignItems:"center",
-    // paddingHorizontal:20,
     paddingTop: 50,
     paddingBottom: 70,
   },
