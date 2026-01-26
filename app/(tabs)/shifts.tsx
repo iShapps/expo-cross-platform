@@ -18,6 +18,7 @@ const styles = StyleSheet.create({
     width: "100%",
     display: "flex",
     flexDirection: "column",
+    backgroundColor: "#ffffff",
   },
 
   androidContainer: {
@@ -26,6 +27,7 @@ const styles = StyleSheet.create({
     width: "100%",
     display: "flex",
     flexDirection: "column",
+    backgroundColor: "#ffffff",
     paddingTop: 50,
     paddingBottom: 70,
   },
