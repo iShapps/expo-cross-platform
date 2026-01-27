@@ -24,164 +24,185 @@ export default function Login() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       style={styles.container}
     >
-      <View style={styles.topContainer}></View>
-      <View style={styles.topAbsContainer}>
-        <View style={styles.topAbsContainerLeft}></View>
-        <View style={styles.topAbsContainerRight}>
-          <View style={styles.innerContainer}></View>
-        </View>
-      </View>
-
-      <View style={styles.bottomContainer}>
-        <View style={{ marginBottom: 20, marginTop: 10 }}>
-          <Text
-            style={{
-              fontSize: 28,
-              color: "#000",
-              fontWeight: "700",
-              marginBottom: 10,
-            }}
-          >
-            Login
-          </Text>
-          <Text
-            style={{
-              fontSize: 14,
-              color: "#999",
-            }}
-          >
-            Login to securely access your account and manage your shifts
-            anytime.
-          </Text>
-        </View>
-
-        {/* Email */}
-        <View style={styles.inputGroup}>
-          <Text style={email ? styles.labelFilled : styles.label}>
-            Email Address
-          </Text>
-          <TextInput
-            value={email}
-            inputMode="email"
-            autoComplete="email"
-            clearButtonMode="while-editing"
-            autoFocus={true}
-            clearTextOnFocus={true}
-            cursorColor="#70C601"
-            enterKeyHint="next"
-            placeholder="johnwilliams@gmail.com"
-            onChangeText={setEmail}
-            placeholderTextColor="#999"
-            style={email ? styles.inputFilled : styles.input}
-          />
-        </View>
-
-        {/* Password */}
-        <View style={styles.inputGroup}>
-          <Text style={password ? styles.labelFilled : styles.label}>
-            Password
-          </Text>
-          <View
-            style={
-              password
-                ? styles.passwordInputGroupFilled
-                : styles.passwordInputGroup
-            }
-          >
-            <TextInput
-              value={password}
-              autoFocus={true}
-              cursorColor="#70C601"
-              keyboardType="email-address"
-              enterKeyHint="done"
-              clearButtonMode="while-editing"
-              autoComplete="password"
-              clearTextOnFocus={true}
-              onChangeText={setPassword}
-              placeholder="••••••••"
-              placeholderTextColor="#999"
-              secureTextEntry={!showPassword}
-              style={{
-                flex: 1,
-              }}
-            />
-            <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-              {showPassword ? (
-                <Entypo name="eye" size={20} color="black" />
-              ) : (
-                <Entypo name="eye-with-line" size={20} color="black" />
-              )}
-            </TouchableOpacity>
+      <View
+        style={{
+          backgroundColor: "#70C601",
+          flex: 1,
+        }}
+      >
+        <View style={styles.topContainer}></View>
+        <View style={styles.topAbsContainer}>
+          <View style={styles.topAbsContainerLeft}></View>
+          <View style={styles.topAbsContainerRight}>
+            <View style={styles.innerContainer}></View>
           </View>
         </View>
-        <View>
-          <Link href="/(open)/forgot-password">
+
+        <View style={styles.bottomContainer}>
+          <View style={{ marginBottom: 20, marginTop: 10 }}>
             <Text
               style={{
-                color: "#70C601",
-                textAlign: "right",
-                textDecorationLine: "underline",
+                fontSize: 28,
+                color: "#000",
+                fontWeight: "700",
+                marginBottom: 10,
               }}
             >
-              Forgot Password?
+              Login
             </Text>
-          </Link>
-        </View>
-
-        {/* Options */}
-        <View style={styles.optionsRow}>
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-            }}
-          >
-            <Checkbox
-              style={styles.checkbox}
-              value={isTermsChecked}
-              onValueChange={setIsTermsChecked}
-              color={isTermsChecked ? "#70C601" : undefined}
-            />
-            <Text style={styles.remember}>
-              I agree to the
-              <Link href="https://www.ishapps.com/terms-of-service">
-                <Text
-                  style={{ color: "#70C601", textDecorationLine: "underline" }}
-                >
-                  {" "}
-                  terms and conditions{" "}
-                </Text>
-              </Link>
-              &amp;
-              <Link href="https://www.ishapps.com/privacy-policy">
-                <Text
-                  style={{ color: "#70C601", textDecorationLine: "underline" }}
-                >
-                  {" "}
-                  privacy policy
-                </Text>
-              </Link>
+            <Text
+              style={{
+                fontSize: 14,
+                color: "#999",
+              }}
+            >
+              Login to securely access your account and manage your shifts
+              anytime.
             </Text>
           </View>
-          {/* <Text style={styles.forgot}>Forgot Password?</Text> */}
-        </View>
 
-        {/* Button */}
-        <TouchableOpacity style={styles.button}>
-          <Text style={styles.buttonText}>Sign in</Text>
-        </TouchableOpacity>
-
-        {/* Footer */}
-        <Text style={styles.footer}>
-          Don&apos;t have an account?{" "}
-          <Link href="/(open)/sign-up">
-            <Text style={{ color: "#70C601", textDecorationLine: "underline" }}>
-              {" "}
-              Create an account
+          {/* Email */}
+          <View style={styles.inputGroup}>
+            <Text style={email ? styles.labelFilled : styles.label}>
+              Email Address
             </Text>
-          </Link>
-        </Text>
+            <TextInput
+              value={email}
+              inputMode="email"
+              autoComplete="email"
+              clearButtonMode="while-editing"
+              autoFocus={true}
+              clearTextOnFocus={true}
+              cursorColor="#70C601"
+              enterKeyHint="next"
+              placeholder="johnwilliams@gmail.com"
+              onChangeText={setEmail}
+              placeholderTextColor="#999"
+              style={email ? styles.inputFilled : styles.input}
+            />
+          </View>
+
+          {/* Password */}
+          <View style={styles.inputGroup}>
+            <Text style={password ? styles.labelFilled : styles.label}>
+              Password
+            </Text>
+            <View
+              style={
+                password
+                  ? styles.passwordInputGroupFilled
+                  : styles.passwordInputGroup
+              }
+            >
+              <TextInput
+                value={password}
+                autoFocus={true}
+                cursorColor="#70C601"
+                keyboardType="email-address"
+                enterKeyHint="done"
+                clearButtonMode="while-editing"
+                autoComplete="password"
+                clearTextOnFocus={true}
+                onChangeText={setPassword}
+                placeholder="••••••••"
+                placeholderTextColor="#999"
+                secureTextEntry={!showPassword}
+                style={{
+                  flex: 1,
+                }}
+              />
+              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                {showPassword ? (
+                  <Entypo name="eye" size={20} color="black" />
+                ) : (
+                  <Entypo name="eye-with-line" size={20} color="black" />
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+          <View>
+            <Link href="/(open)/forgot-password">
+              <Text
+                style={{
+                  color: "#70C601",
+                  textAlign: "right",
+                  textDecorationLine: "underline",
+                }}
+              >
+                Forgot Password?
+              </Text>
+            </Link>
+          </View>
+
+          {/* Options */}
+          <View style={styles.optionsRow}>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+              }}
+            >
+              <Checkbox
+                style={styles.checkbox}
+                value={isTermsChecked}
+                onValueChange={setIsTermsChecked}
+                color={isTermsChecked ? "#70C601" : undefined}
+              />
+              <Text style={styles.remember}>
+                I agree to the
+                <Link href="https://www.ishapps.com/terms-of-service">
+                  <Text
+                    style={{
+                      color: "#70C601",
+                      textDecorationLine: "underline",
+                    }}
+                  >
+                    {" "}
+                    terms and conditions{" "}
+                  </Text>
+                </Link>
+                &amp;
+                <Link href="https://www.ishapps.com/privacy-policy">
+                  <Text
+                    style={{
+                      color: "#70C601",
+                      textDecorationLine: "underline",
+                    }}
+                  >
+                    {" "}
+                    privacy policy
+                  </Text>
+                </Link>
+              </Text>
+            </View>
+            {/* <Text style={styles.forgot}>Forgot Password?</Text> */}
+          </View>
+
+          {/* Button */}
+          <TouchableOpacity style={styles.button}>
+            <Text style={styles.buttonText}>Sign in</Text>
+          </TouchableOpacity>
+
+          {/* Footer */}
+          <Text style={styles.footer}>
+            Don&apos;t have an account?{" "}
+            <Link href="/(open)/sign-up">
+              <Text
+                style={{ color: "#70C601", textDecorationLine: "underline" }}
+              >
+                {" "}
+                Create an account
+              </Text>
+            </Link>
+          </Text>
+        </View>
       </View>
+      <View
+        style={{
+          backgroundColor: "#fff",
+          height: "auto",
+        }}
+      ></View>
     </KeyboardAvoidingView>
   );
 }
@@ -189,7 +210,7 @@ export default function Login() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#70C601",
+    backgroundColor: "#fff",
   },
   topContainer: {
     height: "10%",

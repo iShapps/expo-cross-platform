@@ -31,272 +31,290 @@ export default function ForgotPassword() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       style={styles.container}
     >
-      <View style={styles.topContainer}></View>
-      <View style={styles.topAbsContainer}>
-        <View style={styles.topAbsContainerLeft}></View>
-        <View style={styles.topAbsContainerRight}>
-          <View style={styles.innerContainer}></View>
-        </View>
-      </View>
-
-      <View style={styles.bottomContainer}>
-        <View style={{ marginBottom: 20, marginTop: 10 }}>
-          <Text
-            style={{
-              fontSize: 28,
-              color: "#000",
-              fontWeight: "700",
-              marginBottom: 10,
-            }}
-          >
-            Reset Password
-          </Text>
-          <Text
-            style={{
-              fontSize: 14,
-              color: "#999",
-            }}
-          >
-            Enter your email address below so you can receive a reset code.
-          </Text>
-        </View>
-
-        {/* Email */}
-        <View style={styles.inputGroup}>
-          <Text style={email ? styles.labelFilled : styles.label}>
-            Email Address
-          </Text>
-          <TextInput
-            value={email}
-            inputMode="email"
-            autoComplete="email"
-            clearButtonMode="while-editing"
-            autoFocus={true}
-            clearTextOnFocus={true}
-            cursorColor="#70C601"
-            enterKeyHint="next"
-            placeholder="johnwilliams@gmail.com"
-            onChangeText={setEmail}
-            placeholderTextColor="#999"
-            style={email ? styles.inputFilled : styles.input}
-          />
-        </View>
-
-        {/* Password */}
-        {showInputs && (
-          <View style={styles.inputGroup}>
-            <Text style={password ? styles.labelFilled : styles.label}>
-              Password
-            </Text>
-            <View
-              style={
-                password
-                  ? styles.passwordInputGroupFilled
-                  : styles.passwordInputGroup
-              }
-            >
-              <TextInput
-                value={password}
-                autoFocus={true}
-                cursorColor="#70C601"
-                keyboardType="email-address"
-                enterKeyHint="done"
-                clearButtonMode="while-editing"
-                autoComplete="password"
-                clearTextOnFocus={true}
-                onChangeText={setPassword}
-                placeholder="••••••••"
-                placeholderTextColor="#999"
-                secureTextEntry={!showPassword}
-                style={{
-                  flex: 1,
-                }}
-              />
-              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                {showPassword ? (
-                  <Entypo name="eye" size={20} color="black" />
-                ) : (
-                  <Entypo name="eye-with-line" size={20} color="black" />
-                )}
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
-
-        {showInputs && (
-          <View style={styles.inputGroup}>
-            <Text style={password ? styles.labelFilled : styles.label}>
-              Confirm password
-            </Text>
-            <View
-              style={
-                confirmPassword
-                  ? styles.passwordInputGroupFilled
-                  : styles.passwordInputGroup
-              }
-            >
-              <TextInput
-                value={confirmPassword}
-                autoFocus={true}
-                cursorColor="#70C601"
-                keyboardType="email-address"
-                enterKeyHint="done"
-                clearButtonMode="while-editing"
-                autoComplete="password"
-                clearTextOnFocus={true}
-                onChangeText={setConfirmPassword}
-                placeholder="••••••••"
-                placeholderTextColor="#999"
-                secureTextEntry={!showConfirmPassword}
-                style={{
-                  flex: 1,
-                }}
-              />
-              <TouchableOpacity
-                onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-              >
-                {showPassword ? (
-                  <Entypo name="eye" size={20} color="black" />
-                ) : (
-                  <Entypo name="eye-with-line" size={20} color="black" />
-                )}
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
-
-        {/* Button */}
-        {showInputs ? (
-          <TouchableOpacity style={styles.button}>
-            <Text style={styles.buttonText}>Reset password</Text>
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity
-            onPress={() => setShowModal(true)}
-            style={styles.button}
-          >
-            <Text style={styles.buttonText}>Send reset code</Text>
-          </TouchableOpacity>
-        )}
-
-        {/* Footer */}
-        <Text style={styles.footer}>
-          Remembered password?{" "}
-          <Link href="/(open)/login">
-            <Text style={{ color: "#70C601", textDecorationLine: "underline" }}>
-              {" "}
-              Login to your account
-            </Text>
-          </Link>
-        </Text>
-      </View>
-      <Modal
-        visible={showModal}
-        transparent={true}
-        onRequestClose={() => {
-          setShowModal(false);
+      <View
+        style={{
+          backgroundColor: "#70C601",
+          flex: 1,
         }}
       >
-        <View style={styles.modalContent}>
-          <View style={styles.modalBody}>
-            <View style={styles.modelContentBody}>
-              <TouchableOpacity
-                style={{ alignSelf: "flex-end" }}
-                onPress={() => setShowModal(false)}
-              >
-                <AntDesign name="close" size={20} color="#70C601" />
-              </TouchableOpacity>
+        <View style={styles.topContainer}></View>
+        <View style={styles.topAbsContainer}>
+          <View style={styles.topAbsContainerLeft}></View>
+          <View style={styles.topAbsContainerRight}>
+            <View style={styles.innerContainer}></View>
+          </View>
+        </View>
+
+        <View style={styles.bottomContainer}>
+          <View style={{ marginBottom: 20, marginTop: 10 }}>
+            <Text
+              style={{
+                fontSize: 28,
+                color: "#000",
+                fontWeight: "700",
+                marginBottom: 10,
+              }}
+            >
+              Reset Password
+            </Text>
+            <Text
+              style={{
+                fontSize: 14,
+                color: "#999",
+              }}
+            >
+              Enter your email address below so you can receive a reset code.
+            </Text>
+          </View>
+
+          {/* Email */}
+          <View style={styles.inputGroup}>
+            <Text style={email ? styles.labelFilled : styles.label}>
+              Email Address
+            </Text>
+            <TextInput
+              value={email}
+              inputMode="email"
+              autoComplete="email"
+              clearButtonMode="while-editing"
+              autoFocus={true}
+              clearTextOnFocus={true}
+              cursorColor="#70C601"
+              enterKeyHint="next"
+              placeholder="johnwilliams@gmail.com"
+              onChangeText={setEmail}
+              placeholderTextColor="#999"
+              style={email ? styles.inputFilled : styles.input}
+            />
+          </View>
+
+          {/* Password */}
+          {showInputs && (
+            <View style={styles.inputGroup}>
+              <Text style={password ? styles.labelFilled : styles.label}>
+                Password
+              </Text>
               <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  gap: 4,
-                }}
+                style={
+                  password
+                    ? styles.passwordInputGroupFilled
+                    : styles.passwordInputGroup
+                }
               >
+                <TextInput
+                  value={password}
+                  autoFocus={true}
+                  cursorColor="#70C601"
+                  keyboardType="email-address"
+                  enterKeyHint="done"
+                  clearButtonMode="while-editing"
+                  autoComplete="password"
+                  clearTextOnFocus={true}
+                  onChangeText={setPassword}
+                  placeholder="••••••••"
+                  placeholderTextColor="#999"
+                  secureTextEntry={!showPassword}
+                  style={{
+                    flex: 1,
+                  }}
+                />
+                <TouchableOpacity
+                  onPress={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <Entypo name="eye" size={20} color="black" />
+                  ) : (
+                    <Entypo name="eye-with-line" size={20} color="black" />
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+
+          {showInputs && (
+            <View style={styles.inputGroup}>
+              <Text style={password ? styles.labelFilled : styles.label}>
+                Confirm password
+              </Text>
+              <View
+                style={
+                  confirmPassword
+                    ? styles.passwordInputGroupFilled
+                    : styles.passwordInputGroup
+                }
+              >
+                <TextInput
+                  value={confirmPassword}
+                  autoFocus={true}
+                  cursorColor="#70C601"
+                  keyboardType="email-address"
+                  enterKeyHint="done"
+                  clearButtonMode="while-editing"
+                  autoComplete="password"
+                  clearTextOnFocus={true}
+                  onChangeText={setConfirmPassword}
+                  placeholder="••••••••"
+                  placeholderTextColor="#999"
+                  secureTextEntry={!showConfirmPassword}
+                  style={{
+                    flex: 1,
+                  }}
+                />
+                <TouchableOpacity
+                  onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                >
+                  {showPassword ? (
+                    <Entypo name="eye" size={20} color="black" />
+                  ) : (
+                    <Entypo name="eye-with-line" size={20} color="black" />
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+
+          {/* Button */}
+          {showInputs ? (
+            <TouchableOpacity style={styles.button}>
+              <Text style={styles.buttonText}>Reset password</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              onPress={() => setShowModal(true)}
+              style={styles.button}
+            >
+              <Text style={styles.buttonText}>Send reset code</Text>
+            </TouchableOpacity>
+          )}
+
+          {/* Footer */}
+          <Text style={styles.footer}>
+            Remembered password?{" "}
+            <Link href="/(open)/login">
+              <Text
+                style={{ color: "#70C601", textDecorationLine: "underline" }}
+              >
+                {" "}
+                Login to your account
+              </Text>
+            </Link>
+          </Text>
+        </View>
+        <Modal
+          visible={showModal}
+          transparent={true}
+          onRequestClose={() => {
+            setShowModal(false);
+          }}
+        >
+          <View style={styles.modalContent}>
+            <View style={styles.modalBody}>
+              <View style={styles.modelContentBody}>
+                <TouchableOpacity
+                  style={{ alignSelf: "flex-end" }}
+                  onPress={() => setShowModal(false)}
+                >
+                  <AntDesign name="close" size={20} color="#70C601" />
+                </TouchableOpacity>
                 <View
                   style={{
-                    borderRadius: 50,
-                    backgroundColor: "rgba(112, 198, 1, 0.15)",
-                    width: 100,
-                    height: 100,
-                    padding: 5,
                     flexDirection: "row",
                     justifyContent: "center",
                     alignItems: "center",
                     gap: 4,
                   }}
                 >
-                  <MaterialIcons name="verified" size={60} color="#70C601" />
+                  <View
+                    style={{
+                      borderRadius: 50,
+                      backgroundColor: "rgba(112, 198, 1, 0.15)",
+                      width: 100,
+                      height: 100,
+                      padding: 5,
+                      flexDirection: "row",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      gap: 4,
+                    }}
+                  >
+                    <MaterialIcons name="verified" size={60} color="#70C601" />
+                  </View>
                 </View>
-              </View>
-              <Text
-                style={{
-                  fontSize: 17,
-                  color: "#000000",
-                  fontWeight: "700",
-                  textAlign: "center",
-                  marginVertical: 5,
-                }}
-              >
-                Enter Verification Code!
-              </Text>
-              <Text
-                style={{
-                  fontSize: 14,
-                  color: "#999",
-                  textAlign: "center",
-                  marginTop: 5,
-                  marginBottom: 10,
-                }}
-              >
-                Enter the 4-digit verification code sent to your email address.
-              </Text>
-
-              <OTPInput
-                onChange={handleChange}
-                onComplete={handleComplete}
-                length={6}
-                // containerStyle={styles.customContainer}
-                // inputStyle={styles.customInput}
-                // focusedInputStyle={styles.customFocusedInput}
-                // filledInputStyle={styles.customFilledInput}
-              />
-
-              <TouchableOpacity
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  gap: 4,
-                  marginVertical: 10,
-                }}
-              >
-                <Text>Didn&apos;t get the code?</Text>
                 <Text
                   style={{
-                    color: "#70C601",
-                    fontSize: 14,
-                    fontWeight: "600",
-                    textDecorationLine: "underline",
+                    fontSize: 17,
+                    color: "#000000",
+                    fontWeight: "700",
+                    textAlign: "center",
+                    marginVertical: 5,
                   }}
                 >
-                  Resend
+                  Enter Verification Code!
                 </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => {
-                  setShowInputs(true);
-                  setShowModal(false);
-                }}
-                style={styles.modalButton}
-              >
-                <Text style={styles.buttonText}>Verify</Text>
-              </TouchableOpacity>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    color: "#999",
+                    textAlign: "center",
+                    marginTop: 5,
+                    marginBottom: 10,
+                  }}
+                >
+                  Enter the 4-digit verification code sent to your email
+                  address.
+                </Text>
+
+                <OTPInput
+                  onChange={handleChange}
+                  onComplete={handleComplete}
+                  length={6}
+                  // containerStyle={styles.customContainer}
+                  // inputStyle={styles.customInput}
+                  // focusedInputStyle={styles.customFocusedInput}
+                  // filledInputStyle={styles.customFilledInput}
+                />
+
+                <TouchableOpacity
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    gap: 4,
+                    marginVertical: 10,
+                  }}
+                >
+                  <Text>Didn&apos;t get the code?</Text>
+                  <Text
+                    style={{
+                      color: "#70C601",
+                      fontSize: 14,
+                      fontWeight: "600",
+                      textDecorationLine: "underline",
+                    }}
+                  >
+                    Resend
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => {
+                    setShowInputs(true);
+                    setShowModal(false);
+                  }}
+                  style={styles.modalButton}
+                >
+                  <Text style={styles.buttonText}>Verify</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
-        </View>
-      </Modal>
+        </Modal>
+      </View>
+      <View
+        style={{
+          backgroundColor: "#fff",
+          height: "auto",
+        }}
+      ></View>
     </KeyboardAvoidingView>
   );
 }
@@ -304,7 +322,7 @@ export default function ForgotPassword() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#70C601",
+    backgroundColor: "#fff",
   },
   modalContent: {
     flex: 1,
