@@ -13,11 +13,14 @@ import {
     View,
 } from "react-native";
 
-export default function Login() {
+export default function SignUp() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [inviteCode, setInviteCode] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [isTermsChecked, setIsTermsChecked] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   return (
     <KeyboardAvoidingView
@@ -40,8 +43,8 @@ export default function Login() {
               color: "#999",
             }}
           >
-            Login to securely access your account and manage your shifts
-            anytime.
+            Create an account to securely access and manage your shifts and
+            schedules.
           </Text>
         </View>
 
@@ -104,18 +107,62 @@ export default function Login() {
             </TouchableOpacity>
           </View>
         </View>
-        <View>
-          <Link href="/(open)/login">
-            <Text
+        <View style={styles.inputGroup}>
+          <Text style={password ? styles.labelFilled : styles.label}>
+            Confirm password
+          </Text>
+          <View
+            style={
+              confirmPassword
+                ? styles.passwordInputGroupFilled
+                : styles.passwordInputGroup
+            }
+          >
+            <TextInput
+              value={confirmPassword}
+              autoFocus={true}
+              cursorColor="#70C601"
+              keyboardType="email-address"
+              enterKeyHint="done"
+              clearButtonMode="while-editing"
+              autoComplete="password"
+              clearTextOnFocus={true}
+              onChangeText={setConfirmPassword}
+              placeholder="••••••••"
+              placeholderTextColor="#999"
+              secureTextEntry={!showConfirmPassword}
               style={{
-                color: "#70C601",
-                textAlign: "right",
-                textDecorationLine: "underline",
+                flex: 1,
               }}
+            />
+            <TouchableOpacity
+              onPress={() => setShowConfirmPassword(!showConfirmPassword)}
             >
-              Forgot Password?
-            </Text>
-          </Link>
+              {showPassword ? (
+                <Entypo name="eye" size={20} color="black" />
+              ) : (
+                <Entypo name="eye-with-line" size={20} color="black" />
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <View style={styles.inputGroup}>
+          <Text style={inviteCode ? styles.labelFilled : styles.label}>
+            Invite Code (Optional)
+          </Text>
+          <TextInput
+            value={inviteCode}
+            clearButtonMode="while-editing"
+            autoFocus={true}
+            clearTextOnFocus={true}
+            cursorColor="#70C601"
+            enterKeyHint="next"
+            placeholder="invite code"
+            onChangeText={setInviteCode}
+            placeholderTextColor="#999"
+            style={inviteCode ? styles.inputFilled : styles.input}
+          />
         </View>
 
         {/* Options */}
@@ -158,16 +205,16 @@ export default function Login() {
 
         {/* Button */}
         <TouchableOpacity style={styles.button}>
-          <Text style={styles.buttonText}>Sign In</Text>
+          <Text style={styles.buttonText}>Sign Up</Text>
         </TouchableOpacity>
 
         {/* Footer */}
         <Text style={styles.footer}>
-          Don&apos;t have an account?{" "}
-          <Link href="/(open)/sign-up">
+          Already have an account?{" "}
+          <Link href="/(open)/login">
             <Text style={{ color: "#70C601", textDecorationLine: "underline" }}>
               {" "}
-              Create an account
+              Login to your account
             </Text>
           </Link>
         </Text>
@@ -188,8 +235,8 @@ const styles = StyleSheet.create({
   },
   bottomContainer: {
     flex: 1,
-    width: "100%",
     height: "auto",
+    width: "100%",
     backgroundColor: "#ffffff",
     justifyContent: "center",
     // paddingVertical: 20,
@@ -203,7 +250,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   topAbsContainer: {
-    height: "30%",
+    height: "15%",
     width: "100%",
     display: "flex",
     flexDirection: "row",
