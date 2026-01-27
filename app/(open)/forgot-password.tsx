@@ -163,7 +163,7 @@ export default function ForgotPassword() {
                 <TouchableOpacity
                   onPress={() => setShowConfirmPassword(!showConfirmPassword)}
                 >
-                  {showPassword ? (
+                  {showConfirmPassword ? (
                     <Entypo name="eye" size={20} color="black" />
                   ) : (
                     <Entypo name="eye-with-line" size={20} color="black" />
