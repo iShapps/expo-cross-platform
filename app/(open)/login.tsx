@@ -36,6 +36,16 @@ export default function Login() {
         <View style={{ marginBottom: 20, marginTop: 10 }}>
           <Text
             style={{
+              fontSize: 28,
+              color: "#000",
+              fontWeight: "700",
+              marginBottom: 10,
+            }}
+          >
+            Login
+          </Text>
+          <Text
+            style={{
               fontSize: 14,
               color: "#999",
             }}
@@ -105,7 +115,7 @@ export default function Login() {
           </View>
         </View>
         <View>
-          <Link href="/(open)/login">
+          <Link href="/(open)/forgot-password">
             <Text
               style={{
                 color: "#70C601",
@@ -158,7 +168,7 @@ export default function Login() {
 
         {/* Button */}
         <TouchableOpacity style={styles.button}>
-          <Text style={styles.buttonText}>Sign In</Text>
+          <Text style={styles.buttonText}>Sign in</Text>
         </TouchableOpacity>
 
         {/* Footer */}
@@ -191,8 +201,8 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "auto",
     backgroundColor: "#ffffff",
-    justifyContent: "center",
-    // paddingVertical: 20,
+    // justifyContent: "center",
+    paddingVertical: 20,
     paddingHorizontal: 20,
     borderTopLeftRadius: 55,
   },

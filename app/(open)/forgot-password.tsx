@@ -1,7 +1,6 @@
 import OTPInput, { useOTPInput } from "@/components/shared/otp-input";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import Entypo from "@expo/vector-icons/Entypo";
-import { Checkbox } from "expo-checkbox";
 // import { Image } from "expo-image";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { Link } from "expo-router";
@@ -17,12 +16,11 @@ import {
     View,
 } from "react-native";
 
-export default function SignUp() {
+export default function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [inviteCode, setInviteCode] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [isTermsChecked, setIsTermsChecked] = useState(false);
+  const [showInputs, setShowInputs] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -51,7 +49,7 @@ export default function SignUp() {
               marginBottom: 10,
             }}
           >
-            Sign Up
+            Reset Password
           </Text>
           <Text
             style={{
@@ -59,34 +57,15 @@ export default function SignUp() {
               color: "#999",
             }}
           >
-            Create an account to securely access and manage your shifts and
-            schedules.
+            Enter your email address below so you can receive a reset code.
           </Text>
         </View>
 
         {/* Email */}
         <View style={styles.inputGroup}>
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-            }}
-          >
-            <Text style={email ? styles.labelFilled : styles.label}>
-              Email Address
-            </Text>
-
-            <TouchableOpacity onPress={() => setShowModal(true)}>
-              <Text
-                style={{
-                  color: "#70C601",
-                  fontSize: 12,
-                }}
-              >
-                Verify email
-              </Text>
-            </TouchableOpacity>
-          </View>
+          <Text style={email ? styles.labelFilled : styles.label}>
+            Email Address
+          </Text>
           <TextInput
             value={email}
             inputMode="email"
@@ -104,147 +83,105 @@ export default function SignUp() {
         </View>
 
         {/* Password */}
-        <View style={styles.inputGroup}>
-          <Text style={password ? styles.labelFilled : styles.label}>
-            Password
-          </Text>
-          <View
-            style={
-              password
-                ? styles.passwordInputGroupFilled
-                : styles.passwordInputGroup
-            }
-          >
-            <TextInput
-              value={password}
-              autoFocus={true}
-              cursorColor="#70C601"
-              keyboardType="email-address"
-              enterKeyHint="done"
-              clearButtonMode="while-editing"
-              autoComplete="password"
-              clearTextOnFocus={true}
-              onChangeText={setPassword}
-              placeholder="••••••••"
-              placeholderTextColor="#999"
-              secureTextEntry={!showPassword}
-              style={{
-                flex: 1,
-              }}
-            />
-            <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-              {showPassword ? (
-                <Entypo name="eye" size={20} color="black" />
-              ) : (
-                <Entypo name="eye-with-line" size={20} color="black" />
-              )}
-            </TouchableOpacity>
-          </View>
-        </View>
-        <View style={styles.inputGroup}>
-          <Text style={password ? styles.labelFilled : styles.label}>
-            Confirm password
-          </Text>
-          <View
-            style={
-              confirmPassword
-                ? styles.passwordInputGroupFilled
-                : styles.passwordInputGroup
-            }
-          >
-            <TextInput
-              value={confirmPassword}
-              autoFocus={true}
-              cursorColor="#70C601"
-              keyboardType="email-address"
-              enterKeyHint="done"
-              clearButtonMode="while-editing"
-              autoComplete="password"
-              clearTextOnFocus={true}
-              onChangeText={setConfirmPassword}
-              placeholder="••••••••"
-              placeholderTextColor="#999"
-              secureTextEntry={!showConfirmPassword}
-              style={{
-                flex: 1,
-              }}
-            />
-            <TouchableOpacity
-              onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-            >
-              {showPassword ? (
-                <Entypo name="eye" size={20} color="black" />
-              ) : (
-                <Entypo name="eye-with-line" size={20} color="black" />
-              )}
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        <View style={styles.inputGroup}>
-          <Text style={inviteCode ? styles.labelFilled : styles.label}>
-            Invite Code (Optional)
-          </Text>
-          <TextInput
-            value={inviteCode}
-            clearButtonMode="while-editing"
-            autoFocus={true}
-            clearTextOnFocus={true}
-            cursorColor="#70C601"
-            enterKeyHint="next"
-            placeholder="invite code"
-            onChangeText={setInviteCode}
-            placeholderTextColor="#999"
-            style={inviteCode ? styles.inputFilled : styles.input}
-          />
-        </View>
-
-        {/* Options */}
-        <View style={styles.optionsRow}>
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-            }}
-          >
-            <Checkbox
-              style={styles.checkbox}
-              value={isTermsChecked}
-              onValueChange={setIsTermsChecked}
-              color={isTermsChecked ? "#70C601" : undefined}
-            />
-            <Text style={styles.remember}>
-              I agree to the
-              <Link href="https://www.ishapps.com/terms-of-service">
-                <Text
-                  style={{ color: "#70C601", textDecorationLine: "underline" }}
-                >
-                  {" "}
-                  terms and conditions{" "}
-                </Text>
-              </Link>
-              &amp;
-              <Link href="https://www.ishapps.com/privacy-policy">
-                <Text
-                  style={{ color: "#70C601", textDecorationLine: "underline" }}
-                >
-                  {" "}
-                  privacy policy
-                </Text>
-              </Link>
+        {showInputs && (
+          <View style={styles.inputGroup}>
+            <Text style={password ? styles.labelFilled : styles.label}>
+              Password
             </Text>
+            <View
+              style={
+                password
+                  ? styles.passwordInputGroupFilled
+                  : styles.passwordInputGroup
+              }
+            >
+              <TextInput
+                value={password}
+                autoFocus={true}
+                cursorColor="#70C601"
+                keyboardType="email-address"
+                enterKeyHint="done"
+                clearButtonMode="while-editing"
+                autoComplete="password"
+                clearTextOnFocus={true}
+                onChangeText={setPassword}
+                placeholder="••••••••"
+                placeholderTextColor="#999"
+                secureTextEntry={!showPassword}
+                style={{
+                  flex: 1,
+                }}
+              />
+              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                {showPassword ? (
+                  <Entypo name="eye" size={20} color="black" />
+                ) : (
+                  <Entypo name="eye-with-line" size={20} color="black" />
+                )}
+              </TouchableOpacity>
+            </View>
           </View>
-          {/* <Text style={styles.forgot}>Forgot Password?</Text> */}
-        </View>
+        )}
+
+        {showInputs && (
+          <View style={styles.inputGroup}>
+            <Text style={password ? styles.labelFilled : styles.label}>
+              Confirm password
+            </Text>
+            <View
+              style={
+                confirmPassword
+                  ? styles.passwordInputGroupFilled
+                  : styles.passwordInputGroup
+              }
+            >
+              <TextInput
+                value={confirmPassword}
+                autoFocus={true}
+                cursorColor="#70C601"
+                keyboardType="email-address"
+                enterKeyHint="done"
+                clearButtonMode="while-editing"
+                autoComplete="password"
+                clearTextOnFocus={true}
+                onChangeText={setConfirmPassword}
+                placeholder="••••••••"
+                placeholderTextColor="#999"
+                secureTextEntry={!showConfirmPassword}
+                style={{
+                  flex: 1,
+                }}
+              />
+              <TouchableOpacity
+                onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+              >
+                {showPassword ? (
+                  <Entypo name="eye" size={20} color="black" />
+                ) : (
+                  <Entypo name="eye-with-line" size={20} color="black" />
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
 
         {/* Button */}
-        <TouchableOpacity style={styles.button}>
-          <Text style={styles.buttonText}>Sign up</Text>
-        </TouchableOpacity>
+        {showInputs ? (
+          <TouchableOpacity style={styles.button}>
+            <Text style={styles.buttonText}>Reset password</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            onPress={() => setShowModal(true)}
+            style={styles.button}
+          >
+            <Text style={styles.buttonText}>Send reset code</Text>
+          </TouchableOpacity>
+        )}
 
         {/* Footer */}
         <Text style={styles.footer}>
-          Already have an account?{" "}
+          Remembered password?{" "}
           <Link href="/(open)/login">
             <Text style={{ color: "#70C601", textDecorationLine: "underline" }}>
               {" "}
@@ -347,7 +284,13 @@ export default function SignUp() {
                   Resend
                 </Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.modalButton}>
+              <TouchableOpacity
+                onPress={() => {
+                  setShowInputs(true);
+                  setShowModal(false);
+                }}
+                style={styles.modalButton}
+              >
                 <Text style={styles.buttonText}>Verify</Text>
               </TouchableOpacity>
             </View>
@@ -381,7 +324,7 @@ const styles = StyleSheet.create({
     width: "92%",
   },
   topContainer: {
-    height: "10%",
+    height: "20%",
     justifyContent: "center",
     alignItems: "center",
   },
