@@ -116,7 +116,7 @@ export const OTPInput = forwardRef<OTPInputRef, OTPInputProps>(
           newOtp.join("").length === length
         ) {
           onComplete?.(newOtp.join(""));
-          // Optionally dismiss keyboard
+          // dismiss keyboard
           Keyboard.dismiss();
         }
       }
@@ -227,7 +227,6 @@ export const OTPInput = forwardRef<OTPInputRef, OTPInputProps>(
 
 OTPInput.displayName = "OTPInput";
 
-// Hook version for easier usage
 export const useOTPInput = (length: number = 4) => {
   const [otp, setOtp] = useState("");
   const [isComplete, setIsComplete] = useState(false);
