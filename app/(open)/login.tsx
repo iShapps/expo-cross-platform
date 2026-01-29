@@ -4,20 +4,41 @@ import { Checkbox } from "expo-checkbox";
 import { Link } from "expo-router";
 import { useState } from "react";
 import {
-    KeyboardAvoidingView,
-    Platform,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
+import { useSession } from "../ctx";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isTermsChecked, setIsTermsChecked] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  const { signIn, isLoading } = useSession();
+
+  const handleLogin = async () => {
+    // check if terms are accepted
+    if (!isTermsChecked) {
+      Alert.alert(
+        "Terms Required",
+        "You must agree to the terms and privacy policy.",
+        [{ text: "OK" }],
+      );
+      return;
+    }
+    try {
+      await signIn({ email, password });
+    } catch (error) {
+      console.error("Login error:", error);
+    }
+  };
 
   return (
     <KeyboardAvoidingView
@@ -179,12 +200,18 @@ export default function Login() {
           </View>
 
           {/* Button */}
-          <TouchableOpacity style={styles.button}>
-            <Text style={styles.buttonText}>Sign in</Text>
+          <TouchableOpacity
+            style={[styles.button, isLoading && { opacity: 0.6 }]}
+            onPress={handleLogin}
+            disabled={isLoading}
+          >
+            <Text style={styles.buttonText}>
+              {isLoading ? "Signing in..." : "Sign in"}
+            </Text>
           </TouchableOpacity>
 
           {/* Footer */}
-          <Text style={styles.footer}>
+          {/* <Text style={styles.footer}>
             Don&apos;t have an account?{" "}
             <Link href="/(open)/sign-up">
               <Text
@@ -194,7 +221,7 @@ export default function Login() {
                 Create an account
               </Text>
             </Link>
-          </Text>
+          </Text> */}
         </View>
       </View>
       <View

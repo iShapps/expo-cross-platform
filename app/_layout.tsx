@@ -1,6 +1,8 @@
-import { Stack } from "expo-router";
+import { SplashScreen, Stack } from "expo-router";
 import { SessionProvider, useSession } from "./ctx";
 import { SplashScreenController } from "./splash";
+
+SplashScreen.preventAutoHideAsync();
 
 export default function Root() {
   // Set up the auth context

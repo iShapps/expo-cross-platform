@@ -1,21 +1,30 @@
 import { useProfileData } from "@/data-store/use-account-store";
-import { LoginData } from "@/data-types/auth";
-import { removeToken, setToken } from "@/utils/auth";
+import { LoginCredentials, User } from "@/data-types/auth";
+import { removeToken, setToken as setAuthToken } from "@/utils/auth";
+import {
+  login as apiLogin,
+  logout as apiLogout,
+  AuthenticationError,
+  NetworkError,
+} from "@/utils/auth-api";
 import { usePathname, useRouter, useSegments } from "expo-router";
 import React, { useEffect } from "react";
+import { Alert } from "react-native";
 import { useStorageState } from "./useStorageState";
 
 const AuthContext = React.createContext<{
-  signIn: (data: LoginData) => Promise<void>;
+  signIn: (data: LoginCredentials) => Promise<void>;
   setSess: (data: string) => void;
   signOut: () => void;
   session?: string | null;
+  user?: User | null;
   isLoading: boolean;
 }>({
   signIn: () => Promise.resolve(),
   setSess: () => null,
   signOut: () => null,
   session: null,
+  user: null,
   isLoading: false,
 });
 
@@ -40,7 +49,6 @@ export function useProtectedRoute(user: any) {
   useEffect(() => {
     const inAuthGroup = segments[0] === "(open)";
 
-    // console.log('currentRoute',currentRoute)
     console.log("inAuthGroup", inAuthGroup);
 
     if (
@@ -59,23 +67,53 @@ export function useProtectedRoute(user: any) {
 }
 
 export function SessionProvider(props: React.PropsWithChildren) {
-  const [[isLoading, session], setSession] =
-    useStorageState("authToken-ishapps");
+  const [[isLoading, session], setSession] = useStorageState("session");
+  const [[isLoadingUser, userJson], setUserJson] = useStorageState("user_data");
 
   useProtectedRoute(session);
-  //   const authApi = new AuthApi()
   const profileStore = useProfileData();
-  const handleSignIn = async (data: LoginData) => {
-    try {
-      const loginRes = {
-        token: "token",
-      };
-      //   await authApi.login(data)
-      setSession(loginRes.token);
-      setToken(loginRes.token);
 
-      profileStore.setToken(loginRes.token);
+  const user = userJson ? JSON.parse(userJson) : null;
+
+  const handleSignIn = async (credentials: LoginCredentials) => {
+    try {
+      const result = await apiLogin(credentials);
+
+      // Save token and user data
+      setSession(result.data.access_token);
+      setAuthToken(result.data.access_token);
+      setUserJson(JSON.stringify(result.data.user));
+
+      // Update profile store if needed
+      profileStore.setToken(result.data.access_token);
+
+      Alert.alert("Success", "Login successful!", [{ text: "OK" }]);
     } catch (error) {
+      // Handle errors with alerts
+      if (error instanceof AuthenticationError) {
+        let errorMessage = error.message;
+
+        if (error.errors) {
+          const errorMessages = Object.values(error.errors).flat().join("\n");
+          errorMessage = errorMessages || error.message;
+        }
+
+        Alert.alert("Login Failed", errorMessage, [{ text: "OK" }]);
+      } else if (error instanceof NetworkError) {
+        Alert.alert("Connection Error", error.message, [
+          { text: "OK" },
+          {
+            text: "Retry",
+            onPress: () => handleSignIn(credentials),
+          },
+        ]);
+      } else {
+        Alert.alert(
+          "Error",
+          "An unexpected error occurred. Please try again.",
+          [{ text: "OK" }],
+        );
+      }
       throw error;
     }
   };
@@ -83,7 +121,21 @@ export function SessionProvider(props: React.PropsWithChildren) {
   const handleSetSession = (token: string) => {
     console.log("called");
     setSession(token);
-    setToken(token);
+    setAuthToken(token);
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await apiLogout();
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      // Always clear local data
+      setSession(null);
+      setUserJson(null);
+      removeToken();
+      profileStore.clearDetails();
+    }
   };
 
   return (
@@ -91,13 +143,10 @@ export function SessionProvider(props: React.PropsWithChildren) {
       value={{
         signIn: handleSignIn,
         setSess: handleSetSession,
-        signOut: () => {
-          setSession(null);
-          removeToken();
-          profileStore.clearDetails();
-        },
+        signOut: handleSignOut,
         session,
-        isLoading,
+        user,
+        isLoading: isLoading || isLoadingUser,
       }}
     >
       {props.children}

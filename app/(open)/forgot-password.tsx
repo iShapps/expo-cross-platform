@@ -1,22 +1,31 @@
 import OTPInput, { useOTPInput } from "@/components/shared/otp-input";
+import {
+  AuthenticationError,
+  NetworkError,
+  resetPassword,
+  sendResetCode,
+  verifyResetCode,
+} from "@/utils/auth-api";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import Entypo from "@expo/vector-icons/Entypo";
-// import { Image } from "expo-image";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { Link } from "expo-router";
+import { Link, useRouter } from "expo-router";
 import { useState } from "react";
 import {
-    KeyboardAvoidingView,
-    Modal,
-    Platform,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 export default function ForgotPassword() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -24,7 +33,165 @@ export default function ForgotPassword() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
   const { otp, handleChange, handleComplete } = useOTPInput(6);
+
+  // Send reset code to email
+  const handleSendResetCode = async () => {
+    if (isLoading) return;
+
+    setIsLoading(true);
+    try {
+      const result = await sendResetCode({ email });
+
+      Alert.alert(
+        "Success",
+        result.message || "Reset code sent to your email",
+        [
+          {
+            text: "OK",
+            onPress: () => setShowModal(true),
+          },
+        ],
+      );
+    } catch (error) {
+      if (error instanceof AuthenticationError) {
+        let errorMessage = error.message;
+
+        if (error.errors) {
+          const errorMessages = Object.values(error.errors).flat().join("\n");
+          errorMessage = errorMessages || error.message;
+        }
+
+        Alert.alert("Error", errorMessage, [{ text: "OK" }]);
+      } else if (error instanceof NetworkError) {
+        Alert.alert("Connection Error", error.message, [
+          { text: "OK" },
+          {
+            text: "Retry",
+            onPress: handleSendResetCode,
+          },
+        ]);
+      } else {
+        Alert.alert(
+          "Error",
+          "An unexpected error occurred. Please try again.",
+          [{ text: "OK" }],
+        );
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleVerifyOTP = async () => {
+    if (isVerifying) return;
+
+    setIsVerifying(true);
+    try {
+      const result = await verifyResetCode({ email, otp });
+
+      Alert.alert("Success", result.message || "Code verified successfully", [
+        {
+          text: "OK",
+          onPress: () => {
+            setShowInputs(true);
+            setShowModal(false);
+          },
+        },
+      ]);
+    } catch (error) {
+      if (error instanceof AuthenticationError) {
+        let errorMessage = error.message;
+
+        if (error.errors) {
+          const errorMessages = Object.values(error.errors).flat().join("\n");
+          errorMessage = errorMessages || error.message;
+        }
+
+        Alert.alert("Verification Failed", errorMessage, [{ text: "OK" }]);
+      } else if (error instanceof NetworkError) {
+        Alert.alert("Connection Error", error.message, [
+          { text: "OK" },
+          {
+            text: "Retry",
+            onPress: handleVerifyOTP,
+          },
+        ]);
+      } else {
+        Alert.alert(
+          "Error",
+          "An unexpected error occurred. Please try again.",
+          [{ text: "OK" }],
+        );
+      }
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (isResetting) return;
+
+    setIsResetting(true);
+    try {
+      const result = await resetPassword({
+        email,
+        otp,
+        password,
+        password_confirmation: confirmPassword,
+      });
+
+      Alert.alert("Success", result.message || "Password reset successfully", [
+        {
+          text: "Login",
+          onPress: () => router.replace("/(open)/login"),
+        },
+      ]);
+    } catch (error) {
+      if (error instanceof AuthenticationError) {
+        let errorMessage = error.message;
+
+        if (error.errors) {
+          const errorMessages = Object.values(error.errors).flat().join("\n");
+          errorMessage = errorMessages || error.message;
+        }
+
+        Alert.alert("Reset Failed", errorMessage, [{ text: "OK" }]);
+      } else if (error instanceof NetworkError) {
+        Alert.alert("Connection Error", error.message, [
+          { text: "OK" },
+          {
+            text: "Retry",
+            onPress: handleResetPassword,
+          },
+        ]);
+      } else {
+        Alert.alert(
+          "Error",
+          "An unexpected error occurred. Please try again.",
+          [{ text: "OK" }],
+        );
+      }
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
+  const handleResendCode = async () => {
+    try {
+      await sendResetCode({ email });
+      Alert.alert("Success", "New code sent to your email", [{ text: "OK" }]);
+    } catch (error) {
+      if (error instanceof AuthenticationError) {
+        Alert.alert("Error", error.message, [{ text: "OK" }]);
+      } else if (error instanceof NetworkError) {
+        Alert.alert("Connection Error", error.message, [{ text: "OK" }]);
+      }
+    }
+  };
 
   return (
     <KeyboardAvoidingView
@@ -63,7 +230,9 @@ export default function ForgotPassword() {
                 color: "#999",
               }}
             >
-              Enter your email address below so you can receive a reset code.
+              {showInputs
+                ? "Enter your new password below."
+                : "Enter your email address below so you can receive a reset code."}
             </Text>
           </View>
 
@@ -77,13 +246,13 @@ export default function ForgotPassword() {
               inputMode="email"
               autoComplete="email"
               clearButtonMode="while-editing"
-              autoFocus={true}
-              clearTextOnFocus={true}
+              autoFocus={!showInputs}
               cursorColor="#70C601"
               enterKeyHint="next"
               placeholder="johnwilliams@gmail.com"
               onChangeText={setEmail}
               placeholderTextColor="#999"
+              editable={!showInputs && !isLoading}
               style={email ? styles.inputFilled : styles.input}
             />
           </View>
@@ -103,17 +272,16 @@ export default function ForgotPassword() {
               >
                 <TextInput
                   value={password}
-                  autoFocus={true}
+                  autoFocus={showInputs}
                   cursorColor="#70C601"
-                  keyboardType="email-address"
-                  enterKeyHint="done"
+                  enterKeyHint="next"
                   clearButtonMode="while-editing"
-                  autoComplete="password"
-                  clearTextOnFocus={true}
+                  autoComplete="new-password"
                   onChangeText={setPassword}
                   placeholder="••••••••"
                   placeholderTextColor="#999"
                   secureTextEntry={!showPassword}
+                  editable={!isResetting}
                   style={{
                     flex: 1,
                   }}
@@ -133,7 +301,7 @@ export default function ForgotPassword() {
 
           {showInputs && (
             <View style={styles.inputGroup}>
-              <Text style={password ? styles.labelFilled : styles.label}>
+              <Text style={confirmPassword ? styles.labelFilled : styles.label}>
                 Confirm password
               </Text>
               <View
@@ -145,17 +313,15 @@ export default function ForgotPassword() {
               >
                 <TextInput
                   value={confirmPassword}
-                  autoFocus={true}
                   cursorColor="#70C601"
-                  keyboardType="email-address"
                   enterKeyHint="done"
                   clearButtonMode="while-editing"
-                  autoComplete="password"
-                  clearTextOnFocus={true}
+                  autoComplete="new-password"
                   onChangeText={setConfirmPassword}
                   placeholder="••••••••"
                   placeholderTextColor="#999"
                   secureTextEntry={!showConfirmPassword}
+                  editable={!isResetting}
                   style={{
                     flex: 1,
                   }}
@@ -175,15 +341,28 @@ export default function ForgotPassword() {
 
           {/* Button */}
           {showInputs ? (
-            <TouchableOpacity style={styles.button}>
-              <Text style={styles.buttonText}>Reset password</Text>
+            <TouchableOpacity
+              style={[styles.button, isResetting && styles.buttonDisabled]}
+              onPress={handleResetPassword}
+              disabled={isResetting}
+            >
+              {isResetting ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.buttonText}>Reset password</Text>
+              )}
             </TouchableOpacity>
           ) : (
             <TouchableOpacity
-              onPress={() => setShowModal(true)}
-              style={styles.button}
+              onPress={handleSendResetCode}
+              style={[styles.button, isLoading && styles.buttonDisabled]}
+              disabled={isLoading}
             >
-              <Text style={styles.buttonText}>Send reset code</Text>
+              {isLoading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.buttonText}>Send reset code</Text>
+              )}
             </TouchableOpacity>
           )}
 
@@ -200,6 +379,8 @@ export default function ForgotPassword() {
             </Link>
           </Text>
         </View>
+
+        {/* OTP Verification Modal */}
         <Modal
           visible={showModal}
           transparent={true}
@@ -260,18 +441,13 @@ export default function ForgotPassword() {
                     marginBottom: 10,
                   }}
                 >
-                  Enter the 4-digit verification code sent to your email
-                  address.
+                  Enter the 6-digit verification code sent to {email}.
                 </Text>
 
                 <OTPInput
                   onChange={handleChange}
                   onComplete={handleComplete}
                   length={6}
-                  // containerStyle={styles.customContainer}
-                  // inputStyle={styles.customInput}
-                  // focusedInputStyle={styles.customFocusedInput}
-                  // filledInputStyle={styles.customFilledInput}
                 />
 
                 <TouchableOpacity
@@ -282,6 +458,7 @@ export default function ForgotPassword() {
                     gap: 4,
                     marginVertical: 10,
                   }}
+                  onPress={handleResendCode}
                 >
                   <Text>Didn&apos;t get the code?</Text>
                   <Text
@@ -296,13 +473,18 @@ export default function ForgotPassword() {
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  onPress={() => {
-                    setShowInputs(true);
-                    setShowModal(false);
-                  }}
-                  style={styles.modalButton}
+                  onPress={handleVerifyOTP}
+                  style={[
+                    styles.modalButton,
+                    isVerifying && styles.buttonDisabled,
+                  ]}
+                  disabled={isVerifying}
                 >
-                  <Text style={styles.buttonText}>Verify</Text>
+                  {isVerifying ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <Text style={styles.buttonText}>Verify</Text>
+                  )}
                 </TouchableOpacity>
               </View>
             </View>
@@ -351,7 +533,6 @@ const styles = StyleSheet.create({
     height: "auto",
     width: "100%",
     backgroundColor: "#ffffff",
-    // justifyContent: "center",
     paddingVertical: 20,
     paddingHorizontal: 20,
     borderTopLeftRadius: 55,
@@ -463,6 +644,10 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
 
+  buttonDisabled: {
+    opacity: 0.6,
+  },
+
   modalButton: {
     backgroundColor: "#70C601",
     paddingVertical: 10,
@@ -478,7 +663,6 @@ const styles = StyleSheet.create({
   },
 
   footer: {
-    // textAlign: "center",
     marginTop: 20,
     color: "#555",
   },
