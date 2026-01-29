@@ -67,7 +67,8 @@ export function useProtectedRoute(user: any) {
 }
 
 export function SessionProvider(props: React.PropsWithChildren) {
-  const [[isLoading, session], setSession] = useStorageState("session");
+  const [[isLoading, session], setSession] =
+    useStorageState("authToken-ishapps");
   const [[isLoadingUser, userJson], setUserJson] = useStorageState("user_data");
 
   useProtectedRoute(session);
