@@ -19,7 +19,8 @@
         "monochromeImage": "./assets/images/ishapps.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "softwareKeyboardLayoutMode": "pan"
     },
     "web": {
       "output": "static",
@@ -37,6 +38,21 @@
           "dark": {
             "backgroundColor": "#000000"
           }
+        }
+      ],
+      [
+        "expo-secure-store",
+        {
+          "configureAndroidBackup": true,
+          "faceIDPermission": "Allow iShapps to access your Face ID biometric data."
+        }
+      ],
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "node_modules/@expo-google-fonts/inter/900Black/Inter_900Black.ttf"
+          ]
         }
       ]
     ],
