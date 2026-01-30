@@ -1,27 +1,40 @@
-import {
-  DarkTheme,
-  DefaultTheme,
-  ThemeProvider,
-} from "@react-navigation/native";
-import { Stack } from "expo-router";
-import { useColorScheme } from "react-native";
-import "react-native-reanimated";
+import { SplashScreen, Stack } from "expo-router";
+import { SessionProvider, useSession } from "./ctx";
+import { SplashScreenController } from "./splash";
 
-export const unstable_settings = {
-  anchor: "(tabs)",
-};
+SplashScreen.preventAutoHideAsync();
 
-export default function RootLayout() {
-  const colorScheme = useColorScheme();
+export default function Root() {
+  // Set up the auth context
   return (
-    <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+    <SessionProvider>
+      <SplashScreenController />
+      <RootNavigator />
+    </SessionProvider>
+  );
+}
+
+function RootNavigator() {
+  const { session } = useSession();
+
+  return (
+    <Stack>
+      <Stack.Protected guard={!!session}>
         <Stack.Screen
-          name="modal"
-          options={{ presentation: "modal", title: "Modal" }}
+          options={{
+            headerShown: false,
+          }}
+          name="(tabs)"
         />
-      </Stack>
-    </ThemeProvider>
+      </Stack.Protected>
+      <Stack.Protected guard={!session}>
+        <Stack.Screen
+          options={{
+            headerShown: false,
+          }}
+          name="(open)"
+        />
+      </Stack.Protected>
+    </Stack>
   );
 }
