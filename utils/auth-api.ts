@@ -18,7 +18,9 @@ import { Alert } from "react-native";
 
 // Configuration
 const API_CONFIG = {
-  baseURL: process.env.EXPO_PUBLIC_API_URL || "https://api.yourapp.com",
+  baseURL:
+    process.env.EXPO_PUBLIC_API_URL ||
+    "https://admin.ishapps.com/shapp-dev/api",
   timeout: 30000, // 30 seconds
   endpoints: {
     login: "/login",
