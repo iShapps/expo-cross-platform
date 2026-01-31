@@ -1,15 +1,27 @@
-import { PayrunCard } from "@/components/pay-run-card";
+import ActiveCard from "@/components/active-card";
+import { PayrunCardBase } from "@/components/pay-run";
+import { useProfileData } from "@/data-store/use-account-store";
 import { Payrun } from "@/data-types/dashboard";
-import { FlatList, Platform, StyleSheet, Text } from "react-native";
-import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
+import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+
+import {
+  FlatList,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 export default function HomeScreen() {
+  const profileStore = useProfileData();
+  const userDetails = profileStore.userDetails;
   const sample_payruns: Payrun[] = [
     {
       id: "1",
-      period_start: "2023-01-01T00:00:00.000Z",
-      period_end: "2023-01-01T00:00:00.000Z",
-      status: "current",
+      period_start: "2026-01-31T09:00:00.000Z",
+      period_end: "2026-01-31T19:00:00.000Z",
+      status: "ongoing",
       total_hours: 8,
       total_amount: 1000,
       location: "21 Aldwych Way, Joondalup WA, Australia",
@@ -137,59 +149,121 @@ export default function HomeScreen() {
     },
   ];
   return (
-    <SafeAreaProvider>
-      <SafeAreaView
-        style={
-          Platform.OS === "ios" ? styles.container : styles.androidContainer
-        }
-      >
-        <Text>Home Screen</Text>
-        {/* <PayrunCard payrun={sample_payruns[0]} /> */}
+    <View style={styles.mainContainer}>
+      {/* HEADER */}
+      <View style={styles.containerTop}>
+        <View
+          style={{
+            display: "flex",
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 10,
+          }}
+        >
+          <View style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+            <Text style={styles.headerTitle}>{userDetails?.name}</Text>
+            <View style={{ display: "flex", flexDirection: "row", gap: 5 }}>
+              <FontAwesome6 name="location-dot" size={16} color="#FFC107" />
+              <Text style={styles.headerSubtitle}>
+                {userDetails?.hcp?.address}
+              </Text>
+            </View>
+          </View>
+          <TouchableOpacity
+            // onPress={() => router.push("/(main)/need")}
+            style={styles.notificationContainer}
+          >
+            <MaterialIcons name="notifications" size={20} color="#fff" />
+            <View style={styles.notificationDot} />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* CONTENT */}
+      <View style={styles.mainLandingContainer}>
+        <ActiveCard payrun={sample_payruns[0]} />
         <FlatList
+          style={{ flex: 1 }}
           data={sample_payruns}
-          renderItem={({ item }) => <PayrunCard payrun={item} />}
+          renderItem={({ item }) => <PayrunCardBase payrun={item} />}
           keyExtractor={(item) => item.id}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{
             paddingBottom: 120,
             paddingTop: 5,
-            paddingHorizontal: 10,
+            flexGrow: 1,
             gap: 5,
-            // flex: 1,
           }}
         />
-      </SafeAreaView>
-    </SafeAreaProvider>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    height: "100%",
+  mainContainer: {
+    backgroundColor: "#70C601",
     width: "100%",
+    flex: 1,
+  },
+  header: {
+    backgroundColor: "#70C601",
+    paddingTop: 55,
+    paddingBottom: 10,
+    alignItems: "center",
+  },
+  containerTop: {
+    backgroundColor: "#70C601",
+    height: "20%",
+    width: "100%",
+    paddingTop: 55,
+    paddingBottom: 10,
     display: "flex",
     flexDirection: "column",
-    backgroundColor: "#ffffff",
-    // justifyContent:"center",
-    // alignContent:"center",
-    // alignItems:"center",
-    // paddingHorizontal:20,
-    // paddingVertical:40
+    paddingHorizontal: 10,
+    gap: 10,
   },
 
-  androidContainer: {
-    flex: 1,
-    height: "100%",
-    width: "100%",
+  mainLandingContainer: {
     display: "flex",
     flexDirection: "column",
+    gap: 2,
+    flex: 1,
     backgroundColor: "#ffffff",
-    // justifyContent:"center",
-    // alignContent:"center",
-    // alignItems:"center",
-    // paddingHorizontal:20,
-    paddingTop: 50,
-    paddingBottom: 70,
+    width: "100%",
+    borderTopLeftRadius: 25,
+    borderTopRightRadius: 25,
+    paddingHorizontal: 10,
+    overflow: "hidden",
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#fff",
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: "#fff",
+  },
+  notificationContainer: {
+    backgroundColor: "rgba(255, 255, 255, 0.3)",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    alignContent: "center",
+    flexDirection: "row",
+    borderRadius: 5,
+    padding: 8,
+    position: "relative",
+  },
+  notificationDot: {
+    position: "absolute",
+    top: 7,
+    right: 11,
+    width: 6,
+    height: 6,
+    borderRadius: 4,
+    backgroundColor: "#FF3B30",
   },
 });

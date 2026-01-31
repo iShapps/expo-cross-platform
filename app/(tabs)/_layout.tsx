@@ -16,8 +16,8 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: "#ffffff",
-        tabBarInactiveTintColor: "#e0e0e0",
+        tabBarActiveTintColor: "#70C601",
+        tabBarInactiveTintColor: "#71797E",
         tabBarStyle:
           Platform.OS === "ios" ? styles.iosTabBar : styles.androidTabBar,
         headerShown: false,
@@ -75,7 +75,7 @@ export default function TabLayout() {
 
 const styles = StyleSheet.create({
   iosTabBar: {
-    backgroundColor: "#70C601",
+    backgroundColor: "#fff",
     // marginHorizontal:15,
     // marginVertical:15,
     position: "absolute",
@@ -85,10 +85,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     alignContent: "center",
-    borderTopColor: "#70C601",
+    borderTopColor: "#D3D3D3",
   },
   androidTabBar: {
-    backgroundColor: "#70C601",
+    backgroundColor: "#fff",
     // marginHorizontal:15,
     // marginVertical:15,
     position: "absolute",
@@ -101,6 +101,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     alignContent: "center",
-    borderTopColor: "#70C601",
+    borderTopColor: "#D3D3D3",
   },
 });

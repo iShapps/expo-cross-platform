@@ -87,6 +87,7 @@ export function SessionProvider(props: React.PropsWithChildren) {
 
       // Update profile store if needed
       profileStore.setToken(result.data.access_token);
+      profileStore.setUserDetails(result.data.user);
 
       Alert.alert("Success", "Login successful!", [{ text: "OK" }]);
     } catch (error) {
