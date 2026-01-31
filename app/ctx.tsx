@@ -67,9 +67,12 @@ export function useProtectedRoute(user: any) {
 }
 
 export function SessionProvider(props: React.PropsWithChildren) {
-  const [[isLoading, session], setSession] =
+  const [[isHydrating, session], setSession] =
     useStorageState("authToken-ishapps");
-  const [[isLoadingUser, userJson], setUserJson] = useStorageState("user_data");
+  const [[isHydratingUser, userJson], setUserJson] =
+    useStorageState("user_data");
+
+  const [authLoading, setAuthLoading] = React.useState(false);
 
   useProtectedRoute(session);
   const profileStore = useProfileData();
@@ -77,6 +80,7 @@ export function SessionProvider(props: React.PropsWithChildren) {
   const user = userJson ? JSON.parse(userJson) : null;
 
   const handleSignIn = async (credentials: LoginCredentials) => {
+    setAuthLoading(true);
     try {
       const result = await apiLogin(credentials);
 
@@ -117,6 +121,8 @@ export function SessionProvider(props: React.PropsWithChildren) {
         );
       }
       throw error;
+    } finally {
+      setAuthLoading(false);
     }
   };
 
@@ -148,7 +154,7 @@ export function SessionProvider(props: React.PropsWithChildren) {
         signOut: handleSignOut,
         session,
         user,
-        isLoading: isLoading || isLoadingUser,
+        isLoading: isHydrating || isHydratingUser || authLoading,
       }}
     >
       {props.children}
