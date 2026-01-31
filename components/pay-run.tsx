@@ -3,11 +3,11 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { differenceInMinutes, format } from "date-fns";
 import React from "react";
 import {
-    Platform,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 interface PayrunCardProps {
@@ -135,11 +135,11 @@ export const PayrunCardBase: React.FC<PayrunCardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: "#F8FFF0",
     borderRadius: 5,
     padding: 8,
     borderWidth: 1,
-    borderColor: "#f0f0f0",
+    borderColor: "#d0e6a5",
     display: "flex",
     flexDirection: "row",
     width: "100%",

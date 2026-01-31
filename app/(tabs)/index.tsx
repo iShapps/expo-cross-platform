@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
     flexDirection: "column",
     gap: 2,
     flex: 1,
-    backgroundColor: "#ffffff",
+    backgroundColor: "#fff",
     width: "100%",
     borderTopLeftRadius: 25,
     borderTopRightRadius: 25,

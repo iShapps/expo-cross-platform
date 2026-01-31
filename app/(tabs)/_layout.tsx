@@ -75,7 +75,7 @@ export default function TabLayout() {
 
 const styles = StyleSheet.create({
   iosTabBar: {
-    backgroundColor: "#fff",
+    backgroundColor: "#F8FFF0",
     // marginHorizontal:15,
     // marginVertical:15,
     position: "absolute",
@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
     borderTopColor: "#D3D3D3",
   },
   androidTabBar: {
-    backgroundColor: "#fff",
+    backgroundColor: "#F8FFF0",
     // marginHorizontal:15,
     // marginVertical:15,
     position: "absolute",

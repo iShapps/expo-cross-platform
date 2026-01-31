@@ -2,11 +2,11 @@ import { Payrun } from "@/data-types/dashboard";
 import { differenceInMinutes, format } from "date-fns";
 import React from "react";
 import {
-    Platform,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 interface PayrunCardProps {
