@@ -1,20 +1,20 @@
 import { setStorageItemAsync } from "@/app/useStorageState";
 import {
-    ForgotPasswordErrorResponse,
-    ForgotPasswordRequest,
-    ForgotPasswordSuccessResponse,
-    LoginCredentials,
-    LoginErrorResponse,
-    LoginResponse,
-    LoginSuccessResponse,
-    ResetPasswordErrorResponse,
-    ResetPasswordRequest,
-    ResetPasswordSuccessResponse,
-    VerifyOTPErrorResponse,
-    VerifyOTPRequest,
-    VerifyOTPSuccessResponse,
+  ForgotPasswordErrorResponse,
+  ForgotPasswordRequest,
+  ForgotPasswordSuccessResponse,
+  LoginCredentials,
+  LoginErrorResponse,
+  LoginResponse,
+  LoginSuccessResponse,
+  ResetPasswordErrorResponse,
+  ResetPasswordRequest,
+  ResetPasswordSuccessResponse,
+  VerifyOTPErrorResponse,
+  VerifyOTPRequest,
+  VerifyOTPSuccessResponse,
 } from "@/data-types/auth";
-import { Alert } from "react-native";
+import { Alert, Platform } from "react-native";
 
 // Configuration
 const API_CONFIG = {
@@ -44,7 +44,6 @@ export const TokenStorage = {
   async getToken(): Promise<string | null> {
     try {
       const SecureStore = await import("expo-secure-store");
-      const { Platform } = await import("react-native");
 
       if (Platform.OS === "web") {
         if (typeof localStorage !== "undefined") {
@@ -146,6 +145,7 @@ export const login = async (
 
     if (!data.status) {
       const errorData = data as LoginErrorResponse;
+      console.log("errorData", errorData);
       throw new AuthenticationError(
         errorData.message || "Login failed",
         response.status,
