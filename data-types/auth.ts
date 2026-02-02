@@ -126,7 +126,7 @@ export interface Hcp {
   first_name: string;
   last_name: string;
   contact_number: string;
-  date_of_birth: Date;
+  date_of_birth: string;
   gender: string;
   registration_number: string;
   abn_number: null;

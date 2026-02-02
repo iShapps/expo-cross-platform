@@ -104,7 +104,7 @@ export default function More() {
           }}
         >
           <TouchableOpacity
-            onPress={() => router.push("/(tabs)/schedules")}
+            onPress={() => router.push("/(tabs)/account")}
             style={styles.profileLinks}
           >
             <View style={styles.profileContainer}>
