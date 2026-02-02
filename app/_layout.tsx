@@ -1,16 +1,27 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { SplashScreen, Stack } from "expo-router";
 import { SessionProvider, useSession } from "./ctx";
 import { SplashScreenController } from "./splash";
 
+// onlineManager.setEventListener((setOnline) => {
+//   const eventSubscription = Network.addNetworkStateListener((state) => {
+//     setOnline(!!state.isConnected)
+//   })
+//   return eventSubscription.remove
+// })
+
 SplashScreen.preventAutoHideAsync();
 
 export default function Root() {
+  const queryClient = new QueryClient();
   // Set up the auth context
   return (
-    <SessionProvider>
-      <SplashScreenController />
-      <RootNavigator />
-    </SessionProvider>
+    <QueryClientProvider client={queryClient}>
+      <SessionProvider>
+        <SplashScreenController />
+        <RootNavigator />
+      </SessionProvider>
+    </QueryClientProvider>
   );
 }
 

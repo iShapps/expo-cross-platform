@@ -1,4 +1,5 @@
 import { Payrun } from "@/data-types/dashboard";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { differenceInMinutes, format } from "date-fns";
 import React from "react";
 import {
@@ -14,7 +15,10 @@ interface PayrunCardProps {
   onPress?: () => void;
 }
 
-export const PayrunCard: React.FC<PayrunCardProps> = ({ payrun, onPress }) => {
+export const PayrunCardBase: React.FC<PayrunCardProps> = ({
+  payrun,
+  onPress,
+}) => {
   const startDate = new Date(payrun.period_start);
   const endDate = new Date(payrun.period_end);
 
@@ -25,20 +29,7 @@ export const PayrunCard: React.FC<PayrunCardProps> = ({ payrun, onPress }) => {
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
   const duration = `${hours}:${minutes.toString().padStart(2, "0")}Hrs`;
-  const periodText = `${startTime} to ${endTime} - ${duration}`;
-
-  const getStatusColor = () => {
-    switch (payrun.status) {
-      case "current":
-        return "#70C601";
-      case "processing":
-        return "#FFA500";
-      case "paid":
-        return "#28A745";
-      default:
-        return "#70C601";
-    }
-  };
+  const periodText = `${startTime} to ${endTime} (${duration})`;
 
   return (
     <TouchableOpacity
@@ -47,60 +38,13 @@ export const PayrunCard: React.FC<PayrunCardProps> = ({ payrun, onPress }) => {
       activeOpacity={0.7}
       disabled={!onPress}
     >
-      <View style={styles.mainContent}>
-        <Text
-          style={{
-            ...styles.title,
-
-            fontFamily: Platform.select({
-              android: "Inter_900Black",
-              ios: "Inter-Black",
-            }),
-          }}
-        >
-          {payrun.facility_name}
-        </Text>
-        <Text
-          style={{
-            ...styles.categoryText,
-            fontFamily: Platform.select({
-              android: "Inter_900Black",
-              ios: "Inter-Black",
-            }),
-          }}
-        >
-          {payrun.category_name}
-        </Text>
-        <Text
-          style={{
-            ...styles.periodText,
-            fontFamily: Platform.select({
-              android: "Inter_300Light",
-              ios: "Inter-Light",
-            }),
-          }}
-        >
-          {periodText}
-        </Text>
-        <Text
-          style={{
-            ...styles.locationText,
-            fontFamily: Platform.select({
-              android: "Inter_900Black",
-              ios: "Inter-Black",
-            }),
-          }}
-        >
-          {payrun.location}
-        </Text>
-      </View>
       <View style={styles.dateCard}>
         <Text
           style={{
             ...styles.dateText,
             fontFamily: Platform.select({
-              android: "Inter_900Black",
-              ios: "Inter-Black",
+              android: "Inter_300Light",
+              ios: "Inter-Light",
             }),
           }}
         >
@@ -110,13 +54,80 @@ export const PayrunCard: React.FC<PayrunCardProps> = ({ payrun, onPress }) => {
           style={{
             ...styles.dateText,
             fontFamily: Platform.select({
-              android: "Inter_900Black",
-              ios: "Inter-Black",
+              android: "Inter_300Light",
+              ios: "Inter-Light",
             }),
           }}
         >
           Jan
         </Text>
+      </View>
+      <View style={styles.mainContent}>
+        <Text
+          style={{
+            ...styles.title,
+
+            fontFamily: Platform.select({
+              android: "Inter_600SemiBold",
+              ios: "Inter-SemiBold",
+            }),
+          }}
+        >
+          {payrun.facility_name}
+        </Text>
+        <Text
+          style={{
+            ...styles.categoryText,
+            fontFamily: Platform.select({
+              android: "Inter_500Medium",
+              ios: "Inter-Medium",
+            }),
+          }}
+        >
+          {payrun.category_name}
+        </Text>
+        <View
+          style={{
+            display: "flex",
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 2,
+          }}
+        >
+          <Ionicons name="time-outline" size={18} color="#70C601" />
+          <Text
+            style={{
+              ...styles.periodText,
+              fontFamily: Platform.select({
+                android: "Inter_400Regular",
+                ios: "Inter-Regular",
+              }),
+            }}
+          >
+            {periodText}
+          </Text>
+        </View>
+        <View
+          style={{
+            display: "flex",
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 2,
+          }}
+        >
+          <Ionicons name="location-outline" size={18} color="#70C601" />
+          <Text
+            style={{
+              ...styles.locationText,
+              fontFamily: Platform.select({
+                android: "Inter_500Medium",
+                ios: "Inter-Medium",
+              }),
+            }}
+          >
+            {payrun.location}
+          </Text>
+        </View>
       </View>
     </TouchableOpacity>
   );
@@ -124,15 +135,16 @@ export const PayrunCard: React.FC<PayrunCardProps> = ({ payrun, onPress }) => {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: "#fff",
+    // backgroundColor: "#F8FFF0",
+    backgroundColor: "#ffffff",
     borderRadius: 5,
     padding: 8,
     borderWidth: 1,
-    borderColor: "#f0f0f0",
+    borderColor: "#d0e6a5",
     display: "flex",
     flexDirection: "row",
     width: "100%",
-    // alignItems: "center",
+    alignItems: "flex-start",
     justifyContent: "space-between",
     gap: 14,
   },
@@ -140,25 +152,26 @@ const styles = StyleSheet.create({
     flex: 1,
     display: "flex",
     flexDirection: "column",
-    gap: 3,
+    gap: 6,
   },
   title: {
     fontSize: 14,
-    fontWeight: "700",
-    color: "#70C601",
+    lineHeight: 20,
   },
   categoryText: {
-    fontSize: 10,
-    color: "#000",
-    fontWeight: "bold",
+    fontSize: 12,
+    lineHeight: 18,
+    color: "#708090",
   },
   periodText: {
-    fontSize: 13,
-    color: "gray",
+    fontSize: 12,
+    lineHeight: 18,
+    color: "#36454F",
   },
   locationText: {
     fontSize: 12,
-    color: "#000",
+    lineHeight: 18,
+    color: "#818589",
     fontWeight: "700",
   },
   statusBadge: {
@@ -169,7 +182,7 @@ const styles = StyleSheet.create({
   },
   dateCard: {
     backgroundColor: "#70C601",
-    borderRadius: 8,
+    borderRadius: 5,
     padding: 4,
     display: "flex",
     flexDirection: "column",
@@ -182,7 +195,6 @@ const styles = StyleSheet.create({
   dateText: {
     fontSize: 17,
     color: "#fff",
-    fontWeight: "bold",
     textAlign: "center",
   },
   statusText: {
