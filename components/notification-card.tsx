@@ -64,17 +64,25 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
           size={24}
           color={getNotificationColor()}
         />
+        {!notification.is_read && <View style={styles.unreadDot} />}
       </View>
 
       <View style={styles.content}>
         <View style={styles.header}>
           <Text style={styles.title}>{notification.title}</Text>
-          {!notification.is_read && <View style={styles.unreadDot} />}
         </View>
         <Text style={styles.message} numberOfLines={2}>
           {notification.message}
         </Text>
         <Text style={styles.time}>{timeAgo}</Text>
+      </View>
+
+      <View style={styles.detailHint}>
+        <MaterialCommunityIcons
+          name="chevron-right"
+          size={20}
+          color="#C4C4C4"
+        />
       </View>
     </TouchableOpacity>
   );
@@ -83,11 +91,11 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
 const styles = StyleSheet.create({
   card: {
     backgroundColor: "#fff",
-    borderRadius: 12,
+    borderRadius: 5,
     padding: 12,
-    marginBottom: 8,
+    marginBottom: 4,
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
@@ -110,6 +118,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
+    position: "relative",
   },
   content: {
     flex: 1,
@@ -130,7 +139,11 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     backgroundColor: "#70C601",
-    marginLeft: 8,
+    position: "absolute",
+    top: -2,
+    right: -2,
+    borderWidth: 2,
+    borderColor: "#fff",
   },
   message: {
     fontSize: 13,
@@ -141,5 +154,10 @@ const styles = StyleSheet.create({
   time: {
     fontSize: 11,
     color: "#999",
+  },
+  detailHint: {
+    alignSelf: "flex-start",
+    marginLeft: 8,
+    marginTop: 2,
   },
 });

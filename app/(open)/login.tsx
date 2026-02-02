@@ -1,12 +1,23 @@
 import Entypo from "@expo/vector-icons/Entypo";
 import { Checkbox } from "expo-checkbox";
 // import { Image } from "expo-image";
+import {
+  authenticateWithBiometrics,
+  isBiometricAvailable,
+} from "@/utils/biometrics";
+import AntDesign from "@expo/vector-icons/AntDesign";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { Link } from "expo-router";
-import { useState } from "react";
+import * as SecureStore from "expo-secure-store";
+import { useEffect, useRef, useState } from "react";
 import {
   Alert,
+  Animated,
+  Easing,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   StyleSheet,
   Text,
   TextInput,
@@ -18,10 +29,54 @@ import { useSession } from "../ctx";
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isTermsChecked, setIsTermsChecked] = useState(false);
+  const [isTermsChecked, setIsTermsChecked] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
-
   const { signIn, isLoading } = useSession();
+
+  const [biometricSupported, setBiometricSupported] = useState(false);
+  const spinAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (isLoading) {
+      Animated.loop(
+        Animated.timing(spinAnim, {
+          toValue: 1,
+          duration: 800,
+          easing: Easing.linear,
+          useNativeDriver: true,
+        }),
+      ).start();
+    } else {
+      spinAnim.stopAnimation();
+      spinAnim.setValue(0);
+    }
+  }, [isLoading, spinAnim]);
+
+  // Check for biometric support on mount
+  useEffect(() => {
+    (async () => {
+      setBiometricSupported(await isBiometricAvailable());
+    })();
+  }, []);
+
+  // Check for biometric support on mount
+  useEffect(() => {
+    (async () => {
+      setBiometricSupported(await isBiometricAvailable());
+    })();
+  }, []);
+  // TODO:encrypt stored credentials for production security(only token)
+  const storeCredentials = async (email: string, password: string) => {
+    await SecureStore.setItemAsync("ishapps_email", email);
+    await SecureStore.setItemAsync("ishapps_password", password);
+  };
+
+  //Retrieve credentials for biometric login
+  const getStoredCredentials = async () => {
+    const storedEmail = await SecureStore.getItemAsync("ishapps_email");
+    const storedPassword = await SecureStore.getItemAsync("ishapps_password");
+    return { email: storedEmail, password: storedPassword };
+  };
 
   const handleLogin = async () => {
     // check if terms are accepted
@@ -35,8 +90,69 @@ export default function Login() {
     }
     try {
       await signIn({ email, password });
+      // Ask for biometric consent after successful login
+      if (biometricSupported) {
+        Alert.alert(
+          "Enable Biometric Login?",
+          "Would you like to enable biometric login for future sign-ins? Your credentials will be securely stored.",
+          [
+            {
+              text: "Yes",
+              onPress: async () => {
+                await storeCredentials(email, password);
+                Alert.alert(
+                  "Biometric login enabled",
+                  "You can now use biometrics to sign in.",
+                );
+              },
+            },
+            {
+              text: "No",
+              style: "cancel",
+            },
+          ],
+        );
+      }
     } catch (error) {
       console.error("Login error:", error);
+    }
+  };
+
+  // Biometric login handler
+  const handleBiometricLogin = async () => {
+    if (!biometricSupported) {
+      Alert.alert(
+        "Biometrics not available",
+        "Your device does not support biometric authentication or it is not set up.",
+      );
+      return;
+    }
+    try {
+      const authenticated = await authenticateWithBiometrics(
+        "Sign in with biometrics",
+      );
+      if (!authenticated) {
+        Alert.alert(
+          "Authentication failed",
+          "Biometric authentication was not successful.",
+        );
+        return;
+      }
+      // Retrieve stored credentials
+      const creds = await getStoredCredentials();
+      if (!creds.email || !creds.password) {
+        Alert.alert(
+          "No credentials",
+          "No credentials found for biometric login. Please sign in manually first.",
+        );
+        return;
+      }
+      setEmail(creds.email);
+      setPassword(creds.password);
+      // await signIn({ email: creds.email, password: creds.password });
+    } catch (error) {
+      console.error("Biometric login error:", error);
+      Alert.alert("Login failed", "Could not sign in with stored credentials.");
     }
   };
 
@@ -87,20 +203,41 @@ export default function Login() {
             <Text style={email ? styles.labelFilled : styles.label}>
               Email Address
             </Text>
-            <TextInput
-              value={email}
-              inputMode="email"
-              autoComplete="email"
-              clearButtonMode="while-editing"
-              autoFocus={true}
-              clearTextOnFocus={true}
-              cursorColor="#70C601"
-              enterKeyHint="next"
-              placeholder="johnwilliams@gmail.com"
-              onChangeText={setEmail}
-              placeholderTextColor="#999"
-              style={email ? styles.inputFilled : styles.input}
-            />
+            <View
+              style={
+                password
+                  ? styles.passwordInputGroupFilled
+                  : styles.passwordInputGroup
+              }
+            >
+              <TextInput
+                value={email}
+                inputMode="email"
+                autoComplete="email"
+                clearButtonMode="while-editing"
+                autoFocus={true}
+                clearTextOnFocus={true}
+                cursorColor="#70C601"
+                enterKeyHint="next"
+                placeholder="johnwilliams@gmail.com"
+                onChangeText={setEmail}
+                placeholderTextColor="#999"
+                style={{
+                  flex: 1,
+                }}
+              />
+              <Pressable onPress={handleBiometricLogin}>
+                {Platform.OS === "ios" ? (
+                  <MaterialCommunityIcons
+                    name="line-scan"
+                    size={24}
+                    color="#7393B3"
+                  />
+                ) : (
+                  <Ionicons name="finger-print" size={24} color="#7393B3" />
+                )}
+              </Pressable>
+            </View>
           </View>
 
           {/* Password */}
@@ -132,13 +269,17 @@ export default function Login() {
                   flex: 1,
                 }}
               />
-              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                {showPassword ? (
-                  <Entypo name="eye" size={20} color="black" />
-                ) : (
-                  <Entypo name="eye-with-line" size={20} color="black" />
-                )}
-              </TouchableOpacity>
+              {biometricSupported && (
+                <TouchableOpacity
+                  onPress={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <Entypo name="eye" size={20} color="#7393B3" />
+                  ) : (
+                    <Entypo name="eye-with-line" size={20} color="#7393B3" />
+                  )}
+                </TouchableOpacity>
+              )}
             </View>
           </View>
           <View>
@@ -205,8 +346,25 @@ export default function Login() {
             onPress={handleLogin}
             disabled={isLoading}
           >
+            {isLoading && (
+              <Animated.View
+                style={{
+                  marginRight: 10,
+                  transform: [
+                    {
+                      rotate: spinAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: ["0deg", "360deg"],
+                      }),
+                    },
+                  ],
+                }}
+              >
+                <AntDesign name="loading-3-quarters" size={20} color="#fff" />
+              </Animated.View>
+            )}
             <Text style={styles.buttonText}>
-              {isLoading ? "Signing in..." : "Sign in"}
+              {isLoading ? "signing you in..." : "Sign in"}
             </Text>
           </TouchableOpacity>
 
@@ -358,6 +516,8 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 4,
     alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "center",
     marginTop: 6,
   },
 

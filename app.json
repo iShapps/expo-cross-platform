@@ -9,7 +9,11 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      // "bundleIdentifier": "com.victormadaraka.ishapps",
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "Allow $(PRODUCT_NAME) to use Face ID for authentication."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -44,7 +48,7 @@
         "expo-secure-store",
         {
           "configureAndroidBackup": true,
-          "faceIDPermission": "Allow iShapps to access your Face ID biometric data."
+          "faceIDPermission": "Allow $(PRODUCT_NAME) to access your Face ID biometric data."
         }
       ],
       [
@@ -53,6 +57,12 @@
           "fonts": [
             "node_modules/@expo-google-fonts/inter/900Black/Inter_900Black.ttf"
           ]
+        }
+      ],
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Allow $(PRODUCT_NAME) to use Face ID."
         }
       ]
     ],

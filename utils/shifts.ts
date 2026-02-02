@@ -1,9 +1,9 @@
 import {
-    differenceInMinutes,
-    format,
-    isToday,
-    isTomorrow,
-    parseISO,
+  differenceInMinutes,
+  format,
+  isToday,
+  isTomorrow,
+  parseISO,
 } from "date-fns";
 
 /**
@@ -260,3 +260,54 @@ export const filterShiftsByStatus = <T extends { status: string }>(
   const statuses = Array.isArray(status) ? status : [status];
   return shifts.filter((shift) => statuses.includes(shift.status));
 };
+
+export function formatDuration(ms: number): string {
+  if (ms <= 0) return "00:00:00";
+
+  const totalSeconds = Math.floor(ms / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  return [
+    hours.toString().padStart(2, "0"),
+    minutes.toString().padStart(2, "0"),
+    seconds.toString().padStart(2, "0"),
+  ].join(":");
+}
+
+type CountdownResult = {
+  label: "Starts in" | "Ends in" | "Completed";
+  time: string;
+};
+
+export function getShiftCountdown(
+  periodStart: string,
+  periodEnd: string,
+): CountdownResult {
+  const now = Date.now();
+  const start = new Date(periodStart).getTime();
+  const end = new Date(periodEnd).getTime();
+
+  // Shift not started yet
+  if (now < start) {
+    return {
+      label: "Starts in",
+      time: formatDuration(start - now),
+    };
+  }
+
+  // Shift ongoing
+  if (now >= start && now < end) {
+    return {
+      label: "Ends in",
+      time: formatDuration(end - now),
+    };
+  }
+
+  // Shift completed
+  return {
+    label: "Completed",
+    time: "00:00:00",
+  };
+}
