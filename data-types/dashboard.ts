@@ -1,11 +1,19 @@
-export interface PushNotification {
+export type NotificationType =
+  | "shift_available"
+  | "shift_reminder"
+  | "payment"
+  | "general";
+
+export interface Notification {
   id: string;
-  type: string;
+  type: NotificationType;
   created_at: string;
   is_read: boolean;
   title: string;
   message: string;
 }
+
+export type PushNotification = Notification;
 
 export interface Payrun {
   id: string;
@@ -20,3 +28,4 @@ export interface Payrun {
   total_hours: number;
   total_amount: number;
 }
+

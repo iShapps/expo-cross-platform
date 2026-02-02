@@ -19,7 +19,8 @@ const ActiveCard: React.FC<PayrunCardProps> = ({ payrun, onPress }) => {
       Animated.parallel([
         Animated.sequence([
           Animated.timing(scaleAnim, {
-            toValue: 1.02,
+            // toValue: 1.02,
+            toValue: 1,
             duration: 900,
             easing: Easing.out(Easing.ease),
             useNativeDriver: true,

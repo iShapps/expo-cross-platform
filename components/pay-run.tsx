@@ -135,7 +135,8 @@ export const PayrunCardBase: React.FC<PayrunCardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: "#F8FFF0",
+    // backgroundColor: "#F8FFF0",
+    backgroundColor: "#ffffff",
     borderRadius: 5,
     padding: 8,
     borderWidth: 1,
@@ -151,21 +152,25 @@ const styles = StyleSheet.create({
     flex: 1,
     display: "flex",
     flexDirection: "column",
-    gap: 4,
+    gap: 6,
   },
   title: {
     fontSize: 14,
+    lineHeight: 20,
   },
   categoryText: {
-    fontSize: 13,
+    fontSize: 12,
+    lineHeight: 18,
     color: "#708090",
   },
   periodText: {
-    fontSize: 14,
+    fontSize: 12,
+    lineHeight: 18,
     color: "#36454F",
   },
   locationText: {
-    fontSize: 13.3,
+    fontSize: 12,
+    lineHeight: 18,
     color: "#818589",
     fontWeight: "700",
   },

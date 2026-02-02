@@ -1,10 +1,9 @@
 import { PayrunCardBase } from "@/components/pay-run";
 import { Payrun } from "@/data-types/dashboard";
-import Feather from "@expo/vector-icons/Feather";
-import Fontisto from "@expo/vector-icons/Fontisto";
+import React, { useState } from "react";
 import {
   FlatList,
-  Platform,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -12,9 +11,16 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { router } from "expo-router";
-
 export default function Shifts() {
+  const statusTabs = [
+    "Available",
+    "Scheduled",
+    "Running",
+    "Pending Payment",
+    "Paid",
+  ] as const;
+  const [activeStatus, setActiveStatus] =
+    useState<(typeof statusTabs)[number]>("Scheduled");
   const sample_payruns: Payrun[] = [
     {
       id: "1",
@@ -148,37 +154,55 @@ export default function Shifts() {
     },
   ];
   return (
-    <SafeAreaView
-      style={Platform.OS === "ios" ? styles.container : styles.androidContainer}
-    >
-      <View style={styles.topBarContainer}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={styles.backIconContainer}
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Shifts</Text>
+          <View style={styles.underline} />
+        </View>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.tabsRow}
         >
-          <Fontisto name="arrow-left-l" size={15} color="black" />
-        </TouchableOpacity>
-        <Text style={styles.locationText}>Shifts</Text>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={{ ...styles.backIconContainer, borderColor: "white" }}
-        >
-          <Feather name="search" size={15} color="white" />
-        </TouchableOpacity>
+          {statusTabs.map((status) => {
+            const isActive = activeStatus === status;
+            return (
+              <TouchableOpacity
+                key={status}
+                onPress={() => setActiveStatus(status)}
+                style={styles.tabButton}
+                activeOpacity={0.7}
+              >
+                <Text
+                  style={[styles.tabText, isActive && styles.tabTextActive]}
+                >
+                  {status}
+                </Text>
+                <View
+                  style={[
+                    styles.tabUnderline,
+                    isActive && styles.tabUnderlineActive,
+                  ]}
+                />
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+        <FlatList
+          // style={{ flex: 1 }}
+          data={sample_payruns}
+          renderItem={({ item }) => <PayrunCardBase payrun={item} />}
+          keyExtractor={(item) => item.id}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{
+            paddingBottom: 120,
+            paddingTop: 10,
+            flexGrow: 1,
+            gap: 5,
+          }}
+        />
       </View>
-      <FlatList
-        style={{ flex: 1 }}
-        data={sample_payruns}
-        renderItem={({ item }) => <PayrunCardBase payrun={item} />}
-        keyExtractor={(item) => item.id}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{
-          paddingBottom: 120,
-          paddingTop: 20,
-          flexGrow: 1,
-          gap: 5,
-        }}
-      />
     </SafeAreaView>
   );
 }
@@ -186,48 +210,56 @@ export default function Shifts() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    height: "100%",
-    width: "100%",
-    display: "flex",
-    flexDirection: "column",
     backgroundColor: "#ffffff",
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
+    paddingTop: 16,
   },
-  topBarContainer: {
-    display: "flex",
-    flexDirection: "row",
-    alignContent: "center",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 25,
-    paddingBottom: 10,
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#ffffff",
   },
-  backIconContainer: {
-    height: 40,
-    width: 40,
-    borderRadius: 50,
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: "center",
-    alignContent: "center",
-    alignItems: "center",
-    padding: 2,
-    borderWidth: 1,
-    borderColor: "#D3D3D3",
+  header: {
+    marginBottom: 12,
   },
-  locationText: {
-    fontFamily: "Roboto",
+  title: {
     fontSize: 18,
     fontWeight: "700",
+    color: "#111",
   },
-  androidContainer: {
-    flex: 1,
-    height: "100%",
+  underline: {
+    height: 3,
+    width: 56,
+    borderRadius: 999,
+    backgroundColor: "#70C601",
+    opacity: 0.85,
+    marginTop: 6,
+  },
+  tabsRow: {
+    flexDirection: "row",
+    gap: 8,
+    paddingBottom: 2,
+  },
+  tabButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 6,
+    alignItems: "center",
+  },
+  tabText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#667085",
+  },
+  tabTextActive: {
+    color: "#70C601",
+  },
+  tabUnderline: {
+    height: 2,
     width: "100%",
-    display: "flex",
-    flexDirection: "column",
-    backgroundColor: "#ffffff",
-    paddingTop: 50,
-    paddingBottom: 70,
+    borderRadius: 999,
+    backgroundColor: "transparent",
+    marginTop: 6,
+  },
+  tabUnderlineActive: {
+    backgroundColor: "#70C601",
   },
 });
