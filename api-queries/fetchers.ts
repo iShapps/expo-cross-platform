@@ -139,3 +139,41 @@ export async function fetchShiftById(shiftId: string): Promise<any> {
     );
   }
 }
+
+export async function fetchDashboard(): Promise<any> {
+  try {
+    const response = await authorizedFetch(`${API_BASE_URL}/hcp/dashboard`, {
+      method: "GET",
+    });
+    let data: any;
+    try {
+      data = await response.json();
+    } catch (jsonError) {
+      console.error("JSON parse error:", jsonError);
+      throw new ShiftApiError(
+        "Invalid server response (not JSON)",
+        response.status,
+      );
+    }
+    if (!response.ok) {
+      const apiMessage =
+        data?.message || data?.error || "Failed to fetch dashboard";
+      throw new ShiftApiError(apiMessage, response.status);
+    }
+    if (!data || typeof data !== "object") {
+      throw new ShiftApiError(
+        "Malformed response from server",
+        response.status,
+      );
+    }
+    return data;
+  } catch (error) {
+    if (error instanceof ShiftApiError) throw error;
+    console.error("fetchDashboard error:", error);
+    throw new ShiftApiError(
+      error instanceof Error
+        ? error.message
+        : "An unexpected error occurred fetching dashboard.",
+    );
+  }
+}

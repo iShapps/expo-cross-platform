@@ -1,9 +1,15 @@
+import { fetchDashboard } from "@/api-queries/fetchers";
 import ActiveCard from "@/components/active-card";
 import { NotificationCard } from "@/components/notification-card";
 import { useProfileData } from "@/data-store/use-account-store";
-import { Notification, Payrun } from "@/data-types/dashboard";
+import {
+  DashboardResponse,
+  Notification,
+  Payrun,
+} from "@/data-types/dashboard";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { router } from "expo-router";
 
@@ -100,15 +106,34 @@ export default function HomeScreen() {
     },
   ];
   const currentPayrun = sample_payruns[0];
+  const { data: dashboard } = useQuery<DashboardResponse>({
+    queryKey: ["dashboard"],
+    queryFn: fetchDashboard,
+  });
+  const dashboardData = dashboard?.data;
+  const availableShifts = dashboardData?.available_shifts ?? 0;
+  const scheduledShifts = dashboardData?.scheduled_shifts ?? 0;
+  const upcomingShifts = dashboardData?.upcoming_shifts ?? 0;
+  const weekStart = dashboardData?.week_start_date;
+  const weekEnd = dashboardData?.week_end_date;
+  const dashboardPayrunLabel =
+    weekStart && weekEnd
+      ? `Payrun: Week of ${format(new Date(weekStart), "dd MMM")} - ${format(
+          new Date(weekEnd),
+          "dd MMM yyyy",
+        )}`
+      : null;
   const payrunStart = currentPayrun
     ? format(new Date(currentPayrun.period_start), "dd MMM")
     : "";
   const payrunEnd = currentPayrun
     ? format(new Date(currentPayrun.period_end), "dd MMM yyyy")
     : "";
-  const payrunLabel = currentPayrun
-    ? `Payrun: Week of ${payrunStart} - ${payrunEnd}`
-    : "Payrun: --";
+  const payrunLabel = dashboardPayrunLabel
+    ? dashboardPayrunLabel
+    : currentPayrun
+      ? `Payrun: Week of ${payrunStart} - ${payrunEnd}`
+      : "Payrun: --";
   return (
     <View style={styles.mainContainer}>
       {/* HEADER */}
@@ -167,7 +192,7 @@ export default function HomeScreen() {
                         color="#70C601"
                       />
                     </View>
-                    <Text style={styles.dashboardValue}>12</Text>
+                    <Text style={styles.dashboardValue}>{availableShifts}</Text>
                   </View>
                   <Text style={styles.dashboardTitle}>Available Shifts</Text>
                 </View>
@@ -180,7 +205,7 @@ export default function HomeScreen() {
                         color="#4A90E2"
                       />
                     </View>
-                    <Text style={styles.dashboardValue}>5</Text>
+                    <Text style={styles.dashboardValue}>{scheduledShifts}</Text>
                   </View>
                   <Text style={styles.dashboardTitle}>My Shifts</Text>
                 </View>
@@ -195,7 +220,7 @@ export default function HomeScreen() {
                         color="#FFC107"
                       />
                     </View>
-                    <Text style={styles.dashboardValue}>2</Text>
+                    <Text style={styles.dashboardValue}>{upcomingShifts}</Text>
                   </View>
                   <Text style={styles.dashboardTitle}>Upcoming Shifts</Text>
                 </View>

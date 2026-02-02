@@ -14,7 +14,7 @@ import {
   VerifyOTPRequest,
   VerifyOTPSuccessResponse,
 } from "@/data-types/auth";
-import { Alert } from "react-native";
+import { Alert, Platform } from "react-native";
 
 // Configuration
 const API_CONFIG = {
@@ -44,7 +44,6 @@ export const TokenStorage = {
   async getToken(): Promise<string | null> {
     try {
       const SecureStore = await import("expo-secure-store");
-      const { Platform } = await import("react-native");
 
       if (Platform.OS === "web") {
         if (typeof localStorage !== "undefined") {
