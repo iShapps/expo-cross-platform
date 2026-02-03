@@ -27,6 +27,7 @@ export interface Payrun {
   location: string;
   total_hours: number;
   total_amount: number;
+  shift_type: string;
 }
 
 export interface DashboardMessages {
@@ -56,4 +57,3 @@ export interface DashboardResponse {
   message: string;
   data: DashboardData;
 }
-

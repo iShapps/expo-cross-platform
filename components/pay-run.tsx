@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { ShiftType, ShiftTypePill } from "./shift-type-pill";
 
 interface PayrunCardProps {
   payrun: Payrun;
@@ -38,35 +39,47 @@ export const PayrunCardBase: React.FC<PayrunCardProps> = ({
       activeOpacity={0.7}
       disabled={!onPress}
     >
-      <View style={styles.dateCard}>
-        <Text
-          style={{
-            ...styles.dateText,
-            fontFamily: Platform.select({
-              android: "Inter_300Light",
-              ios: "Inter-Light",
-            }),
-          }}
-        >
-          15
-        </Text>
-        <Text
-          style={{
-            ...styles.dateText,
-            fontFamily: Platform.select({
-              android: "Inter_300Light",
-              ios: "Inter-Light",
-            }),
-          }}
-        >
-          Jan
-        </Text>
+      <View style={styles.headerRow}>
+        {payrun.shift_type && (
+          <ShiftTypePill type={payrun.shift_type as ShiftType} />
+        )}
+      </View>
+      <View
+        style={{
+          flexDirection: "column",
+          alignItems: "center",
+          position: "relative",
+        }}
+      >
+        <View style={styles.dateCard}>
+          <Text
+            style={{
+              ...styles.dateText,
+              fontFamily: Platform.select({
+                android: "Inter_300Light",
+                ios: "Inter-Light",
+              }),
+            }}
+          >
+            15
+          </Text>
+          <Text
+            style={{
+              ...styles.dateText,
+              fontFamily: Platform.select({
+                android: "Inter_300Light",
+                ios: "Inter-Light",
+              }),
+            }}
+          >
+            Jan
+          </Text>
+        </View>
       </View>
       <View style={styles.mainContent}>
         <Text
           style={{
             ...styles.title,
-
             fontFamily: Platform.select({
               android: "Inter_600SemiBold",
               ios: "Inter-SemiBold",
@@ -147,12 +160,19 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     justifyContent: "space-between",
     gap: 14,
+    position: "relative",
   },
   mainContent: {
     flex: 1,
     display: "flex",
     flexDirection: "column",
     gap: 6,
+  },
+  headerRow: {
+    position: "absolute",
+    right: -3,
+    top: -8,
+    zIndex: 100,
   },
   title: {
     fontSize: 14,

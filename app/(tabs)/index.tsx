@@ -30,6 +30,7 @@ export default function HomeScreen() {
       period_start: "2026-01-31T09:00:00.000Z",
       period_end: "2026-01-31T19:00:00.000Z",
       status: "ongoing",
+      shift_type: "Morning",
       total_hours: 8,
       total_amount: 1000,
       location: "21 Aldwych Way, Joondalup WA, Australia",
