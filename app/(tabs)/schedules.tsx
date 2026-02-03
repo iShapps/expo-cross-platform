@@ -1,12 +1,13 @@
 import { PayrunCardBase } from "@/components/pay-run";
 import { Payrun } from "@/data-types/dashboard";
-import React, { useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import {
   FlatList,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -20,6 +21,17 @@ export default function Schedules() {
   ] as const;
   const [activeStatus, setActiveStatus] =
     useState<(typeof statusTabs)[number]>("Running");
+  const { width: screenWidth } = useWindowDimensions();
+  const contentScrollRef = useRef<ScrollView>(null);
+  const shiftTypes = [
+    "Morning",
+    "Afternoon",
+    "Night",
+    "Sleepover",
+    "Public Holiday",
+    "Saturday",
+    "Sunday",
+  ];
   const sample_payruns: Payrun[] = [
     {
       id: "1",
@@ -33,6 +45,7 @@ export default function Schedules() {
       category_name: "Assistant in Nursing",
       facility_id: "1",
       facility_name: "MercyCare Joondalup",
+      shift_type: shiftTypes[0],
     },
     {
       id: "2",
@@ -46,6 +59,7 @@ export default function Schedules() {
       category_name: "Disability Support-Med/Peg/Dysphagia ",
       facility_id: "2",
       facility_name: "Brightwater Oats Street",
+      shift_type: shiftTypes[1],
     },
     {
       id: "3",
@@ -59,6 +73,7 @@ export default function Schedules() {
       category_name: "Therapist Assistant",
       facility_id: "4",
       facility_name: "Amana James Brown Care  Centre",
+      shift_type: shiftTypes[2],
     },
     {
       id: "4",
@@ -72,6 +87,7 @@ export default function Schedules() {
       category_name: "Therapist Assistant",
       facility_id: "4",
       facility_name: "Amana James Brown Care  Centre",
+      shift_type: shiftTypes[3],
     },
     {
       id: "5",
@@ -85,6 +101,7 @@ export default function Schedules() {
       category_name: "Therapist Assistant",
       facility_id: "4",
       facility_name: "Amana James Brown Care  Centre",
+      shift_type: shiftTypes[4],
     },
     {
       id: "6",
@@ -98,6 +115,7 @@ export default function Schedules() {
       category_name: "Therapist Assistant",
       facility_id: "4",
       facility_name: "Amana James Brown Care  Centre",
+      shift_type: shiftTypes[5],
     },
     {
       id: "7",
@@ -111,6 +129,7 @@ export default function Schedules() {
       category_name: "Therapist Assistant",
       facility_id: "4",
       facility_name: "Amana James Brown Care  Centre",
+      shift_type: shiftTypes[6],
     },
     {
       id: "8",
@@ -124,6 +143,7 @@ export default function Schedules() {
       category_name: "Therapist Assistant",
       facility_id: "4",
       facility_name: "Amana James Brown Care  Centre",
+      shift_type: shiftTypes[0],
     },
     {
       id: "9",
@@ -137,6 +157,7 @@ export default function Schedules() {
       category_name: "Therapist Assistant",
       facility_id: "4",
       facility_name: "Amana James Brown Care  Centre",
+      shift_type: shiftTypes[1],
     },
     {
       id: "10",
@@ -150,8 +171,31 @@ export default function Schedules() {
       category_name: "Therapist Assistant",
       facility_id: "4",
       facility_name: "Amana James Brown Care  Centre",
+      shift_type: shiftTypes[2],
     },
   ];
+
+  const handleTabPress = useCallback(
+    (index: number) => {
+      setActiveStatus(statusTabs[index]);
+      contentScrollRef.current?.scrollTo({
+        x: index * screenWidth,
+        animated: true,
+      });
+    },
+    [screenWidth],
+  );
+
+  const handleContentScrollEnd = useCallback(
+    (e: any) => {
+      const offsetX = e.nativeEvent.contentOffset.x;
+      const index = Math.round(offsetX / screenWidth);
+      const clampedIndex = Math.min(Math.max(index, 0), statusTabs.length - 1);
+      setActiveStatus(statusTabs[clampedIndex]);
+    },
+    [screenWidth],
+  );
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
@@ -164,12 +208,12 @@ export default function Schedules() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.tabsRow}
         >
-          {statusTabs.map((status) => {
+          {statusTabs.map((status, index) => {
             const isActive = activeStatus === status;
             return (
               <TouchableOpacity
                 key={status}
-                onPress={() => setActiveStatus(status)}
+                onPress={() => handleTabPress(index)}
                 style={styles.tabButton}
                 activeOpacity={0.7}
               >
@@ -188,7 +232,7 @@ export default function Schedules() {
             );
           })}
         </ScrollView>
-        <FlatList
+        {/* <FlatList
           // style={{ flex: 1 }}
           data={sample_payruns}
           renderItem={({ item }) => <PayrunCardBase payrun={item} />}
@@ -198,9 +242,40 @@ export default function Schedules() {
             paddingBottom: 120,
             paddingTop: 10,
             flexGrow: 1,
-            gap: 5,
+            gap: 10,
           }}
-        />
+        /> */}
+
+        {/* Horizontal paging ScrollView for tab content */}
+        <ScrollView
+          ref={contentScrollRef}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          showsVerticalScrollIndicator={false}
+          onMomentumScrollEnd={handleContentScrollEnd}
+          onScrollBeginDrag={() => {}} // prevent flicker
+        >
+          {statusTabs.map((status, index) => (
+            <View
+              key={status}
+              style={{ width: screenWidth - 16, paddingHorizontal: 4 }}
+            >
+              <FlatList
+                data={sample_payruns}
+                renderItem={({ item }) => <PayrunCardBase payrun={item} />}
+                keyExtractor={(item) => item.id}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{
+                  paddingBottom: 120,
+                  paddingTop: 10,
+                  flexGrow: 1,
+                  gap: 10,
+                }}
+              />
+            </View>
+          ))}
+        </ScrollView>
       </View>
     </SafeAreaView>
   );
@@ -210,7 +285,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#ffffff",
-    paddingHorizontal: 12,
+    paddingHorizontal: 8,
     paddingTop: 16,
   },
   safeArea: {
