@@ -11,7 +11,7 @@ import {
 import { Platform, StyleSheet } from "react-native";
 
 export default function TabLayout() {
-  const colorScheme = "light"; //useColorScheme();
+  // const colorScheme = "light"; //useColorScheme();
 
   return (
     <Tabs
@@ -53,7 +53,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="timesheets"
+        name="documents"
         options={{
           title: "Documents",
           tabBarIcon: ({ color }) => (
@@ -73,6 +73,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="notifications"
         options={{
+          headerShown: false,
           title: "Notifications",
           href: null,
         }}
@@ -80,6 +81,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="profile"
         options={{
+          headerShown: false,
           title: "Profile",
           href: null,
         }}
@@ -87,6 +89,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="change-password"
         options={{
+          headerShown: false,
           title: "Change Password",
           href: null,
         }}
@@ -94,6 +97,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="documents"
         options={{
+          headerShown: false,
           title: "Documents",
           href: null,
         }}
@@ -101,6 +105,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="account"
         options={{
+          headerShown: false,
           title: "Account",
           href: null,
         }}
@@ -108,6 +113,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="bank-details"
         options={{
+          headerShown: false,
           title: "Bank Details",
           href: null,
         }}
@@ -115,6 +121,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="interviews"
         options={{
+          headerShown: false,
           title: "Interviews",
           href: null,
         }}
@@ -122,6 +129,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="facilities"
         options={{
+          headerShown: false,
           title: "Facilities",
           href: null,
         }}
@@ -129,6 +137,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="settings"
         options={{
+          headerShown: false,
           title: "Settings",
           href: null,
         }}
