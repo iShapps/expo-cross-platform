@@ -22,7 +22,7 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
       case "payment":
         return "currency-usd";
       case "general":
-        return "information";
+        return "information-variant";
       default:
         return "bell";
     }
@@ -37,7 +37,7 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
       case "payment":
         return "#28A745";
       case "general":
-        return "#666";
+        return "#4A90E2";
       default:
         return "#70C601";
     }
