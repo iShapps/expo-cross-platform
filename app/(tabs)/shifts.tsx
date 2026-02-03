@@ -1,26 +1,10 @@
 import { PayrunCardBase } from "@/components/pay-run";
 import { Payrun } from "@/data-types/dashboard";
-import React, { useState } from "react";
-import {
-  FlatList,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import React from "react";
+import { FlatList, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Shifts() {
-  const statusTabs = [
-    "Available",
-    "Scheduled",
-    "Running",
-    "Pending Payment",
-    "Paid",
-  ] as const;
-  const [activeStatus, setActiveStatus] =
-    useState<(typeof statusTabs)[number]>("Scheduled");
   const sample_payruns: Payrun[] = [
     {
       id: "1",
@@ -160,35 +144,6 @@ export default function Shifts() {
           <Text style={styles.title}>Shifts</Text>
           <View style={styles.underline} />
         </View>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.tabsRow}
-        >
-          {statusTabs.map((status) => {
-            const isActive = activeStatus === status;
-            return (
-              <TouchableOpacity
-                key={status}
-                onPress={() => setActiveStatus(status)}
-                style={styles.tabButton}
-                activeOpacity={0.7}
-              >
-                <Text
-                  style={[styles.tabText, isActive && styles.tabTextActive]}
-                >
-                  {status}
-                </Text>
-                <View
-                  style={[
-                    styles.tabUnderline,
-                    isActive && styles.tabUnderlineActive,
-                  ]}
-                />
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
         <FlatList
           // style={{ flex: 1 }}
           data={sample_payruns}
