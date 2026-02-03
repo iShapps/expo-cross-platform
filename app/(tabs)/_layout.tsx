@@ -42,7 +42,6 @@ export default function TabLayout() {
           ),
         }}
       />
-
       <Tabs.Screen
         name="shifts"
         options={{
@@ -95,26 +94,10 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="documents"
-        options={{
-          headerShown: false,
-          title: "Documents",
-          href: null,
-        }}
-      />
-      <Tabs.Screen
         name="account"
         options={{
           headerShown: false,
           title: "Account",
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="bank-details"
-        options={{
-          headerShown: false,
-          title: "Bank Details",
           href: null,
         }}
       />

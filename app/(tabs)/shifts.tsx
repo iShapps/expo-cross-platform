@@ -5,6 +5,15 @@ import { FlatList, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Shifts() {
+  const shiftTypes = [
+    "Morning",
+    "Afternoon",
+    "Night",
+    "Sleepover",
+    "Public Holiday",
+    "Saturday",
+    "Sunday",
+  ];
   const sample_payruns: Payrun[] = [
     {
       id: "1",
@@ -18,6 +27,7 @@ export default function Shifts() {
       category_name: "Assistant in Nursing",
       facility_id: "1",
       facility_name: "MercyCare Joondalup",
+      shift_type: shiftTypes[0],
     },
     {
       id: "2",
@@ -31,6 +41,7 @@ export default function Shifts() {
       category_name: "Disability Support-Med/Peg/Dysphagia ",
       facility_id: "2",
       facility_name: "Brightwater Oats Street",
+      shift_type: shiftTypes[1],
     },
     {
       id: "3",
@@ -44,6 +55,7 @@ export default function Shifts() {
       category_name: "Therapist Assistant",
       facility_id: "4",
       facility_name: "Amana James Brown Care  Centre",
+      shift_type: shiftTypes[2],
     },
     {
       id: "4",
@@ -57,6 +69,7 @@ export default function Shifts() {
       category_name: "Therapist Assistant",
       facility_id: "4",
       facility_name: "Amana James Brown Care  Centre",
+      shift_type: shiftTypes[3],
     },
     {
       id: "5",
@@ -70,6 +83,7 @@ export default function Shifts() {
       category_name: "Therapist Assistant",
       facility_id: "4",
       facility_name: "Amana James Brown Care  Centre",
+      shift_type: shiftTypes[4],
     },
     {
       id: "6",
@@ -83,6 +97,7 @@ export default function Shifts() {
       category_name: "Therapist Assistant",
       facility_id: "4",
       facility_name: "Amana James Brown Care  Centre",
+      shift_type: shiftTypes[5],
     },
     {
       id: "7",
@@ -96,6 +111,7 @@ export default function Shifts() {
       category_name: "Therapist Assistant",
       facility_id: "4",
       facility_name: "Amana James Brown Care  Centre",
+      shift_type: shiftTypes[6],
     },
     {
       id: "8",
@@ -109,6 +125,7 @@ export default function Shifts() {
       category_name: "Therapist Assistant",
       facility_id: "4",
       facility_name: "Amana James Brown Care  Centre",
+      shift_type: shiftTypes[0],
     },
     {
       id: "9",
@@ -122,6 +139,7 @@ export default function Shifts() {
       category_name: "Therapist Assistant",
       facility_id: "4",
       facility_name: "Amana James Brown Care  Centre",
+      shift_type: shiftTypes[1],
     },
     {
       id: "10",
@@ -135,6 +153,7 @@ export default function Shifts() {
       category_name: "Therapist Assistant",
       facility_id: "4",
       facility_name: "Amana James Brown Care  Centre",
+      shift_type: shiftTypes[2],
     },
   ];
   return (
@@ -154,7 +173,7 @@ export default function Shifts() {
             paddingBottom: 120,
             paddingTop: 10,
             flexGrow: 1,
-            gap: 5,
+            gap: 10,
           }}
         />
       </View>
