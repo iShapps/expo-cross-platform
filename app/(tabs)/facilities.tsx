@@ -1,10 +1,9 @@
 import Fontisto from "@expo/vector-icons/Fontisto";
-import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { router } from "expo-router";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
-export default function AccountScreen() {
+export default function FacilitiesScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.topBarContainer}>
@@ -14,51 +13,13 @@ export default function AccountScreen() {
         >
           <Fontisto name="arrow-left-l" size={15} color="black" />
         </TouchableOpacity>
-        <Text style={styles.locationText}>Account</Text>
+        <Text style={styles.locationText}>Facilities</Text>
         <TouchableOpacity
           style={styles.faintbackIconContainer}
         ></TouchableOpacity>
       </View>
 
-      <View style={styles.linksContainer}>
-        <TouchableOpacity
-          onPress={() => router.push("/(tabs)/profile")}
-          style={styles.profileLinks}
-        >
-          <View style={styles.profileContainer}>
-            <MaterialCommunityIcons
-              name="account-cog-outline"
-              size={24}
-              color="#70C601"
-            />
-            <Text>My account</Text>
-          </View>
-          <MaterialCommunityIcons
-            name="chevron-right"
-            size={24}
-            color="#70C601"
-          />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={() => router.push("/(tabs)/change-password")}
-          style={styles.profileLinks}
-        >
-          <View style={styles.profileContainer}>
-            <MaterialCommunityIcons
-              name="lock-reset"
-              size={24}
-              color="#70C601"
-            />
-            <Text>Change password</Text>
-          </View>
-          <MaterialCommunityIcons
-            name="chevron-right"
-            size={24}
-            color="#70C601"
-          />
-        </TouchableOpacity>
-      </View>
+      <View style={styles.linksContainer}></View>
     </View>
   );
 }
@@ -121,25 +82,5 @@ const styles = StyleSheet.create({
     gap: 4,
     width: "100%",
     marginVertical: 5,
-  },
-  profileLinks: {
-    width: "100%",
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignContent: "center",
-    alignItems: "center",
-    gap: 5,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f4f4f4",
-    paddingVertical: 12,
-  },
-  profileContainer: {
-    display: "flex",
-    flexDirection: "row",
-    gap: 6,
-    alignContent: "center",
-    alignItems: "center",
-    flex: 1,
   },
 });

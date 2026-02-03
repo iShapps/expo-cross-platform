@@ -1,6 +1,5 @@
 import AntDesign from "@expo/vector-icons/AntDesign";
 import Feather from "@expo/vector-icons/Feather";
-import FontAwesome from "@expo/vector-icons/FontAwesome";
 import Fontisto from "@expo/vector-icons/Fontisto";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
@@ -128,7 +127,7 @@ export default function More() {
             />
           </TouchableOpacity>
           <TouchableOpacity
-            onPress={() => router.push("/(tabs)/schedules")}
+            onPress={() => router.push("/(tabs)/facilities")}
             style={styles.profileLinks}
           >
             <View style={styles.profileContainer}>
@@ -145,15 +144,8 @@ export default function More() {
               color="#70C601"
             />
           </TouchableOpacity>
-          {/* <TouchableOpacity onPress={() => router.push('/(main)/payments')} style={styles.profileLinks}>
-          <View style={styles.profileContainer}>
-          <FontAwesome5 name="credit-card" size={20} color="#70C601" />
-          <Text>Payment Methods</Text>
-          </View>
-          <MaterialCommunityIcons name="chevron-right" size={24} color="#70C601" />
-        </TouchableOpacity> */}
           <TouchableOpacity
-            onPress={() => router.push("/(tabs)/schedules")}
+            onPress={() => router.push("/(tabs)/interviews")}
             style={styles.profileLinks}
           >
             <View style={styles.profileContainer}>
@@ -171,68 +163,12 @@ export default function More() {
             />
           </TouchableOpacity>
           <TouchableOpacity
-            onPress={() => router.push("/(tabs)/schedules")}
-            style={styles.profileLinks}
-          >
-            <View style={styles.profileContainer}>
-              <Ionicons name="wallet" size={24} color="#70C601" />
-              <Text>LMS</Text>
-            </View>
-            <MaterialCommunityIcons
-              name="chevron-right"
-              size={24}
-              color="#70C601"
-            />
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => router.push("/(tabs)/schedules")}
+            onPress={() => router.push("/(tabs)/settings")}
             style={styles.profileLinks}
           >
             <View style={styles.profileContainer}>
               <Feather name="settings" size={24} color="#70C601" />
               <Text>Settings</Text>
-            </View>
-            <MaterialCommunityIcons
-              name="chevron-right"
-              size={24}
-              color="#70C601"
-            />
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => router.push("/(tabs)/schedules")}
-            style={styles.profileLinks}
-          >
-            <View style={styles.profileContainer}>
-              <FontAwesome name="link" size={24} color="#70C601" />
-              <Text>Refer & Earn</Text>
-            </View>
-            <MaterialCommunityIcons
-              name="chevron-right"
-              size={24}
-              color="#70C601"
-            />
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => router.push("/(tabs)/schedules")}
-            style={styles.profileLinks}
-          >
-            <View style={styles.profileContainer}>
-              <AntDesign name="exclamation-circle" size={24} color="#70C601" />
-              <Text>Help Center</Text>
-            </View>
-            <MaterialCommunityIcons
-              name="chevron-right"
-              size={24}
-              color="#70C601"
-            />
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => router.push("/(tabs)/schedules")}
-            style={styles.profileLinks}
-          >
-            <View style={styles.profileContainer}>
-              <Ionicons name="lock-closed" size={24} color="#70C601" />
-              <Text>Privacy Policy</Text>
             </View>
             <MaterialCommunityIcons
               name="chevron-right"
