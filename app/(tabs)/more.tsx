@@ -37,62 +37,38 @@ export default function More() {
           <AntDesign name="login" size={15} color="black" />
         </TouchableOpacity>
       </View>
-      <View
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          width: "100%",
-          gap: 5,
-          flex: 1,
-        }}
-      >
-        <View
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            alignContent: "center",
-            alignItems: "center",
-            gap: 4,
-          }}
-        >
-          <View style={styles.serviceIContainer}>
-            {userDetails?.hcp && userDetails?.hcp.image && (
+      <View style={styles.topSection}>
+        <View style={styles.profileCard}>
+          <View style={styles.avatarContainer}>
+            {userDetails?.hcp && userDetails?.hcp.image ? (
               <Image
                 source={{ uri: userDetails?.hcp.image }}
-                style={{
-                  height: "100%",
-                  width: "100%",
-                  overflow: "hidden",
-                  objectFit: "cover",
-                  borderRadius: 50,
-                }}
+                style={styles.avatarImage}
               />
+            ) : (
+              <Text style={styles.avatarFallback}>
+                {userDetails?.name?.[0] ?? "H"}
+              </Text>
             )}
-            {/* {!userDetails?.image_url && !profileImage &&
-        <TouchableOpacity
-      onPress={pickImage}
-      style={{backgroundColor:"#f4f4f4", padding:4, borderRadius:50, width:60, height:60, display:"flex", flexDirection:"row", alignItems:"center", justifyContent:"center", marginVertical:10}}
-      >
-      <FontAwesome name="camera" size={24} color="gray" />
-      </TouchableOpacity>}
-      {profileImage && (
-        <Image source={{uri:profileImage}} style={{height:"100%", width:"100%",overflow:"hidden",objectFit:"cover",borderRadius:50}}/>
-
-      )} */}
           </View>
-          {/* <Text>
-
-        {(userDetails?.image_url || profileImage) &&
-        <TouchableOpacity
-        onPress={pickImage}
-        style={{display:"flex", flexDirection:"row", alignItems:"center", justifyContent:"center", marginVertical:10}}
-        >
-        <Feather name="edit-2" size={15} color="black" />
-        </TouchableOpacity>
-        }
-        </Text> */}
-          <Text>{userDetails?.name && userDetails?.name}</Text>
+          <View style={styles.profileInfo}>
+            <Text style={styles.profileName}>{userDetails?.name ?? "—"}</Text>
+            <Text style={styles.profileEmail}>{userDetails?.email ?? "—"}</Text>
+            <View style={styles.profileTagRow}>
+              <Text style={styles.profileTag}>
+                {userDetails?.hcp?.hcp_professions?.[0]?.profession?.name ??
+                  "—"}
+              </Text>
+              <Text style={styles.profileTagDivider}>•</Text>
+              <Text style={styles.profileTag}>
+                {userDetails?.hcp?.hcp_professions?.[0]?.level?.name ?? "—"}
+              </Text>
+              <Text style={styles.profileTagDivider}>•</Text>
+              <Text style={styles.profileTag}>
+                {userDetails?.hcp?.hcp_professions?.[0]?.category?.name ?? "—"}
+              </Text>
+            </View>
+          </View>
         </View>
         <View
           style={{
@@ -260,6 +236,77 @@ const styles = StyleSheet.create({
     flexDirection: "column",
     gap: 1,
     margin: 8,
+  },
+  topSection: {
+    display: "flex",
+    flexDirection: "column",
+    width: "100%",
+    gap: 5,
+    flex: 1,
+    alignItems: "flex-start",
+  },
+  profileCard: {
+    backgroundColor: "#F8FFF0",
+    borderRadius: 5,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: "#E6F0D8",
+    flexDirection: "row",
+    // alignItems: "center",
+    gap: 12,
+    width: "100%",
+  },
+  avatarContainer: {
+    height: 68,
+    width: 68,
+    borderRadius: 34,
+    backgroundColor: "#EAF7D2",
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+  },
+  avatarImage: {
+    height: "100%",
+    width: "100%",
+    borderRadius: 34,
+  },
+  avatarFallback: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#70C601",
+  },
+  profileInfo: {
+    flex: 1,
+  },
+  profileName: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#111",
+  },
+  profileEmail: {
+    fontSize: 12,
+    color: "#6B7280",
+    marginTop: 2,
+  },
+  profileTagRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: 6,
+    marginTop: 6,
+  },
+  profileTag: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: "#3B4B3F",
+    backgroundColor: "#EAF7D2",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 999,
+  },
+  profileTagDivider: {
+    color: "#9CA3AF",
+    fontSize: 12,
   },
   serviceIContainer: {
     backgroundColor: "#f4f4f4",

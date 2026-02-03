@@ -4,18 +4,19 @@ import { Image } from "expo-image";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-    ScrollView,
-    StyleSheet,
-    Switch,
-    Text,
-    TouchableOpacity,
-    View,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 export default function ProfileScreen() {
   const profileStore = useProfileData();
   const userDetails = profileStore.userDetails;
   const hcp = userDetails?.hcp;
+  const professions = hcp?.hcp_professions ?? [];
   const [isAvailable, setIsAvailable] = useState(
     Boolean(hcp?.available_for_job),
   );
@@ -99,6 +100,32 @@ export default function ProfileScreen() {
 
         <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>Professional</Text>
+          {professions.length > 0 && (
+            <View style={styles.professionList}>
+              {professions.map((item: any) => (
+                <View key={String(item?.id)} style={styles.professionItem}>
+                  <View style={styles.detailRow}>
+                    <Text style={styles.detailLabel}>Profession</Text>
+                    <Text style={styles.detailValue}>
+                      {item?.profession?.name ?? "—"}
+                    </Text>
+                  </View>
+                  <View style={styles.detailRow}>
+                    <Text style={styles.detailLabel}>Category</Text>
+                    <Text style={styles.detailValue}>
+                      {item?.category?.name ?? "—"}
+                    </Text>
+                  </View>
+                  <View style={styles.detailRow}>
+                    <Text style={styles.detailLabel}>Level</Text>
+                    <Text style={styles.detailValue}>
+                      {item?.level?.name ?? "—"}
+                    </Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          )}
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Registration No.</Text>
             <Text style={styles.detailValue}>
@@ -112,6 +139,38 @@ export default function ProfileScreen() {
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>TFN</Text>
             <Text style={styles.detailValue}>{hcp?.tfn_number ?? "—"}</Text>
+          </View>
+        </View>
+
+        <View style={styles.sectionCard}>
+          <Text style={styles.sectionTitle}>Address Details</Text>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Address</Text>
+            <Text style={styles.detailValue}>{hcp?.address ?? "—"}</Text>
+          </View>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Suburb</Text>
+            <Text style={styles.detailValue}>{hcp?.suburb_name ?? "—"}</Text>
+          </View>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>City</Text>
+            <Text style={styles.detailValue}>{hcp?.city_name ?? "—"}</Text>
+          </View>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>State</Text>
+            <Text style={styles.detailValue}>
+              {hcp?.state_id ? String(hcp?.state_id) : "—"}
+            </Text>
+          </View>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Post code</Text>
+            <Text style={styles.detailValue}>{hcp?.post_code ?? "—"}</Text>
+          </View>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Country</Text>
+            <Text style={styles.detailValue}>
+              {hcp?.country_id ? String(hcp?.country_id) : "—"}
+            </Text>
           </View>
         </View>
 
@@ -280,6 +339,17 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderBottomWidth: 1,
     borderBottomColor: "#F3F4F6",
+  },
+  professionList: {
+    gap: 12,
+    marginBottom: 4,
+  },
+  professionItem: {
+    // borderWidth: 1,
+    // borderColor: "#F3F4F6",
+    // borderRadius: 5,
+    // padding: 10,
+    gap: 4,
   },
   detailLabel: {
     fontSize: 12,
