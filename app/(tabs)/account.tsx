@@ -1,4 +1,3 @@
-import AntDesign from "@expo/vector-icons/AntDesign";
 import Fontisto from "@expo/vector-icons/Fontisto";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { router } from "expo-router";
@@ -17,10 +16,10 @@ export default function AccountScreen() {
         </TouchableOpacity>
         <Text style={styles.locationText}>Account</Text>
         <TouchableOpacity
-          onPress={() => router.replace("/(tabs)/more")}
-          style={styles.backIconContainer}
+          // onPress={() => router.replace("/(tabs)/more")}
+          style={styles.faintbackIconContainer}
         >
-          <AntDesign name="close" size={16} color="black" />
+          {/* <AntDesign name="close" size={16} color="black" /> */}
         </TouchableOpacity>
       </View>
 
@@ -114,6 +113,20 @@ const styles = StyleSheet.create({
     padding: 2,
     borderWidth: 1,
     borderColor: "#D3D3D3",
+  },
+
+  faintbackIconContainer: {
+    height: 40,
+    width: 40,
+    borderRadius: 50,
+    display: "flex",
+    flexDirection: "row",
+    justifyContent: "center",
+    alignContent: "center",
+    alignItems: "center",
+    padding: 2,
+    borderWidth: 1,
+    borderColor: "#fff",
   },
   locationText: {
     fontFamily: "Roboto",

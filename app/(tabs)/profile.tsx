@@ -35,7 +35,9 @@ export default function ProfileScreen() {
           <Fontisto name="arrow-left-l" size={15} color="black" />
         </TouchableOpacity>
         <Text style={styles.locationText}>Profile</Text>
-        <TouchableOpacity></TouchableOpacity>
+        <TouchableOpacity
+          style={styles.faintbackIconContainer}
+        ></TouchableOpacity>
       </View>
       <ScrollView
         contentContainerStyle={styles.content}
@@ -253,6 +255,19 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#D3D3D3",
   },
+  faintbackIconContainer: {
+    height: 40,
+    width: 40,
+    borderRadius: 50,
+    display: "flex",
+    flexDirection: "row",
+    justifyContent: "center",
+    alignContent: "center",
+    alignItems: "center",
+    padding: 2,
+    borderWidth: 1,
+    borderColor: "#fff",
+  },
   backSpacer: {
     width: 52,
   },
@@ -265,7 +280,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
     backgroundColor: "#F8FFF0",
     borderRadius: 5,
-    padding: 16,
+    padding: 10,
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
