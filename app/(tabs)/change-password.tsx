@@ -3,11 +3,11 @@ import Fontisto from "@expo/vector-icons/Fontisto";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 export default function ChangePasswordScreen() {
@@ -28,7 +28,9 @@ export default function ChangePasswordScreen() {
           <Fontisto name="arrow-left-l" size={15} color="black" />
         </TouchableOpacity>
         <Text style={styles.locationText}>Change Password</Text>
-        <TouchableOpacity></TouchableOpacity>
+        <TouchableOpacity
+          style={styles.faintbackIconContainer}
+        ></TouchableOpacity>
       </View>
 
       <View style={styles.formCard}>
@@ -188,6 +190,19 @@ const styles = StyleSheet.create({
     padding: 2,
     borderWidth: 1,
     borderColor: "#D3D3D3",
+  },
+  faintbackIconContainer: {
+    height: 40,
+    width: 40,
+    borderRadius: 50,
+    display: "flex",
+    flexDirection: "row",
+    justifyContent: "center",
+    alignContent: "center",
+    alignItems: "center",
+    padding: 2,
+    borderWidth: 1,
+    borderColor: "#fff",
   },
   backSpacer: {
     width: 52,
