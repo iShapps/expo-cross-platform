@@ -8,14 +8,26 @@ import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { useProfileData } from "@/data-store/use-account-store";
 import { Image } from "expo-image";
 import { router } from "expo-router";
-import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import React, { useState } from "react";
+import {
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { useSession } from "../ctx";
 
 export default function More() {
   const { signOut } = useSession();
   const profileStore = useProfileData();
   const userDetails = profileStore.userDetails;
+  const hcp = userDetails?.hcp;
+  const [isAvailable, setIsAvailable] = useState(
+    Boolean(hcp?.available_for_job),
+  );
+
   const handleLogout = () => {
     signOut();
     // router.replace("/(main)/index")
@@ -37,48 +49,66 @@ export default function More() {
           <AntDesign name="login" size={15} color="black" />
         </TouchableOpacity>
       </View>
-      <View style={styles.topSection}>
-        <View style={styles.profileCard}>
-          <View style={styles.avatarContainer}>
-            {userDetails?.hcp && userDetails?.hcp.image ? (
-              <Image
-                source={{ uri: userDetails?.hcp.image }}
-                style={styles.avatarImage}
-              />
-            ) : (
-              <Text style={styles.avatarFallback}>
-                {userDetails?.name?.[0] ?? "H"}
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.topSection}>
+          <View style={styles.profileCard}>
+            <View style={styles.avatarContainer}>
+              {userDetails?.hcp && userDetails?.hcp.image ? (
+                <Image
+                  source={{ uri: userDetails?.hcp.image }}
+                  style={styles.avatarImage}
+                />
+              ) : (
+                <Text style={styles.avatarFallback}>
+                  {userDetails?.name?.[0] ?? "H"}
+                </Text>
+              )}
+            </View>
+            <View style={styles.profileInfo}>
+              <Text style={styles.profileName}>{userDetails?.name ?? "—"}</Text>
+              <Text style={styles.profileEmail}>
+                {userDetails?.email ?? "—"}
               </Text>
-            )}
+              <View style={styles.profileTagRow}>
+                <Text style={styles.profileTag}>
+                  {userDetails?.hcp?.hcp_professions?.[0]?.profession?.name ??
+                    "—"}
+                </Text>
+                <Text style={styles.profileTagDivider}>•</Text>
+                <Text style={styles.profileTag}>
+                  {userDetails?.hcp?.hcp_professions?.[0]?.level?.name ?? "—"}
+                </Text>
+                <Text style={styles.profileTagDivider}>•</Text>
+                <Text style={styles.profileTag}>
+                  {userDetails?.hcp?.hcp_professions?.[0]?.category?.name ??
+                    "—"}
+                </Text>
+              </View>
+            </View>
           </View>
-          <View style={styles.profileInfo}>
-            <Text style={styles.profileName}>{userDetails?.name ?? "—"}</Text>
-            <Text style={styles.profileEmail}>{userDetails?.email ?? "—"}</Text>
-            <View style={styles.profileTagRow}>
-              <Text style={styles.profileTag}>
-                {userDetails?.hcp?.hcp_professions?.[0]?.profession?.name ??
-                  "—"}
-              </Text>
-              <Text style={styles.profileTagDivider}>•</Text>
-              <Text style={styles.profileTag}>
-                {userDetails?.hcp?.hcp_professions?.[0]?.level?.name ?? "—"}
-              </Text>
-              <Text style={styles.profileTagDivider}>•</Text>
-              <Text style={styles.profileTag}>
-                {userDetails?.hcp?.hcp_professions?.[0]?.category?.name ?? "—"}
-              </Text>
+          <View style={styles.sectionCard}>
+            <Text style={styles.sectionTitle}>Availability</Text>
+            <View style={styles.rowBetween}>
+              <View>
+                <Text style={styles.rowTitle}>Available for jobs</Text>
+                <Text style={styles.rowSubtitle}>
+                  Toggle to appear in available shifts
+                </Text>
+              </View>
+              <Switch
+                value={isAvailable}
+                onValueChange={setIsAvailable}
+                thumbColor={isAvailable ? "#fff" : "#f4f4f4"}
+                trackColor={{ false: "#E5E7EB", true: "#70C601" }}
+              />
             </View>
           </View>
         </View>
-        <View
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 4,
-            width: "100%",
-            marginVertical: 5,
-          }}
-        >
+        <View style={styles.linksSection}>
           <TouchableOpacity
             onPress={() => router.push("/(tabs)/account")}
             style={styles.profileLinks}
@@ -211,7 +241,7 @@ export default function More() {
             />
           </TouchableOpacity>
         </View>
-      </View>
+      </ScrollView>
     </View>
   );
 }
@@ -228,7 +258,7 @@ const styles = StyleSheet.create({
     // justifyContent:"center",
     // alignContent:"center",
     // alignItems:"center",
-    paddingHorizontal: 20,
+    paddingHorizontal: 10,
     paddingVertical: 60,
   },
   serviceView: {
@@ -237,13 +267,58 @@ const styles = StyleSheet.create({
     gap: 1,
     margin: 8,
   },
+
+  sectionCard: {
+    marginTop: 12,
+    borderRadius: 5,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: "#F0F0F0",
+    backgroundColor: "#fff",
+    width: "100%",
+  },
+  scroll: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#111",
+    marginBottom: 10,
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+  },
+  rowBetween: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  rowTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#111",
+  },
+  rowSubtitle: {
+    fontSize: 12,
+    color: "#6B7280",
+    marginTop: 2,
+  },
   topSection: {
     display: "flex",
     flexDirection: "column",
     width: "100%",
     gap: 5,
-    flex: 1,
     alignItems: "flex-start",
+  },
+  linksSection: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 4,
+    width: "100%",
+    marginVertical: 5,
   },
   profileCard: {
     backgroundColor: "#F8FFF0",
