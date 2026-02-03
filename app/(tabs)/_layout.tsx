@@ -34,20 +34,21 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="schedules"
+        options={{
+          title: "Schedules",
+          tabBarIcon: ({ color }) => (
+            <TabBarFAFiveWIcon size={22} name="calendar" color={color} />
+          ),
+        }}
+      />
+
+      <Tabs.Screen
         name="shifts"
         options={{
           title: "Shifts",
           tabBarIcon: ({ color }) => (
             <TabBarFeatherIcon size={22} name="clock" color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="schedules"
-        options={{
-          title: "My schedules",
-          tabBarIcon: ({ color }) => (
-            <TabBarFAFiveWIcon size={22} name="calendar" color={color} />
           ),
         }}
       />
@@ -108,6 +109,27 @@ export default function TabLayout() {
         name="bank-details"
         options={{
           title: "Bank Details",
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="interviews"
+        options={{
+          title: "Interviews",
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="facilities"
+        options={{
+          title: "Facilities",
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: "Settings",
           href: null,
         }}
       />
