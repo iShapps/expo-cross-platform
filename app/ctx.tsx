@@ -28,7 +28,7 @@ const AuthContext = React.createContext<{
   isLoading: false,
 });
 
-// This hook can be used to access the user info.
+// hook to access the user info.
 export function useSession() {
   const value = React.useContext(AuthContext);
   if (process.env.NODE_ENV !== "production") {
@@ -60,7 +60,7 @@ export function useProtectedRoute(user: any) {
       // Redirect to the sign-in page.
       router.replace("/(open)/login");
     } else if ((user && inAuthGroup) || (user && currentRoute)) {
-      // Redirect away from the sign-in page.
+      // Redirect to the home page.
       router.replace("/(tabs)");
     }
   }, [user, segments]);
@@ -138,7 +138,7 @@ export function SessionProvider(props: React.PropsWithChildren) {
     } catch (error) {
       console.error("Logout error:", error);
     } finally {
-      // Always clear local data
+      // clear local data
       setSession(null);
       setUserJson(null);
       removeToken();

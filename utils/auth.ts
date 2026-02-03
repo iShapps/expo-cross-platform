@@ -1,4 +1,3 @@
-// utils/token.ts
 import * as SecureStore from "expo-secure-store";
 
 const TOKEN_KEY = "authToken-ishapps";
