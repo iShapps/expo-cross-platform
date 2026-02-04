@@ -5,8 +5,8 @@ import { HapticTab } from "@/components/haptic-tab";
 import {
   TabBarFAFiveWIcon,
   TabBarFeatherIcon,
-  TabBarIcon,
   TabBarIMaterialIcon,
+  TabBarOctIcon
 } from "@/components/ui/tab-bar-icon";
 import { Platform, StyleSheet } from "react-native";
 
@@ -29,7 +29,7 @@ export default function TabLayout() {
         options={{
           title: "Home",
           tabBarIcon: ({ color }) => (
-            <TabBarIcon size={22} name="home" color={color} />
+            <TabBarOctIcon size={22} name="home-fill" color={color} />
           ),
         }}
       />
