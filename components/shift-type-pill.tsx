@@ -9,16 +9,6 @@ export type ShiftType =
   | "public holiday"
   | "saturday"
   | "sunday";
-// const shiftTypeColors: Record<ShiftType, string> = {
-//   Morning: "#F3F6FB",
-//   Afternoon: "#FDF6EC",
-//   Night: "#F2F3F7",
-//   Sleepover: "#F6F2FB",
-//   "Public Holiday": "#F7F7F2",
-//   Saturday: "#F2FBF2",
-//   Sunday: "#FBF2F2",
-// };
-
 const shiftTypeColors: Record<ShiftType, string> = {
   morning: "#C7DBFF",
   afternoon: "#FFE1B2",

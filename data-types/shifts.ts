@@ -155,7 +155,7 @@ export interface IShift {
   hcp: IHcp;
   category: ICategory;
   profession: IProfession;
-  level: ILevel;
+  level: ILevel | null;
   facility: IFacility;
   cancelled_shift: any | null;
   shift_transfer_from: any | null;
@@ -183,5 +183,13 @@ export interface IShiftResponse {
   message: string;
   data: {
     shifts: IPaginatedShiftsResponse;
+  };
+}
+
+export interface IShiftDetailResponse {
+  status: boolean;
+  message: string;
+  data: {
+    shift: IShift;
   };
 }

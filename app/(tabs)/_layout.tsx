@@ -6,7 +6,7 @@ import {
   TabBarFAFiveWIcon,
   TabBarFeatherIcon,
   TabBarIMaterialIcon,
-  TabBarOctIcon
+  TabBarOctIcon,
 } from "@/components/ui/tab-bar-icon";
 import { Platform, StyleSheet } from "react-native";
 
@@ -122,6 +122,14 @@ export default function TabLayout() {
         options={{
           headerShown: false,
           title: "Settings",
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="shift-details"
+        options={{
+          headerShown: false,
+          title: "Shift Details",
           href: null,
         }}
       />

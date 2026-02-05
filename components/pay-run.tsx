@@ -1,6 +1,7 @@
 import { IShift } from "@/data-types/shifts";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { differenceInMinutes, format } from "date-fns";
+import { useRouter } from "expo-router";
 import React from "react";
 import {
   Platform,
@@ -17,6 +18,7 @@ interface ShiftCardProps {
 }
 
 export const ShiftCardBase: React.FC<ShiftCardProps> = ({ shift, onPress }) => {
+  const router = useRouter();
   const startDate = new Date(shift?.start_time);
   const endDate = new Date(shift?.end_time);
 
@@ -26,15 +28,26 @@ export const ShiftCardBase: React.FC<ShiftCardProps> = ({ shift, onPress }) => {
   const totalMinutes = differenceInMinutes(endDate, startDate);
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
-  const duration = `${hours}:${minutes.toString().padStart(2, "0")}Hrs`;
+  const duration = `${hours}:${minutes.toString().padStart(2, "0")}` + "Hrs";
   const periodText = `${startTime} to ${endTime} (${duration})`;
+
+  const handlePress = onPress
+    ? onPress
+    : () => {
+        if (shift?.id) {
+          router.push({
+            pathname: "/(tabs)/shift-details",
+            params: { shift_id: shift.id },
+          });
+        }
+      };
 
   return (
     <TouchableOpacity
       style={styles.card}
-      onPress={onPress}
+      onPress={handlePress}
       activeOpacity={0.7}
-      disabled={!onPress}
+      disabled={!handlePress}
     >
       <View style={styles.headerRow}>
         {shift?.shift_type && (
