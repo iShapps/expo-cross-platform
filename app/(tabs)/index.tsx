@@ -7,19 +7,13 @@ import {
   Notification,
   Payrun,
 } from "@/data-types/dashboard";
+import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { router } from "expo-router";
 
-import Entypo from "@expo/vector-icons/Entypo";
-import {
-  FlatList,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 
 export default function HomeScreen() {
   const profileStore = useProfileData();
@@ -151,21 +145,21 @@ export default function HomeScreen() {
           <View style={{ display: "flex", flexDirection: "column", gap: 3 }}>
             <Text style={styles.headerTitle}>{userDetails?.name}</Text>
             <View style={{ display: "flex", flexDirection: "row", gap: 5 }}>
-              <Entypo name="briefcase" size={16} color="#FFC107" />
+              <FontAwesome6 name="briefcase" size={16} color="#FFC107" />
               <Text style={styles.headerSubtitle}>
-                {userDetails?.hcp?.hcp_professions?.[0]?.profession?.name}{" "}
-                {userDetails?.hcp?.hcp_professions?.[0]?.level?.name}{" "}
-                {userDetails?.hcp?.hcp_professions?.[0]?.category?.name}
+                {userDetails?.hcp?.hcp_professions[0]?.profession?.name} -{" "}
+                {userDetails?.hcp?.hcp_professions[0]?.category?.name} -{" "}
+                {userDetails?.hcp?.hcp_professions[0]?.level?.name}
               </Text>
             </View>
           </View>
-          <TouchableOpacity
+          <Pressable
             onPress={() => router.push("/(tabs)/notifications")}
             style={styles.notificationContainer}
           >
             <MaterialIcons name="notifications" size={20} color="#fff" />
             <View style={styles.notificationDot} />
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </View>
 
@@ -247,10 +241,10 @@ export default function HomeScreen() {
                   <Text style={styles.sectionLabel}>Notifications</Text>
                   <View style={styles.sectionUnderline} />
                 </View>
-                <TouchableOpacity
+                <Pressable
                   onPress={() => router.push("/(tabs)/notifications")}
                   style={styles.seeAllButton}
-                  activeOpacity={0.7}
+                  // activeOpacity={0.7}
                 >
                   <Text style={styles.seeAllText}>See all</Text>
                   <MaterialIcons
@@ -258,7 +252,7 @@ export default function HomeScreen() {
                     size={18}
                     color="#70C601"
                   />
-                </TouchableOpacity>
+                </Pressable>
               </View>
             </View>
           }

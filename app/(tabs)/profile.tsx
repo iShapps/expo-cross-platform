@@ -4,11 +4,11 @@ import { Image } from "expo-image";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
+  Pressable,
   ScrollView,
   StyleSheet,
   Switch,
   Text,
-  TouchableOpacity,
   View,
 } from "react-native";
 
@@ -28,16 +28,14 @@ export default function ProfileScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.topBarContainer}>
-        <TouchableOpacity
-          onPress={() => router.replace("/(tabs)/account")}
+        <Pressable
+          onPress={() => router.canGoBack() && router.back()}
           style={styles.backIconContainer}
         >
           <Fontisto name="arrow-left-l" size={15} color="black" />
-        </TouchableOpacity>
+        </Pressable>
         <Text style={styles.locationText}>Profile</Text>
-        <TouchableOpacity
-          style={styles.faintbackIconContainer}
-        ></TouchableOpacity>
+        <Pressable style={styles.faintbackIconContainer}></Pressable>
       </View>
       <ScrollView
         contentContainerStyle={styles.content}
@@ -177,18 +175,18 @@ export default function ProfileScreen() {
         </View>
 
         {/* <View style={styles.actionsRow}>
-          <TouchableOpacity
+          <Pressable
             onPress={() => router.push("/(tabs)/documents")}
             style={[styles.actionButton, styles.outlineButton]}
           >
             <Text style={styles.outlineButtonText}>Documents</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
+          </Pressable>
+          <Pressable
             onPress={() => router.push("/(tabs)/change-password")}
             style={[styles.actionButton, styles.primaryButton]}
           >
             <Text style={styles.primaryButtonText}>Change Password</Text>
-          </TouchableOpacity>
+          </Pressable>
         </View> */}
       </ScrollView>
     </View>

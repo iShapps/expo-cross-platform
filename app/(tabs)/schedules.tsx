@@ -1,8 +1,21 @@
-import { PayrunCardBase } from "@/components/pay-run";
-import { Payrun } from "@/data-types/dashboard";
+import {
+  postCancelledShifts,
+  postCompletedShifts,
+  postPastShifts,
+  postRunningShifts,
+  postScheduledShifts,
+  postTransferedShifts,
+} from "@/api-queries/post-pending-shifts";
+import { ShiftCardBase } from "@/components/pay-run";
+import { ShiftCardBaseSkeleton } from "@/components/skeletons/payrun-card-base-skeleton";
+import { IShift } from "@/data-types/shifts";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import React, { useCallback, useRef, useState } from "react";
 import {
   FlatList,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -12,168 +25,80 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+const useShiftInfiniteQuery = (
+  key: string,
+  queryFn: (page?: number) => Promise<any>,
+) => {
+  return useInfiniteQuery({
+    queryKey: [key],
+    queryFn: ({ pageParam = 1 }) => queryFn(pageParam),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      const pagination = lastPage?.data?.shifts;
+      if (!pagination) return undefined;
+      if (pagination.current_page < pagination.last_page) {
+        return pagination.current_page + 1;
+      }
+      return undefined;
+    },
+    refetchInterval: 30 * 60 * 1000,
+    refetchIntervalInBackground: true,
+  });
+};
+
 export default function Schedules() {
   const statusTabs = [
     "Running",
     "Scheduled",
     "Pending Payment",
     "Paid",
+    "Cancelled",
+    "Transferred",
   ] as const;
   const [activeStatus, setActiveStatus] =
     useState<(typeof statusTabs)[number]>("Running");
   const { width: screenWidth } = useWindowDimensions();
   const contentScrollRef = useRef<ScrollView>(null);
-  const shiftTypes = [
-    "Morning",
-    "Afternoon",
-    "Night",
-    "Sleepover",
-    "Public Holiday",
-    "Saturday",
-    "Sunday",
-  ];
-  const sample_payruns: Payrun[] = [
-    {
-      id: "1",
-      period_start: "2026-01-31T09:00:00.000Z",
-      period_end: "2026-01-31T19:00:00.000Z",
-      status: "ongoing",
-      total_hours: 8,
-      total_amount: 1000,
-      location: "21 Aldwych Way, Joondalup WA, Australia",
-      category_id: "1",
-      category_name: "Assistant in Nursing",
-      facility_id: "1",
-      facility_name: "MercyCare Joondalup",
-      shift_type: shiftTypes[0],
-    },
-    {
-      id: "2",
-      period_start: "2023-01-01T00:00:00.000Z",
-      period_end: "2023-01-01T00:00:00.000Z",
-      status: "current",
-      total_hours: 8,
-      total_amount: 1000,
-      location: "170 Swansea St E, East Victoria Park WA 6101, Australia",
-      category_id: "1",
-      category_name: "Disability Support-Med/Peg/Dysphagia ",
-      facility_id: "2",
-      facility_name: "Brightwater Oats Street",
-      shift_type: shiftTypes[1],
-    },
-    {
-      id: "3",
-      period_start: "2023-01-01T00:00:00.000Z",
-      period_end: "2023-01-01T00:00:00.000Z",
-      status: "current",
-      total_hours: 8,
-      total_amount: 1000,
-      location: "171 Albert Street, Osborne Park WA, Australia",
-      category_id: "3",
-      category_name: "Therapist Assistant",
-      facility_id: "4",
-      facility_name: "Amana James Brown Care  Centre",
-      shift_type: shiftTypes[2],
-    },
-    {
-      id: "4",
-      period_start: "2023-01-01T00:00:00.000Z",
-      period_end: "2023-01-01T00:00:00.000Z",
-      status: "current",
-      total_hours: 8,
-      total_amount: 1000,
-      location: "171 Albert Street, Osborne Park WA, Australia",
-      category_id: "3",
-      category_name: "Therapist Assistant",
-      facility_id: "4",
-      facility_name: "Amana James Brown Care  Centre",
-      shift_type: shiftTypes[3],
-    },
-    {
-      id: "5",
-      period_start: "2023-01-01T00:00:00.000Z",
-      period_end: "2023-01-01T00:00:00.000Z",
-      status: "current",
-      total_hours: 8,
-      total_amount: 1000,
-      location: "171 Albert Street, Osborne Park WA, Australia",
-      category_id: "3",
-      category_name: "Therapist Assistant",
-      facility_id: "4",
-      facility_name: "Amana James Brown Care  Centre",
-      shift_type: shiftTypes[4],
-    },
-    {
-      id: "6",
-      period_start: "2023-01-01T00:00:00.000Z",
-      period_end: "2023-01-01T00:00:00.000Z",
-      status: "current",
-      total_hours: 8,
-      total_amount: 1000,
-      location: "171 Albert Street, Osborne Park WA, Australia",
-      category_id: "3",
-      category_name: "Therapist Assistant",
-      facility_id: "4",
-      facility_name: "Amana James Brown Care  Centre",
-      shift_type: shiftTypes[5],
-    },
-    {
-      id: "7",
-      period_start: "2023-01-01T00:00:00.000Z",
-      period_end: "2023-01-01T00:00:00.000Z",
-      status: "current",
-      total_hours: 8,
-      total_amount: 1000,
-      location: "171 Albert Street, Osborne Park WA, Australia",
-      category_id: "3",
-      category_name: "Therapist Assistant",
-      facility_id: "4",
-      facility_name: "Amana James Brown Care  Centre",
-      shift_type: shiftTypes[6],
-    },
-    {
-      id: "8",
-      period_start: "2023-01-01T00:00:00.000Z",
-      period_end: "2023-01-01T00:00:00.000Z",
-      status: "current",
-      total_hours: 8,
-      total_amount: 1000,
-      location: "171 Albert Street, Osborne Park WA, Australia",
-      category_id: "3",
-      category_name: "Therapist Assistant",
-      facility_id: "4",
-      facility_name: "Amana James Brown Care  Centre",
-      shift_type: shiftTypes[0],
-    },
-    {
-      id: "9",
-      period_start: "2023-01-01T00:00:00.000Z",
-      period_end: "2023-01-01T00:00:00.000Z",
-      status: "current",
-      total_hours: 8,
-      total_amount: 1000,
-      location: "171 Albert Street, Osborne Park WA, Australia",
-      category_id: "3",
-      category_name: "Therapist Assistant",
-      facility_id: "4",
-      facility_name: "Amana James Brown Care  Centre",
-      shift_type: shiftTypes[1],
-    },
-    {
-      id: "10",
-      period_start: "2023-01-01T00:00:00.000Z",
-      period_end: "2023-01-01T00:00:00.000Z",
-      status: "current",
-      total_hours: 8,
-      total_amount: 1000,
-      location: "171 Albert Street, Osborne Park WA, Australia",
-      category_id: "3",
-      category_name: "Therapist Assistant",
-      facility_id: "4",
-      facility_name: "Amana James Brown Care  Centre",
-      shift_type: shiftTypes[2],
-    },
-  ];
+
+  // upcoming shifts
+  const scheduledQuery = useShiftInfiniteQuery(
+    "scheduled-shifts",
+    postScheduledShifts,
+  );
+
+  // running shifts
+  const runningQuery = useShiftInfiniteQuery(
+    "running-shifts",
+    postRunningShifts,
+  );
+
+  // cancelled shifts
+  const cancelledQuery = useShiftInfiniteQuery(
+    "cancelled-shifts",
+    postCancelledShifts,
+  );
+
+  // transfered shifts
+  const transferedQuery = useShiftInfiniteQuery(
+    "transfered-shifts",
+    postTransferedShifts,
+  );
+
+  // past shifts
+  const pastQuery = useShiftInfiniteQuery("past-shifts", postPastShifts);
+
+  // completed shifts
+  const completedQuery = useShiftInfiniteQuery(
+    "completed-shifts",
+    postCompletedShifts,
+  );
+
+  // paid -- > past
+  // running -- > running
+  // scheduled -- > scheduled
+  // cancelled -- > cancelled
+  // transfered -- > transfered
+  // pending payment -- > completed
 
   const handleTabPress = useCallback(
     (index: number) => {
@@ -211,11 +136,11 @@ export default function Schedules() {
           {statusTabs.map((status, index) => {
             const isActive = activeStatus === status;
             return (
-              <TouchableOpacity
+              <Pressable
                 key={status}
                 onPress={() => handleTabPress(index)}
                 style={styles.tabButton}
-                activeOpacity={0.7}
+                android_ripple={{ color: "#ccc" }}
               >
                 <Text
                   style={[styles.tabText, isActive && styles.tabTextActive]}
@@ -228,7 +153,7 @@ export default function Schedules() {
                     isActive && styles.tabUnderlineActive,
                   ]}
                 />
-              </TouchableOpacity>
+              </Pressable>
             );
           })}
         </ScrollView>
@@ -261,18 +186,277 @@ export default function Schedules() {
               key={status}
               style={{ width: screenWidth - 16, paddingHorizontal: 4 }}
             >
-              <FlatList
-                data={sample_payruns}
-                renderItem={({ item }) => <PayrunCardBase payrun={item} />}
-                keyExtractor={(item) => item.id}
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={{
-                  paddingBottom: 120,
-                  paddingTop: 10,
-                  flexGrow: 1,
-                  gap: 10,
-                }}
-              />
+              {(() => {
+                let isLoading = false;
+                let data: IShift[] = [];
+                let refetchFn = undefined as undefined | (() => Promise<any>);
+                let isError = false;
+                let isFetchingNextPage = false;
+                let hasNextPage = false;
+                let fetchNextPage: undefined | (() => Promise<any>) = undefined;
+                let isRefetching = false;
+                switch (status) {
+                  case "Paid":
+                    isLoading = pastQuery.isLoading;
+                    data =
+                      pastQuery.data?.pages.flatMap(
+                        (page) => page?.data?.shifts?.data ?? [],
+                      ) || [];
+                    isError = pastQuery.isError;
+                    refetchFn = pastQuery.refetch;
+                    isFetchingNextPage = pastQuery.isFetchingNextPage;
+                    hasNextPage = !!pastQuery.hasNextPage;
+                    fetchNextPage = pastQuery.fetchNextPage;
+                    isRefetching = pastQuery.isRefetching;
+                    break;
+                  case "Running":
+                    isLoading = runningQuery.isLoading;
+                    data =
+                      runningQuery.data?.pages.flatMap(
+                        (page) => page?.data?.shifts?.data ?? [],
+                      ) || [];
+                    isError = runningQuery.isError;
+                    refetchFn = runningQuery.refetch;
+                    isFetchingNextPage = runningQuery.isFetchingNextPage;
+                    hasNextPage = !!runningQuery.hasNextPage;
+                    fetchNextPage = runningQuery.fetchNextPage;
+                    isRefetching = runningQuery.isRefetching;
+                    break;
+                  case "Scheduled":
+                    isLoading = scheduledQuery.isLoading;
+                    data =
+                      scheduledQuery.data?.pages.flatMap(
+                        (page) => page?.data?.shifts?.data ?? [],
+                      ) || [];
+                    isError = scheduledQuery.isError;
+                    refetchFn = scheduledQuery.refetch;
+                    isFetchingNextPage = scheduledQuery.isFetchingNextPage;
+                    hasNextPage = !!scheduledQuery.hasNextPage;
+                    fetchNextPage = scheduledQuery.fetchNextPage;
+                    isRefetching = scheduledQuery.isRefetching;
+                    break;
+                  case "Cancelled":
+                    isLoading = cancelledQuery.isLoading;
+                    data =
+                      cancelledQuery.data?.pages.flatMap(
+                        (page) => page?.data?.shifts?.data ?? [],
+                      ) || [];
+                    isError = cancelledQuery.isError;
+                    refetchFn = cancelledQuery.refetch;
+                    isFetchingNextPage = cancelledQuery.isFetchingNextPage;
+                    hasNextPage = !!cancelledQuery.hasNextPage;
+                    fetchNextPage = cancelledQuery.fetchNextPage;
+                    isRefetching = cancelledQuery.isRefetching;
+                    break;
+                  case "Transferred":
+                    isLoading = transferedQuery.isLoading;
+                    data =
+                      transferedQuery.data?.pages.flatMap(
+                        (page) => page?.data?.shifts?.data ?? [],
+                      ) || [];
+                    isError = transferedQuery.isError;
+                    refetchFn = transferedQuery.refetch;
+                    isFetchingNextPage = transferedQuery.isFetchingNextPage;
+                    hasNextPage = !!transferedQuery.hasNextPage;
+                    fetchNextPage = transferedQuery.fetchNextPage;
+                    isRefetching = transferedQuery.isRefetching;
+                    break;
+                  case "Pending Payment":
+                    isLoading = completedQuery.isLoading;
+                    data =
+                      completedQuery.data?.pages.flatMap(
+                        (page) => page?.data?.shifts?.data ?? [],
+                      ) || [];
+                    isError = completedQuery.isError;
+                    refetchFn = completedQuery.refetch;
+                    isFetchingNextPage = completedQuery.isFetchingNextPage;
+                    hasNextPage = !!completedQuery.hasNextPage;
+                    fetchNextPage = completedQuery.fetchNextPage;
+                    isRefetching = completedQuery.isRefetching;
+                    break;
+                  default:
+                    data = [];
+                }
+                const handlePullToRefresh = async () => {
+                  if (refetchFn) await refetchFn();
+                };
+                const handleLoadMore = () => {
+                  if (hasNextPage && !isFetchingNextPage && fetchNextPage) {
+                    fetchNextPage();
+                  }
+                };
+                if (isLoading) {
+                  return (
+                    <FlatList
+                      data={Array.from({ length: 5 })}
+                      renderItem={() => <ShiftCardBaseSkeleton />}
+                      keyExtractor={(_, idx) => `skeleton-${idx}`}
+                      showsVerticalScrollIndicator={false}
+                      contentContainerStyle={{
+                        paddingBottom: 120,
+                        paddingTop: 10,
+                        flexGrow: 1,
+                        gap: 10,
+                      }}
+                      refreshing={isRefetching && !isFetchingNextPage}
+                      onRefresh={handlePullToRefresh}
+                    />
+                  );
+                }
+
+                if (isError) {
+                  return (
+                    <View
+                      style={{
+                        flex: 1,
+                        justifyContent: "center",
+                        alignItems: "center",
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                      }}
+                    >
+                      <MaterialCommunityIcons
+                        name="alert-circle-outline"
+                        size={72}
+                        color="#ff6f61"
+                        style={{ marginBottom: 16 }}
+                      />
+                      <Text
+                        style={{
+                          fontSize: 20,
+                          fontWeight: "700",
+                          color: "#ff6f61",
+                          marginBottom: 8,
+                        }}
+                      >
+                        Error Loading Shifts
+                      </Text>
+                      <Text
+                        style={{
+                          fontSize: 15,
+                          color: "#818589",
+                          textAlign: "center",
+                          maxWidth: 260,
+                          marginBottom: 12,
+                        }}
+                      >
+                        Something went wrong while fetching{" "}
+                        <Text style={{ textTransform: "lowercase" }}>
+                          {status}
+                        </Text>{" "}
+                        shifts. Please pull to refresh or try again later.
+                      </Text>
+                      <TouchableOpacity
+                        onPress={handlePullToRefresh}
+                        style={{
+                          backgroundColor: "#FBF2F2",
+                          paddingHorizontal: 24,
+                          paddingVertical: 10,
+                          borderRadius: 20,
+                          flexDirection: "row",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: 8,
+                        }}
+                      >
+                        <FontAwesome6
+                          name="rotate-left"
+                          size={20}
+                          color="#71797E"
+                        />
+                        <Text
+                          style={{
+                            color: "#71797E",
+                            fontSize: 16,
+                            fontWeight: "700",
+                          }}
+                        >
+                          Retry
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  );
+                }
+
+                if (!isLoading && (!data || data.length === 0)) {
+                  return (
+                    <View
+                      style={{
+                        flex: 1,
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <MaterialCommunityIcons
+                        name="calendar-remove-outline"
+                        size={72}
+                        color="#e0e0e0"
+                        style={{ marginBottom: 16 }}
+                      />
+                      <Text
+                        style={{
+                          fontSize: 20,
+                          fontWeight: "700",
+                          color: "#70C601",
+                          marginBottom: 8,
+                        }}
+                      >
+                        No Shifts Yet
+                      </Text>
+                      <Text
+                        style={{
+                          fontSize: 15,
+                          color: "#818589",
+                          textAlign: "center",
+                          maxWidth: 260,
+                        }}
+                      >
+                        You have no{" "}
+                        <Text
+                          style={{
+                            textTransform: "lowercase",
+                          }}
+                        >
+                          {status}
+                        </Text>{" "}
+                        shifts for this category at the moment. Check back later
+                        or explore other tabs!
+                      </Text>
+                    </View>
+                  );
+                }
+                return (
+                  <FlatList
+                    data={data}
+                    renderItem={({ item }) => <ShiftCardBase shift={item} />}
+                    keyExtractor={(item) =>
+                      item.id?.toString?.() || String(item.id)
+                    }
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={{
+                      paddingBottom: 120,
+                      paddingTop: 10,
+                      flexGrow: 1,
+                      gap: 10,
+                    }}
+                    refreshing={isRefetching && !isFetchingNextPage}
+                    onRefresh={handlePullToRefresh}
+                    onEndReached={handleLoadMore}
+                    onEndReachedThreshold={0.6}
+                    ListFooterComponent={
+                      isFetchingNextPage ? (
+                        <View style={{ gap: 10, paddingTop: 10 }}>
+                          <ShiftCardBaseSkeleton />
+                          <ShiftCardBaseSkeleton />
+                        </View>
+                      ) : null
+                    }
+                  />
+                );
+              })()}
             </View>
           ))}
         </ScrollView>
