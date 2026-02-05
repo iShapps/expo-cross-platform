@@ -8,11 +8,61 @@ import {
   TabBarIMaterialIcon,
   TabBarOctIcon,
 } from "@/components/ui/tab-bar-icon";
-import { Platform, StyleSheet } from "react-native";
+import { useIsFetching } from "@tanstack/react-query";
+import { Animated, Easing, Platform, StyleSheet, View } from "react-native";
+
+const FetchingSnakeBar = () => {
+  const isFetching = useIsFetching({
+    predicate: (query) => query.state.fetchStatus === "fetching",
+  });
+
+  const translateX = React.useRef(new Animated.Value(0)).current;
+  const [barWidth, setBarWidth] = React.useState(0);
+
+  React.useEffect(() => {
+    if (!isFetching || barWidth === 0) return;
+
+    translateX.setValue(-120); //start off-screen left
+
+    const animation = Animated.loop(
+      Animated.timing(translateX, {
+        toValue: barWidth + 120, //exit off-screen right
+        duration: 1200,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      }),
+    );
+
+    animation.start();
+
+    return () => {
+      animation.stop();
+      translateX.setValue(0);
+    };
+  }, [isFetching, barWidth]);
+
+  if (!isFetching) return null;
+
+  return (
+    <View
+      pointerEvents="none"
+      style={styles.fetchingBarWrap}
+      onLayout={(e) => setBarWidth(e.nativeEvent.layout.width)}
+    >
+      <Animated.View
+        style={[
+          styles.fetchingSnake,
+          {
+            transform: [{ translateX }],
+          },
+        ]}
+      />
+    </View>
+  );
+};
 
 export default function TabLayout() {
   // const colorScheme = "light"; //useColorScheme();
-
   return (
     <Tabs
       backBehavior="history"
@@ -21,6 +71,7 @@ export default function TabLayout() {
         tabBarInactiveTintColor: "#71797E",
         tabBarStyle:
           Platform.OS === "ios" ? styles.iosTabBar : styles.androidTabBar,
+        tabBarBackground: () => <FetchingSnakeBar />,
         headerShown: false,
         tabBarButton: HapticTab,
       }}
@@ -167,5 +218,22 @@ const styles = StyleSheet.create({
     alignItems: "center",
     alignContent: "center",
     borderTopColor: "#D3D3D3",
+  },
+  fetchingBarWrap: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 2,
+    overflow: "hidden",
+  },
+  fetchingSnake: {
+    position: "absolute",
+    top: 0,
+    height: 2,
+    width: 120,
+    borderRadius: 999,
+    backgroundColor: "#70C601",
+    opacity: 0.9,
   },
 });

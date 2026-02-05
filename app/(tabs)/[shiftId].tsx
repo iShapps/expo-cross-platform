@@ -103,12 +103,20 @@ export default function ShiftDetails() {
   // receive shiftId from params
   const { shiftId } = useLocalSearchParams();
 
-  const { data, isLoading, isError, refetch, isRefetching, isRefetchError } =
-    useQuery({
-      queryKey: ["shift-details", shiftId],
-      queryFn: () => postShiftDetails(shiftId as string),
-      refetchInterval: 30 * 60 * 1000, // 30 minutes
-    });
+  const {
+    data,
+    isLoading,
+    isError,
+    refetch,
+    // isFetching,
+    isRefetching,
+    isRefetchError,
+  } = useQuery({
+    queryKey: ["shift-details", shiftId],
+    queryFn: () => postShiftDetails(shiftId as string),
+    refetchInterval: 30 * 60 * 1000, // 30 minutes
+    enabled: !!shiftId,
+  });
 
   const shift = data?.data?.shift as IShift;
 

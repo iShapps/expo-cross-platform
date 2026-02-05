@@ -18,7 +18,6 @@ export default function Shifts() {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-    isRefetching,
   } = useInfiniteQuery({
     queryKey: ["pending-shifts"],
     queryFn: ({ pageParam = 1 }) => postPendingShifts(pageParam),
@@ -32,6 +31,7 @@ export default function Shifts() {
       return undefined;
     },
     refetchInterval: 30 * 60 * 1000, // 30 minutes
+    refetchIntervalInBackground: true,
   });
 
   const shifts =
@@ -72,7 +72,7 @@ export default function Shifts() {
             flexGrow: 1,
             gap: 10,
           }}
-          refreshing={isRefetching && !isFetchingNextPage}
+          refreshing={isFetchingNextPage}
           onRefresh={handlePullToRefresh}
           onEndReached={handleLoadMore}
           onEndReachedThreshold={0.6}

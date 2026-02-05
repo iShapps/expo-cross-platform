@@ -11,9 +11,9 @@ import { SplashScreenController } from "./splash";
 // })
 
 SplashScreen.preventAutoHideAsync();
+const queryClient = new QueryClient();
 
 export default function Root() {
-  const queryClient = new QueryClient();
   // Set up the auth context
   return (
     <QueryClientProvider client={queryClient}>

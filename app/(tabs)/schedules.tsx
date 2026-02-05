@@ -42,6 +42,7 @@ const useShiftInfiniteQuery = (
       return undefined;
     },
     refetchInterval: 30 * 60 * 1000,
+    refetchIntervalInBackground: true,
   });
 };
 
