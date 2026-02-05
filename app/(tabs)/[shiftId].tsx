@@ -3,7 +3,9 @@ import { ShiftType, ShiftTypePill } from "@/components/shift-type-pill";
 import { ShiftDetailsSkeleton } from "@/components/skeletons";
 import { IShift } from "@/data-types/shifts";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import Feather from "@expo/vector-icons/Feather";
 import Fontisto from "@expo/vector-icons/Fontisto";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useQuery } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -101,21 +103,55 @@ export default function ShiftDetails() {
   // receive shiftId from params
   const { shiftId } = useLocalSearchParams();
 
-  const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ["shift-details", shiftId],
-    queryFn: () => postShiftDetails(`277` as string),
-    refetchInterval: 30 * 60 * 1000, // 30 minutes
-  });
+  const { data, isLoading, isError, refetch, isRefetching, isRefetchError } =
+    useQuery({
+      queryKey: ["shift-details", shiftId],
+      queryFn: () => postShiftDetails(shiftId as string),
+      refetchInterval: 30 * 60 * 1000, // 30 minutes
+    });
 
   const shift = data?.data?.shift as IShift;
 
-  console.log("Shift Details - isError:", isError);
-  console.log("Shift Details - shift:", data);
-  console.log("Shift Details - shiftId:", shiftId);
-  console.log("Shift Details - isLoading:", isLoading);
+  const handleRefetch = async () => {
+    await refetch();
+  };
 
-  if (isLoading) {
+  if (isLoading || isRefetching) {
     return <ShiftDetailsSkeleton />;
+  }
+
+  if (!isLoading && (isError || !shift || isRefetchError)) {
+    return (
+      <View style={styles.errorScreen}>
+        <View style={styles.errorCard}>
+          <View style={styles.errorIconWrap}>
+            <MaterialCommunityIcons
+              name="cloud-alert-outline"
+              size={34}
+              color="#FFB2B2"
+            />
+          </View>
+          <Text style={styles.errorTitle}>Something went wrong</Text>
+          <Text style={styles.errorSubtitle}>
+            {data?.message ??
+              "We couldn’t load this shift right now. Check your connection and try again."}
+          </Text>
+          <View style={styles.errorActions}>
+            <Pressable style={styles.errorPrimaryBtn} onPress={handleRefetch}>
+              <Feather name="rotate-ccw" size={18} color="#ffffff" />
+              <Text style={styles.errorPrimaryText}>Try again</Text>
+            </Pressable>
+            <Pressable
+              style={styles.errorSecondaryBtn}
+              onPress={() => router.canGoBack() && router.back()}
+            >
+              <Ionicons name="return-up-back" size={18} color="#4B5563" />
+              <Text style={styles.errorSecondaryText}>Go back</Text>
+            </Pressable>
+          </View>
+        </View>
+      </View>
+    );
   }
 
   const isSleepover = shift?.shift_type === "sleepover";
@@ -490,5 +526,89 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#818589",
     fontWeight: "300",
+  },
+  errorScreen: {
+    flex: 1,
+    backgroundColor: "#ffffff",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 16,
+  },
+  errorCard: {
+    width: "100%",
+    maxWidth: 420,
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    paddingVertical: 20,
+    paddingHorizontal: 20,
+    borderWidth: 1,
+    borderColor: "#E6F0D8",
+    alignItems: "center",
+    shadowColor: "#70C601",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 14,
+    elevation: 3,
+  },
+  errorIconWrap: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: "#FBF2F2",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 12,
+  },
+  errorTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#111",
+  },
+  errorSubtitle: {
+    fontSize: 13,
+    color: "#6B7280",
+    textAlign: "center",
+    marginTop: 8,
+    lineHeight: 18,
+  },
+  errorActions: {
+    width: "100%",
+    marginTop: 18,
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 10,
+  },
+  errorPrimaryBtn: {
+    backgroundColor: "#FFB2B2",
+    display: "flex",
+    flexDirection: "row",
+    gap: 8,
+    alignContent: "center",
+    justifyContent: "center",
+    borderRadius: 5,
+    width: "45%",
+    alignItems: "center",
+  },
+  errorPrimaryText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  errorSecondaryBtn: {
+    backgroundColor: "#F2F5EF",
+    paddingVertical: 12,
+    borderRadius: 5,
+    alignItems: "center",
+    width: "50%",
+    display: "flex",
+    alignContent: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: 8,
+  },
+  errorSecondaryText: {
+    color: "#4B5563",
+    fontSize: 14,
+    fontWeight: "500",
   },
 });
