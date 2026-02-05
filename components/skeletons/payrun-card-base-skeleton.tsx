@@ -2,7 +2,7 @@ import React from "react";
 import { StyleSheet, View } from "react-native";
 import { SkeletonBase } from "./skeleton-base";
 
-export const PayrunCardBaseSkeleton: React.FC = () => {
+export const ShiftCardBaseSkeleton: React.FC = () => {
   return (
     <View style={styles.card}>
       <View style={styles.headerRow}>

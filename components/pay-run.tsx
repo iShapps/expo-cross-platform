@@ -1,4 +1,4 @@
-import { Payrun } from "@/data-types/dashboard";
+import { IShift } from "@/data-types/shifts";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { differenceInMinutes, format } from "date-fns";
 import React from "react";
@@ -11,17 +11,14 @@ import {
 } from "react-native";
 import { ShiftType, ShiftTypePill } from "./shift-type-pill";
 
-interface PayrunCardProps {
-  payrun: Payrun;
+interface ShiftCardProps {
+  shift: IShift;
   onPress?: () => void;
 }
 
-export const PayrunCardBase: React.FC<PayrunCardProps> = ({
-  payrun,
-  onPress,
-}) => {
-  const startDate = new Date(payrun.period_start);
-  const endDate = new Date(payrun.period_end);
+export const ShiftCardBase: React.FC<ShiftCardProps> = ({ shift, onPress }) => {
+  const startDate = new Date(shift?.start_time);
+  const endDate = new Date(shift?.end_time);
 
   // Format: 10:30 pm to 04:30 am - 6:00Hrs
   const startTime = format(startDate, "hh:mm a");
@@ -40,8 +37,8 @@ export const PayrunCardBase: React.FC<PayrunCardProps> = ({
       disabled={!onPress}
     >
       <View style={styles.headerRow}>
-        {payrun.shift_type && (
-          <ShiftTypePill type={payrun.shift_type as ShiftType} />
+        {shift?.shift_type && (
+          <ShiftTypePill type={shift?.shift_type as ShiftType} />
         )}
       </View>
       <View
@@ -61,7 +58,7 @@ export const PayrunCardBase: React.FC<PayrunCardProps> = ({
               }),
             }}
           >
-            15
+            {format(shift?.created_at, "dd")}
           </Text>
           <Text
             style={{
@@ -72,7 +69,7 @@ export const PayrunCardBase: React.FC<PayrunCardProps> = ({
               }),
             }}
           >
-            Jan
+            {format(shift?.created_at, "MMM")}
           </Text>
         </View>
       </View>
@@ -86,7 +83,7 @@ export const PayrunCardBase: React.FC<PayrunCardProps> = ({
             }),
           }}
         >
-          {payrun.facility_name}
+          {shift?.facility?.name}
         </Text>
         <Text
           style={{
@@ -97,7 +94,9 @@ export const PayrunCardBase: React.FC<PayrunCardProps> = ({
             }),
           }}
         >
-          {payrun.category_name}
+          {shift?.profession?.name}
+          {/* {shift?.category?.name}{" "} */}
+          {/* {shift?.level?.name} */}
         </Text>
         <View
           style={{
@@ -124,7 +123,7 @@ export const PayrunCardBase: React.FC<PayrunCardProps> = ({
           style={{
             display: "flex",
             flexDirection: "row",
-            alignItems: "center",
+            // alignItems: "center",
             gap: 2,
           }}
         >
@@ -138,7 +137,8 @@ export const PayrunCardBase: React.FC<PayrunCardProps> = ({
               }),
             }}
           >
-            {payrun.location}
+            {shift?.facility?.address}
+            {/* {shift?.address} */}
           </Text>
         </View>
       </View>
@@ -189,7 +189,7 @@ const styles = StyleSheet.create({
     color: "#36454F",
   },
   locationText: {
-    fontSize: 12,
+    fontSize: 13,
     lineHeight: 18,
     color: "#818589",
     fontWeight: "700",

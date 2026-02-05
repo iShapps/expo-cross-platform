@@ -2,7 +2,7 @@ import {
   ActiveCardSkeleton,
   DashboardAnalyticsSkeleton,
   NotificationCardSkeleton,
-  PayrunCardBaseSkeleton,
+  ShiftCardBaseSkeleton,
 } from "@/components/skeletons";
 import { FlatList, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -23,7 +23,7 @@ export default function DocumentsScreen() {
         <ActiveCardSkeleton />
         <FlatList
           data={SKELETON_DATA}
-          renderItem={() => <PayrunCardBaseSkeleton />}
+          renderItem={() => <ShiftCardBaseSkeleton />}
           keyExtractor={(item) => item.id}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{

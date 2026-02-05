@@ -7,12 +7,12 @@ import {
   Notification,
   Payrun,
 } from "@/data-types/dashboard";
+import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { router } from "expo-router";
 
-import Entypo from "@expo/vector-icons/Entypo";
 import {
   FlatList,
   StyleSheet,
@@ -151,11 +151,9 @@ export default function HomeScreen() {
           <View style={{ display: "flex", flexDirection: "column", gap: 3 }}>
             <Text style={styles.headerTitle}>{userDetails?.name}</Text>
             <View style={{ display: "flex", flexDirection: "row", gap: 5 }}>
-              <Entypo name="briefcase" size={16} color="#FFC107" />
+              <FontAwesome6 name="location-dot" size={16} color="#FFC107" />
               <Text style={styles.headerSubtitle}>
-                {userDetails?.hcp?.hcp_professions?.[0]?.profession?.name}{" "}
-                {userDetails?.hcp?.hcp_professions?.[0]?.level?.name}{" "}
-                {userDetails?.hcp?.hcp_professions?.[0]?.category?.name}
+                {userDetails?.hcp?.address}
               </Text>
             </View>
           </View>
