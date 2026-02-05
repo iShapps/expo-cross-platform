@@ -80,10 +80,10 @@ async function authorizedMutation<Req, Res>(
         data,
       );
     }
-    // .data if present, else return the whole object
-    return (
-      "data" in data && data.data !== undefined ? data.data : data
-    ) as Res;
+    // return (
+    //   "data" in data && data.data !== undefined ? data.data : data
+    // ) as Res;
+    return data as Res;
   } catch (error) {
     clearTimeout(timeoutId);
     if (error instanceof ApiMutationError) throw error;
@@ -104,6 +104,7 @@ export async function postResource<Req, Res>(
   payload: Req,
   validateResponse?: (data: unknown) => data is Res,
 ): Promise<Res> {
+  console.log("POST", `${API_BASE_URL}${endpoint}`, payload);
   return authorizedMutation<Req, Res>(
     `${API_BASE_URL}${endpoint}`,
     "POST",

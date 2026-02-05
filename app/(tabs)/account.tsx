@@ -2,26 +2,24 @@ import Fontisto from "@expo/vector-icons/Fontisto";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { router } from "expo-router";
 import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 export default function AccountScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.topBarContainer}>
-        <TouchableOpacity
-          onPress={() => router.replace("/(tabs)/more")}
+        <Pressable
+          onPress={() => router.canGoBack() && router.back()}
           style={styles.backIconContainer}
         >
           <Fontisto name="arrow-left-l" size={15} color="black" />
-        </TouchableOpacity>
+        </Pressable>
         <Text style={styles.locationText}>Account</Text>
-        <TouchableOpacity
-          style={styles.faintbackIconContainer}
-        ></TouchableOpacity>
+        <Pressable style={styles.faintbackIconContainer}></Pressable>
       </View>
 
       <View style={styles.linksContainer}>
-        <TouchableOpacity
+        <Pressable
           onPress={() => router.push("/(tabs)/profile")}
           style={styles.profileLinks}
         >
@@ -38,9 +36,9 @@ export default function AccountScreen() {
             size={24}
             color="#70C601"
           />
-        </TouchableOpacity>
+        </Pressable>
 
-        <TouchableOpacity
+        <Pressable
           onPress={() => router.push("/(tabs)/change-password")}
           style={styles.profileLinks}
         >
@@ -57,7 +55,7 @@ export default function AccountScreen() {
             size={24}
             color="#70C601"
           />
-        </TouchableOpacity>
+        </Pressable>
       </View>
     </View>
   );

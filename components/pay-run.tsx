@@ -1,27 +1,19 @@
-import { Payrun } from "@/data-types/dashboard";
+import { IShift } from "@/data-types/shifts";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { differenceInMinutes, format } from "date-fns";
+import { Link } from "expo-router";
 import React from "react";
-import {
-  Platform,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Platform, StyleSheet, Text, View } from "react-native";
 import { ShiftType, ShiftTypePill } from "./shift-type-pill";
 
-interface PayrunCardProps {
-  payrun: Payrun;
+interface ShiftCardProps {
+  shift: IShift;
   onPress?: () => void;
 }
 
-export const PayrunCardBase: React.FC<PayrunCardProps> = ({
-  payrun,
-  onPress,
-}) => {
-  const startDate = new Date(payrun.period_start);
-  const endDate = new Date(payrun.period_end);
+export const ShiftCardBase: React.FC<ShiftCardProps> = ({ shift, onPress }) => {
+  const startDate = new Date(shift?.start_time);
+  const endDate = new Date(shift?.end_time);
 
   // Format: 10:30 pm to 04:30 am - 6:00Hrs
   const startTime = format(startDate, "hh:mm a");
@@ -29,120 +21,125 @@ export const PayrunCardBase: React.FC<PayrunCardProps> = ({
   const totalMinutes = differenceInMinutes(endDate, startDate);
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
-  const duration = `${hours}:${minutes.toString().padStart(2, "0")}Hrs`;
+  const duration = `${hours}:${minutes.toString().padStart(2, "0")}` + "Hrs";
   const periodText = `${startTime} to ${endTime} (${duration})`;
 
   return (
-    <TouchableOpacity
-      style={styles.card}
-      onPress={onPress}
-      activeOpacity={0.7}
-      disabled={!onPress}
+    <Link
+      href={{
+        pathname: "/(tabs)/[shiftId]",
+        params: { shiftId: shift.id },
+      }}
     >
-      <View style={styles.headerRow}>
-        {payrun.shift_type && (
-          <ShiftTypePill type={payrun.shift_type as ShiftType} />
-        )}
-      </View>
-      <View
-        style={{
-          flexDirection: "column",
-          alignItems: "center",
-          position: "relative",
-        }}
-      >
-        <View style={styles.dateCard}>
-          <Text
-            style={{
-              ...styles.dateText,
-              fontFamily: Platform.select({
-                android: "Inter_300Light",
-                ios: "Inter-Light",
-              }),
-            }}
-          >
-            15
-          </Text>
-          <Text
-            style={{
-              ...styles.dateText,
-              fontFamily: Platform.select({
-                android: "Inter_300Light",
-                ios: "Inter-Light",
-              }),
-            }}
-          >
-            Jan
-          </Text>
-        </View>
-      </View>
-      <View style={styles.mainContent}>
-        <Text
-          style={{
-            ...styles.title,
-            fontFamily: Platform.select({
-              android: "Inter_600SemiBold",
-              ios: "Inter-SemiBold",
-            }),
-          }}
-        >
-          {payrun.facility_name}
-        </Text>
-        <Text
-          style={{
-            ...styles.categoryText,
-            fontFamily: Platform.select({
-              android: "Inter_500Medium",
-              ios: "Inter-Medium",
-            }),
-          }}
-        >
-          {payrun.category_name}
-        </Text>
-        <View
-          style={{
-            display: "flex",
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 2,
-          }}
-        >
-          <Ionicons name="time-outline" size={18} color="#70C601" />
-          <Text
-            style={{
-              ...styles.periodText,
-              fontFamily: Platform.select({
-                android: "Inter_400Regular",
-                ios: "Inter-Regular",
-              }),
-            }}
-          >
-            {periodText}
-          </Text>
+      <View style={styles.card}>
+        <View style={styles.headerRow}>
+          {shift?.shift_type && (
+            <ShiftTypePill type={shift?.shift_type as ShiftType} />
+          )}
         </View>
         <View
           style={{
-            display: "flex",
-            flexDirection: "row",
+            flexDirection: "column",
             alignItems: "center",
-            gap: 2,
+            position: "relative",
           }}
         >
-          <Ionicons name="location-outline" size={18} color="#70C601" />
+          <View style={styles.dateCard}>
+            <Text
+              style={{
+                ...styles.dateText,
+                fontFamily: Platform.select({
+                  android: "Inter_300Light",
+                  ios: "Inter-Light",
+                }),
+              }}
+            >
+              {format(shift?.created_at, "dd")}
+            </Text>
+            <Text
+              style={{
+                ...styles.dateText,
+                fontFamily: Platform.select({
+                  android: "Inter_300Light",
+                  ios: "Inter-Light",
+                }),
+              }}
+            >
+              {format(shift?.created_at, "MMM")}
+            </Text>
+          </View>
+        </View>
+        <View style={styles.mainContent}>
           <Text
             style={{
-              ...styles.locationText,
+              ...styles.title,
+              fontFamily: Platform.select({
+                android: "Inter_600SemiBold",
+                ios: "Inter-SemiBold",
+              }),
+            }}
+          >
+            {shift?.facility?.name}
+          </Text>
+          <Text
+            style={{
+              ...styles.categoryText,
               fontFamily: Platform.select({
                 android: "Inter_500Medium",
                 ios: "Inter-Medium",
               }),
             }}
           >
-            {payrun.location}
+            {shift?.profession?.name}
+            {/* {shift?.category?.name}{" "} */}
+            {/* {shift?.level?.name} */}
           </Text>
+          <View
+            style={{
+              display: "flex",
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 2,
+            }}
+          >
+            <Ionicons name="time-outline" size={18} color="#70C601" />
+            <Text
+              style={{
+                ...styles.periodText,
+                fontFamily: Platform.select({
+                  android: "Inter_400Regular",
+                  ios: "Inter-Regular",
+                }),
+              }}
+            >
+              {periodText}
+            </Text>
+          </View>
+          <View
+            style={{
+              display: "flex",
+              flexDirection: "row",
+              // alignItems: "center",
+              gap: 2,
+            }}
+          >
+            <Ionicons name="location-outline" size={18} color="#70C601" />
+            <Text
+              style={{
+                ...styles.locationText,
+                fontFamily: Platform.select({
+                  android: "Inter_500Medium",
+                  ios: "Inter-Medium",
+                }),
+              }}
+            >
+              {shift?.facility?.address}
+              {/* {shift?.address} */}
+            </Text>
+          </View>
         </View>
       </View>
-    </TouchableOpacity>
+    </Link>
   );
 };
 
@@ -189,10 +186,10 @@ const styles = StyleSheet.create({
     color: "#36454F",
   },
   locationText: {
-    fontSize: 12,
+    fontSize: 13,
     lineHeight: 18,
     color: "#818589",
-    fontWeight: "700",
+    fontWeight: "600",
   },
   statusBadge: {
     alignSelf: "flex-start",
