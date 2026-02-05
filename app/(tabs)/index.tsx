@@ -145,9 +145,11 @@ export default function HomeScreen() {
           <View style={{ display: "flex", flexDirection: "column", gap: 3 }}>
             <Text style={styles.headerTitle}>{userDetails?.name}</Text>
             <View style={{ display: "flex", flexDirection: "row", gap: 5 }}>
-              <FontAwesome6 name="location-dot" size={16} color="#FFC107" />
+              <FontAwesome6 name="briefcase" size={16} color="#FFC107" />
               <Text style={styles.headerSubtitle}>
-                {userDetails?.hcp?.address}
+                {userDetails?.hcp?.hcp_professions[0]?.profession?.name} -{" "}
+                {userDetails?.hcp?.hcp_professions[0]?.category?.name} -{" "}
+                {userDetails?.hcp?.hcp_professions[0]?.level?.name}
               </Text>
             </View>
           </View>
