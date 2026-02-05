@@ -15,6 +15,7 @@ import { useQuery } from "@tanstack/react-query";
 import React, { useCallback, useRef, useState } from "react";
 import {
   FlatList,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -153,11 +154,11 @@ export default function Schedules() {
           {statusTabs.map((status, index) => {
             const isActive = activeStatus === status;
             return (
-              <TouchableOpacity
+              <Pressable
                 key={status}
                 onPress={() => handleTabPress(index)}
                 style={styles.tabButton}
-                activeOpacity={0.7}
+                android_ripple={{ color: "#ccc" }}
               >
                 <Text
                   style={[styles.tabText, isActive && styles.tabTextActive]}
@@ -170,7 +171,7 @@ export default function Schedules() {
                     isActive && styles.tabUnderlineActive,
                   ]}
                 />
-              </TouchableOpacity>
+              </Pressable>
             );
           })}
         </ScrollView>

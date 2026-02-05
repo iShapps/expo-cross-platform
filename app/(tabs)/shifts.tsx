@@ -6,13 +6,7 @@ import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 
 import { useQuery } from "@tanstack/react-query";
 import React from "react";
-import {
-  FlatList,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Shifts() {
@@ -137,7 +131,7 @@ export default function Shifts() {
               Something went wrong while fetching shifts. Please pull to refresh
               or try again later.
             </Text>
-            <TouchableOpacity
+            <Pressable
               onPress={handlePullToRefresh}
               style={{
                 backgroundColor: "#FBF2F2",
@@ -160,7 +154,7 @@ export default function Shifts() {
               >
                 Retry
               </Text>
-            </TouchableOpacity>
+            </Pressable>
           </View>
         )}
       </View>

@@ -15,6 +15,7 @@ export default function TabLayout() {
 
   return (
     <Tabs
+      backBehavior="history"
       screenOptions={{
         tabBarActiveTintColor: "#70C601",
         tabBarInactiveTintColor: "#71797E",
@@ -126,7 +127,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="shift-details"
+        name="[shiftId]"
         options={{
           headerShown: false,
           title: "Shift Details",
