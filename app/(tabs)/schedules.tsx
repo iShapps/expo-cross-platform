@@ -11,7 +11,7 @@ import { ShiftCardBaseSkeleton } from "@/components/skeletons/payrun-card-base-s
 import { IShift } from "@/data-types/shifts";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import React, { useCallback, useRef, useState } from "react";
 import {
   FlatList,
@@ -24,6 +24,26 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+const useShiftInfiniteQuery = (
+  key: string,
+  queryFn: (page?: number) => Promise<any>,
+) => {
+  return useInfiniteQuery({
+    queryKey: [key],
+    queryFn: ({ pageParam = 1 }) => queryFn(pageParam),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      const pagination = lastPage?.data?.shifts;
+      if (!pagination) return undefined;
+      if (pagination.current_page < pagination.last_page) {
+        return pagination.current_page + 1;
+      }
+      return undefined;
+    },
+    refetchInterval: 30 * 60 * 1000,
+  });
+};
 
 export default function Schedules() {
   const statusTabs = [
@@ -40,76 +60,37 @@ export default function Schedules() {
   const contentScrollRef = useRef<ScrollView>(null);
 
   // upcoming shifts
-  const {
-    data: scheduled,
-    isLoading: scheduledLoading,
-    isError: scheduledError,
-    refetch: refetchScheduled,
-  } = useQuery({
-    queryKey: ["scheduled-shifts"],
-    queryFn: postScheduledShifts,
-    refetchInterval: 30 * 60 * 1000,
-  });
+  const scheduledQuery = useShiftInfiniteQuery(
+    "scheduled-shifts",
+    postScheduledShifts,
+  );
 
   // running shifts
-  const {
-    data: running,
-    isLoading: runningLoading,
-    isError: runningError,
-    refetch: refetchRunning,
-  } = useQuery({
-    queryKey: ["running-shifts"],
-    queryFn: postRunningShifts,
-    refetchInterval: 30 * 60 * 1000,
-  });
+  const runningQuery = useShiftInfiniteQuery(
+    "running-shifts",
+    postRunningShifts,
+  );
 
   // cancelled shifts
-  const {
-    data: cancelled,
-    isLoading: cancelledLoading,
-    isError: cancelledError,
-    refetch: refetchCancelled,
-  } = useQuery({
-    queryKey: ["cancelled-shifts"],
-    queryFn: postCancelledShifts,
-    refetchInterval: 30 * 60 * 1000,
-  });
+  const cancelledQuery = useShiftInfiniteQuery(
+    "cancelled-shifts",
+    postCancelledShifts,
+  );
 
   // transfered shifts
-  const {
-    data: transfered,
-    isLoading: transferedLoading,
-    isError: transferedError,
-    refetch: refetchTransfered,
-  } = useQuery({
-    queryKey: ["transfered-shifts"],
-    queryFn: postTransferedShifts,
-    refetchInterval: 30 * 60 * 1000,
-  });
+  const transferedQuery = useShiftInfiniteQuery(
+    "transfered-shifts",
+    postTransferedShifts,
+  );
 
   // past shifts
-  const {
-    data: past,
-    isLoading: pastLoading,
-    isError: pastError,
-    refetch: refetchPast,
-  } = useQuery({
-    queryKey: ["past-shifts"],
-    queryFn: postPastShifts,
-    refetchInterval: 30 * 60 * 1000,
-  });
+  const pastQuery = useShiftInfiniteQuery("past-shifts", postPastShifts);
 
   // completed shifts
-  const {
-    data: completed,
-    isLoading: completedLoading,
-    isError: completedError,
-    refetch: refetchCompleted,
-  } = useQuery({
-    queryKey: ["completed-shifts"],
-    queryFn: postCompletedShifts,
-    refetchInterval: 30 * 60 * 1000,
-  });
+  const completedQuery = useShiftInfiniteQuery(
+    "completed-shifts",
+    postCompletedShifts,
+  );
 
   // paid -- > past
   // running -- > running
@@ -207,50 +188,101 @@ export default function Schedules() {
               {(() => {
                 let isLoading = false;
                 let data: IShift[] = [];
-                let refetchFn = undefined;
+                let refetchFn = undefined as undefined | (() => Promise<any>);
                 let isError = false;
+                let isFetchingNextPage = false;
+                let hasNextPage = false;
+                let fetchNextPage: undefined | (() => Promise<any>) = undefined;
+                let isRefetching = false;
                 switch (status) {
                   case "Paid":
-                    isLoading = pastLoading;
-                    data = past?.data?.shifts?.data || [];
-                    isError = pastError;
-                    refetchFn = refetchPast;
+                    isLoading = pastQuery.isLoading;
+                    data =
+                      pastQuery.data?.pages.flatMap(
+                        (page) => page?.data?.shifts?.data ?? [],
+                      ) || [];
+                    isError = pastQuery.isError;
+                    refetchFn = pastQuery.refetch;
+                    isFetchingNextPage = pastQuery.isFetchingNextPage;
+                    hasNextPage = !!pastQuery.hasNextPage;
+                    fetchNextPage = pastQuery.fetchNextPage;
+                    isRefetching = pastQuery.isRefetching;
                     break;
                   case "Running":
-                    isLoading = runningLoading;
-                    data = running?.data?.shifts?.data || [];
-                    isError = runningError;
-                    refetchFn = refetchRunning;
+                    isLoading = runningQuery.isLoading;
+                    data =
+                      runningQuery.data?.pages.flatMap(
+                        (page) => page?.data?.shifts?.data ?? [],
+                      ) || [];
+                    isError = runningQuery.isError;
+                    refetchFn = runningQuery.refetch;
+                    isFetchingNextPage = runningQuery.isFetchingNextPage;
+                    hasNextPage = !!runningQuery.hasNextPage;
+                    fetchNextPage = runningQuery.fetchNextPage;
+                    isRefetching = runningQuery.isRefetching;
                     break;
                   case "Scheduled":
-                    isLoading = scheduledLoading;
-                    data = scheduled?.data?.shifts?.data || [];
-                    isError = scheduledError;
-                    refetchFn = refetchScheduled;
+                    isLoading = scheduledQuery.isLoading;
+                    data =
+                      scheduledQuery.data?.pages.flatMap(
+                        (page) => page?.data?.shifts?.data ?? [],
+                      ) || [];
+                    isError = scheduledQuery.isError;
+                    refetchFn = scheduledQuery.refetch;
+                    isFetchingNextPage = scheduledQuery.isFetchingNextPage;
+                    hasNextPage = !!scheduledQuery.hasNextPage;
+                    fetchNextPage = scheduledQuery.fetchNextPage;
+                    isRefetching = scheduledQuery.isRefetching;
                     break;
                   case "Cancelled":
-                    isLoading = cancelledLoading;
-                    data = cancelled?.data?.shifts?.data || [];
-                    isError = cancelledError;
-                    refetchFn = refetchCancelled;
+                    isLoading = cancelledQuery.isLoading;
+                    data =
+                      cancelledQuery.data?.pages.flatMap(
+                        (page) => page?.data?.shifts?.data ?? [],
+                      ) || [];
+                    isError = cancelledQuery.isError;
+                    refetchFn = cancelledQuery.refetch;
+                    isFetchingNextPage = cancelledQuery.isFetchingNextPage;
+                    hasNextPage = !!cancelledQuery.hasNextPage;
+                    fetchNextPage = cancelledQuery.fetchNextPage;
+                    isRefetching = cancelledQuery.isRefetching;
                     break;
                   case "Transferred":
-                    isLoading = transferedLoading;
-                    data = transfered?.data?.shifts?.data || [];
-                    isError = transferedError;
-                    refetchFn = refetchTransfered;
+                    isLoading = transferedQuery.isLoading;
+                    data =
+                      transferedQuery.data?.pages.flatMap(
+                        (page) => page?.data?.shifts?.data ?? [],
+                      ) || [];
+                    isError = transferedQuery.isError;
+                    refetchFn = transferedQuery.refetch;
+                    isFetchingNextPage = transferedQuery.isFetchingNextPage;
+                    hasNextPage = !!transferedQuery.hasNextPage;
+                    fetchNextPage = transferedQuery.fetchNextPage;
+                    isRefetching = transferedQuery.isRefetching;
                     break;
                   case "Pending Payment":
-                    isLoading = completedLoading;
-                    data = completed?.data?.shifts?.data || [];
-                    isError = completedError;
-                    refetchFn = refetchCompleted;
+                    isLoading = completedQuery.isLoading;
+                    data =
+                      completedQuery.data?.pages.flatMap(
+                        (page) => page?.data?.shifts?.data ?? [],
+                      ) || [];
+                    isError = completedQuery.isError;
+                    refetchFn = completedQuery.refetch;
+                    isFetchingNextPage = completedQuery.isFetchingNextPage;
+                    hasNextPage = !!completedQuery.hasNextPage;
+                    fetchNextPage = completedQuery.fetchNextPage;
+                    isRefetching = completedQuery.isRefetching;
                     break;
                   default:
                     data = [];
                 }
                 const handlePullToRefresh = async () => {
                   if (refetchFn) await refetchFn();
+                };
+                const handleLoadMore = () => {
+                  if (hasNextPage && !isFetchingNextPage && fetchNextPage) {
+                    fetchNextPage();
+                  }
                 };
                 if (isLoading) {
                   return (
@@ -265,7 +297,7 @@ export default function Schedules() {
                         flexGrow: 1,
                         gap: 10,
                       }}
-                      refreshing={isLoading}
+                      refreshing={isRefetching && !isFetchingNextPage}
                       onRefresh={handlePullToRefresh}
                     />
                   );
@@ -409,8 +441,18 @@ export default function Schedules() {
                       flexGrow: 1,
                       gap: 10,
                     }}
-                    refreshing={isLoading}
+                    refreshing={isRefetching && !isFetchingNextPage}
                     onRefresh={handlePullToRefresh}
+                    onEndReached={handleLoadMore}
+                    onEndReachedThreshold={0.6}
+                    ListFooterComponent={
+                      isFetchingNextPage ? (
+                        <View style={{ gap: 10, paddingTop: 10 }}>
+                          <ShiftCardBaseSkeleton />
+                          <ShiftCardBaseSkeleton />
+                        </View>
+                      ) : null
+                    }
                   />
                 );
               })()}

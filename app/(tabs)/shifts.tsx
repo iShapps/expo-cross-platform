@@ -4,23 +4,47 @@ import { ShiftCardBaseSkeleton } from "@/components/skeletons";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import React from "react";
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Shifts() {
-  const { data, isLoading, isError, refetch } = useQuery({
+  const {
+    data,
+    isLoading,
+    isError,
+    refetch,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isRefetching,
+  } = useInfiniteQuery({
     queryKey: ["pending-shifts"],
-    queryFn: postPendingShifts,
+    queryFn: ({ pageParam = 1 }) => postPendingShifts(pageParam),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      const pagination = lastPage?.data?.shifts;
+      if (!pagination) return undefined;
+      if (pagination.current_page < pagination.last_page) {
+        return pagination.current_page + 1;
+      }
+      return undefined;
+    },
     refetchInterval: 30 * 60 * 1000, // 30 minutes
   });
 
-  const shifts = data?.data?.shifts?.data || [];
-  console.log("isError:", isError);
+  const shifts =
+    data?.pages.flatMap((page) => page?.data?.shifts?.data ?? []) ?? [];
 
   const handlePullToRefresh = async () => {
     await refetch();
+  };
+
+  const handleLoadMore = () => {
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
   };
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -48,8 +72,18 @@ export default function Shifts() {
             flexGrow: 1,
             gap: 10,
           }}
-          refreshing={isLoading}
+          refreshing={isRefetching && !isFetchingNextPage}
           onRefresh={handlePullToRefresh}
+          onEndReached={handleLoadMore}
+          onEndReachedThreshold={0.6}
+          ListFooterComponent={
+            !isLoading && isFetchingNextPage ? (
+              <View style={{ gap: 10, paddingTop: 10 }}>
+                <ShiftCardBaseSkeleton />
+                <ShiftCardBaseSkeleton />
+              </View>
+            ) : null
+          }
           ListEmptyComponent={
             !isLoading && !isError && shifts.length === 0 ? (
               <View
