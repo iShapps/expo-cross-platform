@@ -7,6 +7,7 @@ import {
   Notification,
   Payrun,
 } from "@/data-types/dashboard";
+import { usePushNotifications } from "@/hooks/use-push-notifications";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useQuery } from "@tanstack/react-query";
@@ -16,6 +17,9 @@ import { router } from "expo-router";
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 
 export default function HomeScreen() {
+  const { expoPushToken, notification } = usePushNotifications();
+  console.log("expoPushToken", expoPushToken);
+  console.log("notification", notification);
   const profileStore = useProfileData();
   const userDetails = profileStore.userDetails;
   const sample_payruns: Payrun[] = [
