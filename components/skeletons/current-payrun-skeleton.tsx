@@ -1,0 +1,57 @@
+import React from "react";
+import { StyleSheet, View } from "react-native";
+
+export const CurrentPayrunSkeleton: React.FC = () => {
+  return (
+    <View style={styles.payrunCard}>
+      <View style={styles.payrunHeader}>
+        <View style={styles.iconPillPayrun} />
+        <View style={styles.labelSkeleton} />
+      </View>
+      <View style={styles.valueSkeleton} />
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  payrunCard: {
+    marginTop: 12,
+    borderRadius: 5,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: "#DDE7D6",
+    backgroundColor: "#F8FFF0",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  payrunHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    width: "100%",
+    gap: 8,
+  },
+  iconPillPayrun: {
+    width: 28,
+    height: 28,
+    borderRadius: 999,
+    backgroundColor: "#E0E0E0",
+  },
+  labelSkeleton: {
+    height: 16,
+    width: 120,
+    borderRadius: 4,
+    backgroundColor: "#E0E0E0",
+    flexGrow: 1,
+    marginLeft: 8,
+  },
+  valueSkeleton: {
+    height: 18,
+    width: 100,
+    borderRadius: 4,
+    backgroundColor: "#E0E0E0",
+    marginTop: 8,
+  },
+});
