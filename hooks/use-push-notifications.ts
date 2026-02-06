@@ -60,8 +60,9 @@ async function registerForPushNotificationsAsync(): Promise<string | null> {
   }
 
   try {
-    const token = (await Notifications.getExpoPushTokenAsync({ projectId }))
-      .data;
+    const token =
+      // const token = (await Notifications.getDevicePushTokenAsync({projectId})); // for FCM and APNs tokens
+      (await Notifications.getExpoPushTokenAsync({ projectId })).data;
     return token;
   } catch (e: unknown) {
     handleRegistrationError(`${e}`);
