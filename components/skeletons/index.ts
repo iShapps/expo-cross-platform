@@ -1,4 +1,5 @@
 export { ActiveCardSkeleton } from "./active-card-skeleton";
+export { CurrentPayrunSkeleton } from "./current-payrun-skeleton";
 export { DashboardAnalyticsSkeleton } from "./dashboard-analytics-skeleton";
 export { NotificationCardSkeleton } from "./notification-card-skeleton";
 export { ShiftCardBaseSkeleton } from "./payrun-card-base-skeleton";
