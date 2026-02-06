@@ -1,6 +1,12 @@
 import { fetchDashboard } from "@/api-queries/fetchers";
 import ActiveCard from "@/components/active-card";
 import { NotificationCard } from "@/components/notification-card";
+import {
+  ActiveCardSkeleton,
+  CurrentPayrunSkeleton,
+  DashboardAnalyticsSkeleton,
+  NotificationCardSkeleton,
+} from "@/components/skeletons";
 import { useProfileData } from "@/data-store/use-account-store";
 import {
   DashboardResponse,
@@ -105,10 +111,12 @@ export default function HomeScreen() {
     },
   ];
   const currentPayrun = sample_payruns[0];
-  const { data: dashboard } = useQuery<DashboardResponse>({
+  const { data: dashboard, isLoading } = useQuery<DashboardResponse>({
     queryKey: ["dashboard"],
     queryFn: fetchDashboard,
   });
+  const notificationsLoading = isLoading; // Replace with actual loading state
+
   const dashboardData = dashboard?.data;
   const availableShifts = dashboardData?.available_shifts ?? 0;
   const scheduledShifts = dashboardData?.scheduled_shifts ?? 0;
@@ -170,9 +178,22 @@ export default function HomeScreen() {
       {/* CONTENT */}
       <View style={styles.mainLandingContainer}>
         <FlatList
-          data={sample_notifications}
-          renderItem={({ item }) => <NotificationCard notification={item} />}
-          keyExtractor={(item) => item.id}
+          // data={sample_notifications}
+          // renderItem={({ item }) => <NotificationCard notification={item} />}
+          // keyExtractor={(item) => item.id}
+          data={
+            notificationsLoading
+              ? ([1, 2] as unknown as Notification[])
+              : sample_notifications
+          }
+          renderItem={
+            notificationsLoading
+              ? () => <NotificationCardSkeleton />
+              : ({ item }) => <NotificationCard notification={item} />
+          }
+          keyExtractor={(item, idx) =>
+            notificationsLoading ? String(idx) : item.id
+          }
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.mainLandingContent}
           ListHeaderComponent={
@@ -181,65 +202,88 @@ export default function HomeScreen() {
                 <Text style={styles.sectionLabel}>Dashboard</Text>
                 <View style={styles.sectionUnderline} />
               </View>
-              <View style={styles.dashboardRow}>
-                <View
-                  style={[styles.dashboardCard, styles.dashboardCardAvailable]}
-                >
-                  <View style={styles.dashboardTopRow}>
-                    <View style={[styles.iconPill, styles.iconPillAvailable]}>
+              {isLoading ? (
+                <DashboardAnalyticsSkeleton />
+              ) : (
+                <View style={styles.dashboardRow}>
+                  <View
+                    style={[
+                      styles.dashboardCard,
+                      styles.dashboardCardAvailable,
+                    ]}
+                  >
+                    <View style={styles.dashboardTopRow}>
+                      <View style={[styles.iconPill, styles.iconPillAvailable]}>
+                        <MaterialIcons
+                          name="event-available"
+                          size={16}
+                          color="#70C601"
+                        />
+                      </View>
+                      <Text style={styles.dashboardValue}>
+                        {availableShifts}
+                      </Text>
+                    </View>
+                    <Text style={styles.dashboardTitle}>Available Shifts</Text>
+                  </View>
+                  <View style={[styles.dashboardCard, styles.dashboardCardMy]}>
+                    <View style={styles.dashboardTopRow}>
+                      <View style={[styles.iconPill, styles.iconPillMy]}>
+                        <MaterialIcons
+                          name="assignment-ind"
+                          size={16}
+                          color="#4A90E2"
+                        />
+                      </View>
+                      <Text style={styles.dashboardValue}>
+                        {scheduledShifts}
+                      </Text>
+                    </View>
+                    <Text style={styles.dashboardTitle}>My Shifts</Text>
+                  </View>
+                  <View
+                    style={[styles.dashboardCard, styles.dashboardCardUpcoming]}
+                  >
+                    <View style={styles.dashboardTopRow}>
+                      <View style={[styles.iconPill, styles.iconPillUpcoming]}>
+                        <MaterialIcons
+                          name="schedule"
+                          size={16}
+                          color="#FFC107"
+                        />
+                      </View>
+                      <Text style={styles.dashboardValue}>
+                        {upcomingShifts}
+                      </Text>
+                    </View>
+                    <Text style={styles.dashboardTitle}>Upcoming Shifts</Text>
+                  </View>
+                </View>
+              )}
+
+              {isLoading ? (
+                <CurrentPayrunSkeleton />
+              ) : (
+                <View style={styles.payrunCard}>
+                  <View style={styles.payrunHeader}>
+                    <View style={styles.iconPillPayrun}>
                       <MaterialIcons
-                        name="event-available"
+                        name="date-range"
                         size={16}
                         color="#70C601"
                       />
                     </View>
-                    <Text style={styles.dashboardValue}>{availableShifts}</Text>
+                    <Text style={styles.payrunLabel}>Current Payrun</Text>
                   </View>
-                  <Text style={styles.dashboardTitle}>Available Shifts</Text>
+                  <Text style={styles.payrunValue}>{payrunLabel}</Text>
                 </View>
-                <View style={[styles.dashboardCard, styles.dashboardCardMy]}>
-                  <View style={styles.dashboardTopRow}>
-                    <View style={[styles.iconPill, styles.iconPillMy]}>
-                      <MaterialIcons
-                        name="assignment-ind"
-                        size={16}
-                        color="#4A90E2"
-                      />
-                    </View>
-                    <Text style={styles.dashboardValue}>{scheduledShifts}</Text>
-                  </View>
-                  <Text style={styles.dashboardTitle}>My Shifts</Text>
-                </View>
-                <View
-                  style={[styles.dashboardCard, styles.dashboardCardUpcoming]}
-                >
-                  <View style={styles.dashboardTopRow}>
-                    <View style={[styles.iconPill, styles.iconPillUpcoming]}>
-                      <MaterialIcons
-                        name="schedule"
-                        size={16}
-                        color="#FFC107"
-                      />
-                    </View>
-                    <Text style={styles.dashboardValue}>{upcomingShifts}</Text>
-                  </View>
-                  <Text style={styles.dashboardTitle}>Upcoming Shifts</Text>
-                </View>
-              </View>
-              <View style={styles.payrunCard}>
-                <View style={styles.payrunHeader}>
-                  <View style={styles.iconPillPayrun}>
-                    <MaterialIcons
-                      name="date-range"
-                      size={16}
-                      color="#70C601"
-                    />
-                  </View>
-                  <Text style={styles.payrunLabel}>Current Payrun</Text>
-                </View>
-                <Text style={styles.payrunValue}>{payrunLabel}</Text>
-              </View>
-              <ActiveCard payrun={sample_payruns[0]} />
+              )}
+              {isLoading ? (
+                <ActiveCardSkeleton />
+              ) : (
+                <ActiveCard payrun={sample_payruns[0]} />
+              )}
+
               <View style={styles.notificationsHeader}>
                 <View style={styles.sectionTitleWrap}>
                   <Text style={styles.sectionLabel}>Notifications</Text>
@@ -280,7 +324,7 @@ const styles = StyleSheet.create({
   },
   containerTop: {
     backgroundColor: "#70C601",
-    height: "20%",
+    height: "14%",
     width: "100%",
     paddingTop: 55,
     paddingBottom: 10,
