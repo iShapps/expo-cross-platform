@@ -115,6 +115,9 @@ export default function ShiftDetails() {
     queryKey: ["shift-details", shiftId],
     queryFn: () => postShiftDetails(shiftId as string),
     refetchInterval: 30 * 60 * 1000, // 30 minutes
+    gcTime: 1000 * 60 * 60,
+    staleTime: 1000 * 60 * 60 * 24,
+    refetchIntervalInBackground: true,
     enabled: !!shiftId,
   });
 
