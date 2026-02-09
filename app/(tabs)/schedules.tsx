@@ -41,8 +41,10 @@ const useShiftInfiniteQuery = (
       }
       return undefined;
     },
-    refetchInterval: 30 * 60 * 1000,
-    refetchIntervalInBackground: true,
+    refetchInterval: 30 * 60 * 1000, // Refetch every 30 minutes.
+    refetchIntervalInBackground: true, //Keeps refetching even if the app is in the background.
+    gcTime: 1000 * 60 * 60, // Collect garbage and remove data from cache after 1 hour of inactivity
+    staleTime: 1000 * 60 * 60 * 24, //Data is considered fresh for 24 hours
   });
 };
 
@@ -191,6 +193,7 @@ export default function Schedules() {
                 let data: IShift[] = [];
                 let refetchFn = undefined as undefined | (() => Promise<any>);
                 let isError = false;
+                let shiftError: any = null;
                 let isFetchingNextPage = false;
                 let hasNextPage = false;
                 let fetchNextPage: undefined | (() => Promise<any>) = undefined;
@@ -203,6 +206,7 @@ export default function Schedules() {
                         (page) => page?.data?.shifts?.data ?? [],
                       ) || [];
                     isError = pastQuery.isError;
+                    shiftError = pastQuery.error;
                     refetchFn = pastQuery.refetch;
                     isFetchingNextPage = pastQuery.isFetchingNextPage;
                     hasNextPage = !!pastQuery.hasNextPage;
@@ -216,6 +220,7 @@ export default function Schedules() {
                         (page) => page?.data?.shifts?.data ?? [],
                       ) || [];
                     isError = runningQuery.isError;
+                    shiftError = runningQuery.error;
                     refetchFn = runningQuery.refetch;
                     isFetchingNextPage = runningQuery.isFetchingNextPage;
                     hasNextPage = !!runningQuery.hasNextPage;
@@ -229,6 +234,7 @@ export default function Schedules() {
                         (page) => page?.data?.shifts?.data ?? [],
                       ) || [];
                     isError = scheduledQuery.isError;
+                    shiftError = scheduledQuery.error;
                     refetchFn = scheduledQuery.refetch;
                     isFetchingNextPage = scheduledQuery.isFetchingNextPage;
                     hasNextPage = !!scheduledQuery.hasNextPage;
@@ -242,6 +248,7 @@ export default function Schedules() {
                         (page) => page?.data?.shifts?.data ?? [],
                       ) || [];
                     isError = cancelledQuery.isError;
+                    shiftError = cancelledQuery.error;
                     refetchFn = cancelledQuery.refetch;
                     isFetchingNextPage = cancelledQuery.isFetchingNextPage;
                     hasNextPage = !!cancelledQuery.hasNextPage;
@@ -255,6 +262,7 @@ export default function Schedules() {
                         (page) => page?.data?.shifts?.data ?? [],
                       ) || [];
                     isError = transferedQuery.isError;
+                    shiftError = transferedQuery.error;
                     refetchFn = transferedQuery.refetch;
                     isFetchingNextPage = transferedQuery.isFetchingNextPage;
                     hasNextPage = !!transferedQuery.hasNextPage;
@@ -268,6 +276,7 @@ export default function Schedules() {
                         (page) => page?.data?.shifts?.data ?? [],
                       ) || [];
                     isError = completedQuery.isError;
+                    shiftError = completedQuery.error;
                     refetchFn = completedQuery.refetch;
                     isFetchingNextPage = completedQuery.isFetchingNextPage;
                     hasNextPage = !!completedQuery.hasNextPage;
@@ -347,7 +356,19 @@ export default function Schedules() {
                         <Text style={{ textTransform: "lowercase" }}>
                           {status}
                         </Text>{" "}
-                        shifts. Please pull to refresh or try again later.
+                        shifts. Please pull to refresh or try again later. (
+                        {shiftError instanceof Error && (
+                          <Text
+                            style={{
+                              fontSize: 13,
+                              color: "#818589",
+                              textAlign: "center",
+                            }}
+                          >
+                            {shiftError.message}
+                          </Text>
+                        )}
+                        )
                       </Text>
                       <TouchableOpacity
                         onPress={handlePullToRefresh}

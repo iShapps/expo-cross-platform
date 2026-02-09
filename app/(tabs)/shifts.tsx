@@ -18,6 +18,7 @@ export default function Shifts() {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
+    error: shiftError,
   } = useInfiniteQuery({
     queryKey: ["pending-shifts"],
     queryFn: ({ pageParam = 1 }) => postPendingShifts(pageParam),
@@ -32,6 +33,8 @@ export default function Shifts() {
     },
     refetchInterval: 30 * 60 * 1000, // 30 minutes
     refetchIntervalInBackground: true,
+    gcTime: 1000 * 60 * 60,
+    staleTime: 1000 * 60 * 60 * 24,
   });
 
   const shifts =
@@ -163,7 +166,19 @@ export default function Shifts() {
               }}
             >
               Something went wrong while fetching shifts. Please pull to refresh
-              or try again later.
+              or try again later. (
+              {shiftError instanceof Error && (
+                <Text
+                  style={{
+                    fontSize: 13,
+                    color: "#818589",
+                    textAlign: "center",
+                  }}
+                >
+                  {shiftError.message}
+                </Text>
+              )}
+              )
             </Text>
             <Pressable
               onPress={handlePullToRefresh}
