@@ -114,6 +114,11 @@ export default function HomeScreen() {
   const { data: dashboard, isLoading } = useQuery<DashboardResponse>({
     queryKey: ["dashboard"],
     queryFn: fetchDashboard,
+    gcTime: 1000 * 60 * 60, // 1 hour
+    staleTime: 1000 * 60 * 60 * 24, // 1 day
+    refetchInterval: 30 * 60 * 1000,
+    refetchIntervalInBackground: true,
+    enabled: !!userDetails?.id,
   });
   const notificationsLoading = isLoading; // Replace with actual loading state
 
