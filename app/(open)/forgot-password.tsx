@@ -10,10 +10,12 @@ import AntDesign from "@expo/vector-icons/AntDesign";
 import Entypo from "@expo/vector-icons/Entypo";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { Link, useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Animated,
+  Easing,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -38,6 +40,23 @@ export default function ForgotPassword() {
   const [isResetting, setIsResetting] = useState(false);
   const { otp, handleChange, handleComplete } = useOTPInput(6);
 
+  const spinAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (isLoading) {
+      Animated.loop(
+        Animated.timing(spinAnim, {
+          toValue: 1,
+          duration: 800,
+          easing: Easing.linear,
+          useNativeDriver: true,
+        }),
+      ).start();
+    } else {
+      spinAnim.stopAnimation();
+      spinAnim.setValue(0);
+    }
+  }, [isLoading, spinAnim]);
   // Send reset code to email
   const handleSendResetCode = async () => {
     if (isLoading) return;
@@ -52,7 +71,8 @@ export default function ForgotPassword() {
         [
           {
             text: "OK",
-            onPress: () => setShowModal(true),
+            // onPress: () => setShowModal(true),
+            onPress: () => router.replace("/(open)/login"),
           },
         ],
       );
@@ -358,11 +378,26 @@ export default function ForgotPassword() {
               style={[styles.button, isLoading && styles.buttonDisabled]}
               disabled={isLoading}
             >
-              {isLoading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.buttonText}>Send reset code</Text>
+              {isLoading && (
+                <Animated.View
+                  style={{
+                    marginRight: 10,
+                    transform: [
+                      {
+                        rotate: spinAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: ["0deg", "360deg"],
+                        }),
+                      },
+                    ],
+                  }}
+                >
+                  <AntDesign name="loading-3-quarters" size={20} color="#fff" />
+                </Animated.View>
               )}
+              <Text style={styles.buttonText}>
+                {isLoading ? "sending reset code...." : "Reset password"}
+              </Text>
             </TouchableOpacity>
           )}
 
@@ -642,6 +677,9 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     alignItems: "center",
     marginTop: 6,
+    display: "flex",
+    flexDirection: "row",
+    justifyContent: "center",
   },
 
   buttonDisabled: {
