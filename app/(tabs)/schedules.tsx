@@ -125,11 +125,10 @@ export default function Schedules() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <View style={styles.header}>
+        <Text style={styles.title}>Schedule</Text>
+      </View>
       <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Schedules</Text>
-          <View style={styles.underline} />
-        </View>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -495,15 +494,23 @@ const styles = StyleSheet.create({
   },
   safeArea: {
     flex: 1,
-    backgroundColor: "#ffffff",
+    backgroundColor: "#70C601",
   },
   header: {
-    marginBottom: 12,
+    display: "flex",
+    flexDirection: "column",
+    gap: 4,
+    backgroundColor: "#70C601",
+    width: "100%",
+    margin: 8,
+    paddingHorizontal: 12,
+    paddingTop: 12,
+    paddingBottom: 8,
   },
   title: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#111",
+    color: "#ffffff",
   },
   underline: {
     height: 3,
