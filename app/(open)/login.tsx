@@ -185,7 +185,7 @@ export default function Login() {
                 marginBottom: 10,
               }}
             >
-              Login
+              LoginTEST
             </Text>
             <Text
               style={{
@@ -194,7 +194,7 @@ export default function Login() {
               }}
             >
               Login to securely access your account and manage your shifts
-              anytime.
+              anytime....
             </Text>
           </View>
 

@@ -1,13 +1,13 @@
-import Entypo from "@expo/vector-icons/Entypo";
-import { Checkbox } from "expo-checkbox";
-// import { Image } from "expo-image";
 import {
   authenticateWithBiometrics,
   isBiometricAvailable,
 } from "@/utils/biometrics";
 import AntDesign from "@expo/vector-icons/AntDesign";
+import Entypo from "@expo/vector-icons/Entypo";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import { Checkbox } from "expo-checkbox";
+import { Image } from "expo-image";
 import { Link } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import { useEffect, useRef, useState } from "react";
@@ -165,15 +165,22 @@ export default function Login() {
         style={{
           backgroundColor: "#70C601",
           flex: 1,
+          justifyContent: "flex-start",
+          alignItems: "center",
         }}
       >
-        <View style={styles.topContainer}></View>
-        <View style={styles.topAbsContainer}>
+        <Image
+          source={require("@/assets/images/careworker2.jpg")}
+          style={{ width: "100%", height: "60%", opacity: 0.5 }}
+          contentFit="cover"
+        />
+        {/* <View style={styles.topContainer}></View> */}
+        {/* <View style={styles.topAbsContainer}>
           <View style={styles.topAbsContainerLeft}></View>
           <View style={styles.topAbsContainerRight}>
             <View style={styles.innerContainer}></View>
           </View>
-        </View>
+        </View> */}
 
         <View style={styles.bottomContainer}>
           <View style={{ marginBottom: 20, marginTop: 10 }}>
@@ -401,16 +408,22 @@ const styles = StyleSheet.create({
     height: "10%",
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: "#4c5481",
   },
   bottomContainer: {
     flex: 1,
     width: "100%",
     height: "auto",
+    minHeight: "60%",
     backgroundColor: "#ffffff",
     // justifyContent: "center",
     paddingVertical: 20,
     paddingHorizontal: 20,
-    borderTopLeftRadius: 55,
+    borderTopRightRadius: 30,
+    borderTopLeftRadius: 30,
+    zIndex: 10,
+    position: "absolute",
+    bottom: 0,
   },
   image: {
     width: 120,
@@ -423,6 +436,7 @@ const styles = StyleSheet.create({
     width: "100%",
     display: "flex",
     flexDirection: "row",
+    backgroundColor: "#4601c6",
   },
   topAbsContainerLeft: {
     backgroundColor: "#70C601",
