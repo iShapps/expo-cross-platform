@@ -9,11 +9,11 @@ import { Image } from "expo-image";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
+  Pressable,
   ScrollView,
   StyleSheet,
   Switch,
   Text,
-  TouchableOpacity,
   View,
 } from "react-native";
 import { useSession } from "../ctx";
@@ -34,19 +34,16 @@ export default function More() {
   return (
     <View style={styles.container}>
       <View style={styles.topBarContainer}>
-        <TouchableOpacity
+        <Pressable
           onPress={() => router.back()}
           style={styles.backIconContainer}
         >
           <Fontisto name="arrow-left-l" size={15} color="black" />
-        </TouchableOpacity>
+        </Pressable>
         <Text style={styles.locationText}>Profile</Text>
-        <TouchableOpacity
-          onPress={handleLogout}
-          style={styles.backIconContainer}
-        >
+        <Pressable onPress={handleLogout} style={styles.backIconContainer}>
           <AntDesign name="login" size={15} color="black" />
-        </TouchableOpacity>
+        </Pressable>
       </View>
       <ScrollView
         style={styles.scroll}
@@ -108,7 +105,7 @@ export default function More() {
           </View>
         </View>
         <View style={styles.linksSection}>
-          <TouchableOpacity
+          <Pressable
             onPress={() => router.push("/(tabs)/account")}
             style={styles.profileLinks}
           >
@@ -125,8 +122,8 @@ export default function More() {
               size={24}
               color="#70C601"
             />
-          </TouchableOpacity>
-          <TouchableOpacity
+          </Pressable>
+          <Pressable
             onPress={() => router.push("/(tabs)/facilities")}
             style={styles.profileLinks}
           >
@@ -143,8 +140,8 @@ export default function More() {
               size={24}
               color="#70C601"
             />
-          </TouchableOpacity>
-          <TouchableOpacity
+          </Pressable>
+          <Pressable
             onPress={() => router.push("/(tabs)/interviews")}
             style={styles.profileLinks}
           >
@@ -161,8 +158,8 @@ export default function More() {
               size={24}
               color="#70C601"
             />
-          </TouchableOpacity>
-          <TouchableOpacity
+          </Pressable>
+          <Pressable
             onPress={() => router.push("/(tabs)/settings")}
             style={styles.profileLinks}
           >
@@ -175,7 +172,7 @@ export default function More() {
               size={24}
               color="#70C601"
             />
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </ScrollView>
     </View>

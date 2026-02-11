@@ -1,22 +1,20 @@
 import Fontisto from "@expo/vector-icons/Fontisto";
 import { router } from "expo-router";
 import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 export default function SettingsScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.topBarContainer}>
-        <TouchableOpacity
-          onPress={() => router.replace("/(tabs)/more")}
+        <Pressable
+          onPress={() => router.canGoBack() && router.back()}
           style={styles.backIconContainer}
         >
           <Fontisto name="arrow-left-l" size={15} color="black" />
-        </TouchableOpacity>
+        </Pressable>
         <Text style={styles.locationText}>Settings</Text>
-        <TouchableOpacity
-          style={styles.faintbackIconContainer}
-        ></TouchableOpacity>
+        <Pressable style={styles.faintbackIconContainer}></Pressable>
       </View>
 
       <View style={styles.linksContainer}></View>

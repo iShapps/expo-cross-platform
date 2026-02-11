@@ -2,13 +2,7 @@ import Entypo from "@expo/vector-icons/Entypo";
 import Fontisto from "@expo/vector-icons/Fontisto";
 import { router } from "expo-router";
 import React, { useState } from "react";
-import {
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
 export default function ChangePasswordScreen() {
   const [currentPassword, setCurrentPassword] = useState("");
@@ -21,16 +15,14 @@ export default function ChangePasswordScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.topBarContainer}>
-        <TouchableOpacity
-          onPress={() => router.replace("/(tabs)/account")}
+        <Pressable
+          onPress={() => router.canGoBack() && router.back()}
           style={styles.backIconContainer}
         >
           <Fontisto name="arrow-left-l" size={15} color="black" />
-        </TouchableOpacity>
+        </Pressable>
         <Text style={styles.locationText}>Change Password</Text>
-        <TouchableOpacity
-          style={styles.faintbackIconContainer}
-        ></TouchableOpacity>
+        <Pressable style={styles.faintbackIconContainer}></Pressable>
       </View>
 
       <View style={styles.formCard}>
@@ -54,7 +46,7 @@ export default function ChangePasswordScreen() {
               cursorColor="#70C601"
               style={{ flex: 1 }}
             />
-            <TouchableOpacity
+            <Pressable
               onPress={() => setShowCurrentPassword(!showCurrentPassword)}
             >
               {showCurrentPassword ? (
@@ -62,7 +54,7 @@ export default function ChangePasswordScreen() {
               ) : (
                 <Entypo name="eye-with-line" size={20} color="#7393B3" />
               )}
-            </TouchableOpacity>
+            </Pressable>
           </View>
         </View>
 
@@ -86,15 +78,13 @@ export default function ChangePasswordScreen() {
               cursorColor="#70C601"
               style={{ flex: 1 }}
             />
-            <TouchableOpacity
-              onPress={() => setShowNewPassword(!showNewPassword)}
-            >
+            <Pressable onPress={() => setShowNewPassword(!showNewPassword)}>
               {showNewPassword ? (
                 <Entypo name="eye" size={20} color="#7393B3" />
               ) : (
                 <Entypo name="eye-with-line" size={20} color="#7393B3" />
               )}
-            </TouchableOpacity>
+            </Pressable>
           </View>
         </View>
 
@@ -118,7 +108,7 @@ export default function ChangePasswordScreen() {
               cursorColor="#70C601"
               style={{ flex: 1 }}
             />
-            <TouchableOpacity
+            <Pressable
               onPress={() => setShowConfirmPassword(!showConfirmPassword)}
             >
               {showConfirmPassword ? (
@@ -126,13 +116,13 @@ export default function ChangePasswordScreen() {
               ) : (
                 <Entypo name="eye-with-line" size={20} color="#7393B3" />
               )}
-            </TouchableOpacity>
+            </Pressable>
           </View>
         </View>
 
-        <TouchableOpacity style={styles.primaryButton} activeOpacity={0.8}>
+        <Pressable style={styles.primaryButton}>
           <Text style={styles.primaryButtonText}>Update Password</Text>
-        </TouchableOpacity>
+        </Pressable>
       </View>
     </View>
   );

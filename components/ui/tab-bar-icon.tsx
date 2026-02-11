@@ -5,6 +5,7 @@ import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import Octicons from "@expo/vector-icons/Octicons";
 
 import { type ComponentProps } from "react";
 
@@ -60,4 +61,11 @@ export function TabBarFAFiveWIcon({
   return (
     <FontAwesome5 size={28} style={[{ marginBottom: -3 }, style]} {...rest} />
   );
+}
+
+export function TabBarOctIcon({
+  style,
+  ...rest
+}: IconProps<ComponentProps<typeof Octicons>["name"]>) {
+  return <Octicons size={28} style={[{ marginBottom: -3 }, style]} {...rest} />;
 }

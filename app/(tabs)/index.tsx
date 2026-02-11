@@ -1,11 +1,15 @@
 import { fetchDashboard } from "@/api-queries/fetchers";
 import { NotificationCard } from "@/components/notification-card";
+import {
+  NotificationCardSkeleton
+} from "@/components/skeletons";
 import { useProfileData } from "@/data-store/use-account-store";
 import {
   DashboardResponse,
   Notification,
   Payrun,
 } from "@/data-types/dashboard";
+import { usePushNotifications } from "@/hooks/use-push-notifications";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useQuery } from "@tanstack/react-query";
@@ -14,6 +18,7 @@ import { router } from "expo-router";
 
 import {
   FlatList,
+  Pressable,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -21,6 +26,9 @@ import {
 } from "react-native";
 
 export default function HomeScreen() {
+  const { expoPushToken, notification } = usePushNotifications();
+  console.log("expoPushToken", expoPushToken);
+  console.log("notification", notification);
   const profileStore = useProfileData();
   const userDetails = profileStore.userDetails;
   const sample_payruns: Payrun[] = [
@@ -106,10 +114,17 @@ export default function HomeScreen() {
     },
   ];
   const currentPayrun = sample_payruns[0];
-  const { data: dashboard } = useQuery<DashboardResponse>({
+  const { data: dashboard, isLoading } = useQuery<DashboardResponse>({
     queryKey: ["dashboard"],
     queryFn: fetchDashboard,
+    gcTime: 1000 * 60 * 60, // 1 hour
+    staleTime: 1000 * 60 * 60 * 24, // 1 day
+    refetchInterval: 30 * 60 * 1000,
+    refetchIntervalInBackground: true,
+    enabled: !!userDetails?.id,
   });
+  const notificationsLoading = isLoading; // Replace with actual loading state
+
   const dashboardData = dashboard?.data;
   const availableShifts = dashboardData?.available_shifts ?? 0;
   const scheduledShifts = dashboardData?.scheduled_shifts ?? 0;
@@ -150,19 +165,21 @@ export default function HomeScreen() {
           <View style={{ display: "flex", flexDirection: "column", gap: 3 }}>
             <Text style={styles.headerTitle}>{userDetails?.name}</Text>
             <View style={{ display: "flex", flexDirection: "row", gap: 5 }}>
-              <FontAwesome6 name="location-dot" size={16} color="#FFC107" />
+              <FontAwesome6 name="briefcase" size={16} color="#FFC107" />
               <Text style={styles.headerSubtitle}>
-                {userDetails?.hcp?.address}
+                {userDetails?.hcp?.hcp_professions[0]?.profession?.name} -{" "}
+                {userDetails?.hcp?.hcp_professions[0]?.category?.name} -{" "}
+                {userDetails?.hcp?.hcp_professions[0]?.level?.name}
               </Text>
             </View>
           </View>
-          <TouchableOpacity
+          <Pressable
             onPress={() => router.push("/(tabs)/notifications")}
             style={styles.notificationContainer}
           >
             <MaterialIcons name="notifications" size={20} color="#fff" />
             <View style={styles.notificationDot} />
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </View>
 
@@ -236,9 +253,22 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
         <FlatList
-          data={sample_notifications}
-          renderItem={({ item }) => <NotificationCard notification={item} />}
-          keyExtractor={(item) => item.id}
+          // data={sample_notifications}
+          // renderItem={({ item }) => <NotificationCard notification={item} />}
+          // keyExtractor={(item) => item.id}
+          data={
+            notificationsLoading
+              ? ([1, 2] as unknown as Notification[])
+              : sample_notifications
+          }
+          renderItem={
+            notificationsLoading
+              ? () => <NotificationCardSkeleton />
+              : ({ item }) => <NotificationCard notification={item} />
+          }
+          keyExtractor={(item, idx) =>
+            notificationsLoading ? String(idx) : item.id
+          }
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.mainLandingContent}
           ListHeaderComponent={<></>}
