@@ -1,8 +1,6 @@
 import { fetchDashboard } from "@/api-queries/fetchers";
 import { NotificationCard } from "@/components/notification-card";
-import {
-  NotificationCardSkeleton
-} from "@/components/skeletons";
+import { NotificationCardSkeleton } from "@/components/skeletons";
 import { useProfileData } from "@/data-store/use-account-store";
 import {
   DashboardResponse,
@@ -395,7 +393,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 12,
     borderWidth: 1,
-    width: "31.5%",
+    width: "31%",
     minHeight: 110,
     // shadowColor: "#000",
     // shadowOffset: { width: 0, height: 4 },
