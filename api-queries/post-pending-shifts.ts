@@ -27,7 +27,7 @@ export async function postScheduledShifts(page = 1): Promise<IShiftResponse> {
 
 export async function postRunningShifts(page = 1): Promise<IShiftResponse> {
   return postResource<{ shift_status: string; page: number }, IShiftResponse>(
-    "/shifts",
+    "/shift",
     {
       shift_status: "running",
       page,

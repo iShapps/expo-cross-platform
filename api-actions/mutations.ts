@@ -55,6 +55,10 @@ async function authorizedMutation<Req, Res>(
       );
     }
     if (!response.ok) {
+      console.error("API error response:", {
+        status: response.status,
+        body: data,
+      });
       const apiMessage =
         isObject(data) &&
         (typeof data.message === "string" ? data.message : data.error)
@@ -80,6 +84,8 @@ async function authorizedMutation<Req, Res>(
         data,
       );
     }
+
+    console.log("API response:", data);
     // return (
     //   "data" in data && data.data !== undefined ? data.data : data
     // ) as Res;
