@@ -193,3 +193,9 @@ export interface IShiftDetailResponse {
     shift: IShift;
   };
 }
+
+export interface IShiftActionResponse {
+  status: boolean;
+  message: string;
+  data?: unknown;
+}

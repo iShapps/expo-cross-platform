@@ -31,15 +31,17 @@ export function useLocation() {
       const granted =
         permissionStatus === "granted" ? true : await requestPermission();
 
-      if (!granted) return;
+      if (!granted) return null;
 
       const currentLocation = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.High,
       });
 
       setLocation(currentLocation);
+      return currentLocation;
     } catch (error) {
       setErrorMsg("Failed to fetch location");
+      return null;
     } finally {
       setLoading(false);
     }

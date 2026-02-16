@@ -1,14 +1,28 @@
+import {
+  postAcceptShift,
+  postEndShift,
+  postShiftTracking,
+  postStartShift,
+} from "@/api-queries/post-pending-shifts";
 import { postShiftDetails } from "@/api-queries/shifts";
 import { ShiftType, ShiftTypePill } from "@/components/shift-type-pill";
 import { ShiftDetailsSkeleton } from "@/components/skeletons";
 import { IShift } from "@/data-types/shifts";
+import { useLocation } from "@/hooks/use-location";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import Feather from "@expo/vector-icons/Feather";
 import Fontisto from "@expo/vector-icons/Fontisto";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  Alert,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
 const iconMap: Record<string, { name: string; bg: string; color: string }> = {
   "Afternoon start": {
@@ -150,6 +164,11 @@ export default function ShiftDetails() {
   const router = useRouter();
   // receive shiftId from params
   const { shiftId } = useLocalSearchParams();
+  const {
+    getCurrentLocation,
+    loading: locationLoading,
+    errorMsg,
+  } = useLocation();
 
   const {
     data,
@@ -170,6 +189,118 @@ export default function ShiftDetails() {
   });
 
   const shift = data?.data?.shift as IShift;
+  const shiftStatus = Number(shift?.shift_status);
+
+  const acceptShiftMutation = useMutation({
+    mutationFn: (id: number) => postAcceptShift(id),
+  });
+  const startShiftMutation = useMutation({
+    mutationFn: (id: number) => postStartShift(id),
+  });
+  const endShiftMutation = useMutation({
+    mutationFn: (id: number) => postEndShift(id),
+  });
+  const trackingMutation = useMutation({
+    mutationFn: (params: {
+      shift_id: number;
+      facility_id: number;
+      latitude: number;
+      longitude: number;
+    }) => postShiftTracking(params),
+  });
+
+  const isAccepting = acceptShiftMutation.isPending;
+  const isStarting =
+    locationLoading ||
+    trackingMutation.isPending ||
+    startShiftMutation.isPending;
+  const isEnding = endShiftMutation.isPending;
+  const isBusy = isAccepting || isStarting || isEnding;
+
+  const showAlert = (title: string, message?: string) => {
+    Alert.alert(title, message || "Something went wrong.", [{ text: "OK" }]);
+  };
+
+  const handleAcceptShift = async () => {
+    if (!shift?.id) return;
+    try {
+      const response = await acceptShiftMutation.mutateAsync(shift.id);
+      if (!response.status) {
+        showAlert("Shift not accepted", response.message);
+        return;
+      }
+      showAlert("Success", response.message);
+      await refetch();
+    } catch (error) {
+      showAlert(
+        "Error",
+        error instanceof Error ? error.message : "Failed to accept shift.",
+      );
+    }
+  };
+
+  const handleStartShift = async () => {
+    if (!shift?.id) return;
+    try {
+      const currentLocation = await getCurrentLocation();
+      if (!currentLocation) {
+        showAlert("Location Error", errorMsg || "Unable to fetch location.");
+        return;
+      }
+      const facilityId = shift?.facility?.id ?? shift?.facility_id;
+      if (!facilityId) {
+        showAlert("Error", "Missing facility information.");
+        return;
+      }
+      console.log({
+        shift_id: shift.id,
+        facility_id: facilityId,
+        latitude: currentLocation.coords.latitude,
+        longitude: currentLocation.coords.longitude,
+      });
+
+      const trackingResponse = await trackingMutation.mutateAsync({
+        shift_id: shift.id,
+        facility_id: facilityId,
+        latitude: currentLocation.coords.latitude,
+        longitude: currentLocation.coords.longitude,
+      });
+      if (!trackingResponse.status) {
+        showAlert("Shift not started", trackingResponse.message);
+        return;
+      }
+      const startResponse = await startShiftMutation.mutateAsync(shift.id);
+      if (!startResponse.status) {
+        showAlert("Shift not started", startResponse.message);
+        return;
+      }
+      showAlert("Success", startResponse.message);
+      await refetch();
+    } catch (error) {
+      showAlert(
+        "Error",
+        error instanceof Error ? error.message : "Failed to start shift.",
+      );
+    }
+  };
+
+  const handleEndShift = async () => {
+    if (!shift?.id) return;
+    try {
+      const response = await endShiftMutation.mutateAsync(shift.id);
+      if (!response.status) {
+        showAlert("Shift not ended", response.message);
+        return;
+      }
+      showAlert("Success", response.message);
+      await refetch();
+    } catch (error) {
+      showAlert(
+        "Error",
+        error instanceof Error ? error.message : "Failed to end shift.",
+      );
+    }
+  };
 
   const handleRefetch = async () => {
     await refetch();
@@ -229,10 +360,63 @@ export default function ShiftDetails() {
           <Text style={styles.locationText}>Shift Details</Text>
           <Pressable style={styles.faintbackIconContainer}></Pressable>
         </View>
+
         <ScrollView
           contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}
         >
+          {(shiftStatus === 0 || shiftStatus === 1 || shiftStatus === 2) && (
+            <View style={styles.actionBarTop}>
+              {shiftStatus === 0 && (
+                <Pressable
+                  onPress={handleAcceptShift}
+                  disabled={isBusy}
+                  style={({ pressed }) => [
+                    styles.actionButton,
+                    styles.actionButtonAccept,
+                    pressed && styles.actionButtonPressed,
+                    isBusy && styles.actionButtonDisabled,
+                  ]}
+                >
+                  <Text style={styles.actionButtonText}>
+                    {isAccepting ? "Processing..." : "Accept Shift"}
+                  </Text>
+                </Pressable>
+              )}
+              {shiftStatus === 1 && (
+                <Pressable
+                  onPress={handleStartShift}
+                  disabled={isBusy}
+                  style={({ pressed }) => [
+                    styles.actionButton,
+                    styles.actionButtonStart,
+                    pressed && styles.actionButtonPressed,
+                    isBusy && styles.actionButtonDisabled,
+                  ]}
+                >
+                  <Text style={styles.actionButtonText}>
+                    {isStarting ? "Processing..." : "Start Shift"}
+                  </Text>
+                </Pressable>
+              )}
+              {shiftStatus === 2 && (
+                <Pressable
+                  onPress={handleEndShift}
+                  disabled={isBusy}
+                  style={({ pressed }) => [
+                    styles.actionButton,
+                    styles.actionButtonEnd,
+                    pressed && styles.actionButtonPressed,
+                    isBusy && styles.actionButtonDisabled,
+                  ]}
+                >
+                  <Text style={styles.actionButtonText}>
+                    {isEnding ? "Processing..." : "End Shift"}
+                  </Text>
+                </Pressable>
+              )}
+            </View>
+          )}
           <View style={styles.heroCard}>
             <View style={styles.heroIconWrap}>
               <MaterialCommunityIcons
@@ -471,6 +655,49 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     paddingHorizontal: 10,
     // flex: 1,
+  },
+  actionBarTop: {
+    paddingHorizontal: 12,
+    paddingBottom: 12,
+    paddingTop: 4,
+    backgroundColor: "#ffffff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#E6F0D8",
+  },
+  actionButton: {
+    borderRadius: 999,
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#E6F0D8",
+    shadowColor: "#70C601",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.22,
+    shadowRadius: 14,
+    elevation: 5,
+  },
+  actionButtonPressed: {
+    transform: [{ scale: 0.98 }],
+  },
+  actionButtonDisabled: {
+    opacity: 0.6,
+  },
+  actionButtonText: {
+    color: "#ffffff",
+    fontSize: 16,
+    fontWeight: "700",
+    letterSpacing: 0.4,
+  },
+  actionButtonAccept: {
+    backgroundColor: "#70C601",
+  },
+  actionButtonStart: {
+    backgroundColor: "#4CAF50",
+  },
+  actionButtonEnd: {
+    backgroundColor: "#E55353",
   },
   heroCard: {
     marginTop: 8,

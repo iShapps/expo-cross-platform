@@ -1,5 +1,5 @@
 import { postResource } from "@/api-actions/mutations";
-import { IShiftResponse } from "@/data-types/shifts";
+import { IShiftActionResponse, IShiftResponse } from "@/data-types/shifts";
 
 export async function postPendingShifts(page = 1): Promise<IShiftResponse> {
   return postResource<{ shift_status: string; page: number }, IShiftResponse>(
@@ -68,5 +68,44 @@ export async function postCancelledShifts(page = 1): Promise<IShiftResponse> {
       shift_status: "cancelled",
       page,
     },
+  );
+}
+
+export async function postAcceptShift(
+  shift_id: number,
+): Promise<IShiftActionResponse> {
+  return postResource<{ shift_id: number }, IShiftActionResponse>(
+    "/shift/accept",
+    { shift_id },
+  );
+}
+
+export async function postShiftTracking(params: {
+  shift_id: number;
+  facility_id: number;
+  latitude: number;
+  longitude: number;
+}): Promise<IShiftActionResponse> {
+  return postResource<typeof params, IShiftActionResponse>(
+    "/shift/shift-tracking",
+    params,
+  );
+}
+
+export async function postStartShift(
+  shift_id: number,
+): Promise<IShiftActionResponse> {
+  return postResource<{ shift_id: number }, IShiftActionResponse>(
+    "/shift/start",
+    { shift_id },
+  );
+}
+
+export async function postEndShift(
+  shift_id: number,
+): Promise<IShiftActionResponse> {
+  return postResource<{ shift_id: number }, IShiftActionResponse>(
+    "/shift/end",
+    { shift_id },
   );
 }
