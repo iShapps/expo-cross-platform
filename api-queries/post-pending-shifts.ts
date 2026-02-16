@@ -5,15 +5,13 @@ export async function postPendingShifts(page = 1): Promise<IShiftResponse> {
   return postResource<{ shift_status: string; page: number }, IShiftResponse>(
     "/shift",
     {
-      shift_status: "pending",
+      shift_status: "available", //pending
       page,
     },
   );
 }
 
-export async function postScheduledShifts(
-  page = 1,
-): Promise<IShiftResponse> {
+export async function postScheduledShifts(page = 1): Promise<IShiftResponse> {
   return postResource<{ shift_status: string; page: number }, IShiftResponse>(
     "/shift",
     {
@@ -23,9 +21,7 @@ export async function postScheduledShifts(
   );
 }
 
-export async function postRunningShifts(
-  page = 1,
-): Promise<IShiftResponse> {
+export async function postRunningShifts(page = 1): Promise<IShiftResponse> {
   return postResource<{ shift_status: string; page: number }, IShiftResponse>(
     "/shifts",
     {
@@ -35,9 +31,7 @@ export async function postRunningShifts(
   );
 }
 
-export async function postTransferedShifts(
-  page = 1,
-): Promise<IShiftResponse> {
+export async function postTransferedShifts(page = 1): Promise<IShiftResponse> {
   return postResource<{ shift_status: string; page: number }, IShiftResponse>(
     "/shift",
     {
@@ -47,9 +41,7 @@ export async function postTransferedShifts(
   );
 }
 
-export async function postPastShifts(
-  page = 1,
-): Promise<IShiftResponse> {
+export async function postPastShifts(page = 1): Promise<IShiftResponse> {
   return postResource<{ shift_status: string; page: number }, IShiftResponse>(
     "/shift",
     {
@@ -59,9 +51,7 @@ export async function postPastShifts(
   );
 }
 
-export async function postCompletedShifts(
-  page = 1,
-): Promise<IShiftResponse> {
+export async function postCompletedShifts(page = 1): Promise<IShiftResponse> {
   return postResource<{ shift_status: string; page: number }, IShiftResponse>(
     "/shift",
     {
@@ -71,9 +61,7 @@ export async function postCompletedShifts(
   );
 }
 
-export async function postCancelledShifts(
-  page = 1,
-): Promise<IShiftResponse> {
+export async function postCancelledShifts(page = 1): Promise<IShiftResponse> {
   return postResource<{ shift_status: string; page: number }, IShiftResponse>(
     "/shift",
     {

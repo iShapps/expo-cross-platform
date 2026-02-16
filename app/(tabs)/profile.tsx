@@ -32,7 +32,7 @@ export default function ProfileScreen() {
           onPress={() => router.canGoBack() && router.back()}
           style={styles.backIconContainer}
         >
-          <Fontisto name="arrow-left-l" size={15} color="black" />
+          <Fontisto name="arrow-left-l" size={15} color="white" />
         </Pressable>
         <Text style={styles.locationText}>Profile</Text>
         <Pressable style={styles.faintbackIconContainer}></Pressable>
@@ -202,15 +202,11 @@ const styles = StyleSheet.create({
     flex: 1,
     height: "100%",
     width: "100%",
-    backgroundColor: "#ffffff",
+    backgroundColor: "#70C601",
     display: "flex",
     flexDirection: "column",
-    gap: 30,
-    // justifyContent:"center",
-    // alignContent:"center",
-    // alignItems:"center",
-    paddingHorizontal: 10,
-    paddingVertical: 60,
+    gap: 20,
+    paddingVertical: 50,
   },
   topBarContainer: {
     display: "flex",
@@ -219,16 +215,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     gap: 25,
+    backgroundColor: "#70C601",
+    paddingHorizontal: 10,
   },
 
   locationText: {
     fontFamily: "Roboto",
     fontSize: 18,
     fontWeight: "700",
+    color: "#ffffff",
   },
   content: {
-    paddingHorizontal: 0,
+    paddingHorizontal: 10,
     paddingBottom: 32,
+    backgroundColor: "#fff",
   },
   headerRow: {
     flexDirection: "row",
@@ -264,7 +264,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 2,
     borderWidth: 1,
-    borderColor: "#fff",
+    borderColor: "#70C601",
   },
   backSpacer: {
     width: 52,

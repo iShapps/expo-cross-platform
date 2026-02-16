@@ -31,14 +31,60 @@ const iconMap: Record<string, { name: string; bg: string; color: string }> = {
   "Morning end": { name: "weather-sunset-up", bg: "#FFFDE7", color: "#FFD600" },
 };
 
+const formatTimeWithAmPm = (time: string | null, baseDate?: Date) => {
+  if (!time) return "--:--";
+  const trimmed = time.trim();
+
+  const formatDate = (date: Date) =>
+    date.toLocaleDateString([], {
+      year: "numeric",
+      month: "short",
+      day: "2-digit",
+    });
+
+  const formatClock = (hours: number, minutes: number) => {
+    const period = hours >= 12 ? "PM" : "AM";
+    const hour12 = hours % 12 || 12;
+    const minuteStr = String(minutes).padStart(2, "0");
+    return `${hour12}:${minuteStr} ${period}`;
+  };
+
+  if (/\b(am|pm)\b/i.test(trimmed)) {
+    return baseDate ? `${formatDate(baseDate)} ${trimmed}` : trimmed;
+  }
+
+  let parsed: Date | null = null;
+
+  if (trimmed.includes("T") || /^\d{4}-\d{2}-\d{2}/.test(trimmed)) {
+    const candidate = new Date(trimmed);
+    if (!Number.isNaN(candidate.getTime())) parsed = candidate;
+  }
+
+  if (!parsed) {
+    const match = trimmed.match(/(\d{1,2}):(\d{2})(?::\d{2})?/);
+    if (match && baseDate) {
+      const hours = Number(match[1]);
+      const minutes = Number(match[2]);
+      const combined = new Date(baseDate);
+      combined.setHours(hours, minutes, 0, 0);
+      parsed = combined;
+    }
+  }
+
+  if (!parsed) return trimmed;
+  return `${formatDate(parsed)} ${formatClock(parsed.getHours(), parsed.getMinutes())}`;
+};
+
 const TimelineItem = ({
   label,
   time,
+  baseDate,
   isFirst,
   isLast,
 }: {
   label: string;
   time: string | null;
+  baseDate?: Date;
   isFirst?: boolean;
   isLast?: boolean;
 }) => {
@@ -92,7 +138,9 @@ const TimelineItem = ({
       </View>
       <View style={styles.timelineContent}>
         <Text style={styles.timelineLabel}>{label}</Text>
-        <Text style={styles.timelineTime}>{time ? time : "--:--"}</Text>
+        <Text style={styles.timelineTime}>
+          {formatTimeWithAmPm(time, baseDate)}
+        </Text>
       </View>
     </View>
   );
@@ -165,7 +213,7 @@ export default function ShiftDetails() {
     );
   }
 
-  const isSleepover = shift?.shift_type === "sleepover";
+  const isSleepover = Boolean(shift?.is_sleepover_shift);
   const startDate = new Date(shift?.start_time);
   const endDate = new Date(shift?.end_time);
   return (
@@ -176,7 +224,7 @@ export default function ShiftDetails() {
             onPress={() => router.canGoBack() && router.back()}
             style={styles.backIconContainer}
           >
-            <Fontisto name="arrow-left-l" size={15} color="black" />
+            <Fontisto name="arrow-left-l" size={15} color="#fff" />
           </Pressable>
           <Text style={styles.locationText}>Shift Details</Text>
           <Pressable style={styles.faintbackIconContainer}></Pressable>
@@ -201,7 +249,13 @@ export default function ShiftDetails() {
               <Text style={styles.heroMeta}>{shift?.state?.name ?? "—"}</Text>
               <View style={styles.chipRow}>
                 {shift?.shift_type && (
-                  <ShiftTypePill type={shift?.shift_type as ShiftType} />
+                  <ShiftTypePill
+                    type={
+                      shift?.is_sleepover_shift
+                        ? "sleepover"
+                        : (shift?.shift_type as ShiftType)
+                    }
+                  />
                 )}
                 {/* <View style={styles.chip}>
                   <Text style={styles.chipText}>
@@ -226,21 +280,32 @@ export default function ShiftDetails() {
                 {startDate.toLocaleTimeString([], {
                   hour: "2-digit",
                   minute: "2-digit",
+                  hour12: true,
                 })}{" "}
                 -{" "}
                 {endDate.toLocaleTimeString([], {
                   hour: "2-digit",
                   minute: "2-digit",
+                  hour12: true,
                 })}
               </Text>
             </View>
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Type</Text>
-              <Text style={styles.detailValue}>{shift?.shift_type}</Text>
+
+              <Text
+                style={{ ...styles.detailValue, textTransform: "capitalize" }}
+              >
+                {shift?.is_sleepover_shift ? "Sleepover" : shift?.shift_type}
+              </Text>
             </View>
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Status</Text>
-              <Text style={styles.detailValue}>{shift?.status}</Text>
+              <Text
+                style={{ ...styles.detailValue, textTransform: "capitalize" }}
+              >
+                {shift?.status}
+              </Text>
             </View>
           </View>
 
@@ -299,27 +364,33 @@ export default function ShiftDetails() {
                 <TimelineItem
                   label="Afternoon start"
                   time={shift?.sleepover_afternoon_start_time}
+                  baseDate={startDate}
                   isFirst
                 />
                 <TimelineItem
                   label="Afternoon end"
                   time={shift?.sleepover_afternoon_end_time}
+                  baseDate={startDate}
                 />
                 <TimelineItem
                   label="Night start"
                   time={shift?.sleepover_night_start_time}
+                  baseDate={startDate}
                 />
                 <TimelineItem
                   label="Night end"
                   time={shift?.sleepover_night_end_time}
+                  baseDate={startDate}
                 />
                 <TimelineItem
                   label="Morning start"
                   time={shift?.sleepover_morning_start_time}
+                  baseDate={startDate}
                 />
                 <TimelineItem
                   label="Morning end"
                   time={shift?.sleepover_morning_end_time}
+                  baseDate={startDate}
                   isLast
                 />
               </View>
@@ -335,13 +406,12 @@ export default function ShiftDetails() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#70C601",
     width: "100%",
     height: "100%",
     display: "flex",
     flexDirection: "column",
-    paddingHorizontal: 10,
-    paddingVertical: 60,
+    paddingVertical: 50,
   },
   backIconContainer: {
     height: 40,
@@ -360,6 +430,7 @@ const styles = StyleSheet.create({
     fontFamily: "Roboto",
     fontSize: 18,
     fontWeight: "700",
+    color: "#fff",
   },
   faintbackIconContainer: {
     height: 40,
@@ -372,13 +443,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 2,
     borderWidth: 1,
-    borderColor: "#fff",
+    borderColor: "#70C601",
   },
   topBarContainer: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     marginBottom: 16,
+    paddingHorizontal: 10,
+    backgroundColor: "#70C601",
   },
   iconCircle: {
     height: 40,
@@ -395,6 +468,9 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingBottom: 32,
+    backgroundColor: "#fff",
+    paddingHorizontal: 10,
+    // flex: 1,
   },
   heroCard: {
     marginTop: 8,
@@ -532,11 +608,13 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#36454F",
     fontWeight: "400",
+    textTransform: "capitalize",
   },
   timelineTime: {
     fontSize: 13,
     color: "#818589",
     fontWeight: "300",
+    textTransform: "capitalize",
   },
   errorScreen: {
     flex: 1,

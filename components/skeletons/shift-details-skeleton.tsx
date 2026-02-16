@@ -195,13 +195,12 @@ export const ShiftDetailsSkeleton: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#70C601",
     width: "100%",
     height: "100%",
     display: "flex",
     flexDirection: "column",
-    paddingHorizontal: 10,
-    paddingVertical: 60,
+    paddingVertical: 50,
   },
   backIconContainer: {
     height: 40,
@@ -220,6 +219,7 @@ const styles = StyleSheet.create({
     fontFamily: "Roboto",
     fontSize: 18,
     fontWeight: "700",
+    color: "#fff",
   },
   faintbackIconContainer: {
     height: 40,
@@ -232,16 +232,21 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 2,
     borderWidth: 1,
-    borderColor: "#fff",
+    borderColor: "#70C601",
   },
   topBarContainer: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     marginBottom: 16,
+    paddingHorizontal: 10,
+    backgroundColor: "#70C601",
   },
   content: {
     paddingBottom: 32,
+    flex: 1,
+    backgroundColor: "#ffffff",
+    paddingHorizontal: 10,
   },
   heroCard: {
     marginTop: 8,
