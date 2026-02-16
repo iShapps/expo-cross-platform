@@ -18,6 +18,7 @@ export default function Shifts() {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
+    error: shiftError,
   } = useInfiniteQuery({
     queryKey: ["pending-shifts"],
     queryFn: ({ pageParam = 1 }) => postPendingShifts(pageParam),
@@ -32,6 +33,8 @@ export default function Shifts() {
     },
     refetchInterval: 30 * 60 * 1000, // 30 minutes
     refetchIntervalInBackground: true,
+    gcTime: 1000 * 60 * 60,
+    staleTime: 1000 * 60 * 60 * 24,
   });
 
   const shifts =
@@ -48,11 +51,10 @@ export default function Shifts() {
   };
   return (
     <SafeAreaView style={styles.safeArea}>
+      <View style={styles.header}>
+        <Text style={styles.title}>Shifts</Text>
+      </View>
       <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Shifts</Text>
-          <View style={styles.underline} />
-        </View>
         <FlatList
           data={isLoading ? [...Array(6)] : shifts}
           renderItem={
@@ -163,7 +165,19 @@ export default function Shifts() {
               }}
             >
               Something went wrong while fetching shifts. Please pull to refresh
-              or try again later.
+              or try again later. (
+              {shiftError instanceof Error && (
+                <Text
+                  style={{
+                    fontSize: 13,
+                    color: "#818589",
+                    textAlign: "center",
+                  }}
+                >
+                  {shiftError.message}
+                </Text>
+              )}
+              )
             </Text>
             <Pressable
               onPress={handlePullToRefresh}
@@ -205,15 +219,23 @@ const styles = StyleSheet.create({
   },
   safeArea: {
     flex: 1,
-    backgroundColor: "#ffffff",
+    backgroundColor: "#70C601",
   },
   header: {
-    marginBottom: 12,
+    display: "flex",
+    flexDirection: "column",
+    gap: 4,
+    backgroundColor: "#70C601",
+    width: "100%",
+    margin: 8,
+    paddingHorizontal: 12,
+    paddingTop: 12,
+    paddingBottom: 8,
   },
   title: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#111",
+    color: "#ffffff",
   },
   underline: {
     height: 3,

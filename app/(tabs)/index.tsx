@@ -1,12 +1,6 @@
 import { fetchDashboard } from "@/api-queries/fetchers";
-import ActiveCard from "@/components/active-card";
 import { NotificationCard } from "@/components/notification-card";
-import {
-  ActiveCardSkeleton,
-  CurrentPayrunSkeleton,
-  DashboardAnalyticsSkeleton,
-  NotificationCardSkeleton,
-} from "@/components/skeletons";
+import { NotificationCardSkeleton } from "@/components/skeletons";
 import { useProfileData } from "@/data-store/use-account-store";
 import {
   DashboardResponse,
@@ -20,7 +14,14 @@ import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { router } from "expo-router";
 
-import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  FlatList,
+  Pressable,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 export default function HomeScreen() {
   const { expoPushToken, notification } = usePushNotifications();
@@ -114,6 +115,11 @@ export default function HomeScreen() {
   const { data: dashboard, isLoading } = useQuery<DashboardResponse>({
     queryKey: ["dashboard"],
     queryFn: fetchDashboard,
+    gcTime: 1000 * 60 * 60, // 1 hour
+    staleTime: 1000 * 60 * 60 * 24, // 1 day
+    refetchInterval: 30 * 60 * 1000,
+    refetchIntervalInBackground: true,
+    enabled: !!userDetails?.id,
   });
   const notificationsLoading = isLoading; // Replace with actual loading state
 
@@ -176,7 +182,74 @@ export default function HomeScreen() {
       </View>
 
       {/* CONTENT */}
+
+      <View style={styles.dashboardContainer}>
+        <View style={styles.dashboardHeader}>
+          <Text style={styles.overviewLabel}>Overview</Text>
+          <View style={styles.sectionUnderline} />
+        </View>
+        <View style={styles.dashboardRow}>
+          <View style={[styles.dashboardCard, styles.dashboardCardAvailable]}>
+            <View style={styles.dashboardTopRow}>
+              <View style={[styles.iconPill, styles.iconPillAvailable]}>
+                <MaterialIcons
+                  name="event-available"
+                  size={16}
+                  color="#70C601"
+                />
+              </View>
+              <Text style={styles.dashboardValue}>{availableShifts}</Text>
+            </View>
+            <Text style={styles.dashboardTitle}>Available</Text>
+          </View>
+          <View style={[styles.dashboardCard, styles.dashboardCardUpcoming]}>
+            <View style={styles.dashboardTopRow}>
+              <View style={[styles.iconPill, styles.iconPillUpcoming]}>
+                <MaterialIcons name="schedule" size={16} color="#FFC107" />
+              </View>
+              <Text style={styles.dashboardValue}>{upcomingShifts}</Text>
+            </View>
+            <Text style={styles.dashboardTitle}>Upcoming</Text>
+          </View>
+          <View style={[styles.dashboardCard, styles.dashboardCardMy]}>
+            <View style={styles.dashboardTopRow}>
+              <View style={[styles.iconPill, styles.iconPillMy]}>
+                <MaterialIcons
+                  name="assignment-ind"
+                  size={16}
+                  color="#4A90E2"
+                />
+              </View>
+              <Text style={styles.dashboardValue}>{scheduledShifts}</Text>
+            </View>
+            <Text style={styles.dashboardTitle}>My Shifts</Text>
+          </View>
+        </View>
+        <View style={styles.payrunCard}>
+          <View style={styles.payrunHeader}>
+            <View style={styles.iconPillPayrun}>
+              <MaterialIcons name="date-range" size={16} color="#70C601" />
+            </View>
+            <Text style={styles.payrunValue}>{payrunLabel}</Text>
+            {/* <Text style={styles.payrunLabel}>Current Payrun</Text> */}
+          </View>
+        </View>
+        {/* <ActiveCard payrun={sample_payruns[0]} /> */}
+      </View>
       <View style={styles.mainLandingContainer}>
+        <View style={styles.notificationsHeader}>
+          <View style={styles.sectionTitleWrap}>
+            <Text style={styles.sectionLabel}>Notifications</Text>
+          </View>
+          <TouchableOpacity
+            onPress={() => router.push("/(tabs)/notifications")}
+            style={styles.seeAllButton}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.seeAllText}>See all</Text>
+            <MaterialIcons name="chevron-right" size={18} color="#70C601" />
+          </TouchableOpacity>
+        </View>
         <FlatList
           // data={sample_notifications}
           // renderItem={({ item }) => <NotificationCard notification={item} />}
@@ -196,114 +269,7 @@ export default function HomeScreen() {
           }
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.mainLandingContent}
-          ListHeaderComponent={
-            <View>
-              <View style={styles.dashboardHeader}>
-                <Text style={styles.sectionLabel}>Dashboard</Text>
-                <View style={styles.sectionUnderline} />
-              </View>
-              {isLoading ? (
-                <DashboardAnalyticsSkeleton />
-              ) : (
-                <View style={styles.dashboardRow}>
-                  <View
-                    style={[
-                      styles.dashboardCard,
-                      styles.dashboardCardAvailable,
-                    ]}
-                  >
-                    <View style={styles.dashboardTopRow}>
-                      <View style={[styles.iconPill, styles.iconPillAvailable]}>
-                        <MaterialIcons
-                          name="event-available"
-                          size={16}
-                          color="#70C601"
-                        />
-                      </View>
-                      <Text style={styles.dashboardValue}>
-                        {availableShifts}
-                      </Text>
-                    </View>
-                    <Text style={styles.dashboardTitle}>Available Shifts</Text>
-                  </View>
-                  <View style={[styles.dashboardCard, styles.dashboardCardMy]}>
-                    <View style={styles.dashboardTopRow}>
-                      <View style={[styles.iconPill, styles.iconPillMy]}>
-                        <MaterialIcons
-                          name="assignment-ind"
-                          size={16}
-                          color="#4A90E2"
-                        />
-                      </View>
-                      <Text style={styles.dashboardValue}>
-                        {scheduledShifts}
-                      </Text>
-                    </View>
-                    <Text style={styles.dashboardTitle}>My Shifts</Text>
-                  </View>
-                  <View
-                    style={[styles.dashboardCard, styles.dashboardCardUpcoming]}
-                  >
-                    <View style={styles.dashboardTopRow}>
-                      <View style={[styles.iconPill, styles.iconPillUpcoming]}>
-                        <MaterialIcons
-                          name="schedule"
-                          size={16}
-                          color="#FFC107"
-                        />
-                      </View>
-                      <Text style={styles.dashboardValue}>
-                        {upcomingShifts}
-                      </Text>
-                    </View>
-                    <Text style={styles.dashboardTitle}>Upcoming Shifts</Text>
-                  </View>
-                </View>
-              )}
-
-              {isLoading ? (
-                <CurrentPayrunSkeleton />
-              ) : (
-                <View style={styles.payrunCard}>
-                  <View style={styles.payrunHeader}>
-                    <View style={styles.iconPillPayrun}>
-                      <MaterialIcons
-                        name="date-range"
-                        size={16}
-                        color="#70C601"
-                      />
-                    </View>
-                    <Text style={styles.payrunLabel}>Current Payrun</Text>
-                  </View>
-                  <Text style={styles.payrunValue}>{payrunLabel}</Text>
-                </View>
-              )}
-              {isLoading ? (
-                <ActiveCardSkeleton />
-              ) : (
-                <ActiveCard payrun={sample_payruns[0]} />
-              )}
-
-              <View style={styles.notificationsHeader}>
-                <View style={styles.sectionTitleWrap}>
-                  <Text style={styles.sectionLabel}>Notifications</Text>
-                  <View style={styles.sectionUnderline} />
-                </View>
-                <Pressable
-                  onPress={() => router.push("/(tabs)/notifications")}
-                  style={styles.seeAllButton}
-                  // activeOpacity={0.7}
-                >
-                  <Text style={styles.seeAllText}>See all</Text>
-                  <MaterialIcons
-                    name="chevron-right"
-                    size={18}
-                    color="#70C601"
-                  />
-                </Pressable>
-              </View>
-            </View>
-          }
+          ListHeaderComponent={<></>}
         />
       </View>
     </View>
@@ -312,9 +278,11 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   mainContainer: {
-    backgroundColor: "#70C601",
+    backgroundColor: "#ffffff",
     width: "100%",
     flex: 1,
+    justifyContent: "flex-start",
+    alignItems: "center",
   },
   header: {
     backgroundColor: "#70C601",
@@ -324,25 +292,41 @@ const styles = StyleSheet.create({
   },
   containerTop: {
     backgroundColor: "#70C601",
-    height: "14%",
+    height: "12%",
     width: "100%",
     paddingTop: 55,
-    paddingBottom: 10,
+    //paddingBottom: 10,
     display: "flex",
     flexDirection: "column",
-    paddingHorizontal: 10,
+    paddingHorizontal: 20,
     gap: 10,
+    borderBottomColor: "#ffffff50",
+    borderBottomWidth: 0.5,
+  },
+
+  dashboardContainer: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 8,
+    width: "100%",
+    backgroundColor: "#70C601",
+    paddingHorizontal: 15,
+    // borderBottomLeftRadius: 25,
+    // borderBottomRightRadius: 25,
+    paddingBottom: 20,
+    marginBottom: 5,
   },
 
   mainLandingContainer: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#ffffff",
     width: "100%",
-    borderTopLeftRadius: 25,
-    borderTopRightRadius: 25,
-    paddingHorizontal: 10,
+    // borderTopLeftRadius: 25,
+    // borderTopRightRadius: 25,
+    paddingHorizontal: 15,
     overflow: "hidden",
   },
+
   mainLandingContent: {
     paddingBottom: 120,
     paddingTop: 4,
@@ -378,12 +362,20 @@ const styles = StyleSheet.create({
     backgroundColor: "#FF3B30",
   },
   sectionLabel: {
-    fontSize: 13,
+    fontSize: 15,
     fontWeight: "600",
     color: "#666",
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
+  overviewLabel: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#ffffff",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+
   dashboardHeader: {
     marginTop: 16,
     marginBottom: 8,
@@ -395,19 +387,24 @@ const styles = StyleSheet.create({
   },
   dashboardCard: {
     // flex: 1,
-    borderRadius: 5,
+    display: "flex",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    borderRadius: 12,
     padding: 12,
     borderWidth: 1,
-    width: "31.5%",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    elevation: 3,
+    width: "31%",
+    minHeight: 110,
+    // shadowColor: "#000",
+    // shadowOffset: { width: 0, height: 4 },
+    // shadowOpacity: 0.08,
+    // shadowRadius: 10,
+    // elevation: 3,
+    gap: 6,
   },
   dashboardCardAvailable: {
     backgroundColor: "#F8FFF0",
-    borderColor: "#70C601",
+    borderColor: "#5ba000",
   },
   dashboardCardScheduled: {
     backgroundColor: "#F0F7FF",
@@ -422,17 +419,18 @@ const styles = StyleSheet.create({
     borderColor: "#FFC107",
   },
   dashboardTitle: {
-    fontSize: 10,
+    fontSize: 15,
     fontWeight: "600",
     color: "#667085",
     marginTop: 8,
   },
   dashboardValue: {
-    fontSize: 22,
+    fontSize: 32,
     fontWeight: "700",
     color: "#111",
   },
   dashboardTopRow: {
+    width: "100%",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -455,8 +453,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFF3CD",
   },
   payrunCard: {
-    marginTop: 12,
-    borderRadius: 5,
+    marginTop: 5,
+    borderRadius: 12,
     padding: 12,
     borderWidth: 1,
     borderColor: "#DDE7D6",
@@ -496,7 +494,7 @@ const styles = StyleSheet.create({
     color: "#111",
   },
   notificationsHeader: {
-    marginTop: 16,
+    marginTop: 8,
     marginBottom: 8,
     flexDirection: "row",
     alignItems: "center",
@@ -507,10 +505,11 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   sectionUnderline: {
-    height: 3,
+    height: 1,
     width: 48,
+    marginTop: 8,
     borderRadius: 999,
-    backgroundColor: "#70C601",
+    backgroundColor: "#ffffff",
     opacity: 0.8,
   },
   seeAllButton: {

@@ -100,10 +100,10 @@ const ActiveCard: React.FC<PayrunCardProps> = ({ payrun, onPress }) => {
       </View>
 
       {/* Address */}
-      <View style={styles.addressPill}>
+      {/* <View style={styles.addressPill}>
         <Ionicons name="location-outline" size={16} color="#70C601" />
         <Text style={styles.addressText}>{payrun.location}</Text>
-      </View>
+      </View> */}
 
       {/* CTA */}
       {/* <TouchableOpacity style={styles.button} onPress={onPress}>
@@ -117,16 +117,18 @@ const ActiveCard: React.FC<PayrunCardProps> = ({ payrun, onPress }) => {
 export default ActiveCard;
 const styles = StyleSheet.create({
   card: {
-    // backgroundColor: "#70C601",
-    borderRadius: 8,
-    padding: 10,
-    gap: 5,
-    marginTop: 10,
-    // borderTopLeftRadius: 25,
-    // borderTopRightRadius: 25,
-    backgroundColor: "#a9dc66",
+    marginTop: 5,
+    borderRadius: 12,
+    padding: 12,
     borderWidth: 1,
-    borderColor: "#70C601",
+    borderColor: "#FF9800",
+    backgroundColor: "#fff1db",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 3,
+    gap: 5,
   },
 
   cardUpcoming: {
@@ -149,10 +151,10 @@ const styles = StyleSheet.create({
   statusPill: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.25)",
+    backgroundColor: "#71c6013b",
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 999,
+    borderRadius: 10,
     gap: 8,
   },
 
@@ -160,29 +162,29 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: "#fff",
+    backgroundColor: "#70C601",
   },
 
   statusText: {
-    color: "#7393B3",
+    color: "#030303",
     fontSize: 11,
   },
 
   remainingText: {
-    color: "#7393B3",
+    color: "#FF9800",
     fontSize: 13,
     fontWeight: "400",
   },
 
   title: {
-    color: "#36454F",
+    color: "#000609",
     fontSize: 17,
     fontWeight: "700",
   },
 
   subtitle: {
-    color: "#7393B3",
-    fontSize: 13,
+    color: "#2f2f2f",
+    fontSize: 14,
   },
 
   infoRow: {
@@ -194,10 +196,12 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
     gap: 10,
-    backgroundColor: "rgba(255,255,255,0.25)",
+    backgroundColor: "#FF9800",
     padding: 12,
     borderRadius: 8,
+    marginTop: 5,
   },
 
   infoLabel: {
@@ -206,8 +210,8 @@ const styles = StyleSheet.create({
   },
 
   infoValue: {
-    color: "#6082B6",
-    fontSize: 14,
+    color: "#ffffff",
+    fontSize: 15,
   },
 
   addressPill: {
