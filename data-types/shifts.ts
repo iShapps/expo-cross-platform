@@ -199,3 +199,8 @@ export interface IShiftActionResponse {
   message: string;
   data?: unknown;
 }
+
+export interface IShiftLocationParams {
+  latitude: number;
+  longitude: number;
+}

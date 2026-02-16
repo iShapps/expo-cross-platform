@@ -7,6 +7,7 @@ import {
 import { postShiftDetails } from "@/api-queries/shifts";
 import { ShiftType, ShiftTypePill } from "@/components/shift-type-pill";
 import { ShiftDetailsSkeleton } from "@/components/skeletons";
+import { useProfileData } from "@/data-store/use-account-store";
 import { IShift } from "@/data-types/shifts";
 import { useLocation } from "@/hooks/use-location";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -163,6 +164,7 @@ const TimelineItem = ({
 export default function ShiftDetails() {
   const router = useRouter();
   // receive shiftId from params
+  const profileStore = useProfileData();
   const { shiftId } = useLocalSearchParams();
   const {
     getCurrentLocation,
@@ -230,6 +232,7 @@ export default function ShiftDetails() {
         return;
       }
       showAlert("Success", response.message);
+      profileStore.setAcceptedShift(shift); // Store accepted shift in global state
       await refetch();
     } catch (error) {
       showAlert(
@@ -275,6 +278,7 @@ export default function ShiftDetails() {
         return;
       }
       showAlert("Success", startResponse.message);
+      profileStore.setAcceptedShift(null); // remove accepted shift from global state on start
       await refetch();
     } catch (error) {
       showAlert(
@@ -293,6 +297,7 @@ export default function ShiftDetails() {
         return;
       }
       showAlert("Success", response.message);
+      profileStore.setAcceptedShift(null); // remove accepted shift from global state on end
       await refetch();
     } catch (error) {
       showAlert(

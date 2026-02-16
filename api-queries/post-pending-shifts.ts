@@ -1,5 +1,9 @@
 import { postResource } from "@/api-actions/mutations";
-import { IShiftActionResponse, IShiftResponse } from "@/data-types/shifts";
+import {
+  IShiftActionResponse,
+  IShiftLocationParams,
+  IShiftResponse,
+} from "@/data-types/shifts";
 
 export async function postPendingShifts(page = 1): Promise<IShiftResponse> {
   return postResource<{ shift_status: string; page: number }, IShiftResponse>(
@@ -108,4 +112,16 @@ export async function postEndShift(
     "/shift/end",
     { shift_id },
   );
+}
+
+export async function postShiftLocation(params: IShiftLocationParams) {
+  try {
+    return await postResource<IShiftLocationParams, IShiftActionResponse>(
+      "/shift/shift-tracking",
+      params,
+    );
+  } catch (error) {
+    console.error("Failed to send shift location", error);
+    throw error;
+  }
 }

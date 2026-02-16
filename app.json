@@ -14,7 +14,8 @@
         "NSFaceIDUsageDescription": "Allow $(PRODUCT_NAME) to use Face ID for authentication.",
         "ITSAppUsesNonExemptEncryption": false,
         "NSLocationWhenInUseUsageDescription": "Allow $(PRODUCT_NAME) to access your location while using the app to navigate to assigned shift locations and verify arrival when starting or ending a shift.",
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "Allow $(PRODUCT_NAME) to access your location in the background to monitor travel to assigned shift locations and verify presence at the facility when starting or ending a shift."
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Allow $(PRODUCT_NAME) to access your location in the background to monitor travel to assigned shift locations and verify presence at the facility when starting or ending a shift.",
+        "UIBackgroundModes": ["location"]
       },
       "bundleIdentifier": "com.victorishapps.ishapps"
     },
@@ -30,7 +31,11 @@
       "softwareKeyboardLayoutMode": "pan",
       "permissions": [
         "android.permission.USE_BIOMETRIC",
-        "android.permission.USE_FINGERPRINT"
+        "android.permission.USE_FINGERPRINT",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_BACKGROUND_LOCATION",
+        "android.permission.FOREGROUND_SERVICE"
       ],
       "package": "com.victorishapps.ishapps"
     },
@@ -79,7 +84,8 @@
         {
           "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location."
         }
-      ]
+      ],
+      "expo-background-task"
     ],
     "experiments": {
       "typedRoutes": true,

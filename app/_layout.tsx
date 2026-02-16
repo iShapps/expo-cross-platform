@@ -1,3 +1,4 @@
+import { useShiftWatcher } from "@/hooks/use-shift-watcher";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { SplashScreen, Stack } from "expo-router";
 import { SessionProvider, useSession } from "./ctx";
@@ -15,6 +16,7 @@ const queryClient = new QueryClient();
 
 export default function Root() {
   // Set up the auth context
+  useShiftWatcher();
   return (
     <QueryClientProvider client={queryClient}>
       <SessionProvider>
