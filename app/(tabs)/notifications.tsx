@@ -76,7 +76,7 @@ export default function NotificationsScreen() {
       <View style={styles.container}>
         <View style={styles.header}>
           <Text style={styles.title}>Notifications</Text>
-          <View style={styles.underline} />
+          {/* <View style={styles.underline} /> */}
         </View>
 
         <FlatList
@@ -89,6 +89,8 @@ export default function NotificationsScreen() {
             paddingTop: 5,
             flexGrow: 1,
             gap: 5,
+            backgroundColor: "#fff",
+            paddingHorizontal: 10,
           }}
         />
       </View>
@@ -99,20 +101,29 @@ export default function NotificationsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
-    paddingHorizontal: 12,
+    backgroundColor: "#70C601",
+    // paddingHorizontal: 12,
+    // paddingTop: 16,
   },
   safeArea: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#70C601",
   },
   header: {
-    marginBottom: 12,
+    display: "flex",
+    flexDirection: "column",
+    gap: 4,
+    backgroundColor: "#70C601",
+    width: "100%",
+    margin: 8,
+    paddingHorizontal: 12,
+    // paddingTop: 12,
+    paddingBottom: 8,
   },
   title: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#111",
+    color: "#ffffff",
   },
   underline: {
     height: 3,

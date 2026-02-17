@@ -9,6 +9,7 @@ import { Image } from "expo-image";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
+  Alert,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -28,7 +29,22 @@ export default function More() {
   );
 
   const handleLogout = () => {
-    signOut();
+    // add confirmation dialog
+    Alert.alert("Logout", "Are you sure you want to logout?", [
+      {
+        text: "Cancel",
+        style: "cancel",
+      },
+      {
+        text: "Yes, Logout",
+        style: "destructive",
+        onPress: () => {
+          signOut();
+          // router.replace("/(main)/index");
+        },
+      },
+    ]);
+    // signOut();
     // router.replace("/(main)/index")
   };
   return (
@@ -38,11 +54,11 @@ export default function More() {
           onPress={() => router.back()}
           style={styles.backIconContainer}
         >
-          <Fontisto name="arrow-left-l" size={15} color="black" />
+          <Fontisto name="arrow-left-l" size={15} color="white" />
         </Pressable>
         <Text style={styles.locationText}>Profile</Text>
         <Pressable onPress={handleLogout} style={styles.backIconContainer}>
-          <AntDesign name="login" size={15} color="black" />
+          <AntDesign name="login" size={15} color="white" />
         </Pressable>
       </View>
       <ScrollView
@@ -184,15 +200,16 @@ const styles = StyleSheet.create({
     flex: 1,
     height: "100%",
     width: "100%",
-    backgroundColor: "#ffffff",
+    backgroundColor: "#70C601",
     display: "flex",
     flexDirection: "column",
-    gap: 30,
+    gap: 20,
     // justifyContent:"center",
     // alignContent:"center",
     // alignItems:"center",
-    paddingHorizontal: 10,
-    paddingVertical: 60,
+    // paddingHorizontal: 10,
+    paddingTop: 50,
+    // paddingBottom: 10,
   },
   serviceView: {
     display: "flex",
@@ -212,6 +229,9 @@ const styles = StyleSheet.create({
   },
   scroll: {
     flex: 1,
+    backgroundColor: "#ffffff",
+    paddingHorizontal: 10,
+    paddingVertical: 10,
   },
   scrollContent: {
     paddingBottom: 24,
@@ -349,7 +369,9 @@ const styles = StyleSheet.create({
     alignContent: "center",
     alignItems: "center",
     justifyContent: "space-between",
+    backgroundColor: "#70C601",
     gap: 25,
+    paddingHorizontal: 10,
   },
   backIconContainer: {
     height: 40,
@@ -368,6 +390,7 @@ const styles = StyleSheet.create({
     fontFamily: "Roboto",
     fontSize: 18,
     fontWeight: "700",
+    color: "#fff",
   },
   searchInputContainer: {
     display: "flex",
