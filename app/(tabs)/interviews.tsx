@@ -11,7 +11,7 @@ export default function InterviewsScreen() {
           onPress={() => router.canGoBack() && router.back()}
           style={styles.backIconContainer}
         >
-          <Fontisto name="arrow-left-l" size={15} color="black" />
+          <Fontisto name="arrow-left-l" size={15} color="#fff" />
         </Pressable>
         <Text style={styles.locationText}>Interviews</Text>
         <Pressable style={styles.faintbackIconContainer}></Pressable>
@@ -27,12 +27,11 @@ const styles = StyleSheet.create({
     flex: 1,
     height: "100%",
     width: "100%",
-    backgroundColor: "#ffffff",
+    backgroundColor: "#70C601",
     display: "flex",
     flexDirection: "column",
-    gap: 30,
-    paddingHorizontal: 20,
-    paddingVertical: 60,
+    gap: 20,
+    paddingVertical: 50,
   },
   topBarContainer: {
     display: "flex",
@@ -41,6 +40,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     gap: 25,
+    backgroundColor: "#70C601",
+    paddingHorizontal: 10,
   },
   backIconContainer: {
     height: 40,
@@ -67,12 +68,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 2,
     borderWidth: 1,
-    borderColor: "#fff",
+    borderColor: "#70C601",
   },
   locationText: {
     fontFamily: "Roboto",
     fontSize: 18,
     fontWeight: "700",
+    color: "#fff",
   },
   linksContainer: {
     display: "flex",
@@ -80,5 +82,8 @@ const styles = StyleSheet.create({
     gap: 4,
     width: "100%",
     marginVertical: 5,
+    backgroundColor: "#fff",
+    flex: 1,
+    paddingHorizontal: 10,
   },
 });

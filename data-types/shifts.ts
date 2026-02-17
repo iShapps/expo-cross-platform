@@ -193,3 +193,14 @@ export interface IShiftDetailResponse {
     shift: IShift;
   };
 }
+
+export interface IShiftActionResponse {
+  status: boolean;
+  message: string;
+  data?: unknown;
+}
+
+export interface IShiftLocationParams {
+  latitude: number;
+  longitude: number;
+}

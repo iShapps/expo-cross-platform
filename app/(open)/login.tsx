@@ -1,13 +1,10 @@
-import Entypo from "@expo/vector-icons/Entypo";
-import { Checkbox } from "expo-checkbox";
-// import { Image } from "expo-image";
 import {
   authenticateWithBiometrics,
   isBiometricAvailable,
 } from "@/utils/biometrics";
-import AntDesign from "@expo/vector-icons/AntDesign";
-import Ionicons from "@expo/vector-icons/Ionicons";
-import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import { AntDesign, Entypo, FontAwesome6, Ionicons } from "@expo/vector-icons";
+import { Checkbox } from "expo-checkbox";
+import { Image } from "expo-image";
 import { Link } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import { useEffect, useRef, useState } from "react";
@@ -157,6 +154,7 @@ export default function Login() {
   };
 
   return (
+    // <View style={styles.container}>
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       style={styles.container}
@@ -164,285 +162,258 @@ export default function Login() {
       <View
         style={{
           backgroundColor: "#70C601",
-          flex: 1,
+          // flex: 1,
+          height: "50%",
+          justifyContent: "flex-start",
+          alignItems: "center",
         }}
       >
-        <View style={styles.topContainer}></View>
-        <View style={styles.topAbsContainer}>
-          <View style={styles.topAbsContainerLeft}></View>
-          <View style={styles.topAbsContainerRight}>
-            <View style={styles.innerContainer}></View>
-          </View>
-        </View>
-
-        <View style={styles.bottomContainer}>
-          <View style={{ marginBottom: 20, marginTop: 10 }}>
-            <Text
-              style={{
-                fontSize: 28,
-                color: "#000",
-                fontWeight: "700",
-                marginBottom: 10,
-              }}
-            >
-              LoginTEST
-            </Text>
-            <Text
-              style={{
-                fontSize: 14,
-                color: "#999",
-              }}
-            >
-              Login to securely access your account and manage your shifts
-              anytime....
-            </Text>
-          </View>
-
-          {/* Email */}
-          <View style={styles.inputGroup}>
-            <Text style={email ? styles.labelFilled : styles.label}>
-              Email Address
-            </Text>
-            <View
-              style={
-                password
-                  ? styles.passwordInputGroupFilled
-                  : styles.passwordInputGroup
-              }
-            >
-              <TextInput
-                value={email}
-                inputMode="email"
-                autoComplete="email"
-                clearButtonMode="while-editing"
-                autoFocus={true}
-                clearTextOnFocus={true}
-                cursorColor="#70C601"
-                enterKeyHint="next"
-                placeholder="johnwilliams@gmail.com"
-                onChangeText={setEmail}
-                placeholderTextColor="#999"
-                style={{
-                  flex: 1,
-                }}
-              />
-              <Pressable onPress={handleBiometricLogin}>
-                {Platform.OS === "ios" ? (
-                  <MaterialCommunityIcons
-                    name="line-scan"
-                    size={24}
-                    color="#7393B3"
-                  />
-                ) : (
-                  <Ionicons name="finger-print" size={24} color="#7393B3" />
-                )}
-              </Pressable>
-            </View>
-          </View>
-
-          {/* Password */}
-          <View style={styles.inputGroup}>
-            <Text style={password ? styles.labelFilled : styles.label}>
-              Password
-            </Text>
-            <View
-              style={
-                password
-                  ? styles.passwordInputGroupFilled
-                  : styles.passwordInputGroup
-              }
-            >
-              <TextInput
-                value={password}
-                autoFocus={true}
-                cursorColor="#70C601"
-                keyboardType="email-address"
-                enterKeyHint="done"
-                clearButtonMode="while-editing"
-                autoComplete="password"
-                clearTextOnFocus={true}
-                onChangeText={setPassword}
-                placeholder="••••••••"
-                placeholderTextColor="#999"
-                secureTextEntry={!showPassword}
-                style={{
-                  flex: 1,
-                }}
-              />
-              {biometricSupported && (
-                <TouchableOpacity
-                  onPress={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? (
-                    <Entypo name="eye" size={20} color="#7393B3" />
-                  ) : (
-                    <Entypo name="eye-with-line" size={20} color="#7393B3" />
-                  )}
-                </TouchableOpacity>
-              )}
-            </View>
-          </View>
-          <View>
-            <Link href="/(open)/forgot-password">
-              <Text
-                style={{
-                  color: "#70C601",
-                  textAlign: "right",
-                  textDecorationLine: "underline",
-                }}
-              >
-                Forgot Password?
-              </Text>
-            </Link>
-          </View>
-
-          {/* Options */}
-          <View style={styles.optionsRow}>
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-              }}
-            >
-              <Checkbox
-                style={styles.checkbox}
-                value={isTermsChecked}
-                onValueChange={setIsTermsChecked}
-                color={isTermsChecked ? "#70C601" : undefined}
-              />
-              <Text style={styles.remember}>
-                I agree to the
-                <Link href="https://www.ishapps.com/terms-of-service">
-                  <Text
-                    style={{
-                      color: "#70C601",
-                      textDecorationLine: "underline",
-                    }}
-                  >
-                    {" "}
-                    terms and conditions{" "}
-                  </Text>
-                </Link>
-                &amp;
-                <Link href="https://www.ishapps.com/privacy-policy">
-                  <Text
-                    style={{
-                      color: "#70C601",
-                      textDecorationLine: "underline",
-                    }}
-                  >
-                    {" "}
-                    privacy policy
-                  </Text>
-                </Link>
-              </Text>
-            </View>
-            {/* <Text style={styles.forgot}>Forgot Password?</Text> */}
-          </View>
-
-          {/* Button */}
-          <TouchableOpacity
-            style={[styles.button, isLoading && { opacity: 0.6 }]}
-            onPress={handleLogin}
-            disabled={isLoading}
-          >
-            {isLoading && (
-              <Animated.View
-                style={{
-                  marginRight: 10,
-                  transform: [
-                    {
-                      rotate: spinAnim.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: ["0deg", "360deg"],
-                      }),
-                    },
-                  ],
-                }}
-              >
-                <AntDesign name="loading-3-quarters" size={20} color="#fff" />
-              </Animated.View>
-            )}
-            <Text style={styles.buttonText}>
-              {isLoading ? "signing you in..." : "Sign in"}
-            </Text>
-          </TouchableOpacity>
-
-          {/* Footer */}
-          {/* <Text style={styles.footer}>
-            Don&apos;t have an account?{" "}
-            <Link href="/(open)/sign-up">
-              <Text
-                style={{ color: "#70C601", textDecorationLine: "underline" }}
-              >
-                {" "}
-                Create an account
-              </Text>
-            </Link>
-          </Text> */}
-        </View>
+        <Image
+          source={require("@/assets/images/careworker2.jpg")}
+          style={{ width: "100%", height: "100%", opacity: 0.5 }}
+          contentFit="cover"
+        />
       </View>
-      <View
-        style={{
-          backgroundColor: "#fff",
-          height: "auto",
-        }}
-      ></View>
+
+      <View style={styles.bottomContainer}>
+        <View style={{ marginBottom: 20, marginTop: 10 }}>
+          <Text
+            style={{
+              fontSize: 28,
+              color: "#000",
+              fontWeight: "700",
+              marginBottom: 10,
+            }}
+          >
+            Login
+          </Text>
+          <Text
+            style={{
+              fontSize: 14,
+              color: "#999",
+            }}
+          >
+            Login to securely access your account and manage your shifts
+            anytime.
+          </Text>
+        </View>
+
+        <View style={styles.inputGroup}>
+          <Text style={email ? styles.labelFilled : styles.label}>
+            Email Address
+          </Text>
+          <View
+            style={
+              password
+                ? styles.passwordInputGroupFilled
+                : styles.passwordInputGroup
+            }
+          >
+            <TextInput
+              value={email}
+              inputMode="email"
+              autoComplete="email"
+              clearButtonMode="while-editing"
+              autoFocus={true}
+              clearTextOnFocus={false}
+              cursorColor="#70C601"
+              enterKeyHint="next"
+              placeholder="johnwilliams@gmail.com"
+              onChangeText={setEmail}
+              placeholderTextColor="#999"
+              style={{
+                flex: 1,
+              }}
+            />
+            <Pressable onPress={handleBiometricLogin}>
+              {Platform.OS === "ios" ? (
+                <View style={styles.iconContainer}>
+                  <Ionicons name="scan-outline" size={30} color="#7393B3" />
+                  <FontAwesome6
+                    name="face-kiss"
+                    size={10}
+                    color="#7393B3"
+                    style={styles.overlayIcon}
+                  />
+                </View>
+              ) : (
+                // <View>
+                // <Ionicons name="scan-outline" size={24} color="#7393B3" />
+                // <FontAwesome6 name="face-kiss" size={10} color="#7393B3" />
+                // </View>
+                <Ionicons name="finger-print" size={24} color="#7393B3" />
+              )}
+            </Pressable>
+          </View>
+        </View>
+
+        <View style={styles.inputGroup}>
+          <Text style={password ? styles.labelFilled : styles.label}>
+            Password
+          </Text>
+          <View
+            style={
+              password
+                ? styles.passwordInputGroupFilled
+                : styles.passwordInputGroup
+            }
+          >
+            <TextInput
+              value={password}
+              autoFocus={true}
+              cursorColor="#70C601"
+              keyboardType="default"
+              enterKeyHint="done"
+              clearButtonMode="while-editing"
+              autoComplete="password"
+              clearTextOnFocus={false}
+              onChangeText={setPassword}
+              placeholder="••••••••"
+              placeholderTextColor="#999"
+              secureTextEntry={!showPassword}
+              style={{
+                flex: 1,
+              }}
+            />
+            {biometricSupported && (
+              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                {showPassword ? (
+                  <Entypo name="eye" size={20} color="#7393B3" />
+                ) : (
+                  <Entypo name="eye-with-line" size={20} color="#7393B3" />
+                )}
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+        <View>
+          <Link href="/(open)/forgot-password">
+            <Text
+              style={{
+                color: "#70C601",
+                textAlign: "right",
+                textDecorationLine: "underline",
+              }}
+            >
+              Forgot Password?
+            </Text>
+          </Link>
+        </View>
+
+        <View style={styles.optionsRow}>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+            }}
+          >
+            <Checkbox
+              style={styles.checkbox}
+              value={isTermsChecked}
+              onValueChange={setIsTermsChecked}
+              color={isTermsChecked ? "#70C601" : undefined}
+            />
+            <Text style={styles.remember}>
+              I agree to the
+              <Link href="https://www.ishapps.com/terms-of-service">
+                <Text
+                  style={{
+                    color: "#70C601",
+                    textDecorationLine: "underline",
+                  }}
+                >
+                  {" "}
+                  terms and conditions{" "}
+                </Text>
+              </Link>
+              &amp;
+              <Link href="https://www.ishapps.com/privacy-policy">
+                <Text
+                  style={{
+                    color: "#70C601",
+                    textDecorationLine: "underline",
+                  }}
+                >
+                  {" "}
+                  privacy policy
+                </Text>
+              </Link>
+            </Text>
+          </View>
+        </View>
+        <TouchableOpacity
+          style={[styles.button, isLoading && { opacity: 0.6 }]}
+          onPress={handleLogin}
+          disabled={isLoading}
+        >
+          {isLoading && (
+            <Animated.View
+              style={{
+                marginRight: 10,
+                transform: [
+                  {
+                    rotate: spinAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: ["0deg", "360deg"],
+                    }),
+                  },
+                ],
+              }}
+            >
+              <AntDesign name="loading-3-quarters" size={20} color="#fff" />
+            </Animated.View>
+          )}
+          <Text style={styles.buttonText}>
+            {isLoading ? "signing you in..." : "Sign in"}
+          </Text>
+        </TouchableOpacity>
+      </View>
     </KeyboardAvoidingView>
+    // </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    // flex: 1,
+    height: "100%",
+    display: "flex",
+    flexDirection: "column",
     backgroundColor: "#fff",
-  },
-  topContainer: {
-    height: "10%",
-    justifyContent: "center",
-    alignItems: "center",
   },
   bottomContainer: {
     flex: 1,
     width: "100%",
-    height: "auto",
-    backgroundColor: "#ffffff",
+    height: "50%",
+    backgroundColor: "#fff",
     // justifyContent: "center",
     paddingVertical: 20,
     paddingHorizontal: 20,
-    borderTopLeftRadius: 55,
+    borderTopRightRadius: 30,
+    borderTopLeftRadius: 30,
+    marginTop: -30,
+    // zIndex: 10,
+    // position: "absolute",
+    // bottom: 0,
+  },
+
+  iconContainer: {
+    width: 30,
+    height: 30,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  overlayIcon: {
+    position: "absolute",
+    top: "50%",
+    left: "50%",
+    transform: [{ translateX: -5 }, { translateY: -5 }],
   },
   image: {
     width: 120,
     height: 120,
     alignSelf: "center",
     marginBottom: 16,
-  },
-  topAbsContainer: {
-    height: "30%",
-    width: "100%",
-    display: "flex",
-    flexDirection: "row",
-  },
-  topAbsContainerLeft: {
-    backgroundColor: "#70C601",
-    height: "100%",
-    width: "50%",
-    marginTop: -50,
-    borderTopLeftRadius: 55,
-  },
-  topAbsContainerRight: {
-    backgroundColor: "white",
-    height: "100%",
-    width: "50%",
-    marginTop: 10,
-  },
-  innerContainer: {
-    height: "100%",
-    width: "100%",
-    backgroundColor: "#70C601",
-    borderBottomRightRadius: 55,
-    marginTop: -10,
   },
   inputGroup: {
     marginBottom: 16,

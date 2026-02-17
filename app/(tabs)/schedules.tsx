@@ -25,6 +25,8 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+// a4cfbbf7-fae5-470b-bb0c-b6bc8f673ade -android app id
+
 const useShiftInfiniteQuery = (
   key: string,
   queryFn: (page?: number) => Promise<any>,
@@ -101,7 +103,9 @@ export default function Schedules() {
   // cancelled -- > cancelled
   // transfered -- > transfered
   // pending payment -- > completed
+  // 10-15 mins shift tracking
 
+  // upcoming, avialable, completed,
   const handleTabPress = useCallback(
     (index: number) => {
       setActiveStatus(statusTabs[index]);

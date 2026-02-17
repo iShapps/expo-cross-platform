@@ -7,12 +7,14 @@ import {
   Notification,
   Payrun,
 } from "@/data-types/dashboard";
+import { useLocation } from "@/hooks/use-location";
 import { usePushNotifications } from "@/hooks/use-push-notifications";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { router } from "expo-router";
+import { useEffect } from "react";
 
 import {
   FlatList,
@@ -25,6 +27,8 @@ import {
 
 export default function HomeScreen() {
   const { expoPushToken, notification } = usePushNotifications();
+  const { requestPermission } = useLocation();
+
   console.log("expoPushToken", expoPushToken);
   console.log("notification", notification);
   const profileStore = useProfileData();
@@ -147,6 +151,11 @@ export default function HomeScreen() {
     : currentPayrun
       ? `Payrun: Week of ${payrunStart} - ${payrunEnd}`
       : "Payrun: --";
+
+  useEffect(() => {
+    requestPermission();
+  }, []);
+
   return (
     <View style={styles.mainContainer}>
       {/* HEADER */}

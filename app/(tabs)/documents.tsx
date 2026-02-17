@@ -92,12 +92,11 @@ export default function DocumentsScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <View style={styles.header}>
+        <Text style={styles.title}>My documents</Text>
+        {/* <View style={styles.underline} /> */}
+      </View>
       <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.title}>My documents</Text>
-          <View style={styles.underline} />
-        </View>
-
         {/* Tabs Row */}
         <ScrollView
           horizontal
@@ -323,20 +322,28 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#ffffff",
-    paddingHorizontal: 12,
-    paddingTop: 16,
+    paddingHorizontal: 10,
+    // paddingTop: 16,
   },
   safeArea: {
     flex: 1,
-    backgroundColor: "#ffffff",
+    backgroundColor: "#70C601",
   },
   header: {
-    marginBottom: 12,
+    display: "flex",
+    flexDirection: "column",
+    gap: 4,
+    backgroundColor: "#70C601",
+    width: "100%",
+    margin: 8,
+    paddingHorizontal: 10,
+    paddingTop: 12,
+    paddingBottom: 8,
   },
   title: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#111",
+    color: "#ffffff",
   },
   underline: {
     height: 3,
@@ -349,8 +356,8 @@ const styles = StyleSheet.create({
   tabsRow: {
     flexDirection: "row",
     gap: 8,
-    paddingBottom: 2,
-    paddingHorizontal: 4,
+    // paddingBottom: 2,
+    // paddingHorizontal: 4,
   },
   tabButton: {
     paddingVertical: 6,
