@@ -14,193 +14,201 @@ export const ShiftDetailsSkeleton: React.FC = () => {
             onPress={() => router.canGoBack() && router.back()}
             style={styles.backIconContainer}
           >
-            <Fontisto name="arrow-left-l" size={15} color="black" />
+            <Fontisto name="arrow-left-l" size={15} color="#fff" />
           </Pressable>
           <Text style={styles.locationText}>Shift Details</Text>
           <Pressable style={styles.faintbackIconContainer}></Pressable>
         </View>
-        <ScrollView
-          contentContainerStyle={styles.content}
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={styles.heroCard}>
-            <SkeletonBase width={64} height={64} borderRadius={6} />
-            <View style={styles.heroContent}>
-              <SkeletonBase width="70%" height={16} borderRadius={4} />
-              <SkeletonBase
-                width="85%"
-                height={12}
-                borderRadius={4}
-                style={{ marginTop: 6 }}
-              />
-              <SkeletonBase
-                width="60%"
-                height={12}
-                borderRadius={4}
-                style={{ marginTop: 6 }}
-              />
-              <View style={styles.chipRow}>
-                <SkeletonBase width={80} height={20} borderRadius={10} />
-              </View>
-            </View>
-          </View>
-
-          <View style={styles.sectionCard}>
-            <SkeletonBase width={120} height={12} borderRadius={4} />
-            <View style={styles.detailRow}>
-              <SkeletonBase width={60} height={10} borderRadius={4} />
-              <SkeletonBase
-                width={140}
-                height={14}
-                borderRadius={4}
-                style={{ marginTop: 6 }}
-              />
-            </View>
-            <View style={styles.detailRow}>
-              <SkeletonBase width={60} height={10} borderRadius={4} />
-              <SkeletonBase
-                width={180}
-                height={14}
-                borderRadius={4}
-                style={{ marginTop: 6 }}
-              />
-            </View>
-            <View style={styles.detailRow}>
-              <SkeletonBase width={60} height={10} borderRadius={4} />
-              <SkeletonBase
-                width={110}
-                height={14}
-                borderRadius={4}
-                style={{ marginTop: 6 }}
-              />
-            </View>
-            <View style={styles.detailRowNoBorder}>
-              <SkeletonBase width={60} height={10} borderRadius={4} />
-              <SkeletonBase
-                width={90}
-                height={14}
-                borderRadius={4}
-                style={{ marginTop: 6 }}
-              />
-            </View>
-          </View>
-
-          <View style={styles.sectionCard}>
-            <SkeletonBase width={110} height={12} borderRadius={4} />
-            <View style={styles.detailRow}>
-              <SkeletonBase width={70} height={10} borderRadius={4} />
-              <SkeletonBase
-                width={140}
-                height={14}
-                borderRadius={4}
-                style={{ marginTop: 6 }}
-              />
-            </View>
-            <View style={styles.detailRow}>
-              <SkeletonBase width={70} height={10} borderRadius={4} />
-              <SkeletonBase
-                width={160}
-                height={14}
-                borderRadius={4}
-                style={{ marginTop: 6 }}
-              />
-            </View>
-            <View style={styles.detailRowNoBorder}>
-              <SkeletonBase width={70} height={10} borderRadius={4} />
-              <SkeletonBase
-                width={120}
-                height={14}
-                borderRadius={4}
-                style={{ marginTop: 6 }}
-              />
-            </View>
-          </View>
-
-          <View style={styles.sectionCard}>
-            <SkeletonBase width={120} height={12} borderRadius={4} />
-            <View style={styles.detailRow}>
-              <SkeletonBase width={80} height={10} borderRadius={4} />
-              <SkeletonBase
-                width={90}
-                height={14}
-                borderRadius={4}
-                style={{ marginTop: 6 }}
-              />
-            </View>
-            <View style={styles.detailRow}>
-              <SkeletonBase width={80} height={10} borderRadius={4} />
-              <SkeletonBase
-                width={60}
-                height={14}
-                borderRadius={4}
-                style={{ marginTop: 6 }}
-              />
-            </View>
-            <View style={styles.detailRowNoBorder}>
-              <SkeletonBase width={80} height={10} borderRadius={4} />
-              <SkeletonBase
-                width={70}
-                height={14}
-                borderRadius={4}
-                style={{ marginTop: 6 }}
-              />
-            </View>
+      </View>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.heroCard}>
+          <SkeletonBase width={64} height={64} borderRadius={6} />
+          <View style={styles.heroContent}>
+            <SkeletonBase width="70%" height={16} borderRadius={4} />
             <SkeletonBase
-              width={180}
-              height={10}
+              width="85%"
+              height={12}
               borderRadius={4}
-              style={{ marginTop: 10 }}
+              style={{ marginTop: 6 }}
+            />
+            <SkeletonBase
+              width="60%"
+              height={12}
+              borderRadius={4}
+              style={{ marginTop: 6 }}
+            />
+            <View style={styles.chipRow}>
+              <SkeletonBase width={80} height={20} borderRadius={10} />
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.sectionCard}>
+          <SkeletonBase width={120} height={12} borderRadius={4} />
+          <View style={styles.detailRow}>
+            <SkeletonBase width={60} height={10} borderRadius={4} />
+            <SkeletonBase
+              width={140}
+              height={14}
+              borderRadius={4}
+              style={{ marginTop: 6 }}
             />
           </View>
-
-          <View style={styles.sectionCard}>
-            <SkeletonBase width={150} height={12} borderRadius={4} />
-            <View style={styles.timelineContainer}>
-              {Array.from({ length: 5 }).map((_, index) => (
-                <View key={index} style={styles.timelineItemWrap}>
-                  <View style={styles.timelineIconColumn}>
-                    <SkeletonBase
-                      width={2}
-                      height={26}
-                      borderRadius={1}
-                      style={styles.timelineLineTop}
-                    />
-                    <SkeletonBase width={40} height={40} borderRadius={20} />
-                    <SkeletonBase
-                      width={2}
-                      height={26}
-                      borderRadius={1}
-                      style={styles.timelineLineBottom}
-                    />
-                  </View>
-                  <View style={styles.timelineContent}>
-                    <SkeletonBase width={120} height={12} borderRadius={4} />
-                    <SkeletonBase
-                      width={80}
-                      height={12}
-                      borderRadius={4}
-                      style={{ marginTop: 6 }}
-                    />
-                  </View>
-                </View>
-              ))}
-            </View>
+          <View style={styles.detailRow}>
+            <SkeletonBase width={60} height={10} borderRadius={4} />
+            <SkeletonBase
+              width={180}
+              height={14}
+              borderRadius={4}
+              style={{ marginTop: 6 }}
+            />
           </View>
-        </ScrollView>
-      </View>
+          <View style={styles.detailRow}>
+            <SkeletonBase width={60} height={10} borderRadius={4} />
+            <SkeletonBase
+              width={110}
+              height={14}
+              borderRadius={4}
+              style={{ marginTop: 6 }}
+            />
+          </View>
+          <View style={styles.detailRowNoBorder}>
+            <SkeletonBase width={60} height={10} borderRadius={4} />
+            <SkeletonBase
+              width={90}
+              height={14}
+              borderRadius={4}
+              style={{ marginTop: 6 }}
+            />
+          </View>
+        </View>
+
+        <View style={styles.sectionCard}>
+          <SkeletonBase width={110} height={12} borderRadius={4} />
+          <View style={styles.detailRow}>
+            <SkeletonBase width={70} height={10} borderRadius={4} />
+            <SkeletonBase
+              width={140}
+              height={14}
+              borderRadius={4}
+              style={{ marginTop: 6 }}
+            />
+          </View>
+          <View style={styles.detailRow}>
+            <SkeletonBase width={70} height={10} borderRadius={4} />
+            <SkeletonBase
+              width={160}
+              height={14}
+              borderRadius={4}
+              style={{ marginTop: 6 }}
+            />
+          </View>
+          <View style={styles.detailRowNoBorder}>
+            <SkeletonBase width={70} height={10} borderRadius={4} />
+            <SkeletonBase
+              width={120}
+              height={14}
+              borderRadius={4}
+              style={{ marginTop: 6 }}
+            />
+          </View>
+        </View>
+
+        <View style={styles.sectionCard}>
+          <SkeletonBase width={120} height={12} borderRadius={4} />
+          <View style={styles.detailRow}>
+            <SkeletonBase width={80} height={10} borderRadius={4} />
+            <SkeletonBase
+              width={90}
+              height={14}
+              borderRadius={4}
+              style={{ marginTop: 6 }}
+            />
+          </View>
+          <View style={styles.detailRow}>
+            <SkeletonBase width={80} height={10} borderRadius={4} />
+            <SkeletonBase
+              width={60}
+              height={14}
+              borderRadius={4}
+              style={{ marginTop: 6 }}
+            />
+          </View>
+          <View style={styles.detailRowNoBorder}>
+            <SkeletonBase width={80} height={10} borderRadius={4} />
+            <SkeletonBase
+              width={70}
+              height={14}
+              borderRadius={4}
+              style={{ marginTop: 6 }}
+            />
+          </View>
+          <SkeletonBase
+            width={180}
+            height={10}
+            borderRadius={4}
+            style={{ marginTop: 10 }}
+          />
+        </View>
+
+        <View style={styles.sectionCard}>
+          <SkeletonBase width={150} height={12} borderRadius={4} />
+          <View style={styles.timelineContainer}>
+            {Array.from({ length: 5 }).map((_, index) => (
+              <View key={index} style={styles.timelineItemWrap}>
+                <View style={styles.timelineIconColumn}>
+                  <SkeletonBase
+                    width={2}
+                    height={26}
+                    borderRadius={1}
+                    style={styles.timelineLineTop}
+                  />
+                  <SkeletonBase width={40} height={40} borderRadius={20} />
+                  <SkeletonBase
+                    width={2}
+                    height={26}
+                    borderRadius={1}
+                    style={styles.timelineLineBottom}
+                  />
+                </View>
+                <View style={styles.timelineContent}>
+                  <SkeletonBase width={120} height={12} borderRadius={4} />
+                  <SkeletonBase
+                    width={80}
+                    height={12}
+                    borderRadius={4}
+                    style={{ marginTop: 6 }}
+                  />
+                </View>
+              </View>
+            ))}
+          </View>
+        </View>
+      </ScrollView>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
+  contentContainer: {
+    height: 110,
+    // padding: 36,
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingBottom: 36,
+  },
   container: {
-    flex: 1,
+    // flex: 1,
     backgroundColor: "#70C601",
     width: "100%",
-    height: "100%",
+    height: "13%",
     display: "flex",
     flexDirection: "column",
-    paddingVertical: 50,
+    paddingVertical: 30,
   },
   backIconContainer: {
     height: 40,
@@ -238,9 +246,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 16,
+    // marginBottom: 16,
     paddingHorizontal: 10,
     backgroundColor: "#70C601",
+    marginTop: 20,
   },
   content: {
     paddingBottom: 32,

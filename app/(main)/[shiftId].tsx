@@ -18,9 +18,11 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useCallback, useRef, useState } from "react";
+import { useRef } from "react";
 import {
   Alert,
+  Linking,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -171,13 +173,6 @@ export default function ShiftDetails() {
   // ref
   const bottomSheetRef = useRef<BottomSheet>(null);
 
-  // callbacks
-  const handleSheetChanges = useCallback((index: number) => {
-    console.log("handleSheetChanges", index);
-  }, []);
-
-  const [sheetHeight, setSheetHeight] = useState(0);
-
   const profileStore = useProfileData();
   const { shiftId } = useLocalSearchParams();
   const {
@@ -232,6 +227,27 @@ export default function ShiftDetails() {
     startShiftMutation.isPending;
   const isEnding = endShiftMutation.isPending;
   const isBusy = isAccepting || isStarting || isEnding;
+
+  const openMaps = async () => {
+    const address = shift?.address;
+
+    if (!address) return;
+
+    const encodedAddress = encodeURIComponent(address);
+
+    const url =
+      Platform.OS === "ios"
+        ? `http://maps.apple.com/?q=${encodedAddress}`
+        : `geo:0,0?q=${encodedAddress}`;
+
+    const supported = await Linking.canOpenURL(url);
+
+    if (supported) {
+      await Linking.openURL(url);
+    } else {
+      Alert.alert("Error", "Unable to open maps application.");
+    }
+  };
 
   const showAlert = (title: string, message?: string) => {
     Alert.alert(title, message || "Something went wrong.", [{ text: "OK" }]);
@@ -386,13 +402,13 @@ export default function ShiftDetails() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.heroCard}>
-          <View style={styles.heroIconWrap}>
+          <Pressable style={styles.heroIconWrap} onPress={openMaps}>
             <MaterialCommunityIcons
               name="office-building-marker"
               size={32}
               color="#70C601"
             />
-          </View>
+          </Pressable>
           <View style={styles.heroContent}>
             <Text style={styles.heroName}>{shift?.facility?.name ?? "—"}</Text>
             <Text style={styles.heroMeta}>{shift?.address ?? "—"}</Text>
