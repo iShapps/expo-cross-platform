@@ -27,7 +27,7 @@ export const ShiftCardBase: React.FC<ShiftCardProps> = ({ shift, onPress }) => {
   return (
     <Link
       href={{
-        pathname: "/(tabs)/[shiftId]",
+        pathname: "/(main)/[shiftId]",
         params: { shiftId: shift.id },
       }}
     >

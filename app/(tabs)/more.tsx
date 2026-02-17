@@ -9,6 +9,7 @@ import { Image } from "expo-image";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
+  Alert,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -28,7 +29,22 @@ export default function More() {
   );
 
   const handleLogout = () => {
-    signOut();
+    // add confirmation dialog
+    Alert.alert("Logout", "Are you sure you want to logout?", [
+      {
+        text: "Cancel",
+        style: "cancel",
+      },
+      {
+        text: "Yes, Logout",
+        style: "destructive",
+        onPress: () => {
+          signOut();
+          // router.replace("/(main)/index");
+        },
+      },
+    ]);
+    // signOut();
     // router.replace("/(main)/index")
   };
   return (

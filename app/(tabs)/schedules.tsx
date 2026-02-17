@@ -25,6 +25,8 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+// a4cfbbf7-fae5-470b-bb0c-b6bc8f673ade -android app id
+
 const useShiftInfiniteQuery = (
   key: string,
   queryFn: (page?: number) => Promise<any>,
@@ -101,7 +103,9 @@ export default function Schedules() {
   // cancelled -- > cancelled
   // transfered -- > transfered
   // pending payment -- > completed
+  // 10-15 mins shift tracking
 
+  // upcoming, avialable, completed,
   const handleTabPress = useCallback(
     (index: number) => {
       setActiveStatus(statusTabs[index]);
@@ -490,7 +494,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#ffffff",
     paddingHorizontal: 8,
-    // paddingTop: 16,
+    paddingTop: 16,
   },
   safeArea: {
     flex: 1,
@@ -503,6 +507,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#70C601",
     width: "100%",
     margin: 8,
+    paddingHorizontal: 12,
     paddingTop: 12,
     paddingBottom: 8,
   },
@@ -522,6 +527,7 @@ const styles = StyleSheet.create({
   tabsRow: {
     flexDirection: "row",
     gap: 8,
+    paddingBottom: 2,
   },
   tabButton: {
     paddingVertical: 6,

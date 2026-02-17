@@ -216,7 +216,7 @@ export default function Login() {
                 autoComplete="email"
                 clearButtonMode="while-editing"
                 autoFocus={true}
-                clearTextOnFocus={true}
+                clearTextOnFocus={false}
                 cursorColor="#70C601"
                 enterKeyHint="next"
                 placeholder="johnwilliams@gmail.com"
@@ -256,11 +256,11 @@ export default function Login() {
                 value={password}
                 autoFocus={true}
                 cursorColor="#70C601"
-                keyboardType="email-address"
+                keyboardType="default"
                 enterKeyHint="done"
                 clearButtonMode="while-editing"
                 autoComplete="password"
-                clearTextOnFocus={true}
+                clearTextOnFocus={false}
                 onChangeText={setPassword}
                 placeholder="••••••••"
                 placeholderTextColor="#999"

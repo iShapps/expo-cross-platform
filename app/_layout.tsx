@@ -1,6 +1,7 @@
 import { useShiftWatcher } from "@/hooks/use-shift-watcher";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { SplashScreen, Stack } from "expo-router";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SessionProvider, useSession } from "./ctx";
 import { SplashScreenController } from "./splash";
 
@@ -18,12 +19,14 @@ export default function Root() {
   // Set up the auth context
   useShiftWatcher();
   return (
-    <QueryClientProvider client={queryClient}>
-      <SessionProvider>
-        <SplashScreenController />
-        <RootNavigator />
-      </SessionProvider>
-    </QueryClientProvider>
+    <GestureHandlerRootView>
+      <QueryClientProvider client={queryClient}>
+        <SessionProvider>
+          <SplashScreenController />
+          <RootNavigator />
+        </SessionProvider>
+      </QueryClientProvider>
+    </GestureHandlerRootView>
   );
 }
 
@@ -38,6 +41,14 @@ function RootNavigator() {
             headerShown: false,
           }}
           name="(tabs)"
+        />
+      </Stack.Protected>
+      <Stack.Protected guard={!!session}>
+        <Stack.Screen
+          options={{
+            headerShown: false,
+          }}
+          name="(main)"
         />
       </Stack.Protected>
       <Stack.Protected guard={!session}>

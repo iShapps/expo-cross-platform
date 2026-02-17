@@ -7,6 +7,7 @@ import {
 import { postShiftDetails } from "@/api-queries/shifts";
 import { ShiftType, ShiftTypePill } from "@/components/shift-type-pill";
 import { ShiftDetailsSkeleton } from "@/components/skeletons";
+import { SwipeButton } from "@/components/swipe-button";
 import { useProfileData } from "@/data-store/use-account-store";
 import { IShift } from "@/data-types/shifts";
 import { useLocation } from "@/hooks/use-location";
@@ -14,8 +15,10 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import Feather from "@expo/vector-icons/Feather";
 import Fontisto from "@expo/vector-icons/Fontisto";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useCallback, useRef, useState } from "react";
 import {
   Alert,
   Pressable,
@@ -164,6 +167,17 @@ const TimelineItem = ({
 export default function ShiftDetails() {
   const router = useRouter();
   // receive shiftId from params
+
+  // ref
+  const bottomSheetRef = useRef<BottomSheet>(null);
+
+  // callbacks
+  const handleSheetChanges = useCallback((index: number) => {
+    console.log("handleSheetChanges", index);
+  }, []);
+
+  const [sheetHeight, setSheetHeight] = useState(0);
+
   const profileStore = useProfileData();
   const { shiftId } = useLocalSearchParams();
   const {
@@ -353,7 +367,7 @@ export default function ShiftDetails() {
   const startDate = new Date(shift?.start_time);
   const endDate = new Date(shift?.end_time);
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, backgroundColor: "#fff" }}>
       <View style={styles.container}>
         <View style={styles.topBarContainer}>
           <Pressable
@@ -365,242 +379,241 @@ export default function ShiftDetails() {
           <Text style={styles.locationText}>Shift Details</Text>
           <Pressable style={styles.faintbackIconContainer}></Pressable>
         </View>
+      </View>
 
-        <ScrollView
-          contentContainerStyle={styles.content}
-          showsVerticalScrollIndicator={false}
-        >
-          {(shiftStatus === 0 || shiftStatus === 1 || shiftStatus === 2) && (
-            <View style={styles.actionBarTop}>
-              {shiftStatus === 0 && (
-                <Pressable
-                  onPress={handleAcceptShift}
-                  disabled={isBusy}
-                  style={({ pressed }) => [
-                    styles.actionButton,
-                    styles.actionButtonAccept,
-                    pressed && styles.actionButtonPressed,
-                    isBusy && styles.actionButtonDisabled,
-                  ]}
-                >
-                  <Text style={styles.actionButtonText}>
-                    {isAccepting ? "Processing..." : "Accept Shift"}
-                  </Text>
-                </Pressable>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.heroCard}>
+          <View style={styles.heroIconWrap}>
+            <MaterialCommunityIcons
+              name="office-building-marker"
+              size={32}
+              color="#70C601"
+            />
+          </View>
+          <View style={styles.heroContent}>
+            <Text style={styles.heroName}>{shift?.facility?.name ?? "—"}</Text>
+            <Text style={styles.heroMeta}>{shift?.address ?? "—"}</Text>
+            <Text style={styles.heroMeta}>{shift?.state?.name ?? "—"}</Text>
+            <View style={styles.chipRow}>
+              {shift?.shift_type && (
+                <ShiftTypePill
+                  type={
+                    shift?.is_sleepover_shift
+                      ? "sleepover"
+                      : (shift?.shift_type as ShiftType)
+                  }
+                />
               )}
-              {shiftStatus === 1 && (
-                <Pressable
-                  onPress={handleStartShift}
-                  disabled={isBusy}
-                  style={({ pressed }) => [
-                    styles.actionButton,
-                    styles.actionButtonStart,
-                    pressed && styles.actionButtonPressed,
-                    isBusy && styles.actionButtonDisabled,
-                  ]}
-                >
-                  <Text style={styles.actionButtonText}>
-                    {isStarting ? "Processing..." : "Start Shift"}
-                  </Text>
-                </Pressable>
-              )}
-              {shiftStatus === 2 && (
-                <Pressable
-                  onPress={handleEndShift}
-                  disabled={isBusy}
-                  style={({ pressed }) => [
-                    styles.actionButton,
-                    styles.actionButtonEnd,
-                    pressed && styles.actionButtonPressed,
-                    isBusy && styles.actionButtonDisabled,
-                  ]}
-                >
-                  <Text style={styles.actionButtonText}>
-                    {isEnding ? "Processing..." : "End Shift"}
-                  </Text>
-                </Pressable>
-              )}
-            </View>
-          )}
-          <View style={styles.heroCard}>
-            <View style={styles.heroIconWrap}>
-              <MaterialCommunityIcons
-                name="office-building-marker"
-                size={32}
-                color="#70C601"
-              />
-            </View>
-            <View style={styles.heroContent}>
-              <Text style={styles.heroName}>
-                {shift?.facility?.name ?? "—"}
-              </Text>
-              <Text style={styles.heroMeta}>{shift?.address ?? "—"}</Text>
-              <Text style={styles.heroMeta}>{shift?.state?.name ?? "—"}</Text>
-              <View style={styles.chipRow}>
-                {shift?.shift_type && (
-                  <ShiftTypePill
-                    type={
-                      shift?.is_sleepover_shift
-                        ? "sleepover"
-                        : (shift?.shift_type as ShiftType)
-                    }
-                  />
-                )}
-                {/* <View style={styles.chip}>
+              {/* <View style={styles.chip}>
                   <Text style={styles.chipText}>
                     {shift?.status?.toUpperCase()}
                   </Text>
                 </View> */}
-              </View>
             </View>
           </View>
+        </View>
 
-          <View style={styles.sectionCard}>
-            <Text style={styles.sectionTitle}>Shift Info</Text>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Date</Text>
-              <Text style={styles.detailValue}>
-                {startDate.toLocaleDateString()}
-              </Text>
-            </View>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Time</Text>
-              <Text style={styles.detailValue}>
-                {startDate.toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  hour12: true,
-                })}{" "}
-                -{" "}
-                {endDate.toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  hour12: true,
-                })}
-              </Text>
-            </View>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Type</Text>
-
-              <Text
-                style={{ ...styles.detailValue, textTransform: "capitalize" }}
-              >
-                {shift?.is_sleepover_shift ? "Sleepover" : shift?.shift_type}
-              </Text>
-            </View>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Status</Text>
-              <Text
-                style={{ ...styles.detailValue, textTransform: "capitalize" }}
-              >
-                {shift?.status}
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.sectionCard}>
-            <Text style={styles.sectionTitle}>Profession</Text>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Profession</Text>
-              <Text style={styles.detailValue}>
-                {shift?.profession?.name ?? "—"}
-              </Text>
-            </View>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Category</Text>
-              <Text style={styles.detailValue}>
-                {shift?.category?.name ?? "—"}
-              </Text>
-            </View>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Level</Text>
-              <Text style={styles.detailValue}>
-                {shift?.level?.name ?? "—"}
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.sectionCard}>
-            <Text style={styles.sectionTitle}>Rates & Hours</Text>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Rate per hour</Text>
-              <Text style={styles.detailValue}>${shift?.hcp_per_rate}</Text>
-            </View>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Total Hours</Text>
-              <Text style={styles.detailValue}>{shift?.hours}</Text>
-            </View>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Amount</Text>
-              <Text style={styles.detailValue}>${shift?.hcp_amount}</Text>
-            </View>
-            <Text
-              style={{
-                fontSize: 11,
-                color: "#818589",
-                marginTop: 6,
-                fontStyle: "italic",
-              }}
-            >
-              All amounts are tax inclusive.
+        <View style={styles.sectionCard}>
+          <Text style={styles.sectionTitle}>Shift Info</Text>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Date</Text>
+            <Text style={styles.detailValue}>
+              {startDate.toLocaleDateString()}
             </Text>
           </View>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Time</Text>
+            <Text style={styles.detailValue}>
+              {startDate.toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: true,
+              })}{" "}
+              -{" "}
+              {endDate.toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: true,
+              })}
+            </Text>
+          </View>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Type</Text>
 
-          {isSleepover && (
-            <View style={styles.sectionCard}>
-              <Text style={styles.sectionTitle}>Sleepover Timeline</Text>
-              <View style={styles.timelineContainer}>
-                <TimelineItem
-                  label="Afternoon start"
-                  time={shift?.sleepover_afternoon_start_time}
-                  baseDate={startDate}
-                  isFirst
-                />
-                <TimelineItem
-                  label="Afternoon end"
-                  time={shift?.sleepover_afternoon_end_time}
-                  baseDate={startDate}
-                />
-                <TimelineItem
-                  label="Night start"
-                  time={shift?.sleepover_night_start_time}
-                  baseDate={startDate}
-                />
-                <TimelineItem
-                  label="Night end"
-                  time={shift?.sleepover_night_end_time}
-                  baseDate={startDate}
-                />
-                <TimelineItem
-                  label="Morning start"
-                  time={shift?.sleepover_morning_start_time}
-                  baseDate={startDate}
-                />
-                <TimelineItem
-                  label="Morning end"
-                  time={shift?.sleepover_morning_end_time}
-                  baseDate={startDate}
-                  isLast
-                />
-              </View>
+            <Text
+              style={{ ...styles.detailValue, textTransform: "capitalize" }}
+            >
+              {shift?.is_sleepover_shift ? "Sleepover" : shift?.shift_type}
+            </Text>
+          </View>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Status</Text>
+            <Text
+              style={{ ...styles.detailValue, textTransform: "capitalize" }}
+            >
+              {shift?.status}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.sectionCard}>
+          <Text style={styles.sectionTitle}>Profession</Text>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Profession</Text>
+            <Text style={styles.detailValue}>
+              {shift?.profession?.name ?? "—"}
+            </Text>
+          </View>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Category</Text>
+            <Text style={styles.detailValue}>
+              {shift?.category?.name ?? "—"}
+            </Text>
+          </View>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Level</Text>
+            <Text style={styles.detailValue}>{shift?.level?.name ?? "—"}</Text>
+          </View>
+        </View>
+
+        <View style={styles.sectionCard}>
+          <Text style={styles.sectionTitle}>Rates & Hours</Text>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Rate per hour</Text>
+            <Text style={styles.detailValue}>${shift?.hcp_per_rate}</Text>
+          </View>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Total Hours</Text>
+            <Text style={styles.detailValue}>{shift?.hours}</Text>
+          </View>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Amount</Text>
+            <Text style={styles.detailValue}>${shift?.hcp_amount}</Text>
+          </View>
+          <Text
+            style={{
+              fontSize: 11,
+              color: "#818589",
+              marginTop: 6,
+              fontStyle: "italic",
+            }}
+          >
+            All amounts are tax inclusive.
+          </Text>
+        </View>
+
+        {isSleepover && (
+          <View style={styles.sectionCard}>
+            <Text style={styles.sectionTitle}>Sleepover Timeline</Text>
+            <View style={styles.timelineContainer}>
+              <TimelineItem
+                label="Afternoon start"
+                time={shift?.sleepover_afternoon_start_time}
+                baseDate={startDate}
+                isFirst
+              />
+              <TimelineItem
+                label="Afternoon end"
+                time={shift?.sleepover_afternoon_end_time}
+                baseDate={startDate}
+              />
+              <TimelineItem
+                label="Night start"
+                time={shift?.sleepover_night_start_time}
+                baseDate={startDate}
+              />
+              <TimelineItem
+                label="Night end"
+                time={shift?.sleepover_night_end_time}
+                baseDate={startDate}
+              />
+              <TimelineItem
+                label="Morning start"
+                time={shift?.sleepover_morning_start_time}
+                baseDate={startDate}
+              />
+              <TimelineItem
+                label="Morning end"
+                time={shift?.sleepover_morning_end_time}
+                baseDate={startDate}
+                isLast
+              />
             </View>
-          )}
-        </ScrollView>
-      </View>
+          </View>
+        )}
+      </ScrollView>
+
+      {[0, 1, 2].includes(shiftStatus) && (
+        <BottomSheet
+          ref={bottomSheetRef}
+          enablePanDownToClose={false}
+          enableContentPanningGesture={false}
+          enableHandlePanningGesture={false}
+          enableOverDrag={false}
+          onChange={undefined}
+          index={0}
+          snapPoints={[110]}
+          backgroundStyle={{
+            backgroundColor: "#E6F0D8",
+            borderTopWidth: 3,
+            borderTopColor: "#70C601",
+            borderTopLeftRadius: 15,
+            borderTopRightRadius: 15,
+          }}
+          handleIndicatorStyle={{ backgroundColor: "#70C601" }}
+        >
+          <BottomSheetView style={styles.contentContainer}>
+            {shiftStatus === 0 && (
+              <SwipeButton
+                text={isAccepting ? "Processing..." : "Swipe to Accept"}
+                onSwipeComplete={handleAcceptShift}
+                disabled={isBusy}
+                bgColor="#70C601"
+              />
+            )}
+            {shiftStatus === 1 && (
+              <SwipeButton
+                text={isStarting ? "Processing..." : "Swipe to Start"}
+                onSwipeComplete={handleStartShift}
+                disabled={isBusy}
+                bgColor="#70C601"
+              />
+            )}
+            {shiftStatus === 2 && (
+              <SwipeButton
+                text={isEnding ? "Processing..." : "Swipe to End"}
+                onSwipeComplete={handleEndShift}
+                disabled={isBusy}
+                bgColor="#E55353"
+              />
+            )}
+          </BottomSheetView>
+        </BottomSheet>
+      )}
     </View>
   );
 }
 
-// ...existing code...
 const styles = StyleSheet.create({
+  contentContainer: {
+    height: 110,
+    // padding: 36,
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingBottom: 36,
+  },
   container: {
-    flex: 1,
+    // flex: 1,
     backgroundColor: "#70C601",
     width: "100%",
-    height: "100%",
+    height: "13%",
     display: "flex",
     flexDirection: "column",
-    paddingVertical: 50,
+    paddingVertical: 30,
   },
   backIconContainer: {
     height: 40,
@@ -638,9 +651,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 16,
+    // marginBottom: 16,
     paddingHorizontal: 10,
     backgroundColor: "#70C601",
+    marginTop: 20,
   },
   iconCircle: {
     height: 40,
@@ -656,7 +670,7 @@ const styles = StyleSheet.create({
     color: "#111",
   },
   content: {
-    paddingBottom: 32,
+    paddingBottom: 140,
     backgroundColor: "#fff",
     paddingHorizontal: 10,
     // flex: 1,

@@ -157,31 +157,32 @@ export default function Login() {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-      style={styles.container}
-    >
+    <View style={styles.container}>
       <View
         style={{
           backgroundColor: "#70C601",
-          flex: 1,
+          // flex: 1,
+          height: "50%",
           justifyContent: "flex-start",
           alignItems: "center",
         }}
       >
         <Image
           source={require("@/assets/images/careworker2.jpg")}
-          style={{ width: "100%", height: "60%", opacity: 0.5 }}
+          style={{ width: "100%", height: "100%", opacity: 0.5 }}
           contentFit="cover"
         />
-        {/* <View style={styles.topContainer}></View> */}
-        {/* <View style={styles.topAbsContainer}>
+      </View>
+      {/* <View style={styles.topContainer}></View> */}
+      {/* <View style={styles.topAbsContainer}>
           <View style={styles.topAbsContainerLeft}></View>
           <View style={styles.topAbsContainerRight}>
             <View style={styles.innerContainer}></View>
           </View>
         </View> */}
-
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
         <View style={styles.bottomContainer}>
           <View style={{ marginBottom: 20, marginTop: 10 }}>
             <Text
@@ -223,7 +224,7 @@ export default function Login() {
                 autoComplete="email"
                 clearButtonMode="while-editing"
                 autoFocus={true}
-                clearTextOnFocus={true}
+                clearTextOnFocus={false}
                 cursorColor="#70C601"
                 enterKeyHint="next"
                 placeholder="johnwilliams@gmail.com"
@@ -263,11 +264,11 @@ export default function Login() {
                 value={password}
                 autoFocus={true}
                 cursorColor="#70C601"
-                keyboardType="email-address"
+                keyboardType="default"
                 enterKeyHint="done"
                 clearButtonMode="while-editing"
                 autoComplete="password"
-                clearTextOnFocus={true}
+                clearTextOnFocus={false}
                 onChangeText={setPassword}
                 placeholder="••••••••"
                 placeholderTextColor="#999"
@@ -388,20 +389,23 @@ export default function Login() {
             </Link>
           </Text> */}
         </View>
-      </View>
-      <View
+      </KeyboardAvoidingView>
+
+      {/* <View
         style={{
           backgroundColor: "#fff",
           height: "auto",
         }}
-      ></View>
-    </KeyboardAvoidingView>
+      ></View> */}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    // flex: 1,
+    display: "flex",
+    flexDirection: "column",
     backgroundColor: "#fff",
   },
   topContainer: {
@@ -413,8 +417,7 @@ const styles = StyleSheet.create({
   bottomContainer: {
     flex: 1,
     width: "100%",
-    height: "auto",
-    minHeight: "60%",
+    // height: "50%",
     backgroundColor: "#ffffff",
     // justifyContent: "center",
     paddingVertical: 20,
