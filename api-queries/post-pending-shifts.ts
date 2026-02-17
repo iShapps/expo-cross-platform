@@ -1,19 +1,21 @@
 import { postResource } from "@/api-actions/mutations";
-import { IShiftResponse } from "@/data-types/shifts";
+import {
+  IShiftActionResponse,
+  IShiftLocationParams,
+  IShiftResponse,
+} from "@/data-types/shifts";
 
 export async function postPendingShifts(page = 1): Promise<IShiftResponse> {
   return postResource<{ shift_status: string; page: number }, IShiftResponse>(
     "/shift",
     {
-      shift_status: "pending",
+      shift_status: "available", //pending
       page,
     },
   );
 }
 
-export async function postScheduledShifts(
-  page = 1,
-): Promise<IShiftResponse> {
+export async function postScheduledShifts(page = 1): Promise<IShiftResponse> {
   return postResource<{ shift_status: string; page: number }, IShiftResponse>(
     "/shift",
     {
@@ -23,11 +25,9 @@ export async function postScheduledShifts(
   );
 }
 
-export async function postRunningShifts(
-  page = 1,
-): Promise<IShiftResponse> {
+export async function postRunningShifts(page = 1): Promise<IShiftResponse> {
   return postResource<{ shift_status: string; page: number }, IShiftResponse>(
-    "/shifts",
+    "/shift",
     {
       shift_status: "running",
       page,
@@ -35,9 +35,7 @@ export async function postRunningShifts(
   );
 }
 
-export async function postTransferedShifts(
-  page = 1,
-): Promise<IShiftResponse> {
+export async function postTransferedShifts(page = 1): Promise<IShiftResponse> {
   return postResource<{ shift_status: string; page: number }, IShiftResponse>(
     "/shift",
     {
@@ -47,9 +45,7 @@ export async function postTransferedShifts(
   );
 }
 
-export async function postPastShifts(
-  page = 1,
-): Promise<IShiftResponse> {
+export async function postPastShifts(page = 1): Promise<IShiftResponse> {
   return postResource<{ shift_status: string; page: number }, IShiftResponse>(
     "/shift",
     {
@@ -59,9 +55,7 @@ export async function postPastShifts(
   );
 }
 
-export async function postCompletedShifts(
-  page = 1,
-): Promise<IShiftResponse> {
+export async function postCompletedShifts(page = 1): Promise<IShiftResponse> {
   return postResource<{ shift_status: string; page: number }, IShiftResponse>(
     "/shift",
     {
@@ -71,9 +65,7 @@ export async function postCompletedShifts(
   );
 }
 
-export async function postCancelledShifts(
-  page = 1,
-): Promise<IShiftResponse> {
+export async function postCancelledShifts(page = 1): Promise<IShiftResponse> {
   return postResource<{ shift_status: string; page: number }, IShiftResponse>(
     "/shift",
     {
@@ -81,4 +73,55 @@ export async function postCancelledShifts(
       page,
     },
   );
+}
+
+export async function postAcceptShift(
+  shift_id: number,
+): Promise<IShiftActionResponse> {
+  return postResource<{ shift_id: number }, IShiftActionResponse>(
+    "/shift/accept",
+    { shift_id },
+  );
+}
+
+export async function postShiftTracking(params: {
+  shift_id: number;
+  facility_id: number;
+  latitude: number;
+  longitude: number;
+}): Promise<IShiftActionResponse> {
+  return postResource<typeof params, IShiftActionResponse>(
+    "/shift/shift-tracking",
+    params,
+  );
+}
+
+export async function postStartShift(
+  shift_id: number,
+): Promise<IShiftActionResponse> {
+  return postResource<{ shift_id: number }, IShiftActionResponse>(
+    "/shift/start",
+    { shift_id },
+  );
+}
+
+export async function postEndShift(
+  shift_id: number,
+): Promise<IShiftActionResponse> {
+  return postResource<{ shift_id: number }, IShiftActionResponse>(
+    "/shift/end",
+    { shift_id },
+  );
+}
+
+export async function postShiftLocation(params: IShiftLocationParams) {
+  try {
+    return await postResource<IShiftLocationParams, IShiftActionResponse>(
+      "/shift/shift-tracking",
+      params,
+    );
+  } catch (error) {
+    console.error("Failed to send shift location", error);
+    throw error;
+  }
 }

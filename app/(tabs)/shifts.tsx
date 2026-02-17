@@ -214,8 +214,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#ffffff",
-    paddingHorizontal: 12,
-    paddingTop: 16,
+    paddingHorizontal: 10,
+    // paddingTop: 16,
   },
   safeArea: {
     flex: 1,
@@ -228,7 +228,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#70C601",
     width: "100%",
     margin: 8,
-    paddingHorizontal: 12,
+    // paddingHorizontal: 12,
     paddingTop: 12,
     paddingBottom: 8,
   },

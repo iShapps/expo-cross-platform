@@ -27,13 +27,15 @@ export const ShiftCardBase: React.FC<ShiftCardProps> = ({ shift, onPress }) => {
   return (
     <Link
       href={{
-        pathname: "/(tabs)/[shiftId]",
+        pathname: "/(main)/[shiftId]",
         params: { shiftId: shift.id },
       }}
     >
       <View style={styles.card}>
         <View style={styles.headerRow}>
-          {shift?.shift_type && (
+          {shift?.is_sleepover_shift ? (
+            <ShiftTypePill type="sleepover" />
+          ) : (
             <ShiftTypePill type={shift?.shift_type as ShiftType} />
           )}
         </View>

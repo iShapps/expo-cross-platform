@@ -177,14 +177,14 @@ export default function TabLayout() {
           href: null,
         }}
       />
-      <Tabs.Screen
+      {/* <Tabs.Screen
         name="[shiftId]"
         options={{
           headerShown: false,
           title: "Shift Details",
           href: null,
         }}
-      />
+      /> */}
     </Tabs>
   );
 }
