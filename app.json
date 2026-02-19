@@ -107,7 +107,8 @@
       "router": {},
       "eas": {
         "projectId": "17a2649d-0933-4036-b23a-49012513cd96",
-        "oneSignalAppId": "<YOUR APP ID HERE>"
+        "oneSignalAppId": "b9c8e5c7-1a0d-4f1b-9c3e-2a5f6d7e8f90",
+        "oneSignalAndroidAppId": "a4cfbbf7-fae5-470b-bb0c-b6bc8f673ade"
       }
     },
     "owner": "ishapps"
