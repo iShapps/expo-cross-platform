@@ -20,6 +20,8 @@ interface SwipeButtonProps {
   disabled?: boolean;
   bgColor?: string;
   icon?: string;
+  completed?: boolean;
+  processing?: boolean;
 }
 
 export const SwipeButton = ({
@@ -28,9 +30,10 @@ export const SwipeButton = ({
   disabled,
   bgColor = "#70C601",
   icon = "chevron-forward",
+  completed = false,
+  processing = false,
 }: SwipeButtonProps) => {
   const translateX = useSharedValue(0);
-  const [completed, setCompleted] = useState(false);
 
   const BUTTON_HEIGHT = 60;
   const KNOB_SIZE = 52;
@@ -53,7 +56,6 @@ export const SwipeButton = ({
       if (disabled || completed) return;
       if (translateX.value >= maxTranslate * 0.9) {
         translateX.value = withSpring(maxTranslate);
-        setCompleted(true);
         onSwipeComplete();
       } else {
         translateX.value = withSpring(0);

@@ -27,6 +27,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  useColorScheme,
   View,
 } from "react-native";
 
@@ -113,6 +114,8 @@ const TimelineItem = ({
     bg: "#F0F0F0",
     color: "#70C601",
   };
+  const colorScheme = useColorScheme() || "light";
+  const styles = getStyles(colorScheme);
   return (
     <View style={styles.timelineItemWrap}>
       <View style={styles.timelineIconColumn}>
@@ -341,37 +344,106 @@ export default function ShiftDetails() {
     await refetch();
   };
 
+  const colorScheme = useColorScheme() || "light";
+  const styles = getStyles(colorScheme);
+
   if (isLoading || isRefetching) {
     return <ShiftDetailsSkeleton />;
   }
 
   if (!isLoading && (isError || !shift || isRefetchError)) {
     return (
-      <View style={styles.errorScreen}>
-        <View style={styles.errorCard}>
-          <View style={styles.errorIconWrap}>
+      <View
+        style={[
+          styles.errorScreen,
+          { backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff" },
+        ]}
+      >
+        <View
+          style={[
+            styles.errorCard,
+            { backgroundColor: colorScheme === "dark" ? "#36454F" : "#fff" },
+          ]}
+        >
+          <View
+            style={[
+              styles.errorIconWrap,
+              {
+                backgroundColor: colorScheme === "dark" ? "#232A2E" : "#FBF2F2",
+              },
+            ]}
+          >
             <MaterialCommunityIcons
               name="cloud-alert-outline"
               size={34}
               color="#FFB2B2"
             />
           </View>
-          <Text style={styles.errorTitle}>Something went wrong</Text>
-          <Text style={styles.errorSubtitle}>
+          <Text
+            style={[
+              styles.errorTitle,
+              { color: colorScheme === "dark" ? "#FFD966" : "#111" },
+            ]}
+          >
+            Something went wrong
+          </Text>
+          <Text
+            style={[
+              styles.errorSubtitle,
+              { color: colorScheme === "dark" ? "#FFD966" : "#6B7280" },
+            ]}
+          >
             {data?.message ??
               "We couldn’t load this shift right now. Check your connection and try again."}
           </Text>
           <View style={styles.errorActions}>
-            <Pressable style={styles.errorPrimaryBtn} onPress={handleRefetch}>
-              <Feather name="rotate-ccw" size={18} color="#ffffff" />
-              <Text style={styles.errorPrimaryText}>Try again</Text>
+            <Pressable
+              style={[
+                styles.errorPrimaryBtn,
+                {
+                  backgroundColor:
+                    colorScheme === "dark" ? "#FFD966" : "#FFB2B2",
+                },
+              ]}
+              onPress={handleRefetch}
+            >
+              <Feather
+                name="rotate-ccw"
+                size={18}
+                color={colorScheme === "dark" ? "#232A2E" : "#ffffff"}
+              />
+              <Text
+                style={[
+                  styles.errorPrimaryText,
+                  { color: colorScheme === "dark" ? "#232A2E" : "#fff" },
+                ]}
+              >
+                Try again
+              </Text>
             </Pressable>
             <Pressable
-              style={styles.errorSecondaryBtn}
+              style={[
+                styles.errorSecondaryBtn,
+                {
+                  backgroundColor:
+                    colorScheme === "dark" ? "#232A2E" : "#F2F5EF",
+                },
+              ]}
               onPress={() => router.canGoBack() && router.back()}
             >
-              <Ionicons name="return-up-back" size={18} color="#4B5563" />
-              <Text style={styles.errorSecondaryText}>Go back</Text>
+              <Ionicons
+                name="return-up-back"
+                size={18}
+                color={colorScheme === "dark" ? "#FFD966" : "#4B5563"}
+              />
+              <Text
+                style={[
+                  styles.errorSecondaryText,
+                  { color: colorScheme === "dark" ? "#FFD966" : "#4B5563" },
+                ]}
+              >
+                Go back
+              </Text>
             </Pressable>
           </View>
         </View>
@@ -383,36 +455,110 @@ export default function ShiftDetails() {
   const startDate = new Date(shift?.start_time);
   const endDate = new Date(shift?.end_time);
   return (
-    <View style={{ flex: 1, backgroundColor: "#fff" }}>
-      <View style={styles.container}>
-        <View style={styles.topBarContainer}>
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff",
+      }}
+    >
+      <View
+        style={[
+          styles.container,
+          { backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601" },
+        ]}
+      >
+        <View
+          style={[
+            styles.topBarContainer,
+            { backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601" },
+          ]}
+        >
           <Pressable
             onPress={() => router.canGoBack() && router.back()}
-            style={styles.backIconContainer}
+            style={[
+              styles.backIconContainer,
+              { borderColor: colorScheme === "dark" ? "#b0b8ca" : "#D3D3D3" },
+            ]}
           >
-            <Fontisto name="arrow-left-l" size={15} color="#fff" />
+            <Fontisto
+              name="arrow-left-l"
+              size={15}
+              color={colorScheme === "dark" ? "#b0b8ca" : "#fff"}
+            />
           </Pressable>
-          <Text style={styles.locationText}>Shift Details</Text>
-          <Pressable style={styles.faintbackIconContainer}></Pressable>
+          <Text
+            style={[
+              styles.locationText,
+              { color: colorScheme === "dark" ? "#fff" : "#fff" },
+            ]}
+          >
+            Shift Details
+          </Text>
+          <Pressable
+            style={[
+              styles.faintbackIconContainer,
+              { borderColor: colorScheme === "dark" ? "#232A2E" : "#70C601" },
+            ]}
+          ></Pressable>
         </View>
       </View>
 
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[
+          styles.content,
+          { backgroundColor: colorScheme === "dark" ? "#36454F" : "#fff" },
+        ]}
         showsVerticalScrollIndicator={false}
       >
-        <Pressable onPress={openMaps} style={styles.heroCard}>
-          <View style={styles.heroIconWrap}>
+        <Pressable
+          onPress={openMaps}
+          style={[
+            styles.heroCard,
+            {
+              backgroundColor: colorScheme === "dark" ? "#232A2E" : "#F8FFF0",
+              borderColor: colorScheme === "dark" ? "#36454F" : "#E6F0D8",
+            },
+          ]}
+        >
+          <View
+            style={[
+              styles.heroIconWrap,
+              {
+                backgroundColor: colorScheme === "dark" ? "#36454F" : "#EAF7D2",
+              },
+            ]}
+          >
             <MaterialCommunityIcons
               name="office-building-marker"
               size={32}
-              color="#70C601"
+              color={colorScheme === "dark" ? "#FFD966" : "#70C601"}
             />
           </View>
           <View style={styles.heroContent}>
-            <Text style={styles.heroName}>{shift?.facility?.name ?? "—"}</Text>
-            <Text style={styles.heroMeta}>{shift?.address ?? "—"}</Text>
-            <Text style={styles.heroMeta}>{shift?.state?.name ?? "—"}</Text>
+            <Text
+              style={[
+                styles.heroName,
+                { color: colorScheme === "dark" ? "#FFD966" : "#111" },
+              ]}
+            >
+              {shift?.facility?.name ?? "—"}
+            </Text>
+            <Text
+              style={[
+                styles.heroMeta,
+                { color: colorScheme === "dark" ? "#FFD966" : "#6B7280" },
+              ]}
+            >
+              {shift?.address ?? "—"}
+            </Text>
+            <Text
+              style={[
+                styles.heroMeta,
+                { color: colorScheme === "dark" ? "#FFD966" : "#6B7280" },
+              ]}
+            >
+              {shift?.state?.name ?? "—"}
+            </Text>
             <View style={styles.chipRow}>
               {shift?.shift_type && (
                 <ShiftTypePill
@@ -423,11 +569,6 @@ export default function ShiftDetails() {
                   }
                 />
               )}
-              {/* <View style={styles.chip}>
-                  <Text style={styles.chipText}>
-                    {shift?.status?.toUpperCase()}
-                  </Text>
-                </View> */}
             </View>
           </View>
         </Pressable>
@@ -573,37 +714,55 @@ export default function ShiftDetails() {
           index={0}
           snapPoints={[110]}
           backgroundStyle={{
-            backgroundColor: "#E6F0D8",
+            backgroundColor: colorScheme === "dark" ? "#232A2E" : "#E6F0D8",
             borderTopWidth: 3,
-            borderTopColor: "#70C601",
+            borderTopColor: colorScheme === "dark" ? "#FFD966" : "#70C601",
             borderTopLeftRadius: 15,
             borderTopRightRadius: 15,
           }}
-          handleIndicatorStyle={{ backgroundColor: "#70C601" }}
+          handleIndicatorStyle={{
+            backgroundColor: colorScheme === "dark" ? "#FFD966" : "#70C601",
+          }}
         >
           <BottomSheetView style={styles.contentContainer}>
             {shiftStatus === 0 && (
               <SwipeButton
-                text={isAccepting ? "Processing..." : "Swipe to Accept"}
-                onSwipeComplete={handleAcceptShift}
+                text="Swipe to Accept"
+                onSwipeComplete={async () => {
+                  await handleAcceptShift();
+                  acceptShiftMutation.reset();
+                }}
                 disabled={isBusy}
-                bgColor="#70C601"
+                bgColor={colorScheme === "dark" ? "#FFD966" : "#70C601"}
+                processing={isAccepting}
+                completed={acceptShiftMutation.isSuccess}
               />
             )}
             {shiftStatus === 1 && (
               <SwipeButton
-                text={isStarting ? "Processing..." : "Swipe to Start"}
-                onSwipeComplete={handleStartShift}
+                text="Swipe to Start"
+                onSwipeComplete={async () => {
+                  await handleStartShift();
+                  startShiftMutation.reset();
+                  trackingMutation.reset();
+                }}
                 disabled={isBusy}
-                bgColor="#70C601"
+                bgColor={colorScheme === "dark" ? "#FFD966" : "#70C601"}
+                processing={isStarting}
+                completed={startShiftMutation.isSuccess}
               />
             )}
-            {shiftStatus === 2 && (
+            {shiftStatus == 2 && (
               <SwipeButton
-                text={isEnding ? "Processing..." : "Swipe to End"}
-                onSwipeComplete={handleEndShift}
+                text="Swipe to End"
+                onSwipeComplete={async () => {
+                  await handleEndShift();
+                  endShiftMutation.reset();
+                }}
                 disabled={isBusy}
-                bgColor="#E55353"
+                bgColor={colorScheme === "dark" ? "#E55353" : "#E55353"}
+                processing={isEnding}
+                completed={endShiftMutation.isSuccess}
               />
             )}
           </BottomSheetView>
@@ -613,353 +772,351 @@ export default function ShiftDetails() {
   );
 }
 
-const styles = StyleSheet.create({
-  contentContainer: {
-    height: 110,
-    // padding: 36,
-    width: "100%",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingBottom: 36,
-  },
-  container: {
-    // flex: 1,
-    backgroundColor: "#70C601",
-    width: "100%",
-    height: "13%",
-    display: "flex",
-    flexDirection: "column",
-    paddingVertical: 30,
-  },
-  backIconContainer: {
-    height: 40,
-    width: 40,
-    borderRadius: 50,
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: "center",
-    alignContent: "center",
-    alignItems: "center",
-    padding: 2,
-    borderWidth: 1,
-    borderColor: "#D3D3D3",
-  },
-  locationText: {
-    fontFamily: "Roboto",
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#fff",
-  },
-  faintbackIconContainer: {
-    height: 40,
-    width: 40,
-    borderRadius: 50,
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: "center",
-    alignContent: "center",
-    alignItems: "center",
-    padding: 2,
-    borderWidth: 1,
-    borderColor: "#70C601",
-  },
-  topBarContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    // marginBottom: 16,
-    paddingHorizontal: 10,
-    backgroundColor: "#70C601",
-    marginTop: 20,
-  },
-  iconCircle: {
-    height: 40,
-    width: 40,
-    borderRadius: 20,
-    backgroundColor: "#F0F0F0",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  pageTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#111",
-  },
-  content: {
-    paddingBottom: 140,
-    backgroundColor: "#fff",
-    paddingHorizontal: 10,
-    // flex: 1,
-  },
-  actionBarTop: {
-    paddingHorizontal: 12,
-    paddingBottom: 12,
-    paddingTop: 4,
-    backgroundColor: "#ffffff",
-    borderBottomWidth: 1,
-    borderBottomColor: "#E6F0D8",
-  },
-  actionButton: {
-    borderRadius: 999,
-    paddingVertical: 14,
-    paddingHorizontal: 18,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "#E6F0D8",
-    shadowColor: "#70C601",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.22,
-    shadowRadius: 14,
-    elevation: 5,
-  },
-  actionButtonPressed: {
-    transform: [{ scale: 0.98 }],
-  },
-  actionButtonDisabled: {
-    opacity: 0.6,
-  },
-  actionButtonText: {
-    color: "#ffffff",
-    fontSize: 16,
-    fontWeight: "700",
-    letterSpacing: 0.4,
-  },
-  actionButtonAccept: {
-    backgroundColor: "#70C601",
-  },
-  actionButtonStart: {
-    backgroundColor: "#4CAF50",
-  },
-  actionButtonEnd: {
-    backgroundColor: "#E55353",
-  },
-  heroCard: {
-    marginTop: 8,
-    backgroundColor: "#F8FFF0",
-    borderRadius: 5,
-    padding: 10,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    borderWidth: 1,
-    borderColor: "#E6F0D8",
-    marginBottom: 12,
-  },
-  heroIconWrap: {
-    height: 64,
-    width: 64,
-    borderRadius: 5,
-    backgroundColor: "#EAF7D2",
-    alignItems: "center",
-    justifyContent: "center",
-    overflow: "hidden",
-  },
-  heroContent: {
-    flex: 1,
-  },
-  heroName: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#111",
-  },
-  heroMeta: {
-    fontSize: 12,
-    color: "#6B7280",
-    marginTop: 2,
-  },
-  sectionCard: {
-    marginTop: 12,
-    borderRadius: 5,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: "#F0F0F0",
-    backgroundColor: "#fff",
-    marginBottom: 8,
-  },
-  sectionTitle: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#111",
-    marginBottom: 10,
-    textTransform: "uppercase",
-    letterSpacing: 0.4,
-  },
-  detailRow: {
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F3F4F6",
-  },
-  detailLabel: {
-    fontSize: 12,
-    color: "#6B7280",
-  },
-  detailValue: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#111",
-    marginTop: 4,
-  },
-  chipRow: {
-    flexDirection: "row",
-    gap: 8,
-    marginTop: 10,
-    marginBottom: -8,
-  },
-  chip: {
-    backgroundColor: "#F0F8E8",
-    borderRadius: 999,
-    paddingHorizontal: 14,
-    paddingVertical: 4,
-    marginRight: 4,
-  },
-  chipText: {
-    color: "#70C601",
-    fontWeight: "700",
-    fontSize: 13,
-    letterSpacing: 0.5,
-  },
-  timelineContainer: {
-    marginTop: 8,
-    paddingLeft: 18,
-  },
-  timelineItemWrap: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    minHeight: 75,
-  },
-  timelineIconColumn: {
-    width: 36,
-    alignItems: "center",
-    position: "relative",
-    minHeight: 75,
-    justifyContent: "flex-start",
-  },
-  timelineLine: {
-    position: "absolute",
-    left: "50%",
-    transform: [{ translateX: -1.5 }],
-    width: 2,
-    borderRadius: 2,
-    backgroundColor: "#E0E0E0",
-    zIndex: 0,
-    height: "50%",
-  },
-  timelineDot: {
-    width: 40,
-    height: 40,
-    borderRadius: 50,
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 1,
-    borderWidth: 1,
-    borderColor: "#fff",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  timelineContent: {
-    flex: 1,
-    marginLeft: 8,
-    flexDirection: "column",
-    justifyContent: "center",
-  },
-  timelineLabel: {
-    fontSize: 13,
-    color: "#36454F",
-    fontWeight: "400",
-    textTransform: "capitalize",
-  },
-  timelineTime: {
-    fontSize: 13,
-    color: "#818589",
-    fontWeight: "300",
-    textTransform: "capitalize",
-  },
-  errorScreen: {
-    flex: 1,
-    backgroundColor: "#ffffff",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 16,
-  },
-  errorCard: {
-    width: "100%",
-    maxWidth: 420,
-    backgroundColor: "#fff",
-    borderRadius: 8,
-    paddingVertical: 20,
-    paddingHorizontal: 20,
-    borderWidth: 1,
-    borderColor: "#E6F0D8",
-    alignItems: "center",
-    shadowColor: "#70C601",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.12,
-    shadowRadius: 14,
-    elevation: 3,
-  },
-  errorIconWrap: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: "#FBF2F2",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 12,
-  },
-  errorTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#111",
-  },
-  errorSubtitle: {
-    fontSize: 13,
-    color: "#6B7280",
-    textAlign: "center",
-    marginTop: 8,
-    lineHeight: 18,
-  },
-  errorActions: {
-    width: "100%",
-    marginTop: 18,
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: 10,
-  },
-  errorPrimaryBtn: {
-    backgroundColor: "#FFB2B2",
-    display: "flex",
-    flexDirection: "row",
-    gap: 8,
-    alignContent: "center",
-    justifyContent: "center",
-    borderRadius: 5,
-    width: "45%",
-    alignItems: "center",
-  },
-  errorPrimaryText: {
-    color: "#fff",
-    fontSize: 14,
-    fontWeight: "500",
-  },
-  errorSecondaryBtn: {
-    backgroundColor: "#F2F5EF",
-    paddingVertical: 12,
-    borderRadius: 5,
-    alignItems: "center",
-    width: "50%",
-    display: "flex",
-    alignContent: "center",
-    justifyContent: "center",
-    flexDirection: "row",
-    gap: 8,
-  },
-  errorSecondaryText: {
-    color: "#4B5563",
-    fontSize: 14,
-    fontWeight: "500",
-  },
-});
+const getStyles = (colorScheme: string) =>
+  StyleSheet.create({
+    contentContainer: {
+      height: 110,
+      width: "100%",
+      alignItems: "center",
+      justifyContent: "center",
+      paddingBottom: 50,
+    },
+    container: {
+      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
+      width: "100%",
+      height: "13%",
+      display: "flex",
+      flexDirection: "column",
+      paddingVertical: 30,
+    },
+    backIconContainer: {
+      height: 40,
+      width: 40,
+      borderRadius: 50,
+      display: "flex",
+      flexDirection: "row",
+      justifyContent: "center",
+      alignContent: "center",
+      alignItems: "center",
+      padding: 2,
+      borderWidth: 1,
+      borderColor: colorScheme === "dark" ? "#FFD966" : "#D3D3D3",
+    },
+    locationText: {
+      fontFamily: "Roboto",
+      fontSize: 18,
+      fontWeight: "700",
+      color: colorScheme === "dark" ? "#FFD966" : "#fff",
+    },
+    faintbackIconContainer: {
+      height: 40,
+      width: 40,
+      borderRadius: 50,
+      display: "flex",
+      flexDirection: "row",
+      justifyContent: "center",
+      alignContent: "center",
+      alignItems: "center",
+      padding: 2,
+      borderWidth: 1,
+      borderColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
+    },
+    topBarContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: 10,
+      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
+      marginTop: 20,
+    },
+    iconCircle: {
+      height: 40,
+      width: 40,
+      borderRadius: 20,
+      backgroundColor: "#F0F0F0",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    pageTitle: {
+      fontSize: 18,
+      fontWeight: "700",
+      color: "#111",
+    },
+    content: {
+      paddingBottom: 140,
+      backgroundColor: colorScheme === "dark" ? "#36454F" : "#fff",
+      paddingHorizontal: 10,
+      // flex: 1,
+    },
+    actionBarTop: {
+      paddingHorizontal: 12,
+      paddingBottom: 12,
+      paddingTop: 4,
+      backgroundColor: "#ffffff",
+      borderBottomWidth: 1,
+      borderBottomColor: "#E6F0D8",
+    },
+    actionButton: {
+      borderRadius: 999,
+      paddingVertical: 14,
+      paddingHorizontal: 18,
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 1,
+      borderColor: "#E6F0D8",
+      shadowColor: "#70C601",
+      shadowOffset: { width: 0, height: 10 },
+      shadowOpacity: 0.22,
+      shadowRadius: 14,
+      elevation: 5,
+    },
+    actionButtonPressed: {
+      transform: [{ scale: 0.98 }],
+    },
+    actionButtonDisabled: {
+      opacity: 0.6,
+    },
+    actionButtonText: {
+      color: "#ffffff",
+      fontSize: 16,
+      fontWeight: "700",
+      letterSpacing: 0.4,
+    },
+    actionButtonAccept: {
+      backgroundColor: "#70C601",
+    },
+    actionButtonStart: {
+      backgroundColor: "#4CAF50",
+    },
+    actionButtonEnd: {
+      backgroundColor: "#E55353",
+    },
+    heroCard: {
+      marginTop: 8,
+      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#F8FFF0",
+      borderRadius: 5,
+      padding: 10,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      borderWidth: 1,
+      borderColor: colorScheme === "dark" ? "#36454F" : "#E6F0D8",
+      marginBottom: 12,
+    },
+    heroIconWrap: {
+      height: 64,
+      width: 64,
+      borderRadius: 5,
+      backgroundColor: colorScheme === "dark" ? "#36454F" : "#EAF7D2",
+      alignItems: "center",
+      justifyContent: "center",
+      overflow: "hidden",
+    },
+    heroContent: {
+      flex: 1,
+    },
+    heroName: {
+      fontSize: 16,
+      fontWeight: "700",
+      color: colorScheme === "dark" ? "#b0b8ca" : "#111",
+    },
+    heroMeta: {
+      fontSize: 12,
+      color: colorScheme === "dark" ? "#b0b8ca" : "#6B7280",
+      marginTop: 2,
+    },
+    sectionCard: {
+      marginTop: 12,
+      borderRadius: 5,
+      padding: 14,
+      borderWidth: 1,
+      borderColor: "#F0F0F0",
+      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff",
+      marginBottom: 8,
+    },
+    sectionTitle: {
+      fontSize: 13,
+      fontWeight: "700",
+      color: colorScheme === "dark" ? "#b0b8ca" : "#111",
+      marginBottom: 10,
+      textTransform: "uppercase",
+      letterSpacing: 0.4,
+    },
+    detailRow: {
+      paddingVertical: 8,
+      borderBottomWidth: 1,
+      borderBottomColor: "#F3F4F6",
+    },
+    detailLabel: {
+      fontSize: 12,
+      color: "#6B7280",
+    },
+    detailValue: {
+      fontSize: 14,
+      fontWeight: "600",
+      color: colorScheme === "dark" ? "#b0b8ca" : "#111",
+      marginTop: 4,
+    },
+    chipRow: {
+      flexDirection: "row",
+      gap: 8,
+      marginTop: 10,
+      marginBottom: -8,
+    },
+    chip: {
+      backgroundColor: "#F0F8E8",
+      borderRadius: 999,
+      paddingHorizontal: 14,
+      paddingVertical: 4,
+      marginRight: 4,
+    },
+    chipText: {
+      color: "#70C601",
+      fontWeight: "700",
+      fontSize: 13,
+      letterSpacing: 0.5,
+    },
+    timelineContainer: {
+      marginTop: 8,
+      paddingLeft: 18,
+    },
+    timelineItemWrap: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      minHeight: 75,
+    },
+    timelineIconColumn: {
+      width: 36,
+      alignItems: "center",
+      position: "relative",
+      minHeight: 75,
+      justifyContent: "flex-start",
+    },
+    timelineLine: {
+      position: "absolute",
+      left: "50%",
+      transform: [{ translateX: -1.5 }],
+      width: 2,
+      borderRadius: 2,
+      backgroundColor: "#E0E0E0",
+      zIndex: 0,
+      height: "50%",
+    },
+    timelineDot: {
+      width: 40,
+      height: 40,
+      borderRadius: 50,
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 1,
+      borderWidth: 1,
+      borderColor: "#fff",
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.08,
+      shadowRadius: 2,
+      elevation: 2,
+    },
+    timelineContent: {
+      flex: 1,
+      marginLeft: 8,
+      flexDirection: "column",
+      justifyContent: "center",
+    },
+    timelineLabel: {
+      fontSize: 13,
+      color: colorScheme === "dark" ? "#b0b8ca" : "#36454F",
+      fontWeight: "400",
+      textTransform: "capitalize",
+    },
+    timelineTime: {
+      fontSize: 13,
+      color: "#818589",
+      fontWeight: "300",
+      textTransform: "capitalize",
+    },
+    errorScreen: {
+      flex: 1,
+      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#ffffff",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: 16,
+    },
+    errorCard: {
+      width: "100%",
+      maxWidth: 420,
+      backgroundColor: colorScheme === "dark" ? "#36454F" : "#fff",
+      borderRadius: 8,
+      paddingVertical: 20,
+      paddingHorizontal: 20,
+      borderWidth: 1,
+      borderColor: colorScheme === "dark" ? "#232A2E" : "#E6F0D8",
+      alignItems: "center",
+      shadowColor: colorScheme === "dark" ? "#70C601" : "#000",
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.12,
+      shadowRadius: 14,
+      elevation: 3,
+    },
+    errorIconWrap: {
+      width: 64,
+      height: 64,
+      borderRadius: 32,
+      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#FBF2F2",
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: 12,
+    },
+    errorTitle: {
+      fontSize: 18,
+      fontWeight: "700",
+      color: colorScheme === "dark" ? "#FFD966" : "#111",
+    },
+    errorSubtitle: {
+      fontSize: 13,
+      color: colorScheme === "dark" ? "#FFD966" : "#6B7280",
+      textAlign: "center",
+      marginTop: 8,
+      lineHeight: 18,
+    },
+    errorActions: {
+      width: "100%",
+      marginTop: 18,
+      flexDirection: "row",
+      justifyContent: "center",
+      gap: 10,
+    },
+    errorPrimaryBtn: {
+      backgroundColor: colorScheme === "dark" ? "#FFD966" : "#FFB2B2",
+      display: "flex",
+      flexDirection: "row",
+      gap: 8,
+      alignContent: "center",
+      justifyContent: "center",
+      borderRadius: 5,
+      width: "45%",
+      alignItems: "center",
+    },
+    errorPrimaryText: {
+      color: colorScheme === "dark" ? "#232A2E" : "#fff",
+      fontSize: 14,
+      fontWeight: "500",
+    },
+    errorSecondaryBtn: {
+      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#F2F5EF",
+      paddingVertical: 12,
+      borderRadius: 5,
+      alignItems: "center",
+      width: "50%",
+      display: "flex",
+      alignContent: "center",
+      justifyContent: "center",
+      flexDirection: "row",
+      gap: 8,
+    },
+    errorSecondaryText: {
+      color: colorScheme === "dark" ? "#FFD966" : "#4B5563",
+      fontSize: 14,
+      fontWeight: "500",
+    },
+  });

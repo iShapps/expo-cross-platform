@@ -236,7 +236,7 @@ const getStyles = (colorScheme: string) =>
       alignItems: "center",
       padding: 2,
       borderWidth: 1,
-      borderColor: colorScheme === "dark" ? "#36454F" : "#70C601",
+      borderColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
     },
     topBarContainer: {
       flexDirection: "row",
