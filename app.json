@@ -10,14 +10,20 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
+      "bundleIdentifier": "com.smarthealthcare.ishapps",
       "infoPlist": {
         "NSFaceIDUsageDescription": "Allow $(PRODUCT_NAME) to use Face ID for authentication.",
         "ITSAppUsesNonExemptEncryption": false,
         "NSLocationWhenInUseUsageDescription": "Allow $(PRODUCT_NAME) to access your location while using the app to navigate to assigned shift locations and verify arrival when starting or ending a shift.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Allow $(PRODUCT_NAME) to access your location in the background to monitor travel to assigned shift locations and verify presence at the facility when starting or ending a shift.",
-        "UIBackgroundModes": ["location"]
+        "UIBackgroundModes": ["location", "remote-notification"]
       },
-      "bundleIdentifier": "com.smarthealthcare.ishapps"
+      "entitlements": {
+        "aps-environment": "development", //"production"
+        "com.apple.security.application-groups": [
+          "group.${ios.bundleIdentifier}.onesignal"
+        ]
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -44,6 +50,12 @@
       "favicon": "./assets/images/smhealth.png"
     },
     "plugins": [
+      [
+        "onesignal-expo-plugin",
+        {
+          "mode": "development" //"production"
+        }
+      ],
       "expo-router",
       "expo-notifications",
       [
@@ -94,7 +106,8 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "17a2649d-0933-4036-b23a-49012513cd96"
+        "projectId": "17a2649d-0933-4036-b23a-49012513cd96",
+        "oneSignalAppId": "<YOUR APP ID HERE>"
       }
     },
     "owner": "ishapps"
