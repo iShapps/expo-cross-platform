@@ -236,7 +236,7 @@ const getStyles = (colorScheme: string) =>
     content: {
       paddingHorizontal: 10,
       paddingBottom: 32,
-      backgroundColor: colorScheme === "dark" ? "#36454F" : "#fff",
+      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff",
     },
     headerRow: {
       flexDirection: "row",

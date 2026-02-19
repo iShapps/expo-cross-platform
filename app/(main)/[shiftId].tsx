@@ -506,7 +506,7 @@ export default function ShiftDetails() {
       <ScrollView
         contentContainerStyle={[
           styles.content,
-          { backgroundColor: colorScheme === "dark" ? "#36454F" : "#fff" },
+          { backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff" },
         ]}
         showsVerticalScrollIndicator={false}
       >
@@ -844,7 +844,7 @@ const getStyles = (colorScheme: string) =>
     },
     content: {
       paddingBottom: 140,
-      backgroundColor: colorScheme === "dark" ? "#36454F" : "#fff",
+      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff",
       paddingHorizontal: 10,
       // flex: 1,
     },
@@ -852,7 +852,7 @@ const getStyles = (colorScheme: string) =>
       paddingHorizontal: 12,
       paddingBottom: 12,
       paddingTop: 4,
-      backgroundColor: "#ffffff",
+      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#ffffff",
       borderBottomWidth: 1,
       borderBottomColor: "#E6F0D8",
     },

@@ -565,7 +565,7 @@ const darkStyles = StyleSheet.create({
   },
   mainLandingContainer: {
     flex: 1,
-    backgroundColor: "#151718",
+    backgroundColor: "#232A2E",
     width: "100%",
     paddingHorizontal: 15,
     overflow: "hidden",

@@ -91,7 +91,7 @@ const getStyles = (colorScheme: string) =>
       gap: 4,
       width: "100%",
       marginVertical: 5,
-      backgroundColor: colorScheme === "dark" ? "#36454F" : "#fff",
+      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff",
       flex: 1,
       paddingHorizontal: 10,
     },
