@@ -1,4 +1,5 @@
 import { IProfileDocument } from "@/data-types/profile";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import Fontisto from "@expo/vector-icons/Fontisto";
@@ -20,6 +21,9 @@ const isExpired = (expiry?: string) => {
 
 const DocumentCard: React.FC<DocumentCardProps> = ({ document }) => {
   const expired = isExpired(document.expiry_date);
+  let colorScheme = useColorScheme();
+  if (!colorScheme) colorScheme = "light";
+  const styles = getStyles(colorScheme);
   // Dynamic icon selection based on document name
   let iconComponent = (
     <MaterialCommunityIcons
@@ -155,100 +159,101 @@ const DocumentCard: React.FC<DocumentCardProps> = ({ document }) => {
 
 export default DocumentCard;
 
-const styles = StyleSheet.create({
-  card: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#fff",
-    borderRadius: 5,
-    padding: 5,
-    borderColor: "#f1f1f1",
-    borderWidth: 1,
-    gap: 0,
-  },
-  expiredCard: {
-    borderColor: "#e53935",
-    backgroundColor: "#fff5f5",
-  },
-  iconWrapper: {
-    position: "relative",
-    marginRight: 16,
-    marginLeft: 2,
-    width: 44,
-    height: 44,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  icon: {
-    zIndex: 1,
-  },
-  statusDot: {
-    position: "absolute",
-    top: 2,
-    right: 2,
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    borderWidth: 1.5,
-    borderColor: "#fff",
-    zIndex: 2,
-  },
-  statusDotActive: {
-    backgroundColor: "#43d047",
-  },
-  statusDotInactive: {
-    backgroundColor: "#e53935",
-  },
-  infoColumn: {
-    flex: 1,
-    flexDirection: "column",
-    justifyContent: "center",
-  },
-  createdAt: {
-    fontSize: 11,
-    color: "#aaa",
-    marginBottom: 2,
-    marginLeft: 2,
-  },
-  nameRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 3,
-    gap: 8,
-  },
-  name: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#222",
-    flexShrink: 1,
-    marginRight: 8,
-    letterSpacing: 0.2,
-  },
-  moreIconBtn: {
-    marginLeft: 8,
-    padding: 4,
-    borderRadius: 16,
-    alignSelf: "center",
-  },
-  metaRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 2,
-    gap: 4,
-  },
-  metaText: {
-    fontSize: 11,
-    color: "#888",
-    fontWeight: "500",
-  },
-  dot: {
-    fontSize: 10,
-    color: "#bbb",
-    marginHorizontal: 3,
-    marginTop: -1,
-  },
-  expiredText: {
-    color: "#e53935",
-    fontWeight: "bold",
-  },
-});
+const getStyles = (colorScheme: string) =>
+  StyleSheet.create({
+    card: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff",
+      borderRadius: 5,
+      padding: 5,
+      borderColor: colorScheme === "dark" ? "#36454F" : "#f1f1f1",
+      borderWidth: 1,
+      gap: 0,
+    },
+    expiredCard: {
+      borderColor: colorScheme === "dark" ? "#e53935" : "#e53935",
+      backgroundColor: colorScheme === "dark" ? "#2E2E2E" : "#fff5f5",
+    },
+    iconWrapper: {
+      position: "relative",
+      marginRight: 16,
+      marginLeft: 2,
+      width: 44,
+      height: 44,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    icon: {
+      zIndex: 1,
+    },
+    statusDot: {
+      position: "absolute",
+      top: 2,
+      right: 2,
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+      borderWidth: 1.5,
+      borderColor: colorScheme === "dark" ? "#36454F" : "#fff",
+      zIndex: 2,
+    },
+    statusDotActive: {
+      backgroundColor: colorScheme === "dark" ? "#43d047" : "#43d047",
+    },
+    statusDotInactive: {
+      backgroundColor: colorScheme === "dark" ? "#e53935" : "#e53935",
+    },
+    infoColumn: {
+      flex: 1,
+      flexDirection: "column",
+      justifyContent: "center",
+    },
+    createdAt: {
+      fontSize: 11,
+      color: colorScheme === "dark" ? "#a8a49f" : "#aaa",
+      marginBottom: 2,
+      marginLeft: 2,
+    },
+    nameRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginBottom: 3,
+      gap: 8,
+    },
+    name: {
+      fontSize: 15,
+      fontWeight: "600",
+      color: colorScheme === "dark" ? "#a8a49f" : "#222",
+      flexShrink: 1,
+      marginRight: 8,
+      letterSpacing: 0.2,
+    },
+    moreIconBtn: {
+      marginLeft: 8,
+      padding: 4,
+      borderRadius: 16,
+      alignSelf: "center",
+    },
+    metaRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginTop: 2,
+      gap: 4,
+    },
+    metaText: {
+      fontSize: 11,
+      color: colorScheme === "dark" ? "#a8a49f" : "#888",
+      fontWeight: "500",
+    },
+    dot: {
+      fontSize: 10,
+      color: colorScheme === "dark" ? "#efece2" : "#bbb",
+      marginHorizontal: 3,
+      marginTop: -1,
+    },
+    expiredText: {
+      color: colorScheme === "dark" ? "#e53935" : "#e53935",
+      fontWeight: "bold",
+    },
+  });

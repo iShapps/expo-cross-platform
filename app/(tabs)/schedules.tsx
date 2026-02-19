@@ -9,6 +9,7 @@ import {
 import { ShiftCardBase } from "@/components/pay-run";
 import { ShiftCardBaseSkeleton } from "@/components/skeletons/payrun-card-base-skeleton";
 import { IShift } from "@/data-types/shifts";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import { useInfiniteQuery } from "@tanstack/react-query";
@@ -146,6 +147,10 @@ export default function Schedules() {
     },
     [screenWidth, scrollTabIntoView],
   );
+
+  let colorScheme = useColorScheme();
+  if (!colorScheme) colorScheme = "light";
+  const styles = getStyles(colorScheme);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -514,67 +519,68 @@ export default function Schedules() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#ffffff",
-    paddingHorizontal: 8,
-    paddingTop: 16,
-  },
-  safeArea: {
-    flex: 1,
-    backgroundColor: "#70C601",
-  },
-  header: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 4,
-    backgroundColor: "#70C601",
-    width: "100%",
-    margin: 8,
-    paddingHorizontal: 12,
-    paddingTop: 12,
-    paddingBottom: 8,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#ffffff",
-  },
-  underline: {
-    height: 3,
-    width: 56,
-    borderRadius: 999,
-    backgroundColor: "#70C601",
-    opacity: 0.85,
-    marginTop: 6,
-  },
-  tabsRow: {
-    flexDirection: "row",
-    gap: 8,
-    paddingBottom: 2,
-  },
-  tabButton: {
-    paddingVertical: 6,
-    paddingHorizontal: 6,
-    alignItems: "center",
-  },
-  tabText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#667085",
-  },
-  tabTextActive: {
-    color: "#70C601",
-  },
-  tabUnderline: {
-    height: 2,
-    width: "100%",
-    borderRadius: 999,
-    backgroundColor: "transparent",
-    marginTop: 6,
-  },
-  tabUnderlineActive: {
-    backgroundColor: "#70C601",
-  },
-});
+const getStyles = (colorScheme: string) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#ffffff",
+      paddingHorizontal: 8,
+      paddingTop: 16,
+    },
+    safeArea: {
+      flex: 1,
+      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
+    },
+    header: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 4,
+      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
+      width: "100%",
+      margin: 8,
+      paddingHorizontal: 12,
+      paddingTop: 12,
+      paddingBottom: 8,
+    },
+    title: {
+      fontSize: 18,
+      fontWeight: "700",
+      color: colorScheme === "dark" ? "#fff" : "#ffffff",
+    },
+    underline: {
+      height: 3,
+      width: 56,
+      borderRadius: 999,
+      backgroundColor: colorScheme === "dark" ? "#FFD966" : "#70C601",
+      opacity: 0.85,
+      marginTop: 6,
+    },
+    tabsRow: {
+      flexDirection: "row",
+      gap: 8,
+      paddingBottom: 2,
+    },
+    tabButton: {
+      paddingVertical: 6,
+      paddingHorizontal: 6,
+      alignItems: "center",
+    },
+    tabText: {
+      fontSize: 14,
+      fontWeight: "600",
+      color: colorScheme === "dark" ? "#fff" : "#667085",
+    },
+    tabTextActive: {
+      color: colorScheme === "dark" ? "#fff" : "#70C601",
+    },
+    tabUnderline: {
+      height: 2,
+      width: "100%",
+      borderRadius: 999,
+      backgroundColor: "transparent",
+      marginTop: 6,
+    },
+    tabUnderlineActive: {
+      backgroundColor: colorScheme === "dark" ? "#fff" : "#70C601",
+    },
+  });

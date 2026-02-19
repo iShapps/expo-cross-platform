@@ -401,14 +401,14 @@ export default function ShiftDetails() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.heroCard}>
-          <Pressable style={styles.heroIconWrap} onPress={openMaps}>
+        <Pressable onPress={openMaps} style={styles.heroCard}>
+          <View style={styles.heroIconWrap}>
             <MaterialCommunityIcons
               name="office-building-marker"
               size={32}
               color="#70C601"
             />
-          </Pressable>
+          </View>
           <View style={styles.heroContent}>
             <Text style={styles.heroName}>{shift?.facility?.name ?? "—"}</Text>
             <Text style={styles.heroMeta}>{shift?.address ?? "—"}</Text>
@@ -430,7 +430,7 @@ export default function ShiftDetails() {
                 </View> */}
             </View>
           </View>
-        </View>
+        </Pressable>
 
         <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>Shift Info</Text>

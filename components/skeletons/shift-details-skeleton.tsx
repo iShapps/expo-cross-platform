@@ -1,3 +1,4 @@
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Fontisto } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React from "react";
@@ -6,6 +7,9 @@ import { SkeletonBase } from "./skeleton-base";
 
 export const ShiftDetailsSkeleton: React.FC = () => {
   const router = useRouter();
+  let colorScheme = useColorScheme();
+  if (!colorScheme) colorScheme = "light";
+  const styles = getStyles(colorScheme);
   return (
     <View style={{ flex: 1 }}>
       <View style={styles.container}>
@@ -192,137 +196,128 @@ export const ShiftDetailsSkeleton: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  contentContainer: {
-    height: 110,
-    // padding: 36,
-    width: "100%",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingBottom: 36,
-  },
-  container: {
-    // flex: 1,
-    backgroundColor: "#70C601",
-    width: "100%",
-    height: "13%",
-    display: "flex",
-    flexDirection: "column",
-    paddingVertical: 30,
-  },
-  backIconContainer: {
-    height: 40,
-    width: 40,
-    borderRadius: 50,
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: "center",
-    alignContent: "center",
-    alignItems: "center",
-    padding: 2,
-    borderWidth: 1,
-    borderColor: "#D3D3D3",
-  },
-  locationText: {
-    fontFamily: "Roboto",
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#fff",
-  },
-  faintbackIconContainer: {
-    height: 40,
-    width: 40,
-    borderRadius: 50,
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: "center",
-    alignContent: "center",
-    alignItems: "center",
-    padding: 2,
-    borderWidth: 1,
-    borderColor: "#70C601",
-  },
-  topBarContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    // marginBottom: 16,
-    paddingHorizontal: 10,
-    backgroundColor: "#70C601",
-    marginTop: 20,
-  },
-  content: {
-    paddingBottom: 32,
-    flex: 1,
-    backgroundColor: "#ffffff",
-    paddingHorizontal: 10,
-  },
-  heroCard: {
-    marginTop: 8,
-    backgroundColor: "#F8FFF0",
-    borderRadius: 5,
-    padding: 10,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    borderWidth: 1,
-    borderColor: "#E6F0D8",
-    marginBottom: 12,
-  },
-  heroContent: {
-    flex: 1,
-  },
-  chipRow: {
-    flexDirection: "row",
-    gap: 8,
-    marginTop: 10,
-    marginBottom: -8,
-  },
-  sectionCard: {
-    marginTop: 12,
-    borderRadius: 5,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: "#F0F0F0",
-    backgroundColor: "#fff",
-    marginBottom: 8,
-  },
-  detailRow: {
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F3F4F6",
-  },
-  detailRowNoBorder: {
-    paddingVertical: 8,
-  },
-  timelineContainer: {
-    marginTop: 8,
-    paddingLeft: 18,
-  },
-  timelineItemWrap: {
-    flexDirection: "row",
-    alignItems: "center",
-    minHeight: 75,
-  },
-  timelineIconColumn: {
-    width: 36,
-    alignItems: "center",
-    position: "relative",
-    minHeight: 75,
-    justifyContent: "center",
-  },
-  timelineLineTop: {
-    position: "absolute",
-    top: 0,
-  },
-  timelineLineBottom: {
-    position: "absolute",
-    bottom: 0,
-  },
-  timelineContent: {
-    flex: 1,
-    marginLeft: 8,
-    flexDirection: "column",
-    justifyContent: "center",
-  },
-});
+const getStyles = (colorScheme: string) =>
+  StyleSheet.create({
+    container: {
+      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
+      width: "100%",
+      height: "13%",
+      display: "flex",
+      flexDirection: "column",
+      paddingVertical: 30,
+    },
+    backIconContainer: {
+      height: 40,
+      width: 40,
+      borderRadius: 50,
+      display: "flex",
+      flexDirection: "row",
+      justifyContent: "center",
+      alignContent: "center",
+      alignItems: "center",
+      padding: 2,
+      borderWidth: 1,
+      borderColor: colorScheme === "dark" ? "#36454F" : "#D3D3D3",
+    },
+    locationText: {
+      fontFamily: "Roboto",
+      fontSize: 18,
+      fontWeight: "700",
+      color: colorScheme === "dark" ? "#fff" : "#fff",
+    },
+    faintbackIconContainer: {
+      height: 40,
+      width: 40,
+      borderRadius: 50,
+      display: "flex",
+      flexDirection: "row",
+      justifyContent: "center",
+      alignContent: "center",
+      alignItems: "center",
+      padding: 2,
+      borderWidth: 1,
+      borderColor: colorScheme === "dark" ? "#36454F" : "#70C601",
+    },
+    topBarContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: 10,
+      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
+      marginTop: 20,
+    },
+    content: {
+      paddingBottom: 32,
+      flex: 1,
+      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#ffffff",
+      paddingHorizontal: 10,
+    },
+    heroCard: {
+      marginTop: 8,
+      backgroundColor: colorScheme === "dark" ? "#36454F" : "#F8FFF0",
+      borderRadius: 5,
+      padding: 10,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      borderWidth: 1,
+      borderColor: colorScheme === "dark" ? "#36454F" : "#E6F0D8",
+      marginBottom: 12,
+    },
+    heroContent: {
+      flex: 1,
+    },
+    chipRow: {
+      flexDirection: "row",
+      gap: 8,
+      marginTop: 10,
+      marginBottom: -8,
+    },
+    sectionCard: {
+      marginTop: 12,
+      borderRadius: 5,
+      padding: 14,
+      borderWidth: 1,
+      borderColor: colorScheme === "dark" ? "#36454F" : "#F0F0F0",
+      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff",
+      marginBottom: 8,
+    },
+    detailRow: {
+      paddingVertical: 8,
+      borderBottomWidth: 1,
+      borderBottomColor: colorScheme === "dark" ? "#36454F" : "#F3F4F6",
+    },
+    detailRowNoBorder: {
+      paddingVertical: 8,
+    },
+    timelineContainer: {
+      marginTop: 8,
+      paddingLeft: 18,
+    },
+    timelineItemWrap: {
+      flexDirection: "row",
+      alignItems: "center",
+      minHeight: 75,
+    },
+    timelineIconColumn: {
+      width: 36,
+      alignItems: "center",
+      position: "relative",
+      minHeight: 75,
+      justifyContent: "center",
+    },
+    timelineLineTop: {
+      position: "absolute",
+      top: 0,
+    },
+    timelineLineBottom: {
+      position: "absolute",
+      bottom: 0,
+    },
+    timelineContent: {
+      flex: 1,
+      marginLeft: 8,
+      flexDirection: "column",
+      justifyContent: "center",
+    },
+  });

@@ -1,3 +1,4 @@
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import {
   authenticateWithBiometrics,
   isBiometricAvailable,
@@ -25,6 +26,9 @@ import {
 import { useSession } from "../ctx";
 
 export default function Login() {
+  const colorScheme = useColorScheme() || "light";
+  const styles = getStyles(colorScheme);
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isTermsChecked, setIsTermsChecked] = useState(true);
@@ -92,6 +96,17 @@ export default function Login() {
         password,
 
         // optionals : get device info
+        // Device.modelName; // Android: "Pixel 2"; iOS: "iPhone XS Max"; web: "iPhone", null
+        // Device.osBuildId; // Android: "PSR1.180720.075"; iOS: "16F203"; web: null
+        // Device.osInternalBuildId; // Android: "MMB29K"; iOS: "16F203"; web: null,
+        // Device.osName; // Android: "Android"; iOS: "iOS" or "iPadOS"; web: "iOS", "Android", "Windows"
+        // Device.osVersion; // Android: "4.0.3"; iOS: "12.3.1"; web: "11.0", "8.1.0"
+        // Device.manufacturer; // Android: "Google", "xiaomi"; iOS: "Apple"; web: "Google", null
+        // Device.deviceType; // UNKNOWN, PHONE, TABLET, TV, DESKTOP
+        // Device.deviceName; // "Vivian's iPhone XS"
+        // Device.designName; // Android: "kminilte"; iOS: null; web: null
+        // Device.brand; // Android: "google", "xiaomi"; iOS: "Apple"; web: null
+
         device_id: Device.osInternalBuildId ?? "", //to change to oneSignal's sub id for push notifications
         device_name: Device.deviceName ?? Device.modelName ?? "Unknown Device",
         device_type: Device.deviceType?.toString() ?? "Unknown Device", //Device.osName ?? "Unknown Device",
@@ -164,15 +179,13 @@ export default function Login() {
   };
 
   return (
-    // <View style={styles.container}>
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       style={styles.container}
     >
       <View
         style={{
-          backgroundColor: "#70C601",
-          // flex: 1,
+          backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
           height: "50%",
           justifyContent: "flex-start",
           alignItems: "center",
@@ -190,7 +203,7 @@ export default function Login() {
           <Text
             style={{
               fontSize: 28,
-              color: "#000",
+              color: colorScheme === "dark" ? "#fff" : "#000",
               fontWeight: "700",
               marginBottom: 10,
             }}
@@ -200,7 +213,7 @@ export default function Login() {
           <Text
             style={{
               fontSize: 14,
-              color: "#999",
+              color: colorScheme === "dark" ? "#b0b8ca" : "#999",
             }}
           >
             Login to securely access your account and manage your shifts
@@ -226,32 +239,37 @@ export default function Login() {
               clearButtonMode="while-editing"
               autoFocus={true}
               clearTextOnFocus={false}
-              cursorColor="#70C601"
+              cursorColor={colorScheme === "dark" ? "#fff" : "#70C601"}
               enterKeyHint="next"
               placeholder="johnwilliams@gmail.com"
               onChangeText={setEmail}
-              placeholderTextColor="#999"
+              placeholderTextColor={colorScheme === "dark" ? "#aaa" : "#999"}
               style={{
                 flex: 1,
+                color: colorScheme === "dark" ? "#fff" : undefined,
               }}
             />
             <Pressable onPress={handleBiometricLogin}>
               {Platform.OS === "ios" ? (
                 <View style={styles.iconContainer}>
-                  <Ionicons name="scan-outline" size={30} color="#7393B3" />
+                  <Ionicons
+                    name="scan-outline"
+                    size={30}
+                    color={colorScheme === "dark" ? "#b0b8ca" : "#7393B3"}
+                  />
                   <FontAwesome6
                     name="face-kiss"
                     size={10}
-                    color="#7393B3"
+                    color={colorScheme === "dark" ? "#b0b8ca" : "#7393B3"}
                     style={styles.overlayIcon}
                   />
                 </View>
               ) : (
-                // <View>
-                // <Ionicons name="scan-outline" size={24} color="#7393B3" />
-                // <FontAwesome6 name="face-kiss" size={10} color="#7393B3" />
-                // </View>
-                <Ionicons name="finger-print" size={24} color="#7393B3" />
+                <Ionicons
+                  name="finger-print"
+                  size={24}
+                  color={colorScheme === "dark" ? "#b0b8ca" : "#7393B3"}
+                />
               )}
             </Pressable>
           </View>
@@ -271,7 +289,7 @@ export default function Login() {
             <TextInput
               value={password}
               autoFocus={true}
-              cursorColor="#70C601"
+              cursorColor={colorScheme === "dark" ? "#fff" : "#70C601"}
               keyboardType="default"
               enterKeyHint="done"
               clearButtonMode="while-editing"
@@ -279,18 +297,27 @@ export default function Login() {
               clearTextOnFocus={false}
               onChangeText={setPassword}
               placeholder="••••••••"
-              placeholderTextColor="#999"
+              placeholderTextColor={colorScheme === "dark" ? "#aaa" : "#999"}
               secureTextEntry={!showPassword}
               style={{
                 flex: 1,
+                color: colorScheme === "dark" ? "#b0b8ca" : undefined,
               }}
             />
             {biometricSupported && (
               <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
                 {showPassword ? (
-                  <Entypo name="eye" size={20} color="#7393B3" />
+                  <Entypo
+                    name="eye"
+                    size={20}
+                    color={colorScheme === "dark" ? "#b0b8ca" : "#7393B3"}
+                  />
                 ) : (
-                  <Entypo name="eye-with-line" size={20} color="#7393B3" />
+                  <Entypo
+                    name="eye-with-line"
+                    size={20}
+                    color={colorScheme === "dark" ? "#b0b8ca" : "#7393B3"}
+                  />
                 )}
               </TouchableOpacity>
             )}
@@ -300,7 +327,7 @@ export default function Login() {
           <Link href="/(open)/forgot-password">
             <Text
               style={{
-                color: "#70C601",
+                color: colorScheme === "dark" ? "#b0b8ca" : "#70C601",
                 textAlign: "right",
                 textDecorationLine: "underline",
               }}
@@ -321,14 +348,25 @@ export default function Login() {
               style={styles.checkbox}
               value={isTermsChecked}
               onValueChange={setIsTermsChecked}
-              color={isTermsChecked ? "#70C601" : undefined}
+              color={
+                isTermsChecked
+                  ? colorScheme === "dark"
+                    ? "#fff"
+                    : "#70C601"
+                  : undefined
+              }
             />
-            <Text style={styles.remember}>
+            <Text
+              style={[
+                styles.remember,
+                { color: colorScheme === "dark" ? "#b0b8ca" : "#555" },
+              ]}
+            >
               I agree to the
               <Link href="https://www.ishapps.com/terms-of-service">
                 <Text
                   style={{
-                    color: "#70C601",
+                    color: colorScheme === "dark" ? "#b0b8ca" : "#70C601",
                     textDecorationLine: "underline",
                   }}
                 >
@@ -340,7 +378,7 @@ export default function Login() {
               <Link href="https://www.ishapps.com/privacy-policy">
                 <Text
                   style={{
-                    color: "#70C601",
+                    color: colorScheme === "dark" ? "#b0b8ca" : "#70C601",
                     textDecorationLine: "underline",
                   }}
                 >
@@ -352,7 +390,11 @@ export default function Login() {
           </View>
         </View>
         <TouchableOpacity
-          style={[styles.button, isLoading && { opacity: 0.6 }]}
+          style={[
+            styles.button,
+            isLoading && { opacity: 0.6 },
+            colorScheme === "dark" && { backgroundColor: "#FFD966" },
+          ]}
           onPress={handleLogin}
           disabled={isLoading}
         >
@@ -370,155 +412,148 @@ export default function Login() {
                 ],
               }}
             >
-              <AntDesign name="loading-3-quarters" size={20} color="#fff" />
+              <AntDesign
+                name="loading-3-quarters"
+                size={20}
+                color={colorScheme === "dark" ? "#232A2E" : "#fff"}
+              />
             </Animated.View>
           )}
-          <Text style={styles.buttonText}>
+          <Text
+            style={[
+              styles.buttonText,
+              colorScheme === "dark" && { color: "#232A2E" },
+            ]}
+          >
             {isLoading ? "signing you in..." : "Sign in"}
           </Text>
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
-    // </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    // flex: 1,
-    height: "100%",
-    display: "flex",
-    flexDirection: "column",
-    backgroundColor: "#fff",
-  },
-  bottomContainer: {
-    flex: 1,
-    width: "100%",
-    height: "50%",
-    backgroundColor: "#fff",
-    // justifyContent: "center",
-    paddingVertical: 20,
-    paddingHorizontal: 20,
-    borderTopRightRadius: 30,
-    borderTopLeftRadius: 30,
-    marginTop: -30,
-    // zIndex: 10,
-    // position: "absolute",
-    // bottom: 0,
-  },
-
-  iconContainer: {
-    width: 30,
-    height: 30,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  overlayIcon: {
-    position: "absolute",
-    top: "50%",
-    left: "50%",
-    transform: [{ translateX: -5 }, { translateY: -5 }],
-  },
-  image: {
-    width: 120,
-    height: 120,
-    alignSelf: "center",
-    marginBottom: 16,
-  },
-  inputGroup: {
-    marginBottom: 16,
-  },
-
-  passwordInputGroup: {
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    borderBottomWidth: 1,
-    borderBottomColor: "#ccc",
-    paddingVertical: 8,
-    fontSize: 16,
-    gap: 8,
-  },
-  passwordInputGroupFilled: {
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    borderBottomWidth: 1,
-    borderBottomColor: "#70C601",
-    paddingVertical: 8,
-    fontSize: 16,
-    gap: 8,
-  },
-  label: {
-    fontSize: 14,
-    color: "#000",
-    fontWeight: "700",
-    marginBottom: 6,
-  },
-  labelFilled: {
-    fontSize: 14,
-    color: "#70C601",
-    fontWeight: "700",
-    marginBottom: 6,
-  },
-
-  input: {
-    borderBottomWidth: 1,
-    borderBottomColor: "#ccc",
-    paddingVertical: 8,
-    fontSize: 16,
-  },
-
-  inputFilled: {
-    borderBottomWidth: 1,
-    borderBottomColor: "#70C601",
-    paddingVertical: 8,
-    fontSize: 16,
-  },
-  optionsRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginVertical: 16,
-  },
-
-  remember: {
-    color: "#555",
-    fontSize: 14,
-  },
-
-  forgot: {
-    color: "#70C601",
-    fontSize: 14,
-    fontWeight: "600",
-  },
-
-  button: {
-    backgroundColor: "#70C601",
-    paddingVertical: 10,
-    borderRadius: 4,
-    alignItems: "center",
-    flexDirection: "row",
-    justifyContent: "center",
-    marginTop: 6,
-  },
-
-  buttonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "400",
-  },
-
-  footer: {
-    // textAlign: "center",
-    marginTop: 20,
-    color: "#555",
-  },
-
-  signup: {
-    color: "#70C601",
-    fontWeight: "700",
-  },
-  checkbox: {
-    margin: 4,
-  },
-});
+const getStyles = (colorScheme: string) =>
+  StyleSheet.create({
+    container: {
+      height: "100%",
+      display: "flex",
+      flexDirection: "column",
+      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff",
+    },
+    bottomContainer: {
+      flex: 1,
+      width: "100%",
+      height: "50%",
+      backgroundColor: colorScheme === "dark" ? "#36454F" : "#fff",
+      paddingVertical: 20,
+      paddingHorizontal: 20,
+      borderTopRightRadius: 30,
+      borderTopLeftRadius: 30,
+      marginTop: -30,
+    },
+    iconContainer: {
+      width: 30,
+      height: 30,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    overlayIcon: {
+      position: "absolute",
+      top: "50%",
+      left: "50%",
+      transform: [{ translateX: -5 }, { translateY: -5 }],
+    },
+    image: {
+      width: 120,
+      height: 120,
+      alignSelf: "center",
+      marginBottom: 16,
+    },
+    inputGroup: {
+      marginBottom: 16,
+    },
+    passwordInputGroup: {
+      display: "flex",
+      flexDirection: "row",
+      justifyContent: "space-between",
+      borderBottomWidth: 1,
+      borderBottomColor: colorScheme === "dark" ? "#b0b8ca" : "#ccc",
+      paddingVertical: 8,
+      fontSize: 16,
+      gap: 8,
+    },
+    passwordInputGroupFilled: {
+      display: "flex",
+      flexDirection: "row",
+      justifyContent: "space-between",
+      borderBottomWidth: 1,
+      borderBottomColor: colorScheme === "dark" ? "#b0b8ca" : "#70C601",
+      paddingVertical: 8,
+      fontSize: 16,
+      gap: 8,
+    },
+    label: {
+      fontSize: 14,
+      color: colorScheme === "dark" ? "#fff" : "#000",
+      fontWeight: "700",
+      marginBottom: 6,
+    },
+    labelFilled: {
+      fontSize: 14,
+      color: colorScheme === "dark" ? "#fff" : "#70C601",
+      fontWeight: "700",
+      marginBottom: 6,
+    },
+    input: {
+      borderBottomWidth: 1,
+      borderBottomColor: colorScheme === "dark" ? "#FFD966" : "#ccc",
+      paddingVertical: 8,
+      fontSize: 16,
+    },
+    inputFilled: {
+      borderBottomWidth: 1,
+      borderBottomColor: colorScheme === "dark" ? "#FFD966" : "#70C601",
+      paddingVertical: 8,
+      fontSize: 16,
+    },
+    optionsRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      marginVertical: 16,
+    },
+    remember: {
+      color: colorScheme === "dark" ? "#FFD966" : "#555",
+      fontSize: 14,
+    },
+    forgot: {
+      color: colorScheme === "dark" ? "#FFD966" : "#70C601",
+      fontSize: 14,
+      fontWeight: "600",
+    },
+    button: {
+      backgroundColor: colorScheme === "dark" ? "#FFD966" : "#70C601",
+      paddingVertical: 10,
+      borderRadius: 4,
+      alignItems: "center",
+      flexDirection: "row",
+      justifyContent: "center",
+      marginTop: 6,
+    },
+    buttonText: {
+      color: colorScheme === "dark" ? "#232A2E" : "#fff",
+      fontSize: 16,
+      fontWeight: "400",
+    },
+    footer: {
+      marginTop: 20,
+      color: colorScheme === "dark" ? "#FFD966" : "#555",
+    },
+    signup: {
+      color: colorScheme === "dark" ? "#FFD966" : "#70C601",
+      fontWeight: "700",
+    },
+    checkbox: {
+      margin: 4,
+    },
+  });

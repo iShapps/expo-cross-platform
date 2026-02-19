@@ -1,8 +1,13 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
 import { SkeletonBase } from "./skeleton-base";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 
 export const DashboardAnalyticsSkeleton: React.FC = () => {
+  let colorScheme = useColorScheme();
+  if (!colorScheme) colorScheme = "light";
+  const styles = getStyles(colorScheme);
+
   return (
     <View style={styles.container}>
       <View style={styles.dashboardRow}>
@@ -43,8 +48,9 @@ export const DashboardAnalyticsSkeleton: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (colorScheme: string) => StyleSheet.create({
   container: {
+    backgroundColor: colorScheme === "dark" ? "#232A2E" : undefined,
     paddingHorizontal: 0,
   },
   dashboardRow: {
@@ -58,22 +64,20 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     width: "31.5%",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    elevation: 3,
+    backgroundColor: colorScheme === "dark" ? "#232A2E" : undefined,
+    borderColor: colorScheme === "dark" ? "#36454F" : undefined,
   },
   dashboardCardAvailable: {
-    backgroundColor: "#F8FFF0",
-    borderColor: "#f0f0f0",
+    backgroundColor: colorScheme === "dark" ? "#232A2E" : undefined,
+    borderColor: colorScheme === "dark" ? "#70C601" : undefined,
   },
   dashboardCardMy: {
-    backgroundColor: "#F0F7FF",
-    borderColor: "#f0f0f0",
+    backgroundColor: colorScheme === "dark" ? "#232A2E" : undefined,
+    borderColor: colorScheme === "dark" ? "#4A90E2" : undefined,
   },
   dashboardCardUpcoming: {
-    backgroundColor: "#FFF7E6",
-    borderColor: "#f0f0f0",
+    backgroundColor: colorScheme === "dark" ? "#2E2E2E" : undefined,
+    borderColor: colorScheme === "dark" ? "#FFD600" : undefined,
   },
   dashboardTopRow: {
     flexDirection: "row",

@@ -1,8 +1,12 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { SkeletonBase } from "./skeleton-base";
 
 export const ActiveCardSkeleton: React.FC = () => {
+  let colorScheme = useColorScheme();
+  if (!colorScheme) colorScheme = "light";
+  const styles = getStyles(colorScheme);
   return (
     <View style={styles.card}>
       <View style={styles.topContent}>
@@ -36,15 +40,15 @@ export const ActiveCardSkeleton: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (colorScheme: string) => StyleSheet.create({
   card: {
     borderRadius: 8,
     padding: 10,
     gap: 5,
     marginTop: 10,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: colorScheme === "dark" ? "#232A2E" : "#f5f5f5",
     borderWidth: 1,
-    borderColor: "#f0f0f0",
+    borderColor: colorScheme === "dark" ? "#36454F" : "#f0f0f0",
   },
   topContent: {
     flexDirection: "row",
@@ -63,7 +67,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    backgroundColor: "#f0f0f0",
+    backgroundColor: colorScheme === "dark" ? "#36454F" : "#f0f0f0",
     padding: 12,
     borderRadius: 8,
     marginBottom: 8,
@@ -72,7 +76,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    backgroundColor: "#f0f0f0",
+    backgroundColor: colorScheme === "dark" ? "#36454F" : "#f0f0f0",
     padding: 12,
     borderRadius: 8,
   },

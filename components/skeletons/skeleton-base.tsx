@@ -1,3 +1,4 @@
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import React, { useEffect, useRef } from "react";
 import { Animated, Easing, StyleSheet } from "react-native";
 
@@ -14,6 +15,9 @@ export const SkeletonBase: React.FC<SkeletonBaseProps> = ({
   borderRadius = 4,
   style,
 }) => {
+  let colorScheme = useColorScheme();
+  if (!colorScheme) colorScheme = "light";
+
   const shimmerAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -35,15 +39,18 @@ export const SkeletonBase: React.FC<SkeletonBaseProps> = ({
     ).start();
   }, [shimmerAnim]);
 
+  const lightColors = ["#e8e8e8", "#f5f5f5"];
+  const darkColors = ["#232A2E", "#36454F"];
+  const shimmerColors = colorScheme === "dark" ? darkColors : lightColors;
   const backgroundColor = shimmerAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: ["#e8e8e8", "#f5f5f5"],
+    outputRange: shimmerColors,
   });
 
   return (
     <Animated.View
       style={[
-        styles.skeleton,
+        getStyles(colorScheme).skeleton,
         {
           width,
           height,
@@ -56,8 +63,9 @@ export const SkeletonBase: React.FC<SkeletonBaseProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (colorScheme: string) => StyleSheet.create({
   skeleton: {
     overflow: "hidden",
+    backgroundColor: colorScheme === "dark" ? "#232A2E" : "#e8e8e8",
   },
 });

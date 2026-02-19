@@ -1,6 +1,9 @@
 import { useShiftWatcher } from "@/hooks/use-shift-watcher";
+import { ActionSheetProvider } from "@expo/react-native-action-sheet";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { SplashScreen, Stack } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import { useColorScheme } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SessionProvider, useSession } from "./ctx";
 import { SplashScreenController } from "./splash";
@@ -17,15 +20,21 @@ const queryClient = new QueryClient();
 
 export default function Root() {
   // Set up the auth context
+  const colorScheme = useColorScheme();
+  console.log("Current color scheme:", colorScheme);
+
   useShiftWatcher();
   return (
-    <GestureHandlerRootView>
-      <QueryClientProvider client={queryClient}>
-        <SessionProvider>
-          <SplashScreenController />
-          <RootNavigator />
-        </SessionProvider>
-      </QueryClientProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ActionSheetProvider>
+        <QueryClientProvider client={queryClient}>
+          <SessionProvider>
+            <SplashScreenController />
+            <RootNavigator />
+          </SessionProvider>
+        </QueryClientProvider>
+      </ActionSheetProvider>
+      <StatusBar style="auto" />
     </GestureHandlerRootView>
   );
 }

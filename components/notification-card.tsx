@@ -1,4 +1,5 @@
 import { PushNotification } from "@/data-types/dashboard";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { formatDistanceToNow } from "date-fns";
 import React from "react";
@@ -13,6 +14,10 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
   notification,
   onPress,
 }) => {
+  let colorScheme = useColorScheme();
+  if (!colorScheme) colorScheme = "light";
+  const styles = getStyles(colorScheme);
+
   const getNotificationIcon = () => {
     switch (notification.type) {
       case "shift_available":
@@ -88,76 +93,78 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: "#fff",
-    borderRadius: 5,
-    padding: 12,
-    marginBottom: 4,
-    flexDirection: "row",
-    alignItems: "flex-start",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 1,
+const getStyles = (colorScheme: string) =>
+  StyleSheet.create({
+    card: {
+      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff",
+      borderRadius: 5,
+      padding: 12,
+      marginBottom: 4,
+      flexDirection: "row",
+      alignItems: "flex-start",
+      shadowColor: colorScheme === "dark" ? "#000" : "#000",
+      shadowOffset: {
+        width: 0,
+        height: 1,
+      },
+      shadowOpacity: 0.05,
+      shadowRadius: 2,
+      elevation: 2,
+      borderWidth: 1,
+      borderColor: colorScheme === "dark" ? "#36454F" : "#f0f0f0",
     },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: "#f0f0f0",
-  },
-  unreadCard: {
-    backgroundColor: "#F8FFF0",
-    borderColor: "#70C601",
-  },
-  iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
-    position: "relative",
-  },
-  content: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 4,
-  },
-  title: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#000",
-    flex: 1,
-  },
-  unreadDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "#70C601",
-    position: "absolute",
-    top: -2,
-    right: -2,
-    borderWidth: 2,
-    borderColor: "#fff",
-  },
-  message: {
-    fontSize: 13,
-    color: "#666",
-    lineHeight: 18,
-    marginBottom: 4,
-  },
-  time: {
-    fontSize: 11,
-    color: "#999",
-  },
-  detailHint: {
-    alignSelf: "flex-start",
-    marginLeft: 8,
-    marginTop: 2,
-  },
-});
+    unreadCard: {
+      backgroundColor: colorScheme === "dark" ? "#36454F" : "#F8FFF0",
+      borderColor: colorScheme === "dark" ? "#f5ebcd" : "#70C601",
+    },
+    iconContainer: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      justifyContent: "center",
+      alignItems: "center",
+      marginRight: 12,
+      position: "relative",
+      backgroundColor: colorScheme === "dark" ? "#36454F" : undefined,
+    },
+    content: {
+      flex: 1,
+    },
+    header: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginBottom: 4,
+    },
+    title: {
+      fontSize: 14,
+      fontWeight: "600",
+      color: colorScheme === "dark" ? "#edebe3" : "#000",
+      flex: 1,
+    },
+    unreadDot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: colorScheme === "dark" ? "#edebe3" : "#70C601",
+      position: "absolute",
+      top: -2,
+      right: -2,
+      borderWidth: 2,
+      borderColor: colorScheme === "dark" ? "#36454F" : "#fff",
+    },
+    message: {
+      fontSize: 13,
+      color: colorScheme === "dark" ? "#edebe3" : "#666",
+      lineHeight: 18,
+      marginBottom: 4,
+    },
+    time: {
+      fontSize: 11,
+      color: colorScheme === "dark" ? "#edebe3" : "#999",
+    },
+    detailHint: {
+      alignSelf: "flex-start",
+      marginLeft: 8,
+      marginTop: 2,
+    },
+  });
