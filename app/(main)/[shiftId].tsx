@@ -729,8 +729,12 @@ export default function ShiftDetails() {
               <SwipeButton
                 text="Swipe to Accept"
                 onSwipeComplete={async () => {
-                  await handleAcceptShift();
-                  acceptShiftMutation.reset();
+                  try {
+                    await handleAcceptShift();
+                  } catch {
+                  } finally {
+                    setTimeout(() => acceptShiftMutation.reset(), 1500);
+                  }
                 }}
                 disabled={isBusy}
                 bgColor={colorScheme === "dark" ? "#FFD966" : "#70C601"}
@@ -742,9 +746,17 @@ export default function ShiftDetails() {
               <SwipeButton
                 text="Swipe to Start"
                 onSwipeComplete={async () => {
-                  await handleStartShift();
-                  startShiftMutation.reset();
-                  trackingMutation.reset();
+                  // await handleStartShift();
+                  // startShiftMutation.reset();
+                  // trackingMutation.reset();
+
+                  try {
+                    await handleStartShift();
+                  } catch {
+                  } finally {
+                    setTimeout(() => startShiftMutation.reset(), 1500);
+                    trackingMutation.reset();
+                  }
                 }}
                 disabled={isBusy}
                 bgColor={colorScheme === "dark" ? "#FFD966" : "#70C601"}
@@ -752,12 +764,16 @@ export default function ShiftDetails() {
                 completed={startShiftMutation.isSuccess}
               />
             )}
-            {shiftStatus == 2 && (
+            {shiftStatus === 2 && (
               <SwipeButton
                 text="Swipe to End"
                 onSwipeComplete={async () => {
-                  await handleEndShift();
-                  endShiftMutation.reset();
+                  try {
+                    await handleEndShift();
+                  } catch {
+                  } finally {
+                    setTimeout(() => endShiftMutation.reset(), 1500);
+                  }
                 }}
                 disabled={isBusy}
                 bgColor={colorScheme === "dark" ? "#E55353" : "#E55353"}

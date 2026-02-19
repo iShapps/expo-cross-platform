@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import React, { useState } from "react";
+import React, { useEffect } from "react";
 import { Dimensions, StyleSheet, View } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 
@@ -34,6 +34,12 @@ export const SwipeButton = ({
   processing = false,
 }: SwipeButtonProps) => {
   const translateX = useSharedValue(0);
+
+  useEffect(() => {
+    if (!completed && !processing) {
+      translateX.value = withSpring(0);
+    }
+  }, [completed, processing]);
 
   const BUTTON_HEIGHT = 60;
   const KNOB_SIZE = 52;
