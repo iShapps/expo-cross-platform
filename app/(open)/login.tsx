@@ -445,7 +445,7 @@ const getStyles = (colorScheme: string) =>
       flex: 1,
       width: "100%",
       height: "50%",
-      backgroundColor: colorScheme === "dark" ? "#36454F" : "#fff",
+      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff",
       paddingVertical: 20,
       paddingHorizontal: 20,
       borderTopRightRadius: 30,
