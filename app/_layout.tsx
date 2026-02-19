@@ -32,6 +32,8 @@ export default function Root() {
 
 function RootNavigator() {
   const { session } = useSession();
+  // initiate one signal before login
+  // useOneSignal();
 
   return (
     <Stack>

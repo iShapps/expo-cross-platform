@@ -4,6 +4,7 @@ import {
 } from "@/utils/biometrics";
 import { AntDesign, Entypo, FontAwesome6, Ionicons } from "@expo/vector-icons";
 import { Checkbox } from "expo-checkbox";
+import * as Device from "expo-device";
 import { Image } from "expo-image";
 import { Link } from "expo-router";
 import * as SecureStore from "expo-secure-store";
@@ -86,7 +87,16 @@ export default function Login() {
       return;
     }
     try {
-      await signIn({ email, password });
+      await signIn({
+        email,
+        password,
+
+        // optionals : get device info
+        device_id: Device.osInternalBuildId ?? "", //to change to oneSignal's sub id for push notifications
+        device_name: Device.deviceName ?? Device.modelName ?? "Unknown Device",
+        device_type: Device.deviceType?.toString() ?? "Unknown Device", //Device.osName ?? "Unknown Device",
+        device_version: Device.osVersion ?? "Unknown Version",
+      });
       // Ask for biometric consent after successful login
       if (biometricSupported) {
         Alert.alert(

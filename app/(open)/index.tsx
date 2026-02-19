@@ -4,6 +4,7 @@ import {
 } from "@/utils/biometrics";
 import { AntDesign, Entypo, FontAwesome6, Ionicons } from "@expo/vector-icons";
 import { Checkbox } from "expo-checkbox";
+import * as Device from "expo-device";
 import { Image } from "expo-image";
 import { Link } from "expo-router";
 import * as SecureStore from "expo-secure-store";
@@ -86,7 +87,27 @@ export default function Login() {
       return;
     }
     try {
-      await signIn({ email, password });
+      await signIn({
+        email,
+        password,
+
+        // optionals : get device info
+        // Device.modelName; // Android: "Pixel 2"; iOS: "iPhone XS Max"; web: "iPhone", null
+        // Device.osBuildId; // Android: "PSR1.180720.075"; iOS: "16F203"; web: null
+        // Device.osInternalBuildId; // Android: "MMB29K"; iOS: "16F203"; web: null,
+        // Device.osName; // Android: "Android"; iOS: "iOS" or "iPadOS"; web: "iOS", "Android", "Windows"
+        // Device.osVersion; // Android: "4.0.3"; iOS: "12.3.1"; web: "11.0", "8.1.0"
+        // Device.manufacturer; // Android: "Google", "xiaomi"; iOS: "Apple"; web: "Google", null
+        // Device.deviceType; // UNKNOWN, PHONE, TABLET, TV, DESKTOP
+        // Device.deviceName; // "Vivian's iPhone XS"
+        // Device.designName; // Android: "kminilte"; iOS: null; web: null
+        // Device.brand; // Android: "google", "xiaomi"; iOS: "Apple"; web: null
+
+        device_id: Device.osInternalBuildId ?? "", //to change to oneSignal's sub id for push notifications
+        device_name: Device.deviceName ?? Device.modelName ?? "Unknown Device",
+        device_type: Device.deviceType?.toString() ?? "Unknown Device", //Device.osName ?? "Unknown Device",
+        device_version: Device.osVersion ?? "Unknown Version",
+      });
       // Ask for biometric consent after successful login
       if (biometricSupported) {
         Alert.alert(

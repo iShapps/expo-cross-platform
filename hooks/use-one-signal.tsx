@@ -1,87 +1,106 @@
 import Constants from "expo-constants";
 import { useEffect } from "react";
 import {
-    LogLevel,
-    NotificationClickEvent,
-    NotificationWillDisplayEvent,
-    OneSignal,
+  LogLevel,
+  NotificationClickEvent,
+  NotificationWillDisplayEvent,
+  OneSignal,
 } from "react-native-onesignal";
-
-// export const useOneSignal = () => {
-//   useEffect(() => {
-//     const appId = Constants.expoConfig?.extra?.oneSignalAppId;
-
-//     if (!appId) {
-//       console.warn("OneSignal App ID is missing in app.json extra config");
-//       return;
-//     }
-
-//     // Enable logging (remove or reduce in production)
-//     OneSignal.Debug.setLogLevel(LogLevel.Verbose);
-
-//     // Initialize OneSignal
-//     OneSignal.initialize(appId);
-
-//     // Request permission (recommended only during development)
-//     // OneSignal.Notifications.requestPermission(false);
-//   }, []);
-// };
 
 export const useOneSignal = () => {
   useEffect(() => {
     const appId = Constants.expoConfig?.extra?.oneSignalAppId;
+
     if (!appId) {
       console.warn("OneSignal App ID is missing in app.json extra config");
       return;
     }
 
-    // Enable logging (remove or reduce in production)
-    OneSignal.Debug.setLogLevel(LogLevel.Verbose);
+    if (__DEV__) {
+      OneSignal.Debug.setLogLevel(LogLevel.Verbose);
+    }
+
     OneSignal.initialize(appId);
-    OneSignal.Notifications.requestPermission(true);
 
-    // Request permission (recommended only during development)
-    // OneSignal.Notifications.requestPermission(false);
-    OneSignal.Notifications.canRequestPermission().then((canRequest) => {
+    const requestPermission = async () => {
+      const canRequest = await OneSignal.Notifications.canRequestPermission();
+
       if (canRequest) {
-        OneSignal.Notifications.requestPermission(true);
+        await OneSignal.Notifications.requestPermission(true);
       }
-    });
 
-    OneSignal.Notifications.getPermissionAsync().then((status) => {
-      console.log("OneSignal permission status:", status);
-    });
+      const permission = await OneSignal.Notifications.getPermissionAsync();
 
-    OneSignal.Notifications.addEventListener(
-      "permissionChange",
-      (status: any) => {
-        console.log("OneSignal permission changed:", status);
-      },
+      console.log("OneSignal permission status:", permission);
+    };
+
+    requestPermission();
+
+    const logSubscription = async () => {
+      const subscriptionId = await OneSignal.User.pushSubscription.getIdAsync();
+
+      console.log("OneSignal Subscription ID:", subscriptionId);
+    };
+
+    logSubscription();
+
+    const subscriptionListener = (event: any) => {
+      console.log("Push Subscription changed:", event);
+      console.log("New Subscription ID:", event.current?.id);
+    };
+
+    OneSignal.User.pushSubscription.addEventListener(
+      "change",
+      subscriptionListener,
     );
 
     const handleClick = (event: NotificationClickEvent) => {
       console.log("Notification clicked:", event);
     };
 
+    const handleForeground = (event: NotificationWillDisplayEvent) => {
+      console.log("Notification received in foreground:", event);
+
+      event.getNotification().display();
+    };
+
     OneSignal.Notifications.addEventListener(
       "foregroundWillDisplay",
-      (event: NotificationWillDisplayEvent) => {
-        event.preventDefault(); // Prevent the default notification display
-        console.log("Notification received in foreground:", event);
-        // event.getNotification().display(); // Manually display the notification if desired
-        // event.notification
-      },
+      handleForeground,
     );
+
     OneSignal.Notifications.addEventListener("click", handleClick);
 
     return () => {
+      OneSignal.Notifications.removeEventListener(
+        "foregroundWillDisplay",
+        handleForeground,
+      );
+
       OneSignal.Notifications.removeEventListener("click", handleClick);
+
+      OneSignal.User.pushSubscription.removeEventListener(
+        "change",
+        subscriptionListener,
+      );
     };
   }, []);
 };
 
-// import { OneSignal } from "react-native-onesignal";
+export const onLoginSuccess = async (user: string) => {
+  try {
+    await OneSignal.login(user);
 
-// const onLoginSuccess = (user: { id: number }) => {
-//   OneSignal.login(user.id.toString());
-// };
+    const subscriptionId = await OneSignal.User.pushSubscription.getIdAsync();
+
+    console.log("User logged in to OneSignal");
+    console.log("External ID:", user);
+    console.log("Subscription ID:", subscriptionId);
+  } catch (error) {
+    console.error("OneSignal login error:", error);
+  }
+};
+
+export const onLogout = async () => {
+  await OneSignal.logout();
+};

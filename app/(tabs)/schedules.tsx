@@ -62,7 +62,11 @@ export default function Schedules() {
   const [activeStatus, setActiveStatus] =
     useState<(typeof statusTabs)[number]>("Running");
   const { width: screenWidth } = useWindowDimensions();
+
   const contentScrollRef = useRef<ScrollView>(null);
+  const tabScrollRef = useRef<ScrollView>(null);
+  const tabOffsetsRef = useRef<number[]>([]);
+  const tabWidthsRef = useRef<number[]>([]);
 
   // upcoming shifts
   const scheduledQuery = useShiftInfiniteQuery(
@@ -106,15 +110,30 @@ export default function Schedules() {
   // 10-15 mins shift tracking
 
   // upcoming, avialable, completed,
+
+  const scrollTabIntoView = useCallback(
+    (index: number) => {
+      const offset = tabOffsetsRef.current[index];
+      const width = tabWidthsRef.current[index];
+      if (offset == null || width == null) return;
+      tabScrollRef.current?.scrollTo({
+        x: offset - screenWidth / 2 + width / 2, // center the active tab
+        animated: true,
+      });
+    },
+    [screenWidth],
+  );
+
   const handleTabPress = useCallback(
     (index: number) => {
       setActiveStatus(statusTabs[index]);
+      scrollTabIntoView(index);
       contentScrollRef.current?.scrollTo({
         x: index * screenWidth,
         animated: true,
       });
     },
-    [screenWidth],
+    [screenWidth, scrollTabIntoView],
   );
 
   const handleContentScrollEnd = useCallback(
@@ -123,8 +142,9 @@ export default function Schedules() {
       const index = Math.round(offsetX / screenWidth);
       const clampedIndex = Math.min(Math.max(index, 0), statusTabs.length - 1);
       setActiveStatus(statusTabs[clampedIndex]);
+      scrollTabIntoView(clampedIndex);
     },
-    [screenWidth],
+    [screenWidth, scrollTabIntoView],
   );
 
   return (
@@ -134,6 +154,7 @@ export default function Schedules() {
       </View>
       <View style={styles.container}>
         <ScrollView
+          ref={tabScrollRef}
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.tabsRow}
@@ -146,6 +167,10 @@ export default function Schedules() {
                 onPress={() => handleTabPress(index)}
                 style={styles.tabButton}
                 android_ripple={{ color: "#ccc" }}
+                onLayout={(e) => {
+                  tabOffsetsRef.current[index] = e.nativeEvent.layout.x;
+                  tabWidthsRef.current[index] = e.nativeEvent.layout.width;
+                }}
               >
                 <Text
                   style={[styles.tabText, isActive && styles.tabTextActive]}
