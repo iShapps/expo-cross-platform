@@ -457,6 +457,7 @@ export default function ShiftDetails() {
   const endDate = new Date(shift?.end_time);
   return (
     <SafeAreaView
+      edges={["top"]}
       style={{
         flex: 1,
         backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601",

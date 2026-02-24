@@ -11,7 +11,7 @@ export default function FacilitiesScreen() {
   const styles = getStyles(colorScheme);
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView edges={["top"]} style={styles.safeArea}>
       <Header title="Facilities" onBack={() => router.back()} />
 
       <View style={styles.linksContainer}></View>

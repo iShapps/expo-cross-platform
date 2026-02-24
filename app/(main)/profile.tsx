@@ -24,7 +24,7 @@ export default function ProfileScreen() {
   }, [hcp?.available_for_job]);
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={["top"]}>
       <Header title="Profile" onBack={() => router.back()} />
       <ScrollView
         contentContainerStyle={styles.content}

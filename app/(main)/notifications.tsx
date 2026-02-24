@@ -111,7 +111,7 @@ export default function NotificationsScreen() {
   const styles = getStyles(colorScheme);
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView edges={["top"]} style={styles.safeArea}>
       {/* Header */}
       <Header title="Notifications" onBack={() => router.back()} />
 

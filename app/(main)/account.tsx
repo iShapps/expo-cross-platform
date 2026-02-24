@@ -12,7 +12,7 @@ export default function AccountScreen() {
   const styles = getStyles(colorScheme);
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={["top"]}>
       <Header title="Account" onBack={() => router.back()} />
 
       <View style={styles.linksContainer}>

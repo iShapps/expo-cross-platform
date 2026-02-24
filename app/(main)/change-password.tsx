@@ -19,7 +19,7 @@ export default function ChangePasswordScreen() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={["top"]}>
       <Header title="Change Password" onBack={() => router.back()} />
 
       <View style={styles.formCard}>
