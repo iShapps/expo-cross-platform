@@ -680,10 +680,10 @@ export default function ShiftDetails() {
           snapPoints={[110]}
           backgroundStyle={{
             backgroundColor: colorScheme === "dark" ? "#232A2E" : "#E6F0D8",
-            borderTopWidth: 3,
-            borderTopColor: colorScheme === "dark" ? "#FFD966" : "#70C601",
-            borderTopLeftRadius: 15,
-            borderTopRightRadius: 15,
+            // borderTopWidth: 3,
+            // borderTopColor: colorScheme === "dark" ? "#FFD966" : "#70C601",
+            // borderTopLeftRadius: 15,
+            // borderTopRightRadius: 15,
           }}
           handleIndicatorStyle={{
             backgroundColor: colorScheme === "dark" ? "#FFD966" : "#70C601",
