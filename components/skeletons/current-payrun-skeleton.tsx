@@ -1,7 +1,12 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 
 export const CurrentPayrunSkeleton: React.FC = () => {
+  let colorScheme = useColorScheme();
+  if (!colorScheme) colorScheme = "light";
+  const styles = getStyles(colorScheme);
+
   return (
     <View style={styles.payrunCard}>
       <View style={styles.payrunHeader}>
@@ -13,14 +18,14 @@ export const CurrentPayrunSkeleton: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (colorScheme: string) => StyleSheet.create({
   payrunCard: {
     marginTop: 12,
     borderRadius: 5,
     padding: 12,
     borderWidth: 1,
-    borderColor: "#DDE7D6",
-    backgroundColor: "#F8FFF0",
+    borderColor: colorScheme === "dark" ? "#36454F" : "#DDE7D6",
+    backgroundColor: colorScheme === "dark" ? "#232A2E" : "#F8FFF0",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
@@ -37,13 +42,13 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 999,
-    backgroundColor: "#E0E0E0",
+    backgroundColor: colorScheme === "dark" ? "#36454F" : "#E0E0E0",
   },
   labelSkeleton: {
     height: 16,
     width: 120,
     borderRadius: 4,
-    backgroundColor: "#E0E0E0",
+    backgroundColor: colorScheme === "dark" ? "#36454F" : "#E0E0E0",
     flexGrow: 1,
     marginLeft: 8,
   },
@@ -51,7 +56,7 @@ const styles = StyleSheet.create({
     height: 18,
     width: 100,
     borderRadius: 4,
-    backgroundColor: "#E0E0E0",
+    backgroundColor: colorScheme === "dark" ? "#36454F" : "#E0E0E0",
     marginTop: 8,
   },
 });

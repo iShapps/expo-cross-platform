@@ -1,8 +1,13 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
 import { SkeletonBase } from "./skeleton-base";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 
 export const NotificationCardSkeleton: React.FC = () => {
+  let colorScheme = useColorScheme();
+  if (!colorScheme) colorScheme = "light";
+  const styles = getStyles(colorScheme);
+
   return (
     <View style={styles.card}>
       <View style={styles.iconContainer}>
@@ -30,9 +35,9 @@ export const NotificationCardSkeleton: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (colorScheme: string) => StyleSheet.create({
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff",
     borderRadius: 5,
     padding: 12,
     marginBottom: 4,
@@ -47,7 +52,7 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 2,
     borderWidth: 1,
-    borderColor: "#f0f0f0",
+    borderColor: colorScheme === "dark" ? "#36454F" : "#f0f0f0",
   },
   iconContainer: {
     width: 40,
@@ -56,6 +61,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
+    backgroundColor: colorScheme === "dark" ? "#36454F" : undefined,
   },
   content: {
     flex: 1,

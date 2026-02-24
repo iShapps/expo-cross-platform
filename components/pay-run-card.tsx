@@ -1,4 +1,5 @@
 import { Payrun } from "@/data-types/dashboard";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { differenceInMinutes, format } from "date-fns";
 import React from "react";
 import {
@@ -26,6 +27,10 @@ export const PayrunCard: React.FC<PayrunCardProps> = ({ payrun, onPress }) => {
   const minutes = totalMinutes % 60;
   const duration = `${hours}:${minutes.toString().padStart(2, "0")}Hrs`;
   const periodText = `${startTime} to ${endTime} - ${duration}`;
+
+  let colorScheme = useColorScheme();
+  if (!colorScheme) colorScheme = "light";
+  const styles = getStyles(colorScheme);
 
   const getStatusColor = () => {
     switch (payrun.status) {
@@ -122,72 +127,71 @@ export const PayrunCard: React.FC<PayrunCardProps> = ({ payrun, onPress }) => {
   );
 };
 
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: "#fff",
-    borderRadius: 5,
-    padding: 8,
-    borderWidth: 1,
-    borderColor: "#f0f0f0",
-    display: "flex",
-    flexDirection: "row",
-    width: "100%",
-    // alignItems: "center",
-    justifyContent: "space-between",
-    gap: 14,
-  },
-  mainContent: {
-    flex: 1,
-    display: "flex",
-    flexDirection: "column",
-    gap: 3,
-  },
-  title: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#70C601",
-  },
-  categoryText: {
-    fontSize: 10,
-    color: "#000",
-    fontWeight: "bold",
-  },
-  periodText: {
-    fontSize: 13,
-    color: "gray",
-  },
-  locationText: {
-    fontSize: 12,
-    color: "#000",
-    fontWeight: "700",
-  },
-  statusBadge: {
-    alignSelf: "flex-start",
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  dateCard: {
-    backgroundColor: "#70C601",
-    borderRadius: 8,
-    padding: 4,
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    // height: 85,
-    height: "auto",
-    width: 55,
-  },
-  dateText: {
-    fontSize: 17,
-    color: "#fff",
-    fontWeight: "bold",
-    textAlign: "center",
-  },
-  statusText: {
-    color: "#fff",
-    fontSize: 12,
-    fontWeight: "600",
-  },
-});
+const getStyles = (colorScheme: string) =>
+  StyleSheet.create({
+    card: {
+      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff",
+      borderRadius: 5,
+      padding: 8,
+      borderWidth: 1,
+      borderColor: colorScheme === "dark" ? "#36454F" : "#f0f0f0",
+      display: "flex",
+      flexDirection: "row",
+      width: "100%",
+      justifyContent: "space-between",
+      gap: 14,
+    },
+    mainContent: {
+      flex: 1,
+      display: "flex",
+      flexDirection: "column",
+      gap: 3,
+    },
+    title: {
+      fontSize: 14,
+      fontWeight: "700",
+      color: colorScheme === "dark" ? "#a8a49f" : "#70C601",
+    },
+    categoryText: {
+      fontSize: 10,
+      color: colorScheme === "dark" ? "#a8a49f" : "#000",
+      fontWeight: "bold",
+    },
+    periodText: {
+      fontSize: 13,
+      color: colorScheme === "dark" ? "#a8a49f" : "gray",
+    },
+    locationText: {
+      fontSize: 12,
+      color: colorScheme === "dark" ? "#a8a49f" : "#000",
+      fontWeight: "700",
+    },
+    statusBadge: {
+      alignSelf: "flex-start",
+      paddingHorizontal: 12,
+      paddingVertical: 4,
+      borderRadius: 12,
+    },
+    dateCard: {
+      backgroundColor: colorScheme === "dark" ? "#36454F" : "#70C601",
+      borderRadius: 8,
+      padding: 4,
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      height: "auto",
+      width: 55,
+    },
+    dateText: {
+      fontSize: 17,
+      color: colorScheme === "dark" ? "#a8a49f" : "#fff",
+      fontWeight: "bold",
+      textAlign: "center",
+    },
+    statusText: {
+      color: colorScheme === "dark" ? "#a8a49f" : "#fff",
+      fontSize: 12,
+      fontWeight: "600",
+    },
+  });

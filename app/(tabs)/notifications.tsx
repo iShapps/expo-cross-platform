@@ -1,5 +1,6 @@
 import { NotificationCard } from "@/components/notification-card";
 import { Notification } from "@/data-types/dashboard";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { FlatList, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -71,6 +72,10 @@ export default function NotificationsScreen() {
     },
   ];
 
+  let colorScheme = useColorScheme();
+  if (!colorScheme) colorScheme = "light";
+  const styles = getStyles(colorScheme);
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
@@ -89,7 +94,7 @@ export default function NotificationsScreen() {
             paddingTop: 5,
             flexGrow: 1,
             gap: 5,
-            backgroundColor: "#fff",
+            backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff",
             paddingHorizontal: 10,
           }}
         />
@@ -98,43 +103,41 @@ export default function NotificationsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#70C601",
-    // paddingHorizontal: 12,
-    // paddingTop: 16,
-  },
-  safeArea: {
-    flex: 1,
-    backgroundColor: "#70C601",
-  },
-  header: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 4,
-    backgroundColor: "#70C601",
-    width: "100%",
-    margin: 8,
-    paddingHorizontal: 12,
-    // paddingTop: 12,
-    paddingBottom: 8,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#ffffff",
-  },
-  underline: {
-    height: 3,
-    width: 56,
-    borderRadius: 999,
-    backgroundColor: "#70C601",
-    opacity: 0.85,
-    marginTop: 6,
-  },
-  listContent: {
-    paddingBottom: 24,
-    gap: 8,
-  },
-});
+const getStyles = (colorScheme: string) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
+    },
+    safeArea: {
+      flex: 1,
+      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
+    },
+    header: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 4,
+      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
+      width: "100%",
+      margin: 8,
+      paddingHorizontal: 12,
+      paddingBottom: 8,
+    },
+    title: {
+      fontSize: 18,
+      fontWeight: "700",
+      color: colorScheme === "dark" ? "#fff" : "#ffffff",
+    },
+    underline: {
+      height: 3,
+      width: 56,
+      borderRadius: 999,
+      backgroundColor: colorScheme === "dark" ? "#FFD966" : "#70C601",
+      opacity: 0.85,
+      marginTop: 6,
+    },
+    listContent: {
+      paddingBottom: 24,
+      gap: 8,
+    },
+  });

@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { differenceInMinutes, format } from "date-fns";
 import React, { useEffect, useRef } from "react";
 import { Animated, Easing, StyleSheet, Text, View } from "react-native";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 
 interface PayrunCardProps {
   payrun: Payrun;
@@ -13,6 +14,9 @@ interface PayrunCardProps {
 const ActiveCard: React.FC<PayrunCardProps> = ({ payrun, onPress }) => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const opacityAnim = useRef(new Animated.Value(1)).current;
+  let colorScheme = useColorScheme();
+  if (!colorScheme) colorScheme = "light";
+  const styles = getStyles(colorScheme);
 
   useEffect(() => {
     Animated.loop(
@@ -115,15 +119,16 @@ const ActiveCard: React.FC<PayrunCardProps> = ({ payrun, onPress }) => {
 };
 
 export default ActiveCard;
-const styles = StyleSheet.create({
+
+const getStyles = (colorScheme: string) => StyleSheet.create({
   card: {
     marginTop: 5,
     borderRadius: 12,
     padding: 12,
     borderWidth: 1,
-    borderColor: "#FF9800",
-    backgroundColor: "#fff1db",
-    shadowColor: "#000",
+    borderColor: colorScheme === "dark" ? "#36454F" : "#FF9800",
+    backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff1db",
+    shadowColor: colorScheme === "dark" ? "#000" : "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 10,
@@ -138,9 +143,9 @@ const styles = StyleSheet.create({
     marginTop: 10,
     borderTopLeftRadius: 25,
     borderTopRightRadius: 25,
-    backgroundColor: "#ffe493",
+    backgroundColor: colorScheme === "dark" ? "#FFD966" : "#ffe493",
     borderWidth: 1,
-    borderColor: "#ffd966",
+    borderColor: colorScheme === "dark" ? "#FFD966" : "#ffd966",
   },
   topContent: {
     flexDirection: "row",
@@ -151,7 +156,7 @@ const styles = StyleSheet.create({
   statusPill: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#71c6013b",
+    backgroundColor: colorScheme === "dark" ? "#36454F" : "#71c6013b",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 10,
@@ -162,28 +167,28 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: "#70C601",
+    backgroundColor: colorScheme === "dark" ? "#FFD966" : "#70C601",
   },
 
   statusText: {
-    color: "#030303",
+    color: colorScheme === "dark" ? "#FFD966" : "#030303",
     fontSize: 11,
   },
 
   remainingText: {
-    color: "#FF9800",
+    color: colorScheme === "dark" ? "#FFD966" : "#FF9800",
     fontSize: 13,
     fontWeight: "400",
   },
 
   title: {
-    color: "#000609",
+    color: colorScheme === "dark" ? "#FFD966" : "#000609",
     fontSize: 17,
     fontWeight: "700",
   },
 
   subtitle: {
-    color: "#2f2f2f",
+    color: colorScheme === "dark" ? "#FFD966" : "#2f2f2f",
     fontSize: 14,
   },
 
@@ -198,19 +203,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 10,
-    backgroundColor: "#FF9800",
+    backgroundColor: colorScheme === "dark" ? "#36454F" : "#FF9800",
     padding: 12,
     borderRadius: 8,
     marginTop: 5,
   },
 
   infoLabel: {
-    color: "rgba(255,255,255,0.85)",
+    color: colorScheme === "dark" ? "#FFD966" : "rgba(255,255,255,0.85)",
     fontSize: 12,
   },
 
   infoValue: {
-    color: "#ffffff",
+    color: colorScheme === "dark" ? "#FFD966" : "#ffffff",
     fontSize: 15,
   },
 
@@ -218,13 +223,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    backgroundColor: "rgba(255,255,255,0.25)",
+    backgroundColor: colorScheme === "dark" ? "#36454F" : "rgba(255,255,255,0.25)",
     padding: 12,
     borderRadius: 8,
   },
 
   addressText: {
-    color: "#6082B6",
+    color: colorScheme === "dark" ? "#FFD966" : "#6082B6",
     fontSize: 14,
     flex: 1,
   },
@@ -235,13 +240,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     gap: 8,
-    backgroundColor: "rgba(255,255,255,0.25)",
+    backgroundColor: colorScheme === "dark" ? "#36454F" : "rgba(255,255,255,0.25)",
     paddingVertical: 14,
     borderRadius: 18,
   },
 
   buttonText: {
-    color: "#fff",
+    color: colorScheme === "dark" ? "#FFD966" : "#fff",
     fontSize: 16,
     fontWeight: "700",
   },

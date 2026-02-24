@@ -1,8 +1,13 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
 import { SkeletonBase } from "./skeleton-base";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 
 export const PayrunCardSkeleton: React.FC = () => {
+  let colorScheme = useColorScheme();
+  if (!colorScheme) colorScheme = "light";
+  const styles = getStyles(colorScheme);
+
   return (
     <View style={styles.card}>
       <View style={styles.mainContent}>
@@ -21,13 +26,13 @@ export const PayrunCardSkeleton: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (colorScheme: string) => StyleSheet.create({
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff",
     borderRadius: 5,
     padding: 8,
     borderWidth: 1,
-    borderColor: "#f0f0f0",
+    borderColor: colorScheme === "dark" ? "#36454F" : "#f0f0f0",
     display: "flex",
     flexDirection: "row",
     width: "100%",
@@ -45,7 +50,7 @@ const styles = StyleSheet.create({
     height: 4,
   },
   dateCard: {
-    backgroundColor: "#f0f0f0",
+    backgroundColor: colorScheme === "dark" ? "#36454F" : "#f0f0f0",
     borderRadius: 8,
     padding: 4,
     display: "flex",

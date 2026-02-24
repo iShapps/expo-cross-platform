@@ -1,7 +1,13 @@
 // Types
-export interface LoginCredentials {
+export default interface LoginCredentials {
   email: string;
   password: string;
+
+  // optionals
+  device_version?: string;
+  device_name?: string;
+  device_type?: string;
+  device_id?: string;
 }
 
 export interface ForgotPasswordRequest {

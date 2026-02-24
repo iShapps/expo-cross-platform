@@ -1,33 +1,39 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 
-export const DocumentCardSkeleton: React.FC = () => (
-  <View style={styles.card}>
-    <View style={styles.iconSkeleton} />
-    <View style={styles.infoColumn}>
-      <View style={styles.lineSmall} />
-      <View style={styles.lineLargeRow}>
-        <View style={styles.lineLarge} />
-        <View style={styles.circleSkeleton} />
-      </View>
-      <View style={styles.lineSmallRow}>
+export const DocumentCardSkeleton: React.FC = () => {
+  let colorScheme = useColorScheme();
+  if (!colorScheme) colorScheme = "light";
+  const styles = getStyles(colorScheme);
+  return (
+    <View style={styles.card}>
+      <View style={styles.iconSkeleton} />
+      <View style={styles.infoColumn}>
         <View style={styles.lineSmall} />
-        <View style={styles.dotSkeleton} />
-        <View style={styles.lineSmall} />
+        <View style={styles.lineLargeRow}>
+          <View style={styles.lineLarge} />
+          <View style={styles.circleSkeleton} />
+        </View>
+        <View style={styles.lineSmallRow}>
+          <View style={styles.lineSmall} />
+          <View style={styles.dotSkeleton} />
+          <View style={styles.lineSmall} />
+        </View>
       </View>
+      <View style={styles.moreIconSkeleton} />
     </View>
-    <View style={styles.moreIconSkeleton} />
-  </View>
-);
+  );
+};
 
-const styles = StyleSheet.create({
+const getStyles = (colorScheme: string) => StyleSheet.create({
   card: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff",
+    backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff",
     borderRadius: 5,
     padding: 5,
-    borderColor: "#f1f1f1",
+    borderColor: colorScheme === "dark" ? "#36454F" : "#f1f1f1",
     borderWidth: 1,
     minHeight: 56,
   },
@@ -35,7 +41,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: "#ececec",
+    backgroundColor: colorScheme === "dark" ? "#36454F" : "#ececec",
     marginRight: 16,
     marginLeft: 2,
   },
@@ -47,7 +53,7 @@ const styles = StyleSheet.create({
   lineSmall: {
     height: 10,
     width: 80,
-    backgroundColor: "#ececec",
+    backgroundColor: colorScheme === "dark" ? "#36454F" : "#ececec",
     borderRadius: 4,
     marginBottom: 6,
     marginLeft: 2,
@@ -61,7 +67,7 @@ const styles = StyleSheet.create({
   lineLarge: {
     height: 16,
     width: 120,
-    backgroundColor: "#ececec",
+    backgroundColor: colorScheme === "dark" ? "#36454F" : "#ececec",
     borderRadius: 4,
     marginRight: 8,
   },
@@ -69,7 +75,7 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: "#ececec",
+    backgroundColor: colorScheme === "dark" ? "#36454F" : "#ececec",
   },
   lineSmallRow: {
     flexDirection: "row",
@@ -81,7 +87,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: "#ececec",
+    backgroundColor: colorScheme === "dark" ? "#36454F" : "#ececec",
     marginHorizontal: 3,
     marginTop: -1,
   },
@@ -89,7 +95,7 @@ const styles = StyleSheet.create({
     width: 26,
     height: 26,
     borderRadius: 13,
-    backgroundColor: "#ececec",
+    backgroundColor: colorScheme === "dark" ? "#36454F" : "#ececec",
     marginLeft: 8,
     alignSelf: "flex-start",
   },
