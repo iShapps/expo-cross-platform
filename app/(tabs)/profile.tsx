@@ -1,4 +1,5 @@
 import { useProfileData } from "@/data-store/use-account-store";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import Fontisto from "@expo/vector-icons/Fontisto";
 import { Image } from "expo-image";
 import { router } from "expo-router";
@@ -13,6 +14,9 @@ import {
 } from "react-native";
 
 export default function ProfileScreen() {
+  let colorScheme = useColorScheme();
+  if (!colorScheme) colorScheme = "light";
+  const styles = getStyles(colorScheme);
   const profileStore = useProfileData();
   const userDetails = profileStore.userDetails;
   const hcp = userDetails?.hcp;
@@ -32,7 +36,11 @@ export default function ProfileScreen() {
           onPress={() => router.canGoBack() && router.back()}
           style={styles.backIconContainer}
         >
-          <Fontisto name="arrow-left-l" size={15} color="white" />
+          <Fontisto
+            name="arrow-left-l"
+            size={15}
+            color={colorScheme === "dark" ? "#b0b8ca" : "white"}
+          />
         </Pressable>
         <Text style={styles.locationText}>Profile</Text>
         <Pressable style={styles.faintbackIconContainer}></Pressable>
@@ -193,213 +201,209 @@ export default function ProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: "#fff",
-  },
-  container: {
-    flex: 1,
-    height: "100%",
-    width: "100%",
-    backgroundColor: "#70C601",
-    display: "flex",
-    flexDirection: "column",
-    gap: 20,
-    paddingVertical: 50,
-  },
-  topBarContainer: {
-    display: "flex",
-    flexDirection: "row",
-    alignContent: "center",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 25,
-    backgroundColor: "#70C601",
-    paddingHorizontal: 10,
-  },
-
-  locationText: {
-    fontFamily: "Roboto",
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#ffffff",
-  },
-  content: {
-    paddingHorizontal: 10,
-    paddingBottom: 32,
-    backgroundColor: "#fff",
-  },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 8,
-  },
-  backButton: {
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-  },
-  backIconContainer: {
-    height: 40,
-    width: 40,
-    borderRadius: 50,
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: "center",
-    alignContent: "center",
-    alignItems: "center",
-    padding: 2,
-    borderWidth: 1,
-    borderColor: "#D3D3D3",
-  },
-  faintbackIconContainer: {
-    height: 40,
-    width: 40,
-    borderRadius: 50,
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: "center",
-    alignContent: "center",
-    alignItems: "center",
-    padding: 2,
-    borderWidth: 1,
-    borderColor: "#70C601",
-  },
-  backSpacer: {
-    width: 52,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#111",
-  },
-  heroCard: {
-    marginTop: 8,
-    backgroundColor: "#F8FFF0",
-    borderRadius: 5,
-    padding: 10,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    borderWidth: 1,
-    borderColor: "#E6F0D8",
-  },
-  avatarWrap: {
-    height: 64,
-    width: 64,
-    borderRadius: 5,
-    backgroundColor: "#EAF7D2",
-    alignItems: "center",
-    justifyContent: "center",
-    overflow: "hidden",
-  },
-  avatarImage: {
-    height: "100%",
-    width: "100%",
-    borderRadius: 5,
-  },
-  avatarFallback: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: "#70C601",
-  },
-  heroContent: {
-    flex: 1,
-  },
-  heroName: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#111",
-  },
-  heroMeta: {
-    fontSize: 12,
-    color: "#6B7280",
-    marginTop: 2,
-  },
-  sectionCard: {
-    marginTop: 12,
-    borderRadius: 5,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: "#F0F0F0",
-    backgroundColor: "#fff",
-  },
-  sectionTitle: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#111",
-    marginBottom: 10,
-    textTransform: "uppercase",
-    letterSpacing: 0.4,
-  },
-  rowBetween: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  rowTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#111",
-  },
-  rowSubtitle: {
-    fontSize: 12,
-    color: "#6B7280",
-    marginTop: 2,
-  },
-  detailRow: {
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F3F4F6",
-  },
-  professionList: {
-    gap: 12,
-    marginBottom: 4,
-  },
-  professionItem: {
-    // borderWidth: 1,
-    // borderColor: "#F3F4F6",
-    // borderRadius: 5,
-    // padding: 10,
-    gap: 4,
-  },
-  detailLabel: {
-    fontSize: 12,
-    color: "#6B7280",
-  },
-  detailValue: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#111",
-    marginTop: 4,
-  },
-  actionsRow: {
-    flexDirection: "row",
-    gap: 10,
-    marginTop: 16,
-  },
-  actionButton: {
-    flex: 1,
-    borderRadius: 5,
-    paddingVertical: 12,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  primaryButton: {
-    backgroundColor: "#70C601",
-  },
-  primaryButtonText: {
-    color: "#fff",
-    fontWeight: "700",
-  },
-  outlineButton: {
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    backgroundColor: "#fff",
-  },
-  outlineButtonText: {
-    color: "#111",
-    fontWeight: "700",
-  },
-});
+const getStyles = (colorScheme: string) =>
+  StyleSheet.create({
+    safeArea: {
+      flex: 1,
+      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff",
+    },
+    container: {
+      flex: 1,
+      height: "100%",
+      width: "100%",
+      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
+      display: "flex",
+      flexDirection: "column",
+      gap: 20,
+      paddingVertical: 50,
+    },
+    topBarContainer: {
+      display: "flex",
+      flexDirection: "row",
+      alignContent: "center",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 25,
+      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
+      paddingHorizontal: 10,
+    },
+    locationText: {
+      fontFamily: "Roboto",
+      fontSize: 18,
+      fontWeight: "700",
+      color: colorScheme === "dark" ? "#fff" : "#ffffff",
+    },
+    content: {
+      paddingHorizontal: 10,
+      paddingBottom: 32,
+      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff",
+    },
+    headerRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingVertical: 8,
+    },
+    backButton: {
+      paddingVertical: 6,
+      paddingHorizontal: 10,
+    },
+    backIconContainer: {
+      height: 40,
+      width: 40,
+      borderRadius: 50,
+      display: "flex",
+      flexDirection: "row",
+      justifyContent: "center",
+      alignContent: "center",
+      alignItems: "center",
+      padding: 2,
+      borderWidth: 1,
+      borderColor: colorScheme === "dark" ? "#b0b8ca" : "#D3D3D3",
+    },
+    faintbackIconContainer: {
+      height: 40,
+      width: 40,
+      borderRadius: 50,
+      display: "flex",
+      flexDirection: "row",
+      justifyContent: "center",
+      alignContent: "center",
+      alignItems: "center",
+      padding: 2,
+      borderWidth: 1,
+      borderColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
+    },
+    backSpacer: {
+      width: 52,
+    },
+    title: {
+      fontSize: 18,
+      fontWeight: "700",
+      color: colorScheme === "dark" ? "#b0b8ca" : "#111",
+    },
+    heroCard: {
+      marginTop: 8,
+      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#F8FFF0",
+      borderRadius: 5,
+      padding: 10,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      borderWidth: 1,
+      borderColor: colorScheme === "dark" ? "#36454F" : "#E6F0D8",
+    },
+    avatarWrap: {
+      height: 64,
+      width: 64,
+      borderRadius: 5,
+      backgroundColor: colorScheme === "dark" ? "#36454F" : "#EAF7D2",
+      alignItems: "center",
+      justifyContent: "center",
+      overflow: "hidden",
+    },
+    avatarImage: {
+      height: "100%",
+      width: "100%",
+      borderRadius: 5,
+    },
+    avatarFallback: {
+      fontSize: 22,
+      fontWeight: "700",
+      color: colorScheme === "dark" ? "#b0b8ca" : "#70C601",
+    },
+    heroContent: {
+      flex: 1,
+    },
+    heroName: {
+      fontSize: 16,
+      fontWeight: "700",
+      color: colorScheme === "dark" ? "#b0b8ca" : "#111",
+    },
+    heroMeta: {
+      fontSize: 12,
+      color: colorScheme === "dark" ? "#b0b8ca" : "#6B7280",
+      marginTop: 2,
+    },
+    sectionCard: {
+      marginTop: 12,
+      borderRadius: 5,
+      padding: 14,
+      borderWidth: 1,
+      borderColor: colorScheme === "dark" ? "#36454F" : "#F0F0F0",
+      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff",
+    },
+    sectionTitle: {
+      fontSize: 13,
+      fontWeight: "700",
+      color: colorScheme === "dark" ? "#b0b8ca" : "#111",
+      marginBottom: 10,
+      textTransform: "uppercase",
+      letterSpacing: 0.4,
+    },
+    rowBetween: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+    },
+    rowTitle: {
+      fontSize: 14,
+      fontWeight: "600",
+      color: colorScheme === "dark" ? "#b0b8ca" : "#111",
+    },
+    rowSubtitle: {
+      fontSize: 12,
+      color: colorScheme === "dark" ? "#b0b8ca" : "#6B7280",
+      marginTop: 2,
+    },
+    detailRow: {
+      paddingVertical: 8,
+      borderBottomWidth: 1,
+      borderBottomColor: colorScheme === "dark" ? "#232A2E" : "#F3F4F6",
+    },
+    professionList: {
+      gap: 12,
+      marginBottom: 4,
+    },
+    professionItem: {
+      gap: 4,
+    },
+    detailLabel: {
+      fontSize: 12,
+      color: colorScheme === "dark" ? "#b0b8ca" : "#6B7280",
+    },
+    detailValue: {
+      fontSize: 14,
+      fontWeight: "600",
+      color: colorScheme === "dark" ? "#b0b8ca" : "#111",
+      marginTop: 4,
+    },
+    actionsRow: {
+      flexDirection: "row",
+      gap: 10,
+      marginTop: 16,
+    },
+    actionButton: {
+      flex: 1,
+      borderRadius: 5,
+      paddingVertical: 12,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    primaryButton: {
+      backgroundColor: colorScheme === "dark" ? "#b0b8ca" : "#70C601",
+    },
+    primaryButtonText: {
+      color: colorScheme === "dark" ? "#232A2E" : "#fff",
+      fontWeight: "700",
+    },
+    outlineButton: {
+      borderWidth: 1,
+      borderColor: colorScheme === "dark" ? "#b0b8ca" : "#E5E7EB",
+      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff",
+    },
+    outlineButtonText: {
+      color: colorScheme === "dark" ? "#b0b8ca" : "#111",
+      fontWeight: "700",
+    },
+  });

@@ -16,6 +16,7 @@ import { format } from "date-fns";
 import { router } from "expo-router";
 import { useEffect } from "react";
 
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import {
   FlatList,
   Pressable,
@@ -28,6 +29,7 @@ import {
 export default function HomeScreen() {
   const { expoPushToken, notification } = usePushNotifications();
   const { requestPermission } = useLocation();
+  const colorScheme = useColorScheme();
 
   console.log("expoPushToken", expoPushToken);
   console.log("notification", notification);
@@ -155,6 +157,8 @@ export default function HomeScreen() {
   useEffect(() => {
     requestPermission();
   }, []);
+
+  const styles = colorScheme === "dark" ? darkStyles : lightStyles;
 
   return (
     <View style={styles.mainContainer}>
@@ -285,7 +289,8 @@ export default function HomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+// Theme-aware styles
+const lightStyles = StyleSheet.create({
   mainContainer: {
     backgroundColor: "#ffffff",
     width: "100%",
@@ -304,7 +309,6 @@ const styles = StyleSheet.create({
     height: "12%",
     width: "100%",
     paddingTop: 55,
-    //paddingBottom: 10,
     display: "flex",
     flexDirection: "column",
     paddingHorizontal: 20,
@@ -312,7 +316,6 @@ const styles = StyleSheet.create({
     borderBottomColor: "#ffffff50",
     borderBottomWidth: 0.5,
   },
-
   dashboardContainer: {
     display: "flex",
     flexDirection: "column",
@@ -320,22 +323,16 @@ const styles = StyleSheet.create({
     width: "100%",
     backgroundColor: "#70C601",
     paddingHorizontal: 15,
-    // borderBottomLeftRadius: 25,
-    // borderBottomRightRadius: 25,
     paddingBottom: 20,
     marginBottom: 5,
   },
-
   mainLandingContainer: {
     flex: 1,
     backgroundColor: "#ffffff",
     width: "100%",
-    // borderTopLeftRadius: 25,
-    // borderTopRightRadius: 25,
     paddingHorizontal: 15,
     overflow: "hidden",
   },
-
   mainLandingContent: {
     paddingBottom: 120,
     paddingTop: 4,
@@ -384,7 +381,6 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
-
   dashboardHeader: {
     marginTop: 16,
     marginBottom: 8,
@@ -395,7 +391,6 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   dashboardCard: {
-    // flex: 1,
     display: "flex",
     alignItems: "flex-start",
     justifyContent: "space-between",
@@ -404,11 +399,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     width: "31%",
     minHeight: 110,
-    // shadowColor: "#000",
-    // shadowOffset: { width: 0, height: 4 },
-    // shadowOpacity: 0.08,
-    // shadowRadius: 10,
-    // elevation: 3,
     gap: 6,
   },
   dashboardCardAvailable: {
@@ -519,6 +509,243 @@ const styles = StyleSheet.create({
     marginTop: 8,
     borderRadius: 999,
     backgroundColor: "#ffffff",
+    opacity: 0.8,
+  },
+  seeAllButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 2,
+    paddingVertical: 4,
+    paddingHorizontal: 6,
+  },
+  seeAllText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#70C601",
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+  },
+});
+
+const darkStyles = StyleSheet.create({
+  mainContainer: {
+    backgroundColor: "#151718",
+    width: "100%",
+    flex: 1,
+    justifyContent: "flex-start",
+    alignItems: "center",
+  },
+  header: {
+    backgroundColor: "#232A2E",
+    paddingTop: 55,
+    paddingBottom: 10,
+    alignItems: "center",
+  },
+  containerTop: {
+    backgroundColor: "#232A2E",
+    height: "12%",
+    width: "100%",
+    paddingTop: 55,
+    display: "flex",
+    flexDirection: "column",
+    paddingHorizontal: 20,
+    gap: 10,
+    borderBottomColor: "#36454F",
+    borderBottomWidth: 0.5,
+  },
+  dashboardContainer: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 8,
+    width: "100%",
+    backgroundColor: "#232A2E",
+    paddingHorizontal: 15,
+    paddingBottom: 20,
+    marginBottom: 5,
+  },
+  mainLandingContainer: {
+    flex: 1,
+    backgroundColor: "#232A2E",
+    width: "100%",
+    paddingHorizontal: 15,
+    overflow: "hidden",
+  },
+  mainLandingContent: {
+    paddingBottom: 120,
+    paddingTop: 4,
+    gap: 8,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#ECEDEE",
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: "#A0A4AB",
+  },
+  notificationContainer: {
+    backgroundColor: "rgba(52, 52, 52, 0.3)",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    alignContent: "center",
+    flexDirection: "row",
+    borderRadius: 5,
+    padding: 8,
+    position: "relative",
+  },
+  notificationDot: {
+    position: "absolute",
+    top: 7,
+    right: 11,
+    width: 6,
+    height: 6,
+    borderRadius: 4,
+    backgroundColor: "#FF3B30",
+  },
+  sectionLabel: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#A0A4AB",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  overviewLabel: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#ECEDEE",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  dashboardHeader: {
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  dashboardRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+  },
+  dashboardCard: {
+    display: "flex",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    width: "31%",
+    minHeight: 110,
+    gap: 6,
+  },
+  dashboardCardAvailable: {
+    backgroundColor: "#232A2E",
+    borderColor: "#70C601",
+  },
+  dashboardCardScheduled: {
+    backgroundColor: "#232A2E",
+    borderColor: "#4A90E2",
+  },
+  dashboardCardMy: {
+    backgroundColor: "#232A2E",
+    borderColor: "#4A90E2",
+  },
+  dashboardCardUpcoming: {
+    backgroundColor: "#2E2E2E",
+    borderColor: "#FFD600",
+  },
+  dashboardTitle: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#A0A4AB",
+    marginTop: 8,
+  },
+  dashboardValue: {
+    fontSize: 32,
+    fontWeight: "700",
+    color: "#ECEDEE",
+  },
+  dashboardTopRow: {
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  iconPill: {
+    width: 28,
+    height: 28,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(52,52,52,0.7)",
+  },
+  iconPillAvailable: {
+    backgroundColor: "#36454F",
+  },
+  iconPillMy: {
+    backgroundColor: "#36454F",
+  },
+  iconPillUpcoming: {
+    backgroundColor: "#2E2E2E",
+  },
+  payrunCard: {
+    marginTop: 5,
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: "#36454F",
+    backgroundColor: "#232A2E",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  payrunHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    width: "100%",
+    gap: 8,
+  },
+  iconPillPayrun: {
+    width: 28,
+    height: 28,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#36454F",
+  },
+  payrunLabel: {
+    fontSize: 13,
+    flexGrow: 1,
+    fontWeight: "700",
+    color: "#ECEDEE",
+    marginBottom: 4,
+    letterSpacing: 0.2,
+    textTransform: "uppercase",
+  },
+  payrunValue: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#ECEDEE",
+  },
+  notificationsHeader: {
+    marginTop: 8,
+    marginBottom: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  sectionTitleWrap: {
+    flexDirection: "column",
+    gap: 6,
+  },
+  sectionUnderline: {
+    height: 1,
+    width: 48,
+    marginTop: 8,
+    borderRadius: 999,
+    backgroundColor: "#36454F",
     opacity: 0.8,
   },
   seeAllButton: {

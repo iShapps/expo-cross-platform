@@ -1,3 +1,4 @@
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import Entypo from "@expo/vector-icons/Entypo";
 import Fontisto from "@expo/vector-icons/Fontisto";
 import { router } from "expo-router";
@@ -5,6 +6,10 @@ import React, { useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
 export default function ChangePasswordScreen() {
+  let colorScheme = useColorScheme();
+  if (!colorScheme) colorScheme = "light";
+  const styles = getStyles(colorScheme);
+
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -19,7 +24,11 @@ export default function ChangePasswordScreen() {
           onPress={() => router.canGoBack() && router.back()}
           style={styles.backIconContainer}
         >
-          <Fontisto name="arrow-left-l" size={15} color="#fff" />
+          <Fontisto
+            name="arrow-left-l"
+            size={15}
+            color={colorScheme === "dark" ? "#b0b8ca" : "#fff"}
+          />
         </Pressable>
         <Text style={styles.locationText}>Change Password</Text>
         <Pressable style={styles.faintbackIconContainer}></Pressable>
@@ -42,17 +51,28 @@ export default function ChangePasswordScreen() {
               onChangeText={setCurrentPassword}
               secureTextEntry={!showCurrentPassword}
               placeholder="••••••••"
-              placeholderTextColor="#999"
-              cursorColor="#70C601"
-              style={{ flex: 1 }}
+              placeholderTextColor={colorScheme === "dark" ? "#aaa" : "#999"}
+              cursorColor={colorScheme === "dark" ? "#b0b8ca" : "#70C601"}
+              style={{
+                flex: 1,
+                color: colorScheme === "dark" ? "#b0b8ca" : undefined,
+              }}
             />
             <Pressable
               onPress={() => setShowCurrentPassword(!showCurrentPassword)}
             >
               {showCurrentPassword ? (
-                <Entypo name="eye" size={20} color="#7393B3" />
+                <Entypo
+                  name="eye"
+                  size={20}
+                  color={colorScheme === "dark" ? "#b0b8ca" : "#7393B3"}
+                />
               ) : (
-                <Entypo name="eye-with-line" size={20} color="#7393B3" />
+                <Entypo
+                  name="eye-with-line"
+                  size={20}
+                  color={colorScheme === "dark" ? "#b0b8ca" : "#7393B3"}
+                />
               )}
             </Pressable>
           </View>
@@ -74,15 +94,26 @@ export default function ChangePasswordScreen() {
               onChangeText={setNewPassword}
               secureTextEntry={!showNewPassword}
               placeholder="••••••••"
-              placeholderTextColor="#999"
-              cursorColor="#70C601"
-              style={{ flex: 1 }}
+              placeholderTextColor={colorScheme === "dark" ? "#aaa" : "#999"}
+              cursorColor={colorScheme === "dark" ? "#b0b8ca" : "#70C601"}
+              style={{
+                flex: 1,
+                color: colorScheme === "dark" ? "#b0b8ca" : undefined,
+              }}
             />
             <Pressable onPress={() => setShowNewPassword(!showNewPassword)}>
               {showNewPassword ? (
-                <Entypo name="eye" size={20} color="#7393B3" />
+                <Entypo
+                  name="eye"
+                  size={20}
+                  color={colorScheme === "dark" ? "#b0b8ca" : "#7393B3"}
+                />
               ) : (
-                <Entypo name="eye-with-line" size={20} color="#7393B3" />
+                <Entypo
+                  name="eye-with-line"
+                  size={20}
+                  color={colorScheme === "dark" ? "#b0b8ca" : "#7393B3"}
+                />
               )}
             </Pressable>
           </View>
@@ -104,17 +135,28 @@ export default function ChangePasswordScreen() {
               onChangeText={setConfirmPassword}
               secureTextEntry={!showConfirmPassword}
               placeholder="••••••••"
-              placeholderTextColor="#999"
-              cursorColor="#70C601"
-              style={{ flex: 1 }}
+              placeholderTextColor={colorScheme === "dark" ? "#aaa" : "#999"}
+              cursorColor={colorScheme === "dark" ? "#b0b8ca" : "#70C601"}
+              style={{
+                flex: 1,
+                color: colorScheme === "dark" ? "#b0b8ca" : undefined,
+              }}
             />
             <Pressable
               onPress={() => setShowConfirmPassword(!showConfirmPassword)}
             >
               {showConfirmPassword ? (
-                <Entypo name="eye" size={20} color="#7393B3" />
+                <Entypo
+                  name="eye"
+                  size={20}
+                  color={colorScheme === "dark" ? "#b0b8ca" : "#7393B3"}
+                />
               ) : (
-                <Entypo name="eye-with-line" size={20} color="#7393B3" />
+                <Entypo
+                  name="eye-with-line"
+                  size={20}
+                  color={colorScheme === "dark" ? "#b0b8ca" : "#7393B3"}
+                />
               )}
             </Pressable>
           </View>
@@ -128,138 +170,128 @@ export default function ChangePasswordScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: "#fff",
-  },
-
-  container: {
-    flex: 1,
-    height: "100%",
-    width: "100%",
-    backgroundColor: "#70C601",
-    display: "flex",
-    flexDirection: "column",
-    // justifyContent:"center",
-    // alignContent:"center",
-    // alignItems:"center",
-    // paddingHorizontal: 20,
-    paddingVertical: 50,
-  },
-  topBarContainer: {
-    display: "flex",
-    flexDirection: "row",
-    alignContent: "center",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 25,
-    backgroundColor: "#70C601",
-    paddingHorizontal: 10,
-  },
-
-  locationText: {
-    fontFamily: "Roboto",
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#fff",
-  },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 8,
-  },
-  backIconContainer: {
-    height: 40,
-    width: 40,
-    borderRadius: 50,
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: "center",
-    alignContent: "center",
-    alignItems: "center",
-    padding: 2,
-    borderWidth: 1,
-    borderColor: "#D3D3D3",
-  },
-  faintbackIconContainer: {
-    height: 40,
-    width: 40,
-    borderRadius: 50,
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: "center",
-    alignContent: "center",
-    alignItems: "center",
-    padding: 2,
-    borderWidth: 1,
-    borderColor: "#70C601",
-  },
-  backSpacer: {
-    width: 52,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#111",
-  },
-  formCard: {
-    marginTop: 20,
-    // borderRadius: 16,
-    // padding: 16,
-    // borderWidth: 1,
-    // borderColor: "#F0F0F0",
-    backgroundColor: "#fff",
-    flex: 1,
-    paddingVertical: 20,
-    paddingHorizontal: 10,
-  },
-  inputGroup: {
-    marginBottom: 16,
-  },
-  passwordInputGroup: {
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    borderBottomWidth: 1,
-    borderBottomColor: "#ccc",
-    paddingVertical: 8,
-    fontSize: 16,
-    gap: 8,
-  },
-  passwordInputGroupFilled: {
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    borderBottomWidth: 1,
-    borderBottomColor: "#70C601",
-    paddingVertical: 8,
-    fontSize: 16,
-    gap: 8,
-  },
-  label: {
-    fontSize: 14,
-    color: "#000",
-    fontWeight: "700",
-    marginBottom: 6,
-  },
-  labelFilled: {
-    fontSize: 14,
-    color: "#70C601",
-    fontWeight: "700",
-    marginBottom: 6,
-  },
-  primaryButton: {
-    marginTop: 16,
-    backgroundColor: "#70C601",
-    borderRadius: 5,
-    paddingVertical: 12,
-    alignItems: "center",
-  },
-  primaryButtonText: {
-    color: "#fff",
-    // fontWeight: "700",
-    fontSize: 14,
-  },
-});
+const getStyles = (colorScheme: string) =>
+  StyleSheet.create({
+    safeArea: {
+      flex: 1,
+      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff",
+    },
+    container: {
+      flex: 1,
+      height: "100%",
+      width: "100%",
+      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
+      display: "flex",
+      flexDirection: "column",
+      paddingVertical: 50,
+    },
+    topBarContainer: {
+      display: "flex",
+      flexDirection: "row",
+      alignContent: "center",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 25,
+      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
+      paddingHorizontal: 10,
+    },
+    locationText: {
+      fontFamily: "Roboto",
+      fontSize: 18,
+      fontWeight: "700",
+      color: colorScheme === "dark" ? "#fff" : "#fff",
+    },
+    headerRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingVertical: 8,
+    },
+    backIconContainer: {
+      height: 40,
+      width: 40,
+      borderRadius: 50,
+      display: "flex",
+      flexDirection: "row",
+      justifyContent: "center",
+      alignContent: "center",
+      alignItems: "center",
+      padding: 2,
+      borderWidth: 1,
+      borderColor: colorScheme === "dark" ? "#b0b8ca" : "#D3D3D3",
+    },
+    faintbackIconContainer: {
+      height: 40,
+      width: 40,
+      borderRadius: 50,
+      display: "flex",
+      flexDirection: "row",
+      justifyContent: "center",
+      alignContent: "center",
+      alignItems: "center",
+      padding: 2,
+      borderWidth: 1,
+      borderColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
+    },
+    backSpacer: {
+      width: 52,
+    },
+    title: {
+      fontSize: 18,
+      fontWeight: "700",
+      color: colorScheme === "dark" ? "#fff" : "#111",
+    },
+    formCard: {
+      marginTop: 20,
+      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff",
+      flex: 1,
+      paddingVertical: 20,
+      paddingHorizontal: 10,
+    },
+    inputGroup: {
+      marginBottom: 16,
+    },
+    passwordInputGroup: {
+      display: "flex",
+      flexDirection: "row",
+      justifyContent: "space-between",
+      borderBottomWidth: 1,
+      borderBottomColor: colorScheme === "dark" ? "#b0b8ca" : "#ccc",
+      paddingVertical: 8,
+      fontSize: 16,
+      gap: 8,
+    },
+    passwordInputGroupFilled: {
+      display: "flex",
+      flexDirection: "row",
+      justifyContent: "space-between",
+      borderBottomWidth: 1,
+      borderBottomColor: colorScheme === "dark" ? "#b0b8ca" : "#70C601",
+      paddingVertical: 8,
+      fontSize: 16,
+      gap: 8,
+    },
+    label: {
+      fontSize: 14,
+      color: colorScheme === "dark" ? "#b0b8ca" : "#000",
+      fontWeight: "700",
+      marginBottom: 6,
+    },
+    labelFilled: {
+      fontSize: 14,
+      color: colorScheme === "dark" ? "#fff" : "#70C601",
+      fontWeight: "700",
+      marginBottom: 6,
+    },
+    primaryButton: {
+      marginTop: 16,
+      backgroundColor: colorScheme === "dark" ? "#b0b8ca" : "#70C601",
+      borderRadius: 5,
+      paddingVertical: 12,
+      alignItems: "center",
+    },
+    primaryButtonText: {
+      color: colorScheme === "dark" ? "#232A2E" : "#fff",
+      fontSize: 14,
+    },
+  });

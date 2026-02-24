@@ -10,14 +10,20 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
+      "bundleIdentifier": "com.smarthealthcare.ishapps",
       "infoPlist": {
         "NSFaceIDUsageDescription": "Allow $(PRODUCT_NAME) to use Face ID for authentication.",
         "ITSAppUsesNonExemptEncryption": false,
         "NSLocationWhenInUseUsageDescription": "Allow $(PRODUCT_NAME) to access your location while using the app to navigate to assigned shift locations and verify arrival when starting or ending a shift.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Allow $(PRODUCT_NAME) to access your location in the background to monitor travel to assigned shift locations and verify presence at the facility when starting or ending a shift.",
-        "UIBackgroundModes": ["location"]
+        "UIBackgroundModes": ["location", "remote-notification"]
       },
-      "bundleIdentifier": "com.victorishapps.ishapps"
+      "entitlements": {
+        "aps-environment": "development", //"production"
+        "com.apple.security.application-groups": [
+          "group.${ios.bundleIdentifier}.onesignal"
+        ]
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -37,13 +43,19 @@
         "android.permission.ACCESS_BACKGROUND_LOCATION",
         "android.permission.FOREGROUND_SERVICE"
       ],
-      "package": "com.victorishapps.ishapps"
+      "package": "com.smarthealthcare.ishapps"
     },
     "web": {
       "output": "static",
       "favicon": "./assets/images/smhealth.png"
     },
     "plugins": [
+      [
+        "onesignal-expo-plugin",
+        {
+          "mode": "development" //"production"
+        }
+      ],
       "expo-router",
       "expo-notifications",
       [
@@ -94,8 +106,11 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "1e7bb57b-bac3-4d98-91c4-392a4bdbaeae"
+        "projectId": "17a2649d-0933-4036-b23a-49012513cd96",
+        "oneSignalAppId": "b9c8e5c7-1a0d-4f1b-9c3e-2a5f6d7e8f90",
+        "oneSignalAndroidAppId": "a4cfbbf7-fae5-470b-bb0c-b6bc8f673ade"
       }
-    }
+    },
+    "owner": "ishapps"
   }
 }

@@ -1,5 +1,5 @@
 import { useProfileData } from "@/data-store/use-account-store";
-import { LoginCredentials, User } from "@/data-types/auth";
+import LoginCredentials, { User } from "@/data-types/auth";
 import { removeToken, setToken as setAuthToken } from "@/utils/auth";
 import {
   login as apiLogin,
@@ -93,6 +93,9 @@ export function SessionProvider(props: React.PropsWithChildren) {
       profileStore.setToken(result.data.access_token);
       profileStore.setUserDetails(result.data.user);
 
+      // Login to OneSignal for push notifications
+      // await onLoginSuccess(result.data.user.id.toString());
+
       Alert.alert("Success", "Login successful!", [{ text: "OK" }]);
     } catch (error) {
       // Handle errors with alerts
@@ -135,6 +138,8 @@ export function SessionProvider(props: React.PropsWithChildren) {
   const handleSignOut = async () => {
     try {
       await apiLogout();
+      // Logout from OneSignal to stop push notifications
+      // await onLogout();
     } catch (error) {
       console.error("Logout error:", error);
     } finally {
