@@ -181,21 +181,6 @@ export default function ProfileScreen() {
             </Text>
           </View>
         </View>
-
-        {/* <View style={styles.actionsRow}>
-          <Pressable
-            onPress={() => router.push("/(tabs)/documents")}
-            style={[styles.actionButton, styles.outlineButton]}
-          >
-            <Text style={styles.outlineButtonText}>Documents</Text>
-          </Pressable>
-          <Pressable
-            onPress={() => router.push("/(tabs)/change-password")}
-            style={[styles.actionButton, styles.primaryButton]}
-          >
-            <Text style={styles.primaryButtonText}>Change Password</Text>
-          </Pressable>
-        </View> */}
       </ScrollView>
     </View>
   );

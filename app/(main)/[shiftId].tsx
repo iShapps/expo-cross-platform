@@ -10,6 +10,7 @@ import { ShiftDetailsSkeleton } from "@/components/skeletons";
 import { SwipeButton } from "@/components/swipe-button";
 import { useProfileData } from "@/data-store/use-account-store";
 import { IShift } from "@/data-types/shifts";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useLocation } from "@/hooks/use-location";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import Feather from "@expo/vector-icons/Feather";
@@ -27,7 +28,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  useColorScheme,
   View,
 } from "react-native";
 

@@ -385,14 +385,4 @@ const getStyles = (colorScheme: string) =>
     tabUnderlineActive: {
       backgroundColor: colorScheme === "dark" ? "#FFD966" : "#70C601",
     },
-    androidContainer: {
-      flex: 1,
-      height: "100%",
-      width: "100%",
-      display: "flex",
-      flexDirection: "column",
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#ffffff",
-      paddingTop: 50,
-      paddingBottom: 70,
-    },
   });

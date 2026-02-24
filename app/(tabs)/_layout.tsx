@@ -1,5 +1,3 @@
-import { Tabs } from "expo-router";
-import React from "react";
 import { HapticTab } from "@/components/haptic-tab";
 import {
   TabBarFAFiveWIcon,
@@ -7,9 +5,11 @@ import {
   TabBarIMaterialIcon,
   TabBarOctIcon,
 } from "@/components/ui/tab-bar-icon";
-import { useIsFetching } from "@tanstack/react-query";
-import { Animated, Easing, Platform, StyleSheet, View } from "react-native";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useIsFetching } from "@tanstack/react-query";
+import { Tabs } from "expo-router";
+import React from "react";
+import { Animated, Easing, Platform, StyleSheet, View } from "react-native";
 
 const FetchingSnakeBar = () => {
   const isFetching = useIsFetching({
@@ -62,7 +62,7 @@ const FetchingSnakeBar = () => {
 };
 
 export default function TabLayout() {
-    const colorScheme = useColorScheme();
+  const colorScheme = useColorScheme();
   const lightTabBar = {
     activeTint: "#70C601",
     inactiveTint: "#71797E",
@@ -114,14 +114,17 @@ export default function TabLayout() {
     }),
   };
   const tabBarTheme = colorScheme === "dark" ? darkTabBar : lightTabBar;
-  
+
   return (
     <Tabs
       backBehavior="history"
       screenOptions={{
         tabBarActiveTintColor: tabBarTheme.activeTint,
         tabBarInactiveTintColor: tabBarTheme.inactiveTint,
-        tabBarStyle: Platform.OS === "ios" ? tabBarTheme.iosBar.bar : tabBarTheme.androidBar.bar,
+        tabBarStyle:
+          Platform.OS === "ios"
+            ? tabBarTheme.iosBar.bar
+            : tabBarTheme.androidBar.bar,
         tabBarBackground: () => <FetchingSnakeBar />,
         headerShown: false,
         tabBarButton: HapticTab,
@@ -173,58 +176,10 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="notifications"
-        options={{
-          headerShown: false,
-          title: "Notifications",
-          href: null,
-        }}
-      />
-      <Tabs.Screen
         name="profile"
         options={{
           headerShown: false,
           title: "Profile",
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="change-password"
-        options={{
-          headerShown: false,
-          title: "Change Password",
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="account"
-        options={{
-          headerShown: false,
-          title: "Account",
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="interviews"
-        options={{
-          headerShown: false,
-          title: "Interviews",
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="facilities"
-        options={{
-          headerShown: false,
-          title: "Facilities",
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="settings"
-        options={{
-          headerShown: false,
-          title: "Settings",
           href: null,
         }}
       />

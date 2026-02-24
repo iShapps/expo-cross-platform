@@ -1,9 +1,10 @@
+import { useSettingsStore } from "@/data-store/use-settings-store";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useShiftWatcher } from "@/hooks/use-shift-watcher";
 import { ActionSheetProvider } from "@expo/react-native-action-sheet";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { SplashScreen, Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useColorScheme } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SessionProvider, useSession } from "./ctx";
 import { SplashScreenController } from "./splash";
@@ -24,6 +25,11 @@ export default function Root() {
   console.log("Current color scheme:", colorScheme);
 
   useShiftWatcher();
+
+  const systemColorScheme = useColorScheme();
+  const { theme } = useSettingsStore();
+  const isDark =
+    theme === "dark" || (theme === "system" && systemColorScheme === "dark");
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ActionSheetProvider>
@@ -34,7 +40,7 @@ export default function Root() {
           </SessionProvider>
         </QueryClientProvider>
       </ActionSheetProvider>
-      <StatusBar style="auto" />
+      <StatusBar style={isDark ? "light" : "dark"} />
     </GestureHandlerRootView>
   );
 }

@@ -127,7 +127,7 @@ export default function More() {
         </View>
         <View style={styles.linksSection}>
           <Pressable
-            onPress={() => router.push("/(tabs)/account")}
+            onPress={() => router.push("/(main)/account")}
             style={styles.profileLinks}
           >
             <View style={styles.profileContainer}>
@@ -145,7 +145,7 @@ export default function More() {
             />
           </Pressable>
           <Pressable
-            onPress={() => router.push("/(tabs)/facilities")}
+            onPress={() => router.push("/(main)/facilities")}
             style={styles.profileLinks}
           >
             <View style={styles.profileContainer}>
@@ -163,7 +163,7 @@ export default function More() {
             />
           </Pressable>
           <Pressable
-            onPress={() => router.push("/(tabs)/interviews")}
+            onPress={() => router.push("/(main)/interviews")}
             style={styles.profileLinks}
           >
             <View style={styles.profileContainer}>
@@ -181,7 +181,7 @@ export default function More() {
             />
           </Pressable>
           <Pressable
-            onPress={() => router.push("/(tabs)/settings")}
+            onPress={() => router.push("/(main)/settings")}
             style={styles.profileLinks}
           >
             <View style={styles.profileContainer}>

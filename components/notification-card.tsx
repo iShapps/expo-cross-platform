@@ -2,7 +2,7 @@ import { INotification } from "@/data-types/notifications";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { formatDistanceToNow } from "date-fns";
-import { Link } from "expo-router";
+import { Href, Link } from "expo-router";
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 
@@ -49,16 +49,31 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
     addSuffix: true,
   });
 
+  const timeFormatted = new Date(notification.created_at).toLocaleString(
+    undefined,
+    {
+      dateStyle: "medium",
+      timeStyle: "short",
+    },
+  );
+
+  const getHref = (): Href => {
+    switch (notification.notification_type) {
+      case "shifts":
+        return {
+          pathname: "/(main)/[shiftId]",
+          params: { shiftId: notification.shift_id.toString() },
+        };
+
+      case "documents":
+        return "/(tabs)/documents";
+
+      default:
+        return "/(main)/notifications";
+    }
+  };
   return (
-    <Link
-      href={{
-        pathname: "/(tabs)/notifications",
-        params: {
-          id: notification.id,
-          notification: JSON.stringify(notification),
-        },
-      }}
-    >
+    <Link href={getHref()}>
       <View
         style={[styles.card, !notification.is_expired && styles.unreadCard]}
       >
@@ -83,7 +98,7 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
           <Text style={styles.message} numberOfLines={2}>
             {notification.message}
           </Text>
-          <Text style={styles.time}>{timeAgo}</Text>
+          <Text style={styles.time}>{timeFormatted}</Text>
         </View>
 
         <View style={styles.detailHint}>

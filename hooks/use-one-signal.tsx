@@ -1,3 +1,5 @@
+import { useSession } from "@/app/ctx";
+import { useSettingsStore } from "@/data-store/use-settings-store";
 import Constants from "expo-constants";
 import { useEffect } from "react";
 import {
@@ -8,6 +10,10 @@ import {
 } from "react-native-onesignal";
 
 export const useOneSignal = () => {
+  const notificationsEnabled = useSettingsStore(
+    (state) => state.notificationsEnabled,
+  );
+  const session = useSession();
   useEffect(() => {
     const appId = Constants.expoConfig?.extra?.oneSignalAppId;
 
@@ -22,19 +28,40 @@ export const useOneSignal = () => {
 
     OneSignal.initialize(appId);
 
-    const requestPermission = async () => {
-      const canRequest = await OneSignal.Notifications.canRequestPermission();
+    const handleNotificationState = async () => {
+      if (notificationsEnabled) {
+        console.log("Notifications ENABLED");
+        const canRequest = await OneSignal.Notifications.canRequestPermission();
 
-      if (canRequest) {
-        await OneSignal.Notifications.requestPermission(true);
+        if (canRequest) {
+          await OneSignal.Notifications.requestPermission(true);
+        }
+
+        if (session?.user?.id) {
+          await OneSignal.login(String(session.user.id));
+          console.log("Logged into OneSignal");
+        }
+      } else {
+        console.log("Notifications DISABLED");
+        await OneSignal.logout();
       }
-
-      const permission = await OneSignal.Notifications.getPermissionAsync();
-
-      console.log("OneSignal permission status:", permission);
     };
 
-    requestPermission();
+    handleNotificationState();
+
+    // const requestPermission = async () => {
+    //   const canRequest = await OneSignal.Notifications.canRequestPermission();
+
+    //   if (canRequest) {
+    //     await OneSignal.Notifications.requestPermission(true);
+    //   }
+
+    //   const permission = await OneSignal.Notifications.getPermissionAsync();
+
+    //   console.log("OneSignal permission status:", permission);
+    // };
+
+    // requestPermission();
 
     const logSubscription = async () => {
       const subscriptionId = await OneSignal.User.pushSubscription.getIdAsync();

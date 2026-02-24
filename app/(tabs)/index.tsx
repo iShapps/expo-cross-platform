@@ -140,7 +140,7 @@ export default function HomeScreen() {
             </View>
           </View>
           <Pressable
-            onPress={() => router.push("/(tabs)/notifications")}
+            onPress={() => router.push("/(main)/notifications")}
             style={styles.notificationContainer}
           >
             <MaterialIcons name="notifications" size={20} color="#fff" />
