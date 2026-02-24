@@ -223,7 +223,7 @@ export default function HomeScreen() {
             <Text style={styles.sectionLabel}>Notifications</Text>
           </View>
           <TouchableOpacity
-            onPress={() => router.push("/(tabs)/notifications")}
+            onPress={() => router.push("/(main)/notifications")}
             style={styles.seeAllButton}
             activeOpacity={0.7}
           >

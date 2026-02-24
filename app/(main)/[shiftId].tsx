@@ -5,6 +5,7 @@ import {
   postStartShift,
 } from "@/api-queries/post-pending-shifts";
 import { postShiftDetails } from "@/api-queries/shifts";
+import Header from "@/components/Header";
 import { ShiftType, ShiftTypePill } from "@/components/shift-type-pill";
 import { ShiftDetailsSkeleton } from "@/components/skeletons";
 import { SwipeButton } from "@/components/swipe-button";
@@ -14,7 +15,6 @@ import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useLocation } from "@/hooks/use-location";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import Feather from "@expo/vector-icons/Feather";
-import Fontisto from "@expo/vector-icons/Fontisto";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -30,6 +30,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const iconMap: Record<string, { name: string; bg: string; color: string }> = {
   "Afternoon start": {
@@ -455,53 +456,16 @@ export default function ShiftDetails() {
   const startDate = new Date(shift?.start_time);
   const endDate = new Date(shift?.end_time);
   return (
-    <View
+    <SafeAreaView
       style={{
         flex: 1,
-        backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff",
+        backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
       }}
     >
-      <View
-        style={[
-          styles.container,
-          { backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601" },
-        ]}
-      >
-        <View
-          style={[
-            styles.topBarContainer,
-            { backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601" },
-          ]}
-        >
-          <Pressable
-            onPress={() => router.canGoBack() && router.back()}
-            style={[
-              styles.backIconContainer,
-              { borderColor: colorScheme === "dark" ? "#b0b8ca" : "#D3D3D3" },
-            ]}
-          >
-            <Fontisto
-              name="arrow-left-l"
-              size={15}
-              color={colorScheme === "dark" ? "#b0b8ca" : "#fff"}
-            />
-          </Pressable>
-          <Text
-            style={[
-              styles.locationText,
-              { color: colorScheme === "dark" ? "#fff" : "#fff" },
-            ]}
-          >
-            Shift Details
-          </Text>
-          <Pressable
-            style={[
-              styles.faintbackIconContainer,
-              { borderColor: colorScheme === "dark" ? "#232A2E" : "#70C601" },
-            ]}
-          ></Pressable>
-        </View>
-      </View>
+      <Header
+        title="Shift Details"
+        onBack={() => router.canGoBack() && router.back()}
+      />
 
       <ScrollView
         contentContainerStyle={[
@@ -784,7 +748,7 @@ export default function ShiftDetails() {
           </BottomSheetView>
         </BottomSheet>
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 

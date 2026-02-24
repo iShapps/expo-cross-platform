@@ -1,17 +1,11 @@
+import Header from "@/components/Header";
 import { useProfileData } from "@/data-store/use-account-store";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import Fontisto from "@expo/vector-icons/Fontisto";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
-import {
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  Text,
-  View,
-} from "react-native";
+import { ScrollView, StyleSheet, Switch, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function ProfileScreen() {
   let colorScheme = useColorScheme();
@@ -30,21 +24,8 @@ export default function ProfileScreen() {
   }, [hcp?.available_for_job]);
 
   return (
-    <View style={styles.container}>
-      <View style={styles.topBarContainer}>
-        <Pressable
-          onPress={() => router.canGoBack() && router.back()}
-          style={styles.backIconContainer}
-        >
-          <Fontisto
-            name="arrow-left-l"
-            size={15}
-            color={colorScheme === "dark" ? "#b0b8ca" : "white"}
-          />
-        </Pressable>
-        <Text style={styles.locationText}>Profile</Text>
-        <Pressable style={styles.faintbackIconContainer}></Pressable>
-      </View>
+    <SafeAreaView style={styles.safeArea}>
+      <Header title="Profile" onBack={() => router.back()} />
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
@@ -182,7 +163,7 @@ export default function ProfileScreen() {
           </View>
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -190,7 +171,7 @@ const getStyles = (colorScheme: string) =>
   StyleSheet.create({
     safeArea: {
       flex: 1,
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff",
+      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
     },
     container: {
       flex: 1,

@@ -1,9 +1,10 @@
+import Header from "@/components/Header";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import Fontisto from "@expo/vector-icons/Fontisto";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { router } from "expo-router";
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function AccountScreen() {
   let colorScheme = useColorScheme();
@@ -11,21 +12,8 @@ export default function AccountScreen() {
   const styles = getStyles(colorScheme);
 
   return (
-    <View style={styles.container}>
-      <View style={styles.topBarContainer}>
-        <Pressable
-          onPress={() => router.canGoBack() && router.back()}
-          style={styles.backIconContainer}
-        >
-          <Fontisto
-            name="arrow-left-l"
-            size={15}
-            color={colorScheme === "dark" ? "#b0b8ca" : "white"}
-          />
-        </Pressable>
-        <Text style={styles.locationText}>Account</Text>
-        <Pressable style={styles.faintbackIconContainer}></Pressable>
-      </View>
+    <SafeAreaView style={styles.safeArea}>
+      <Header title="Account" onBack={() => router.back()} />
 
       <View style={styles.linksContainer}>
         <Pressable
@@ -74,70 +62,21 @@ export default function AccountScreen() {
           />
         </Pressable>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const getStyles = (colorScheme: string) =>
   StyleSheet.create({
-    container: {
+    safeArea: {
       flex: 1,
-      height: "100%",
-      width: "100%",
       backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
-      display: "flex",
-      flexDirection: "column",
-      gap: 20,
-      paddingVertical: 50,
-    },
-    topBarContainer: {
-      display: "flex",
-      flexDirection: "row",
-      alignContent: "center",
-      alignItems: "center",
-      justifyContent: "space-between",
-      gap: 25,
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
-      paddingHorizontal: 10,
-    },
-    backIconContainer: {
-      height: 40,
-      width: 40,
-      borderRadius: 50,
-      display: "flex",
-      flexDirection: "row",
-      justifyContent: "center",
-      alignContent: "center",
-      alignItems: "center",
-      padding: 2,
-      borderWidth: 1,
-      borderColor: colorScheme === "dark" ? "#b0b8ca" : "#D3D3D3",
-    },
-    faintbackIconContainer: {
-      height: 40,
-      width: 40,
-      borderRadius: 50,
-      display: "flex",
-      flexDirection: "row",
-      justifyContent: "center",
-      alignContent: "center",
-      alignItems: "center",
-      padding: 2,
-      borderWidth: 1,
-      borderColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
-    },
-    locationText: {
-      fontFamily: "Roboto",
-      fontSize: 18,
-      fontWeight: "700",
-      color: colorScheme === "dark" ? "#fff" : "#ffffff",
     },
     linksContainer: {
       display: "flex",
       flexDirection: "column",
       gap: 4,
       width: "100%",
-      marginVertical: 5,
       paddingHorizontal: 10,
       backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff",
       flex: 1,

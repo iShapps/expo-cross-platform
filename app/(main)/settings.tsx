@@ -1,10 +1,11 @@
+import Header from "@/components/Header";
 import { useSettingsStore } from "@/data-store/use-settings-store";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import Fontisto from "@expo/vector-icons/Fontisto";
 import { router } from "expo-router";
 import React from "react";
-import { Pressable, StyleSheet, Switch, Text, View } from "react-native";
+import { StyleSheet, Switch, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function SettingsScreen() {
   let colorScheme = useColorScheme();
@@ -22,21 +23,8 @@ export default function SettingsScreen() {
   } = useSettingsStore();
 
   return (
-    <View style={styles.container}>
-      <View style={styles.topBarContainer}>
-        <Pressable
-          onPress={() => router.canGoBack() && router.back()}
-          style={styles.backIconContainer}
-        >
-          <Fontisto
-            name="arrow-left-l"
-            size={15}
-            color={colorScheme === "dark" ? "#fff" : "#fff"}
-          />
-        </Pressable>
-        <Text style={styles.locationText}>Settings</Text>
-        <Pressable style={styles.faintbackIconContainer}></Pressable>
-      </View>
+    <SafeAreaView style={styles.safeArea}>
+      <Header title="Settings" onBack={() => router.back()} />
 
       <View style={styles.linksContainer}>
         {/* <Text style={styles.sectionHeader}>App Access</Text> */}
@@ -114,21 +102,15 @@ export default function SettingsScreen() {
           </View>
         </View>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const getStyles = (colorScheme: string) =>
   StyleSheet.create({
-    container: {
+    safeArea: {
       flex: 1,
-      height: "100%",
-      width: "100%",
       backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
-      display: "flex",
-      flexDirection: "column",
-      gap: 20,
-      paddingVertical: 50,
     },
     topBarContainer: {
       display: "flex",
@@ -177,7 +159,6 @@ const getStyles = (colorScheme: string) =>
       flexDirection: "column",
       gap: 16,
       width: "100%",
-      marginVertical: 5,
       backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff",
       flex: 1,
       paddingHorizontal: 10,

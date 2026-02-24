@@ -1,11 +1,11 @@
-import AntDesign from "@expo/vector-icons/AntDesign";
 import Feather from "@expo/vector-icons/Feather";
-import Fontisto from "@expo/vector-icons/Fontisto";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 
+import Header from "@/components/Header";
 import { useProfileData } from "@/data-store/use-account-store";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { MaterialIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import React, { useState } from "react";
@@ -18,6 +18,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useSession } from "../ctx";
 
 export default function More() {
@@ -53,8 +54,8 @@ export default function More() {
     // router.replace("/(main)/index")
   };
   return (
-    <View style={styles.container}>
-      <View style={styles.topBarContainer}>
+    <SafeAreaView style={styles.safeArea}>
+      {/* <View style={styles.topBarContainer}>
         <Pressable
           onPress={() => router.back()}
           style={styles.backIconContainer}
@@ -65,7 +66,18 @@ export default function More() {
         <Pressable onPress={handleLogout} style={styles.backIconContainer}>
           <AntDesign name="login" size={15} color="white" />
         </Pressable>
-      </View>
+      </View> */}
+
+      <Header
+        title="Profile"
+        onBack={() => router.back()}
+        right={
+          <Pressable onPress={handleLogout} style={{ paddingRight: 10 }}>
+            {/* <AntDesign name="login" size={20} color="white" /> */}
+            <MaterialIcons name="login" size={24} color="white" />
+          </Pressable>
+        }
+      />
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
@@ -196,12 +208,16 @@ export default function More() {
           </Pressable>
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const getStyles = (colorScheme: string) =>
   StyleSheet.create({
+    safeArea: {
+      flex: 1,
+      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
+    },
     container: {
       flex: 1,
       height: "100%",
@@ -387,8 +403,8 @@ const getStyles = (colorScheme: string) =>
       alignContent: "center",
       alignItems: "center",
       padding: 2,
-      borderWidth: 1,
-      borderColor: colorScheme === "dark" ? "#36454F" : "#D3D3D3",
+      // borderWidth: 1,
+      // borderColor: colorScheme === "dark" ? "#36454F" : "#D3D3D3",
     },
     locationText: {
       fontFamily: "Roboto",

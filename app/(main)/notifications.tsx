@@ -1,8 +1,9 @@
 import { getNotifications } from "@/api-queries/notifcations";
+import Header from "@/components/Header";
 import { NotificationCard } from "@/components/notification-card";
 import { NotificationCardSkeleton } from "@/components/skeletons";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { FontAwesome6, MaterialCommunityIcons } from "@expo/vector-icons";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import React, { useCallback, useMemo, useRef, useState } from "react";
@@ -29,6 +30,7 @@ export default function NotificationsScreen() {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
+    isRefetching,
     error,
   } = useInfiniteQuery({
     queryKey: ["notifications"],
@@ -88,7 +90,8 @@ export default function NotificationsScreen() {
     (e: any) => {
       const offsetX = e.nativeEvent.contentOffset.x;
       const index = Math.round(offsetX / screenWidth);
-      setActiveTab(tabTypes[index]);
+      const clampedIndex = Math.min(Math.max(index, 0), tabTypes.length - 1);
+      setActiveTab(tabTypes[clampedIndex]);
     },
     [screenWidth, tabTypes],
   );
@@ -110,15 +113,7 @@ export default function NotificationsScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.headerRow}>
-          <Pressable onPress={() => router.back()}>
-            <FontAwesome6 name="arrow-left" size={18} color="#fff" />
-          </Pressable>
-          <Text style={styles.title}>Notifications</Text>
-          <View style={{ width: 18 }} />
-        </View>
-      </View>
+      <Header title="Notifications" onBack={() => router.back()} />
 
       <View style={styles.container}>
         {/* Tabs */}
@@ -151,16 +146,17 @@ export default function NotificationsScreen() {
           })}
         </ScrollView>
 
-        {/* Horizontal Paging */}
         <ScrollView
           ref={contentScrollRef}
           horizontal
           pagingEnabled
           showsHorizontalScrollIndicator={false}
           onMomentumScrollEnd={handleContentScrollEnd}
+          scrollEventThrottle={16}
+          onScrollBeginDrag={() => {}}
         >
           {tabData.map((tabNotifications, index) => (
-            <View key={tabTypes[index]} style={{ width: screenWidth - 24 }}>
+            <View key={tabTypes[index]} style={{ width: screenWidth - 18 }}>
               {isLoading ? (
                 <FlatList
                   data={[...Array(6)]}
@@ -181,23 +177,23 @@ export default function NotificationsScreen() {
                 </View>
               ) : (
                 <FlatList
-                  data={[
-                    ...tabNotifications,
-                    ...tabNotifications,
-                    ...tabNotifications,
-                    ...tabNotifications,
-                    ...tabNotifications,
-                  ]} // Temporary duplication for testing infinite scroll
+                  data={tabNotifications}
                   renderItem={({ item }) => (
                     <NotificationCard notification={item} />
                   )}
+                  showsVerticalScrollIndicator={false}
                   keyExtractor={(item, i) => String(item.id ?? i)}
                   onEndReached={handleLoadMore}
                   onEndReachedThreshold={0.6}
-                  refreshing={isFetchingNextPage}
+                  refreshing={isRefetching && !isFetchingNextPage}
                   onRefresh={handlePullToRefresh}
                   ListFooterComponent={
-                    isFetchingNextPage ? <NotificationCardSkeleton /> : null
+                    isFetchingNextPage ? (
+                      <View style={{ gap: 10, paddingTop: 10 }}>
+                        <NotificationCardSkeleton />
+                        <NotificationCardSkeleton />
+                      </View>
+                    ) : null
                   }
                   contentContainerStyle={styles.listContainer}
                 />
@@ -231,29 +227,15 @@ const getStyles = (colorScheme: string) =>
       flex: 1,
       backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
     },
-    header: {
-      padding: 16,
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
-    },
-    headerRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-    },
-    title: {
-      fontSize: 18,
-      fontWeight: "700",
-      color: "#fff",
-    },
     container: {
       flex: 1,
       backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff",
-      paddingHorizontal: 12,
+      paddingHorizontal: 8,
     },
     tabsRow: {
       flexDirection: "row",
-      gap: 12,
-      paddingVertical: 10,
+      gap: 8,
+      paddingTop: 5,
     },
     tabButton: {
       alignItems: "center",
@@ -277,9 +259,10 @@ const getStyles = (colorScheme: string) =>
       backgroundColor: colorScheme === "dark" ? "#FFD966" : "#70C601",
     },
     listContainer: {
-      paddingTop: 10,
       paddingBottom: 120,
-      gap: 10,
+      paddingTop: 10,
+      flexGrow: 1,
+      gap: 4,
     },
     emptyState: {
       alignItems: "center",

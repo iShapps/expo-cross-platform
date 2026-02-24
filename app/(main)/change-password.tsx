@@ -1,9 +1,10 @@
+import Header from "@/components/Header";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import Entypo from "@expo/vector-icons/Entypo";
-import Fontisto from "@expo/vector-icons/Fontisto";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function ChangePasswordScreen() {
   let colorScheme = useColorScheme();
@@ -18,21 +19,8 @@ export default function ChangePasswordScreen() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   return (
-    <View style={styles.container}>
-      <View style={styles.topBarContainer}>
-        <Pressable
-          onPress={() => router.canGoBack() && router.back()}
-          style={styles.backIconContainer}
-        >
-          <Fontisto
-            name="arrow-left-l"
-            size={15}
-            color={colorScheme === "dark" ? "#b0b8ca" : "#fff"}
-          />
-        </Pressable>
-        <Text style={styles.locationText}>Change Password</Text>
-        <Pressable style={styles.faintbackIconContainer}></Pressable>
-      </View>
+    <SafeAreaView style={styles.safeArea}>
+      <Header title="Change Password" onBack={() => router.back()} />
 
       <View style={styles.formCard}>
         <View style={styles.inputGroup}>
@@ -166,7 +154,7 @@ export default function ChangePasswordScreen() {
           <Text style={styles.primaryButtonText}>Update Password</Text>
         </Pressable>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -174,80 +162,20 @@ const getStyles = (colorScheme: string) =>
   StyleSheet.create({
     safeArea: {
       flex: 1,
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff",
-    },
-    container: {
-      flex: 1,
-      height: "100%",
-      width: "100%",
       backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
-      display: "flex",
-      flexDirection: "column",
-      paddingVertical: 50,
-    },
-    topBarContainer: {
-      display: "flex",
-      flexDirection: "row",
-      alignContent: "center",
-      alignItems: "center",
-      justifyContent: "space-between",
-      gap: 25,
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
-      paddingHorizontal: 10,
-    },
-    locationText: {
-      fontFamily: "Roboto",
-      fontSize: 18,
-      fontWeight: "700",
-      color: colorScheme === "dark" ? "#fff" : "#fff",
-    },
-    headerRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      paddingVertical: 8,
-    },
-    backIconContainer: {
-      height: 40,
-      width: 40,
-      borderRadius: 50,
-      display: "flex",
-      flexDirection: "row",
-      justifyContent: "center",
-      alignContent: "center",
-      alignItems: "center",
-      padding: 2,
-      borderWidth: 1,
-      borderColor: colorScheme === "dark" ? "#b0b8ca" : "#D3D3D3",
-    },
-    faintbackIconContainer: {
-      height: 40,
-      width: 40,
-      borderRadius: 50,
-      display: "flex",
-      flexDirection: "row",
-      justifyContent: "center",
-      alignContent: "center",
-      alignItems: "center",
-      padding: 2,
-      borderWidth: 1,
-      borderColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
-    },
-    backSpacer: {
-      width: 52,
-    },
-    title: {
-      fontSize: 18,
-      fontWeight: "700",
-      color: colorScheme === "dark" ? "#fff" : "#111",
     },
     formCard: {
-      marginTop: 20,
+      display: "flex",
+      flexDirection: "column",
+      gap: 4,
+      width: "100%",
+      marginVertical: 5,
       backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff",
       flex: 1,
-      paddingVertical: 20,
       paddingHorizontal: 10,
+      paddingVertical: 16,
     },
+
     inputGroup: {
       marginBottom: 16,
     },
