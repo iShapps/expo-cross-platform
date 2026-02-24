@@ -2,6 +2,7 @@ import Header from "@/components/Header";
 import { useSettingsStore } from "@/data-store/use-settings-store";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import * as Application from "expo-application";
 import { router } from "expo-router";
 import React from "react";
 import { StyleSheet, Switch, Text, View } from "react-native";
@@ -22,84 +23,91 @@ export default function SettingsScreen() {
     setNotifications,
   } = useSettingsStore();
 
+  const appVersion = `${Application.nativeApplicationVersion} (${Application.nativeBuildVersion})`;
+
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView edges={["top"]} style={styles.safeArea}>
       <Header title="Settings" onBack={() => router.back()} />
-
-      <View style={styles.linksContainer}>
-        {/* <Text style={styles.sectionHeader}>App Access</Text> */}
-        <View style={styles.settingsWrap}>
-          {/* Location Access */}
-          <View style={styles.settingCard}>
-            <View style={styles.settingIconWrap}>
-              <Ionicons
-                name="location-sharp"
-                size={22}
-                color={colorScheme === "dark" ? "#FFD966" : "#70C601"}
+      <View style={{ flex: 1 }}>
+        <View style={styles.linksContainer}>
+          {/* <Text style={styles.sectionHeader}>App Access</Text> */}
+          <View style={styles.settingsWrap}>
+            {/* Location Access */}
+            <View style={styles.settingCard}>
+              <View style={styles.settingIconWrap}>
+                <Ionicons
+                  name="location-sharp"
+                  size={22}
+                  color={colorScheme === "dark" ? "#FFD966" : "#70C601"}
+                />
+              </View>
+              <View style={styles.settingTextWrap}>
+                <Text style={styles.settingTitle}>Location Access</Text>
+                <Text style={styles.settingDesc}>
+                  Allow app to access your location for better experience.
+                </Text>
+              </View>
+              <Switch
+                value={locationEnabled}
+                onValueChange={setLocation}
+                thumbColor={locationEnabled ? "#fff" : "#fff"}
+                trackColor={{ false: "gray", true: "#70C601" }}
               />
             </View>
-            <View style={styles.settingTextWrap}>
-              <Text style={styles.settingTitle}>Location Access</Text>
-              <Text style={styles.settingDesc}>
-                Allow app to access your location for better experience.
-              </Text>
-            </View>
-            <Switch
-              value={locationEnabled}
-              onValueChange={setLocation}
-              thumbColor={locationEnabled ? "#fff" : "#fff"}
-              trackColor={{ false: "gray", true: "#70C601" }}
-            />
-          </View>
 
-          {/* Notifications */}
-          <View style={styles.settingCard}>
-            <View style={styles.settingIconWrap}>
-              <Ionicons
-                name="notifications"
-                size={22}
-                color={colorScheme === "dark" ? "#FFD966" : "#70C601"}
+            {/* Notifications */}
+            <View style={styles.settingCard}>
+              <View style={styles.settingIconWrap}>
+                <Ionicons
+                  name="notifications"
+                  size={22}
+                  color={colorScheme === "dark" ? "#FFD966" : "#70C601"}
+                />
+              </View>
+              <View style={styles.settingTextWrap}>
+                <Text style={styles.settingTitle}>Notifications</Text>
+                <Text style={styles.settingDesc}>
+                  Enable push notifications for important updates.
+                </Text>
+              </View>
+              <Switch
+                value={notificationsEnabled}
+                onValueChange={setNotifications}
+                thumbColor={notificationsEnabled ? "#fff" : "#fff"}
+                trackColor={{ false: "gray", true: "#70C601" }}
               />
             </View>
-            <View style={styles.settingTextWrap}>
-              <Text style={styles.settingTitle}>Notifications</Text>
-              <Text style={styles.settingDesc}>
-                Enable push notifications for important updates.
-              </Text>
-            </View>
-            <Switch
-              value={notificationsEnabled}
-              onValueChange={setNotifications}
-              thumbColor={notificationsEnabled ? "#fff" : "#fff"}
-              trackColor={{ false: "gray", true: "#70C601" }}
-            />
-          </View>
 
-          {/* Theme */}
-          <View style={styles.settingCard}>
-            <View style={styles.settingIconWrap}>
-              <MaterialCommunityIcons
-                name="theme-light-dark"
-                size={22}
-                color={colorScheme === "dark" ? "#FFD966" : "#70C601"}
+            {/* Theme */}
+            <View style={styles.settingCard}>
+              <View style={styles.settingIconWrap}>
+                <MaterialCommunityIcons
+                  name="theme-light-dark"
+                  size={22}
+                  color={colorScheme === "dark" ? "#FFD966" : "#70C601"}
+                />
+              </View>
+              <View style={styles.settingTextWrap}>
+                <Text style={styles.settingTitle}>Theme</Text>
+                <Text style={styles.settingDesc}>
+                  Toggle between Light, Dark, theme for the app.
+                </Text>
+              </View>
+              <Switch
+                value={theme === "dark"}
+                onValueChange={(value) => setTheme(value ? "dark" : "light")}
+                thumbColor={theme === "dark" ? "#fff" : "#fff"}
+                trackColor={{
+                  false: "gray",
+                  true: "#70C601",
+                }}
               />
             </View>
-            <View style={styles.settingTextWrap}>
-              <Text style={styles.settingTitle}>Theme</Text>
-              <Text style={styles.settingDesc}>
-                Toggle between Light, Dark, theme for the app.
-              </Text>
-            </View>
-            <Switch
-              value={theme === "dark"}
-              onValueChange={(value) => setTheme(value ? "dark" : "light")}
-              thumbColor={theme === "dark" ? "#fff" : "#fff"}
-              trackColor={{
-                false: "gray",
-                true: "#70C601",
-              }}
-            />
           </View>
+        </View>
+        {/* App Version Footer */}
+        <View style={styles.versionContainer}>
+          <Text style={styles.versionText}>v{appVersion}</Text>
         </View>
       </View>
     </SafeAreaView>
@@ -111,48 +119,6 @@ const getStyles = (colorScheme: string) =>
     safeArea: {
       flex: 1,
       backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
-    },
-    topBarContainer: {
-      display: "flex",
-      flexDirection: "row",
-      alignContent: "center",
-      alignItems: "center",
-      justifyContent: "space-between",
-      gap: 25,
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
-      paddingHorizontal: 10,
-    },
-    backIconContainer: {
-      height: 40,
-      width: 40,
-      borderRadius: 50,
-      display: "flex",
-      flexDirection: "row",
-      justifyContent: "center",
-      alignContent: "center",
-      alignItems: "center",
-      padding: 2,
-      borderWidth: 1,
-      borderColor: colorScheme === "dark" ? "#b0b8ca" : "#D3D3D3",
-    },
-    faintbackIconContainer: {
-      height: 40,
-      width: 40,
-      borderRadius: 50,
-      display: "flex",
-      flexDirection: "row",
-      justifyContent: "center",
-      alignContent: "center",
-      alignItems: "center",
-      padding: 2,
-      borderWidth: 1,
-      borderColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
-    },
-    locationText: {
-      fontFamily: "Roboto",
-      fontSize: 18,
-      fontWeight: "700",
-      color: colorScheme === "dark" ? "#fff" : "#fff",
     },
     linksContainer: {
       display: "flex",
@@ -225,30 +191,14 @@ const getStyles = (colorScheme: string) =>
       fontSize: 12,
       color: colorScheme === "dark" ? "#b0b8ca" : "#6b7280",
     },
-    themeOptionsWrap: {
-      flexDirection: "row",
-      gap: 6,
-      marginLeft: 8,
+    versionContainer: {
+      alignItems: "center",
+      paddingVertical: 16,
+      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff",
     },
-    themeOption: {
-      paddingVertical: 4,
-      paddingHorizontal: 10,
-      borderRadius: 8,
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#eafbe7",
-      borderWidth: 1,
-      borderColor: colorScheme === "dark" ? "#FFD96633" : "#70C60133",
-      marginHorizontal: 1,
-    },
-    themeOptionActive: {
-      backgroundColor: colorScheme === "dark" ? "#FFD966" : "#70C601",
-      borderColor: colorScheme === "dark" ? "#FFD966" : "#70C601",
-    },
-    themeOptionText: {
-      fontSize: 13,
-      color: colorScheme === "dark" ? "#FFD966" : "#70C601",
-      fontWeight: "600",
-    },
-    themeOptionTextActive: {
-      color: colorScheme === "dark" ? "#232A2E" : "#fff",
+
+    versionText: {
+      fontSize: 12,
+      color: colorScheme === "dark" ? "#b0b8ca" : "#9ca3af",
     },
   });
