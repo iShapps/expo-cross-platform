@@ -21,6 +21,9 @@ export default function SettingsScreen() {
     setLocation,
     notificationsEnabled,
     setNotifications,
+
+    biometricsEnabled,
+    setBiometrics,
   } = useSettingsStore();
 
   const appVersion = `${Application.nativeApplicationVersion} (${Application.nativeBuildVersion})`;
@@ -30,7 +33,7 @@ export default function SettingsScreen() {
       <Header title="Settings" onBack={() => router.back()} />
       <View style={{ flex: 1 }}>
         <View style={styles.linksContainer}>
-          {/* <Text style={styles.sectionHeader}>App Access</Text> */}
+          <Text style={styles.sectionHeader}>App permissions</Text>
           <View style={styles.settingsWrap}>
             {/* Location Access */}
             <View style={styles.settingCard}>
@@ -103,6 +106,31 @@ export default function SettingsScreen() {
                 }}
               />
             </View>
+
+            {/* Biometrics */}
+            <View style={styles.settingCard}>
+              <View style={styles.settingIconWrap}>
+                <Ionicons
+                  name="finger-print"
+                  size={22}
+                  color={colorScheme === "dark" ? "#FFD966" : "#70C601"}
+                />
+              </View>
+              <View style={styles.settingTextWrap}>
+                <Text style={styles.settingTitle}>
+                  Biometric Authentication
+                </Text>
+                <Text style={styles.settingDesc}>
+                  Enable biometric authentication for added security.
+                </Text>
+              </View>
+              <Switch
+                value={biometricsEnabled}
+                onValueChange={setBiometrics}
+                thumbColor={biometricsEnabled ? "#fff" : "#fff"}
+                trackColor={{ false: "gray", true: "#70C601" }}
+              />
+            </View>
           </View>
         </View>
         {/* App Version Footer */}
@@ -123,7 +151,7 @@ const getStyles = (colorScheme: string) =>
     linksContainer: {
       display: "flex",
       flexDirection: "column",
-      gap: 16,
+      gap: 8,
       width: "100%",
       backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff",
       flex: 1,
@@ -137,10 +165,8 @@ const getStyles = (colorScheme: string) =>
     sectionHeader: {
       fontSize: 15,
       fontWeight: "700",
-      color: colorScheme === "dark" ? "#FFD966" : "#70C601",
-      marginBottom: 8,
+      color: colorScheme === "dark" ? "#b0b8ca" : "#232A2E",
       marginLeft: 2,
-      letterSpacing: 0.5,
     },
     settingsWrap: {
       display: "flex",

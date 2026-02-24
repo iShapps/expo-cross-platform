@@ -1,8 +1,10 @@
+import { useSettingsStore } from "@/data-store/use-settings-store";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useShiftWatcher } from "@/hooks/use-shift-watcher";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { SplashScreen, Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SessionProvider, useSession } from "./ctx";
 import { SplashScreenController } from "./splash";
@@ -23,6 +25,9 @@ export default function Root() {
   console.log("Current color scheme:", colorScheme);
 
   useShiftWatcher();
+  useEffect(() => {
+    useSettingsStore.getState().hydrate();
+  }, []);
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <QueryClientProvider client={queryClient}>
