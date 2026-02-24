@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import React, { useState } from "react";
+import React, { useEffect } from "react";
 import { Dimensions, StyleSheet, View } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 
@@ -20,6 +20,8 @@ interface SwipeButtonProps {
   disabled?: boolean;
   bgColor?: string;
   icon?: string;
+  completed?: boolean;
+  processing?: boolean;
 }
 
 export const SwipeButton = ({
@@ -28,9 +30,16 @@ export const SwipeButton = ({
   disabled,
   bgColor = "#70C601",
   icon = "chevron-forward",
+  completed = false,
+  processing = false,
 }: SwipeButtonProps) => {
   const translateX = useSharedValue(0);
-  const [completed, setCompleted] = useState(false);
+
+  useEffect(() => {
+    if (!completed && !processing) {
+      translateX.value = withSpring(0);
+    }
+  }, [completed, processing]);
 
   const BUTTON_HEIGHT = 60;
   const KNOB_SIZE = 52;
@@ -53,7 +62,6 @@ export const SwipeButton = ({
       if (disabled || completed) return;
       if (translateX.value >= maxTranslate * 0.9) {
         translateX.value = withSpring(maxTranslate);
-        setCompleted(true);
         onSwipeComplete();
       } else {
         translateX.value = withSpring(0);

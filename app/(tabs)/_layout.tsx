@@ -1,6 +1,5 @@
 import { Tabs } from "expo-router";
 import React from "react";
-
 import { HapticTab } from "@/components/haptic-tab";
 import {
   TabBarFAFiveWIcon,
@@ -10,6 +9,7 @@ import {
 } from "@/components/ui/tab-bar-icon";
 import { useIsFetching } from "@tanstack/react-query";
 import { Animated, Easing, Platform, StyleSheet, View } from "react-native";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 
 const FetchingSnakeBar = () => {
   const isFetching = useIsFetching({
@@ -62,15 +62,66 @@ const FetchingSnakeBar = () => {
 };
 
 export default function TabLayout() {
-  // const colorScheme = "light"; //useColorScheme();
+    const colorScheme = useColorScheme();
+  const lightTabBar = {
+    activeTint: "#70C601",
+    inactiveTint: "#71797E",
+    iosBar: StyleSheet.create({
+      bar: {
+        backgroundColor: "#F8FFF0",
+        position: "absolute",
+        justifyContent: "center",
+        alignItems: "center",
+        borderTopColor: "#D3D3D3",
+      },
+    }),
+    androidBar: StyleSheet.create({
+      bar: {
+        backgroundColor: "#F8FFF0",
+        position: "absolute",
+        height: 60,
+        paddingBottom: 8,
+        paddingTop: 8,
+        justifyContent: "center",
+        alignItems: "center",
+        borderTopColor: "#D3D3D3",
+      },
+    }),
+  };
+  const darkTabBar = {
+    activeTint: "#70C601",
+    inactiveTint: "#A0A4AB",
+    iosBar: StyleSheet.create({
+      bar: {
+        backgroundColor: "#232A2E",
+        position: "absolute",
+        justifyContent: "center",
+        alignItems: "center",
+        borderTopColor: "#36454F",
+      },
+    }),
+    androidBar: StyleSheet.create({
+      bar: {
+        backgroundColor: "#232A2E",
+        position: "absolute",
+        height: 60,
+        paddingBottom: 8,
+        paddingTop: 8,
+        justifyContent: "center",
+        alignItems: "center",
+        borderTopColor: "#36454F",
+      },
+    }),
+  };
+  const tabBarTheme = colorScheme === "dark" ? darkTabBar : lightTabBar;
+  
   return (
     <Tabs
       backBehavior="history"
       screenOptions={{
-        tabBarActiveTintColor: "#70C601",
-        tabBarInactiveTintColor: "#71797E",
-        tabBarStyle:
-          Platform.OS === "ios" ? styles.iosTabBar : styles.androidTabBar,
+        tabBarActiveTintColor: tabBarTheme.activeTint,
+        tabBarInactiveTintColor: tabBarTheme.inactiveTint,
+        tabBarStyle: Platform.OS === "ios" ? tabBarTheme.iosBar.bar : tabBarTheme.androidBar.bar,
         tabBarBackground: () => <FetchingSnakeBar />,
         headerShown: false,
         tabBarButton: HapticTab,

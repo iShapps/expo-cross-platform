@@ -1,9 +1,8 @@
 import { setStorageItemAsync } from "@/app/useStorageState";
-import {
+import LoginCredentials, {
   ForgotPasswordErrorResponse,
   ForgotPasswordRequest,
   ForgotPasswordSuccessResponse,
-  LoginCredentials,
   LoginErrorResponse,
   LoginResponse,
   LoginSuccessResponse,
@@ -113,6 +112,7 @@ export const login = async (
     // Validate input
     validateCredentials(credentials);
 
+    console.log("Logging in with credentials:", { credentials });
     // Create abort controller for timeout
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), API_CONFIG.timeout);
@@ -128,6 +128,10 @@ export const login = async (
         body: JSON.stringify({
           email: credentials.email.trim().toLowerCase(),
           password: credentials.password,
+          device_id: credentials.device_id,
+          "device-name": credentials.device_name,
+          "device-type": credentials.device_type,
+          "device-version": credentials.device_version,
         }),
         signal: controller.signal,
       },

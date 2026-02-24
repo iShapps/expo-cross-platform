@@ -1,8 +1,13 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
 import { SkeletonBase } from "./skeleton-base";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 
 export const ShiftCardBaseSkeleton: React.FC = () => {
+  let colorScheme = useColorScheme();
+  if (!colorScheme) colorScheme = "light";
+  const styles = getStyles(colorScheme);
+
   return (
     <View style={styles.card}>
       <View style={styles.headerRow}>
@@ -26,13 +31,13 @@ export const ShiftCardBaseSkeleton: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (colorScheme: string) => StyleSheet.create({
   card: {
-    backgroundColor: "#ffffff",
+    backgroundColor: colorScheme === "dark" ? "#232A2E" : "#ffffff",
     borderRadius: 5,
     padding: 8,
     borderWidth: 1,
-    borderColor: "#d0e6a5",
+    borderColor: colorScheme === "dark" ? "#36454F" : "#d0e6a5",
     display: "flex",
     flexDirection: "row",
     width: "100%",
@@ -53,7 +58,7 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   dateCard: {
-    backgroundColor: "#f0f0f0",
+    backgroundColor: colorScheme === "dark" ? "#36454F" : "#f0f0f0",
     borderRadius: 5,
     padding: 4,
     display: "flex",

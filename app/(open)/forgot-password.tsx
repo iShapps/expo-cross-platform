@@ -1,4 +1,5 @@
 import OTPInput, { useOTPInput } from "@/components/shared/otp-input";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import {
   AuthenticationError,
   NetworkError,
@@ -28,6 +29,8 @@ import {
 
 export default function ForgotPassword() {
   const router = useRouter();
+  const colorScheme = useColorScheme() || "light";
+  const styles = getStyles(colorScheme);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -220,24 +223,43 @@ export default function ForgotPassword() {
     >
       <View
         style={{
-          backgroundColor: "#70C601",
+          backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
           flex: 1,
         }}
       >
         <View style={styles.topContainer}></View>
         <View style={styles.topAbsContainer}>
-          <View style={styles.topAbsContainerLeft}></View>
-          <View style={styles.topAbsContainerRight}>
-            <View style={styles.innerContainer}></View>
+          <View
+            style={[
+              styles.topAbsContainerLeft,
+              {
+                backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
+              },
+            ]}
+          ></View>
+          <View
+            style={[
+              styles.topAbsContainerRight,
+              { backgroundColor: colorScheme === "dark" ? "#36454F" : "#fff" },
+            ]}
+          >
+            <View
+              style={[
+                styles.innerContainer,
+                {
+                  backgroundColor:
+                    colorScheme === "dark" ? "#232A2E" : "#70C601",
+                },
+              ]}
+            ></View>
           </View>
         </View>
-
         <View style={styles.bottomContainer}>
           <View style={{ marginBottom: 20, marginTop: 10 }}>
             <Text
               style={{
                 fontSize: 28,
-                color: "#000",
+                color: colorScheme === "dark" ? "#fff" : "#000",
                 fontWeight: "700",
                 marginBottom: 10,
               }}
@@ -247,7 +269,7 @@ export default function ForgotPassword() {
             <Text
               style={{
                 fontSize: 14,
-                color: "#999",
+                color: colorScheme === "dark" ? "#b0b8ca" : "#999",
               }}
             >
               {showInputs
@@ -402,11 +424,19 @@ export default function ForgotPassword() {
           )}
 
           {/* Footer */}
-          <Text style={styles.footer}>
+          <Text
+            style={[
+              styles.footer,
+              { color: colorScheme === "dark" ? "#b0b8ca" : "#555" },
+            ]}
+          >
             Remembered password?{" "}
             <Link href="/(open)/login">
               <Text
-                style={{ color: "#70C601", textDecorationLine: "underline" }}
+                style={{
+                  color: colorScheme === "dark" ? "#b0b8ca" : "#70C601",
+                  textDecorationLine: "underline",
+                }}
               >
                 {" "}
                 Login to your account
@@ -498,7 +528,7 @@ export default function ForgotPassword() {
                   <Text>Didn&apos;t get the code?</Text>
                   <Text
                     style={{
-                      color: "#70C601",
+                      color: colorScheme === "dark" ? "#FFD966" : "#70C601",
                       fontSize: 14,
                       fontWeight: "600",
                       textDecorationLine: "underline",
@@ -528,7 +558,7 @@ export default function ForgotPassword() {
       </View>
       <View
         style={{
-          backgroundColor: "#fff",
+          backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff",
           height: "auto",
         }}
       ></View>
@@ -536,180 +566,172 @@ export default function ForgotPassword() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-  },
-  modalContent: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.5)",
-  },
-  modelContentBody: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 5,
-  },
-  modalBody: {
-    backgroundColor: "#ffffff",
-    padding: 10,
-    borderRadius: 8,
-    width: "92%",
-  },
-  topContainer: {
-    height: "20%",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  bottomContainer: {
-    flex: 1,
-    height: "auto",
-    width: "100%",
-    backgroundColor: "#ffffff",
-    paddingVertical: 20,
-    paddingHorizontal: 20,
-    borderTopLeftRadius: 55,
-  },
-  image: {
-    width: 120,
-    height: 120,
-    alignSelf: "center",
-    marginBottom: 16,
-  },
-  topAbsContainer: {
-    height: "15%",
-    width: "100%",
-    display: "flex",
-    flexDirection: "row",
-  },
-  topAbsContainerLeft: {
-    backgroundColor: "#70C601",
-    height: "100%",
-    width: "50%",
-    marginTop: -50,
-    borderTopLeftRadius: 55,
-  },
-  topAbsContainerRight: {
-    backgroundColor: "white",
-    height: "100%",
-    width: "50%",
-    marginTop: 10,
-  },
-  innerContainer: {
-    height: "100%",
-    width: "100%",
-    backgroundColor: "#70C601",
-    borderBottomRightRadius: 55,
-    marginTop: -10,
-  },
-  inputGroup: {
-    marginBottom: 16,
-  },
-
-  passwordInputGroup: {
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    borderBottomWidth: 1,
-    borderBottomColor: "#ccc",
-    paddingVertical: 8,
-    fontSize: 16,
-    gap: 8,
-  },
-  passwordInputGroupFilled: {
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    borderBottomWidth: 1,
-    borderBottomColor: "#70C601",
-    paddingVertical: 8,
-    fontSize: 16,
-    gap: 8,
-  },
-  label: {
-    fontSize: 14,
-    color: "#000",
-    fontWeight: "700",
-    marginBottom: 6,
-  },
-  labelFilled: {
-    fontSize: 14,
-    color: "#70C601",
-    fontWeight: "700",
-    marginBottom: 6,
-  },
-
-  input: {
-    borderBottomWidth: 1,
-    borderBottomColor: "#ccc",
-    paddingVertical: 8,
-    fontSize: 16,
-  },
-
-  inputFilled: {
-    borderBottomWidth: 1,
-    borderBottomColor: "#70C601",
-    paddingVertical: 8,
-    fontSize: 16,
-  },
-  optionsRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginVertical: 16,
-  },
-
-  remember: {
-    color: "#555",
-    fontSize: 14,
-  },
-
-  forgot: {
-    color: "#70C601",
-    fontSize: 14,
-    fontWeight: "600",
-  },
-
-  button: {
-    backgroundColor: "#70C601",
-    paddingVertical: 10,
-    borderRadius: 4,
-    alignItems: "center",
-    marginTop: 6,
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: "center",
-  },
-
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-
-  modalButton: {
-    backgroundColor: "#70C601",
-    paddingVertical: 10,
-    borderRadius: 5,
-    alignItems: "center",
-    marginTop: 6,
-  },
-
-  buttonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "400",
-  },
-
-  footer: {
-    marginTop: 20,
-    color: "#555",
-  },
-
-  signup: {
-    color: "#70C601",
-    fontWeight: "700",
-  },
-  checkbox: {
-    margin: 4,
-  },
-});
+const getStyles = (colorScheme: string) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff",
+    },
+    modalContent: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: "rgba(0,0,0,0.5)",
+    },
+    modelContentBody: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 5,
+    },
+    modalBody: {
+      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#ffffff",
+      padding: 10,
+      borderRadius: 8,
+      width: "92%",
+    },
+    topContainer: {
+      height: "20%",
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    bottomContainer: {
+      flex: 1,
+      height: "auto",
+      width: "100%",
+      backgroundColor: colorScheme === "dark" ? "#36454F" : "#ffffff",
+      paddingVertical: 20,
+      paddingHorizontal: 20,
+      borderTopLeftRadius: 55,
+    },
+    image: {
+      width: 120,
+      height: 120,
+      alignSelf: "center",
+      marginBottom: 16,
+    },
+    topAbsContainer: {
+      height: "15%",
+      width: "100%",
+      display: "flex",
+      flexDirection: "row",
+    },
+    topAbsContainerLeft: {
+      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
+      height: "100%",
+      width: "50%",
+      marginTop: -50,
+      borderTopLeftRadius: 55,
+    },
+    topAbsContainerRight: {
+      backgroundColor: colorScheme === "dark" ? "#36454F" : "#fff",
+      height: "100%",
+      width: "50%",
+      marginTop: 10,
+    },
+    innerContainer: {
+      height: "100%",
+      width: "100%",
+      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
+      borderBottomRightRadius: 55,
+      marginTop: -10,
+    },
+    inputGroup: {
+      marginBottom: 16,
+    },
+    passwordInputGroup: {
+      display: "flex",
+      flexDirection: "row",
+      justifyContent: "space-between",
+      borderBottomWidth: 1,
+      borderBottomColor: colorScheme === "dark" ? "#FFD966" : "#ccc",
+      paddingVertical: 8,
+      fontSize: 16,
+      gap: 8,
+    },
+    passwordInputGroupFilled: {
+      display: "flex",
+      flexDirection: "row",
+      justifyContent: "space-between",
+      borderBottomWidth: 1,
+      borderBottomColor: colorScheme === "dark" ? "#FFD966" : "#70C601",
+      paddingVertical: 8,
+      fontSize: 16,
+      gap: 8,
+    },
+    label: {
+      fontSize: 14,
+      color: colorScheme === "dark" ? "#b0b8ca" : "#000",
+      fontWeight: "700",
+      marginBottom: 6,
+    },
+    labelFilled: {
+      fontSize: 14,
+      color: colorScheme === "dark" ? "#FFD966" : "#70C601",
+      fontWeight: "700",
+      marginBottom: 6,
+    },
+    input: {
+      borderBottomWidth: 1,
+      borderBottomColor: colorScheme === "dark" ? "#b0b8ca" : "#ccc",
+      paddingVertical: 8,
+      fontSize: 16,
+      color: colorScheme === "dark" ? "#FFD966" : undefined,
+    },
+    inputFilled: {
+      borderBottomWidth: 1,
+      borderBottomColor: colorScheme === "dark" ? "#FFD966" : "#70C601",
+      paddingVertical: 8,
+      fontSize: 16,
+      color: colorScheme === "dark" ? "#FFD966" : undefined,
+    },
+    optionsRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      marginVertical: 16,
+    },
+    remember: {
+      color: colorScheme === "dark" ? "#FFD966" : "#555",
+      fontSize: 14,
+    },
+    forgot: {
+      color: colorScheme === "dark" ? "#FFD966" : "#70C601",
+      fontSize: 14,
+      fontWeight: "600",
+    },
+    button: {
+      backgroundColor: colorScheme === "dark" ? "#FFD966" : "#70C601",
+      paddingVertical: 10,
+      borderRadius: 4,
+      alignItems: "center",
+      marginTop: 6,
+      display: "flex",
+      flexDirection: "row",
+      justifyContent: "center",
+    },
+    buttonDisabled: {
+      opacity: 0.6,
+    },
+    modalButton: {
+      backgroundColor: colorScheme === "dark" ? "#FFD966" : "#70C601",
+      paddingVertical: 10,
+      borderRadius: 5,
+      alignItems: "center",
+      marginTop: 6,
+    },
+    buttonText: {
+      color: colorScheme === "dark" ? "#232A2E" : "#fff",
+      fontSize: 16,
+      fontWeight: "400",
+    },
+    footer: {
+      marginTop: 20,
+      color: colorScheme === "dark" ? "#FFD966" : "#555",
+    },
+    signup: {
+      color: colorScheme === "dark" ? "#FFD966" : "#70C601",
+      fontWeight: "700",
+    },
+    checkbox: {
+      margin: 4,
+    },
+  });

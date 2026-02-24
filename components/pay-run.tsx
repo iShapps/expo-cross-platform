@@ -1,4 +1,5 @@
 import { IShift } from "@/data-types/shifts";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { differenceInMinutes, format } from "date-fns";
 import { Link } from "expo-router";
@@ -23,6 +24,10 @@ export const ShiftCardBase: React.FC<ShiftCardProps> = ({ shift, onPress }) => {
   const minutes = totalMinutes % 60;
   const duration = `${hours}:${minutes.toString().padStart(2, "0")}` + "Hrs";
   const periodText = `${startTime} to ${endTime} (${duration})`;
+
+  let colorScheme = useColorScheme();
+  if (!colorScheme) colorScheme = "light";
+  const styles = getStyles(colorScheme);
 
   return (
     <Link
@@ -145,80 +150,80 @@ export const ShiftCardBase: React.FC<ShiftCardProps> = ({ shift, onPress }) => {
   );
 };
 
-const styles = StyleSheet.create({
-  card: {
-    // backgroundColor: "#F8FFF0",
-    backgroundColor: "#ffffff",
-    borderRadius: 5,
-    padding: 8,
-    borderWidth: 1,
-    borderColor: "#d0e6a5",
-    display: "flex",
-    flexDirection: "row",
-    width: "100%",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    gap: 14,
-    position: "relative",
-  },
-  mainContent: {
-    flex: 1,
-    display: "flex",
-    flexDirection: "column",
-    gap: 6,
-  },
-  headerRow: {
-    position: "absolute",
-    right: -3,
-    top: -8,
-    zIndex: 100,
-  },
-  title: {
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  categoryText: {
-    fontSize: 12,
-    lineHeight: 18,
-    color: "#708090",
-  },
-  periodText: {
-    fontSize: 12,
-    lineHeight: 18,
-    color: "#36454F",
-  },
-  locationText: {
-    fontSize: 13,
-    lineHeight: 18,
-    color: "#818589",
-    fontWeight: "600",
-  },
-  statusBadge: {
-    alignSelf: "flex-start",
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  dateCard: {
-    backgroundColor: "#70C601",
-    borderRadius: 5,
-    padding: 4,
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    // height: 85,
-    height: "auto",
-    width: 55,
-  },
-  dateText: {
-    fontSize: 17,
-    color: "#fff",
-    textAlign: "center",
-  },
-  statusText: {
-    color: "#fff",
-    fontSize: 12,
-    fontWeight: "600",
-  },
-});
+const getStyles = (colorScheme: string) =>
+  StyleSheet.create({
+    card: {
+      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#ffffff",
+      borderRadius: 5,
+      padding: 8,
+      borderWidth: 1,
+      borderColor: colorScheme === "dark" ? "#36454F" : "#d0e6a5",
+      display: "flex",
+      flexDirection: "row",
+      width: "100%",
+      alignItems: "flex-start",
+      justifyContent: "space-between",
+      gap: 14,
+      position: "relative",
+    },
+    mainContent: {
+      flex: 1,
+      display: "flex",
+      flexDirection: "column",
+      gap: 6,
+    },
+    headerRow: {
+      position: "absolute",
+      right: -3,
+      top: -8,
+      zIndex: 100,
+    },
+    title: {
+      fontSize: 14,
+      lineHeight: 20,
+      color: colorScheme === "dark" ? "#a8a49f" : undefined,
+    },
+    categoryText: {
+      fontSize: 12,
+      lineHeight: 18,
+      color: colorScheme === "dark" ? "#a8a49f" : "#708090",
+    },
+    periodText: {
+      fontSize: 12,
+      lineHeight: 18,
+      color: colorScheme === "dark" ? "#a8a49f" : "#36454F",
+    },
+    locationText: {
+      fontSize: 13,
+      lineHeight: 18,
+      color: colorScheme === "dark" ? "#a8a49f" : "#818589",
+      fontWeight: "600",
+    },
+    statusBadge: {
+      alignSelf: "flex-start",
+      paddingHorizontal: 12,
+      paddingVertical: 4,
+      borderRadius: 12,
+    },
+    dateCard: {
+      backgroundColor: colorScheme === "dark" ? "#36454F" : "#70C601",
+      borderRadius: 5,
+      padding: 4,
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      height: "auto",
+      width: 55,
+    },
+    dateText: {
+      fontSize: 17,
+      color: colorScheme === "dark" ? "#a8a49f" : "#fff",
+      textAlign: "center",
+    },
+    statusText: {
+      color: colorScheme === "dark" ? "#a8a49f" : "#fff",
+      fontSize: 12,
+      fontWeight: "600",
+    },
+  });
