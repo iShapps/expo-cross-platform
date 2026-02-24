@@ -1,22 +1,24 @@
-import { fetchDashboard } from "@/api-queries/fetchers";
 import { NotificationCard } from "@/components/notification-card";
-import { NotificationCardSkeleton } from "@/components/skeletons";
-import { useProfileData } from "@/data-store/use-account-store";
 import {
-  DashboardResponse,
-  Notification,
-  Payrun,
-} from "@/data-types/dashboard";
+  CurrentPayrunSkeleton,
+  DashboardAnalyticsSkeleton,
+  NotificationCardSkeleton,
+} from "@/components/skeletons";
+import { useProfileData } from "@/data-store/use-account-store";
+import { DashboardResponse } from "@/data-types/dashboard";
 import { useLocation } from "@/hooks/use-location";
 import { usePushNotifications } from "@/hooks/use-push-notifications";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { router } from "expo-router";
 import { useEffect } from "react";
 
+import { getHCPDashboard } from "@/api-queries/dashboard";
+import { getNotifications } from "@/api-queries/notifcations";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import {
   FlatList,
   Pressable,
@@ -35,99 +37,47 @@ export default function HomeScreen() {
   console.log("notification", notification);
   const profileStore = useProfileData();
   const userDetails = profileStore.userDetails;
-  const sample_payruns: Payrun[] = [
-    {
-      id: "1",
-      period_start: "2026-01-31T09:00:00.000Z",
-      period_end: "2026-01-31T19:00:00.000Z",
-      status: "ongoing",
-      shift_type: "Morning",
-      total_hours: 8,
-      total_amount: 1000,
-      location: "21 Aldwych Way, Joondalup WA, Australia",
-      category_id: "1",
-      category_name: "Assistant in Nursing",
-      facility_id: "1",
-      facility_name: "MercyCare Joondalup",
+
+  const { data: dashboard, isLoading: dashboardLoading } =
+    useQuery<DashboardResponse>({
+      queryKey: ["dashboard"],
+      queryFn: () => getHCPDashboard(),
+      gcTime: 1000 * 60 * 60, // 1 hour
+      staleTime: 1000 * 60 * 60 * 24, // 1 day
+      refetchInterval: 30 * 60 * 1000,
+      refetchIntervalInBackground: true,
+      enabled: !!userDetails?.id,
+    });
+
+  const {
+    data,
+    isLoading: notificationsLoading,
+    isError,
+    refetch,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    // error: notificationsError,
+  } = useInfiniteQuery({
+    queryKey: ["noifications"],
+    queryFn: ({ pageParam = 1 }) => getNotifications(pageParam),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      const pagination = lastPage?.data?.hcps;
+      if (!pagination) return undefined;
+      if (pagination.current_page < pagination.last_page) {
+        return pagination.current_page + 1;
+      }
+      return undefined;
     },
-  ];
-  const sample_notifications: Notification[] = [
-    {
-      id: "1",
-      type: "shift_available",
-      created_at: "2023-10-01T10:00:00.000Z",
-      is_read: false,
-      title: "New Shift Available",
-      message: "A new shift is available at MercyCare Joondalup.",
-    },
-    {
-      id: "2",
-      type: "payment",
-      created_at: "2023-09-28T14:30:00.000Z",
-      is_read: true,
-      title: "Payment Processed",
-      message: "Your payment for the last payrun has been processed.",
-    },
-    {
-      id: "3",
-      type: "shift_reminder",
-      created_at: "2023-09-30T08:00:00.000Z",
-      is_read: false,
-      title: "Shift Reminder",
-      message: "Don't forget your shift tomorrow at Brightwater Oats Street.",
-    },
-    {
-      id: "4",
-      type: "general",
-      created_at: "2023-10-02T07:15:00.000Z",
-      is_read: true,
-      title: "Profile Updated",
-      message: "Your profile details were updated successfully.",
-    },
-    {
-      id: "5",
-      type: "shift_available",
-      created_at: "2023-10-02T09:45:00.000Z",
-      is_read: false,
-      title: "Extra Shift Added",
-      message: "An extra evening shift is available at Regis Lake Park.",
-    },
-    {
-      id: "6",
-      type: "payment",
-      created_at: "2023-10-03T12:10:00.000Z",
-      is_read: true,
-      title: "Payslip Ready",
-      message: "Your payslip for the current period is ready to view.",
-    },
-    {
-      id: "7",
-      type: "shift_reminder",
-      created_at: "2023-10-03T17:30:00.000Z",
-      is_read: false,
-      title: "Shift Starts Soon",
-      message: "Your shift at Brightwater Oats Street starts in 2 hours.",
-    },
-    {
-      id: "8",
-      type: "general",
-      created_at: "2023-10-04T08:05:00.000Z",
-      is_read: true,
-      title: "App Update",
-      message: "A new version is available with performance improvements.",
-    },
-  ];
-  const currentPayrun = sample_payruns[0];
-  const { data: dashboard, isLoading } = useQuery<DashboardResponse>({
-    queryKey: ["dashboard"],
-    queryFn: fetchDashboard,
-    gcTime: 1000 * 60 * 60, // 1 hour
-    staleTime: 1000 * 60 * 60 * 24, // 1 day
-    refetchInterval: 30 * 60 * 1000,
+    refetchInterval: 30 * 60 * 1000, // 30 minutes
     refetchIntervalInBackground: true,
-    enabled: !!userDetails?.id,
+    gcTime: 1000 * 60 * 60,
+    staleTime: 1000 * 60 * 60 * 24,
   });
-  const notificationsLoading = isLoading; // Replace with actual loading state
+
+  const notifications =
+    data?.pages.flatMap((page) => page?.data?.hcps?.data ?? []) ?? [];
 
   const dashboardData = dashboard?.data;
   const availableShifts = dashboardData?.available_shifts ?? 0;
@@ -135,6 +85,9 @@ export default function HomeScreen() {
   const upcomingShifts = dashboardData?.upcoming_shifts ?? 0;
   const weekStart = dashboardData?.week_start_date;
   const weekEnd = dashboardData?.week_end_date;
+
+  console.log("dashboard", dashboard);
+
   const dashboardPayrunLabel =
     weekStart && weekEnd
       ? `Payrun: Week of ${format(new Date(weekStart), "dd MMM")} - ${format(
@@ -142,21 +95,23 @@ export default function HomeScreen() {
           "dd MMM yyyy",
         )}`
       : null;
-  const payrunStart = currentPayrun
-    ? format(new Date(currentPayrun.period_start), "dd MMM")
-    : "";
-  const payrunEnd = currentPayrun
-    ? format(new Date(currentPayrun.period_end), "dd MMM yyyy")
-    : "";
   const payrunLabel = dashboardPayrunLabel
     ? dashboardPayrunLabel
-    : currentPayrun
-      ? `Payrun: Week of ${payrunStart} - ${payrunEnd}`
-      : "Payrun: --";
+    : "Payrun: --";
 
   useEffect(() => {
     requestPermission();
   }, []);
+
+  const handlePullToRefresh = async () => {
+    await refetch();
+  };
+
+  const handleLoadMore = () => {
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  };
 
   const styles = colorScheme === "dark" ? darkStyles : lightStyles;
 
@@ -189,7 +144,10 @@ export default function HomeScreen() {
             style={styles.notificationContainer}
           >
             <MaterialIcons name="notifications" size={20} color="#fff" />
-            <View style={styles.notificationDot} />
+
+            {notifications.length > 0 && (
+              <View style={styles.notificationDot} />
+            )}
           </Pressable>
         </View>
       </View>
@@ -201,52 +159,62 @@ export default function HomeScreen() {
           <Text style={styles.overviewLabel}>Overview</Text>
           <View style={styles.sectionUnderline} />
         </View>
-        <View style={styles.dashboardRow}>
-          <View style={[styles.dashboardCard, styles.dashboardCardAvailable]}>
-            <View style={styles.dashboardTopRow}>
-              <View style={[styles.iconPill, styles.iconPillAvailable]}>
-                <MaterialIcons
-                  name="event-available"
-                  size={16}
-                  color="#70C601"
-                />
+        {dashboardLoading ? (
+          <DashboardAnalyticsSkeleton />
+        ) : (
+          <View style={styles.dashboardRow}>
+            <View style={[styles.dashboardCard, styles.dashboardCardAvailable]}>
+              <View style={styles.dashboardTopRow}>
+                <View style={[styles.iconPill, styles.iconPillAvailable]}>
+                  <MaterialIcons
+                    name="event-available"
+                    size={16}
+                    color="#70C601"
+                  />
+                </View>
+                <Text style={styles.dashboardValue}>{availableShifts}</Text>
               </View>
-              <Text style={styles.dashboardValue}>{availableShifts}</Text>
+              <Text style={styles.dashboardTitle}>Available</Text>
             </View>
-            <Text style={styles.dashboardTitle}>Available</Text>
-          </View>
-          <View style={[styles.dashboardCard, styles.dashboardCardUpcoming]}>
-            <View style={styles.dashboardTopRow}>
-              <View style={[styles.iconPill, styles.iconPillUpcoming]}>
-                <MaterialIcons name="schedule" size={16} color="#FFC107" />
+            <View style={[styles.dashboardCard, styles.dashboardCardUpcoming]}>
+              <View style={styles.dashboardTopRow}>
+                <View style={[styles.iconPill, styles.iconPillUpcoming]}>
+                  <MaterialIcons name="schedule" size={16} color="#FFC107" />
+                </View>
+                <Text style={styles.dashboardValue}>{upcomingShifts}</Text>
               </View>
-              <Text style={styles.dashboardValue}>{upcomingShifts}</Text>
+              <Text style={styles.dashboardTitle}>Upcoming</Text>
             </View>
-            <Text style={styles.dashboardTitle}>Upcoming</Text>
-          </View>
-          <View style={[styles.dashboardCard, styles.dashboardCardMy]}>
-            <View style={styles.dashboardTopRow}>
-              <View style={[styles.iconPill, styles.iconPillMy]}>
-                <MaterialIcons
-                  name="assignment-ind"
-                  size={16}
-                  color="#4A90E2"
-                />
+            <View style={[styles.dashboardCard, styles.dashboardCardMy]}>
+              <View style={styles.dashboardTopRow}>
+                <View style={[styles.iconPill, styles.iconPillMy]}>
+                  <MaterialIcons
+                    name="assignment-ind"
+                    size={16}
+                    color="#4A90E2"
+                  />
+                </View>
+                <Text style={styles.dashboardValue}>{scheduledShifts}</Text>
               </View>
-              <Text style={styles.dashboardValue}>{scheduledShifts}</Text>
+              <Text style={styles.dashboardTitle}>My Shifts</Text>
             </View>
-            <Text style={styles.dashboardTitle}>My Shifts</Text>
           </View>
-        </View>
-        <View style={styles.payrunCard}>
-          <View style={styles.payrunHeader}>
-            <View style={styles.iconPillPayrun}>
-              <MaterialIcons name="date-range" size={16} color="#70C601" />
+        )}
+
+        {dashboardLoading ? (
+          <CurrentPayrunSkeleton />
+        ) : (
+          <View style={styles.payrunCard}>
+            <View style={styles.payrunHeader}>
+              <View style={styles.iconPillPayrun}>
+                <MaterialIcons name="date-range" size={16} color="#70C601" />
+              </View>
+              <Text style={styles.payrunValue}>{payrunLabel}</Text>
+              {/* <Text style={styles.payrunLabel}>Current Payrun</Text> */}
             </View>
-            <Text style={styles.payrunValue}>{payrunLabel}</Text>
-            {/* <Text style={styles.payrunLabel}>Current Payrun</Text> */}
           </View>
-        </View>
+        )}
+
         {/* <ActiveCard payrun={sample_payruns[0]} /> */}
       </View>
       <View style={styles.mainLandingContainer}>
@@ -263,26 +231,77 @@ export default function HomeScreen() {
             <MaterialIcons name="chevron-right" size={18} color="#70C601" />
           </TouchableOpacity>
         </View>
+
         <FlatList
-          // data={sample_notifications}
-          // renderItem={({ item }) => <NotificationCard notification={item} />}
-          // keyExtractor={(item) => item.id}
-          data={
-            notificationsLoading
-              ? ([1, 2] as unknown as Notification[])
-              : sample_notifications
-          }
+          data={notificationsLoading ? [...Array(6)] : notifications}
           renderItem={
             notificationsLoading
               ? () => <NotificationCardSkeleton />
               : ({ item }) => <NotificationCard notification={item} />
           }
-          keyExtractor={(item, idx) =>
-            notificationsLoading ? String(idx) : item.id
+          keyExtractor={
+            notificationsLoading
+              ? (_, idx) => `skeleton-${idx}`
+              : (item) => String(item.id)
           }
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.mainLandingContent}
-          ListHeaderComponent={<></>}
+          contentContainerStyle={{
+            paddingBottom: 120,
+            paddingTop: 10,
+            flexGrow: 1,
+            gap: 10,
+          }}
+          refreshing={isFetchingNextPage}
+          onRefresh={handlePullToRefresh}
+          onEndReached={handleLoadMore}
+          onEndReachedThreshold={0.6}
+          ListFooterComponent={
+            !notificationsLoading && isFetchingNextPage ? (
+              <View style={{ gap: 10, paddingTop: 10 }}>
+                <NotificationCardSkeleton />
+                <NotificationCardSkeleton />
+              </View>
+            ) : null
+          }
+          ListEmptyComponent={
+            !notificationsLoading && !isError && notifications.length === 0 ? (
+              <View
+                style={{
+                  flex: 1,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <MaterialCommunityIcons
+                  name="calendar-remove-outline"
+                  size={72}
+                  color="#e0e0e0"
+                  style={{ marginBottom: 16 }}
+                />
+                <Text
+                  style={{
+                    fontSize: 20,
+                    fontWeight: "700",
+                    color: "#70C601",
+                    marginBottom: 8,
+                  }}
+                >
+                  No Notifications Yet
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 15,
+                    color: "#818589",
+                    textAlign: "center",
+                    maxWidth: 260,
+                  }}
+                >
+                  There&apos;s no notifications for this the moment. Check back
+                  later
+                </Text>
+              </View>
+            ) : null
+          }
         />
       </View>
     </View>

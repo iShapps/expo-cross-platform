@@ -13,6 +13,9 @@ export class ApiMutationError extends Error {
     this.statusCode = statusCode;
     this.details = details;
   }
+
+  // victormadaraka@ishapps.com
+  // 3D6KTVeY
 }
 
 function isObject(val: unknown): val is Record<string, unknown> {
