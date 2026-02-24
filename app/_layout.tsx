@@ -1,4 +1,3 @@
-import { useSettingsStore } from "@/data-store/use-settings-store";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useShiftWatcher } from "@/hooks/use-shift-watcher";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -24,11 +23,6 @@ export default function Root() {
   console.log("Current color scheme:", colorScheme);
 
   useShiftWatcher();
-
-  const systemColorScheme = useColorScheme();
-  const { theme } = useSettingsStore();
-  const isDark =
-    theme === "dark" || (theme === "system" && systemColorScheme === "dark");
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <QueryClientProvider client={queryClient}>
@@ -37,7 +31,7 @@ export default function Root() {
           <RootNavigator />
         </SessionProvider>
       </QueryClientProvider>
-      <StatusBar style={isDark ? "light" : "dark"} />
+      <StatusBar style="auto" />
     </GestureHandlerRootView>
   );
 }
