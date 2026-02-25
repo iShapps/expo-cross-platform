@@ -1,7 +1,7 @@
 import {
-    authenticateWithBiometrics,
-    isBiometricAllowed,
-    isBiometricAvailable,
+  authenticateWithBiometrics,
+  isBiometricAllowed,
+  isBiometricAvailable,
 } from "@/utils/biometrics";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as LocalAuthentication from "expo-local-authentication";
@@ -92,7 +92,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
           await AsyncStorage.setItem("notifications", JSON.stringify(false));
           return;
         }
-
+        await OneSignal.User.pushSubscription.optIn();
         set({ notificationsEnabled: true });
         await AsyncStorage.setItem("notifications", JSON.stringify(true));
       } else {

@@ -6,10 +6,10 @@ export interface INotification {
   title: string;
   message: string;
   shift_id: number;
-  hcp_id: number;
-  facility_id: null;
-  swap_request_id: null;
-  statement_id: null;
+  hcp_id: number | null;
+  facility_id: number | null;
+  swap_request_id: number | null;
+  statement_id: number | null;
   notification_type: NotificationType;
   shift_broadcast_type: null;
   read_status: string;
@@ -55,4 +55,36 @@ export interface INotificationResponse {
   data: {
     hcps: IPaginatedNotificationsResponse;
   };
+}
+
+export interface NotificationAdditionalData {
+  shift: NotificationShift;
+  shift_id: number;
+  notification_type: NotificationType;
+  hcp_id: number | null;
+  swap_request_id: number | null;
+  document_type: string | null;
+}
+
+export interface AppNotification {
+  actionButtons: any[];
+  additionalData?: NotificationAdditionalData;
+  attachments?: unknown;
+  badge?: number;
+  badgeIncrement?: number;
+  body: string;
+  category?: string;
+  contentAvailable?: boolean;
+  interruptionLevel?: string;
+  launchURL?: string;
+  mutableContent?: boolean;
+  notificationId: string;
+  rawPayload?: unknown;
+  relevanceScore?: number;
+  sound?: string;
+  subtitle?: string;
+  templateId?: string;
+  templateName?: string;
+  threadId?: string;
+  title: string;
 }

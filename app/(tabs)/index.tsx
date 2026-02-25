@@ -16,7 +16,10 @@ import { useEffect } from "react";
 
 import { getHCPDashboard } from "@/api-queries/dashboard";
 import { getNotifications } from "@/api-queries/notifcations";
+import { useSettingsStore } from "@/data-store/use-settings-store";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useOneSignal } from "@/hooks/use-one-signal";
+import { useShiftWatcher } from "@/hooks/use-shift-watcher";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import {
   FlatList,
@@ -34,6 +37,11 @@ export default function HomeScreen() {
   const profileStore = useProfileData();
   const userDetails = profileStore.userDetails;
 
+  useShiftWatcher();
+  useOneSignal();
+  useEffect(() => {
+    useSettingsStore.getState().hydrate();
+  }, []);
   const { data: dashboard, isLoading: dashboardLoading } =
     useQuery<DashboardResponse>({
       queryKey: ["dashboard"],
