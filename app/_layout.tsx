@@ -1,5 +1,5 @@
 import { useSettingsStore } from "@/data-store/use-settings-store";
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useOneSignal } from "@/hooks/use-one-signal";
 import { useShiftWatcher } from "@/hooks/use-shift-watcher";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { SplashScreen, Stack } from "expo-router";
@@ -20,11 +20,8 @@ SplashScreen.preventAutoHideAsync();
 const queryClient = new QueryClient();
 
 export default function Root() {
-  // Set up the auth context
-  const colorScheme = useColorScheme();
-  console.log("Current color scheme:", colorScheme);
-
   useShiftWatcher();
+  useOneSignal();
   useEffect(() => {
     useSettingsStore.getState().hydrate();
   }, []);
@@ -43,9 +40,6 @@ export default function Root() {
 
 function RootNavigator() {
   const { session } = useSession();
-  // initiate one signal before login
-  // useOneSignal();
-
   return (
     <Stack>
       <Stack.Protected guard={!!session}>

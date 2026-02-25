@@ -15,7 +15,7 @@ export const useOneSignal = () => {
   );
   const session = useSession();
   useEffect(() => {
-    const appId = Constants.expoConfig?.extra?.oneSignalAppId;
+    const appId = Constants.expoConfig?.extra?.eas?.oneSignalAppId;
 
     if (!appId) {
       console.warn("OneSignal App ID is missing in app.json extra config");
@@ -27,8 +27,8 @@ export const useOneSignal = () => {
     }
 
     OneSignal.initialize(appId);
-
     const handleNotificationState = async () => {
+      console.log("Notifications called");
       if (notificationsEnabled) {
         console.log("Notifications ENABLED");
         const canRequest = await OneSignal.Notifications.canRequestPermission();
@@ -48,20 +48,6 @@ export const useOneSignal = () => {
     };
 
     handleNotificationState();
-
-    // const requestPermission = async () => {
-    //   const canRequest = await OneSignal.Notifications.canRequestPermission();
-
-    //   if (canRequest) {
-    //     await OneSignal.Notifications.requestPermission(true);
-    //   }
-
-    //   const permission = await OneSignal.Notifications.getPermissionAsync();
-
-    //   console.log("OneSignal permission status:", permission);
-    // };
-
-    // requestPermission();
 
     const logSubscription = async () => {
       const subscriptionId = await OneSignal.User.pushSubscription.getIdAsync();

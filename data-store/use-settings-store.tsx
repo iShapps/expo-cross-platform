@@ -1,10 +1,11 @@
 import {
-  authenticateWithBiometrics,
-  isBiometricAvailable,
+    authenticateWithBiometrics,
+    isBiometricAvailable,
 } from "@/utils/biometrics";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as LocalAuthentication from "expo-local-authentication";
 import * as Location from "expo-location";
+import { OneSignal } from "react-native-onesignal";
 import { create } from "zustand";
 
 type Theme = "system" | "light" | "dark";
@@ -23,8 +24,8 @@ interface SettingsState {
 }
 
 export const useSettingsStore = create<SettingsState>((set) => ({
-  locationEnabled: true,
-  notificationsEnabled: true,
+  locationEnabled: false,
+  notificationsEnabled: false,
   biometricsEnabled: false,
   theme: "light",
 
@@ -66,10 +67,11 @@ export const useSettingsStore = create<SettingsState>((set) => ({
       const locationStatus = await Location.getForegroundPermissionsAsync();
       const locationEnabled = locationStatus.status === "granted";
 
-      const storedNotifications = await AsyncStorage.getItem("notifications");
-      const notificationsEnabled = storedNotifications
-        ? JSON.parse(storedNotifications)
-        : false;
+      const permission = await OneSignal.Notifications.getPermissionAsync();
+      const hasSubscription =
+        await OneSignal.User.pushSubscription.getIdAsync();
+
+      const notificationsEnabled = permission === true && !!hasSubscription;
 
       const hasHardware = await LocalAuthentication.hasHardwareAsync();
       const isEnrolled = await LocalAuthentication.isEnrolledAsync();
@@ -84,9 +86,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
         locationEnabled: storedLocation
           ? JSON.parse(storedLocation)
           : locationEnabled,
-        notificationsEnabled: storedNotifications
-          ? JSON.parse(storedNotifications)
-          : notificationsEnabled,
+        notificationsEnabled,
         biometricsEnabled: storedBiometrics
           ? JSON.parse(storedBiometrics)
           : biometricsEnabled,

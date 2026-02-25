@@ -7,7 +7,6 @@ import {
 import { useProfileData } from "@/data-store/use-account-store";
 import { DashboardResponse } from "@/data-types/dashboard";
 import { useLocation } from "@/hooks/use-location";
-import { usePushNotifications } from "@/hooks/use-push-notifications";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
@@ -29,12 +28,9 @@ import {
 } from "react-native";
 
 export default function HomeScreen() {
-  const { expoPushToken, notification } = usePushNotifications();
+  // const { expoPushToken, notification } = usePushNotifications();
   const { requestPermission } = useLocation();
   const colorScheme = useColorScheme();
-
-  console.log("expoPushToken", expoPushToken);
-  console.log("notification", notification);
   const profileStore = useProfileData();
   const userDetails = profileStore.userDetails;
 
@@ -85,8 +81,6 @@ export default function HomeScreen() {
   const upcomingShifts = dashboardData?.upcoming_shifts ?? 0;
   const weekStart = dashboardData?.week_start_date;
   const weekEnd = dashboardData?.week_end_date;
-
-  console.log("dashboard", dashboard);
 
   const dashboardPayrunLabel =
     weekStart && weekEnd
