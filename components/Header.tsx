@@ -22,7 +22,7 @@ const Header: React.FC<HeaderProps> = ({ title, onBack, right }) => {
             <MaterialIcons
               name="chevron-left"
               size={30}
-              color={theme.iconWhite}
+              color={theme.whiteText}
             />
           </Pressable>
         ) : (
@@ -39,11 +39,11 @@ const getStyles = (theme: typeof Colors.light) =>
   StyleSheet.create({
     safeArea: {
       flex: 1,
-      backgroundColor: theme.secondary,
+      backgroundColor: theme.background,
     },
     header: {
       paddingVertical: 10,
-      backgroundColor: theme.secondary,
+      backgroundColor: theme.background,
     },
     headerRow: {
       flexDirection: "row",
@@ -53,7 +53,7 @@ const getStyles = (theme: typeof Colors.light) =>
     title: {
       fontSize: 18,
       fontWeight: "700",
-      color: theme.buttonText,
+      color: theme.whiteText,
     },
   });
 
