@@ -49,7 +49,7 @@ export default function NotificationsScreen() {
   const notifications =
     data?.pages.flatMap((page) => page?.data?.hcps?.data ?? []) ?? [];
 
-  const tabTypes = useMemo(() => ["Shifts", "Documents", "Others"], []);
+  const tabTypes = useMemo(() => ["Shifts", "Documents", "General"], []);
 
   const shiftsNotifications = notifications.filter(
     (n) => n.notification_type === "shifts",
@@ -173,7 +173,9 @@ export default function NotificationsScreen() {
                     size={72}
                     color="#e0e0e0"
                   />
-                  <Text style={styles.emptyTitle}>No Notifications Yet</Text>
+                  <Text style={styles.emptyTitle}>
+                    No {tabTypes[index].toLowerCase()} notifications Yet
+                  </Text>
                 </View>
               ) : (
                 <FlatList
@@ -231,6 +233,8 @@ const getStyles = (colorScheme: string) =>
       flex: 1,
       backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff",
       paddingHorizontal: 8,
+      display: "flex",
+      flexDirection: "column",
     },
     tabsRow: {
       flexDirection: "row",
@@ -261,6 +265,7 @@ const getStyles = (colorScheme: string) =>
     listContainer: {
       paddingBottom: 120,
       paddingTop: 10,
+      paddingHorizontal: 2,
       flexGrow: 1,
       gap: 4,
     },
