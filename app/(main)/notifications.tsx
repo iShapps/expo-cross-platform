@@ -159,7 +159,7 @@ export default function NotificationsScreen() {
             <View key={tabTypes[index]} style={{ width: screenWidth - 18 }}>
               {isLoading ? (
                 <FlatList
-                  data={[...Array(6)]}
+                  data={[...Array(2)]}
                   renderItem={() => <NotificationCardSkeleton />}
                   keyExtractor={(_, i) => `skeleton-${i}`}
                   refreshing={isFetchingNextPage}
@@ -230,7 +230,7 @@ const getStyles = (colorScheme: string) =>
       backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
     },
     container: {
-      flex: 1,
+      // flex: 1,
       backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff",
       paddingHorizontal: 8,
       display: "flex",
@@ -263,10 +263,11 @@ const getStyles = (colorScheme: string) =>
       backgroundColor: colorScheme === "dark" ? "#FFD966" : "#70C601",
     },
     listContainer: {
+      height: "auto",
+      minHeight: "100%",
       paddingBottom: 120,
       paddingTop: 10,
       paddingHorizontal: 2,
-      flexGrow: 1,
       gap: 4,
     },
     emptyState: {
