@@ -350,14 +350,9 @@ export default function Schedules() {
                   return (
                     <View
                       style={{
-                        flex: 1,
-                        justifyContent: "center",
+                        // flex: 1,
                         alignItems: "center",
-                        position: "absolute",
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
+                        justifyContent: "center",
                       }}
                     >
                       <MaterialCommunityIcons

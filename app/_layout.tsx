@@ -1,5 +1,6 @@
 import { useSettingsStore } from "@/data-store/use-settings-store";
 import { useOneSignal } from "@/hooks/use-one-signal";
+import { usePermissionMonitor } from "@/hooks/use-permission-monitor";
 import { useShiftWatcher } from "@/hooks/use-shift-watcher";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { SplashScreen, Stack } from "expo-router";
@@ -22,6 +23,7 @@ const queryClient = new QueryClient();
 export default function Root() {
   useShiftWatcher();
   useOneSignal();
+  usePermissionMonitor();
   useEffect(() => {
     useSettingsStore.getState().hydrate();
   }, []);
