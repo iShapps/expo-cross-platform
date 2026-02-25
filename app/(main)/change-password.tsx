@@ -169,11 +169,10 @@ const getStyles = (colorScheme: string) =>
       flexDirection: "column",
       gap: 4,
       width: "100%",
-      marginVertical: 5,
       backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff",
       flex: 1,
-      paddingHorizontal: 10,
-      paddingVertical: 16,
+      paddingHorizontal: 12,
+      paddingTop: 16,
     },
 
     inputGroup: {
