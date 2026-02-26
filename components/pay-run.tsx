@@ -100,7 +100,7 @@ export const ShiftCardBase: React.FC<ShiftCardProps> = ({ shift, onPress }) => {
               }}
             >
               {shift?.profession?.name}
-              {/* {shift?.category?.name}{" "} */}
+              {/* {shift?.shift_status}{" "} */}
               {/* {shift?.level?.name} */}
             </Text>
             <View

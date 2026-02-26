@@ -4,7 +4,7 @@ import {
   postPastShifts,
   postRunningShifts,
   postScheduledShifts,
-  postTransferedShifts,
+  postTransferredShifts,
 } from "@/api-queries/post-pending-shifts";
 import { ShiftCardBase } from "@/components/pay-run";
 import { ShiftCardBaseSkeleton } from "@/components/skeletons/payrun-card-base-skeleton";
@@ -88,9 +88,9 @@ export default function Schedules() {
   );
 
   // transfered shifts
-  const transferedQuery = useShiftInfiniteQuery(
+  const transferredQuery = useShiftInfiniteQuery(
     "transfered-shifts",
-    postTransferedShifts,
+    postTransferredShifts,
   );
 
   // past shifts
@@ -289,18 +289,18 @@ export default function Schedules() {
                     isRefetching = cancelledQuery.isRefetching;
                     break;
                   case "Transferred":
-                    isLoading = transferedQuery.isLoading;
+                    isLoading = transferredQuery.isLoading;
                     data =
-                      transferedQuery.data?.pages.flatMap(
+                      transferredQuery.data?.pages.flatMap(
                         (page) => page?.data?.shifts?.data ?? [],
                       ) || [];
-                    isError = transferedQuery.isError;
-                    shiftError = transferedQuery.error;
-                    refetchFn = transferedQuery.refetch;
-                    isFetchingNextPage = transferedQuery.isFetchingNextPage;
-                    hasNextPage = !!transferedQuery.hasNextPage;
-                    fetchNextPage = transferedQuery.fetchNextPage;
-                    isRefetching = transferedQuery.isRefetching;
+                    isError = transferredQuery.isError;
+                    shiftError = transferredQuery.error;
+                    refetchFn = transferredQuery.refetch;
+                    isFetchingNextPage = transferredQuery.isFetchingNextPage;
+                    hasNextPage = !!transferredQuery.hasNextPage;
+                    fetchNextPage = transferredQuery.fetchNextPage;
+                    isRefetching = transferredQuery.isRefetching;
                     break;
                   case "Pending Payment":
                     isLoading = completedQuery.isLoading;

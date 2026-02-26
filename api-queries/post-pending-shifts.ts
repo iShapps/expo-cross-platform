@@ -5,6 +5,26 @@ import {
   IShiftResponse,
 } from "@/data-types/shifts";
 
+// 0: pending
+// 1: scheduled
+// 2: running
+// 3: cancelled
+// 4: completed
+// 5: transferred
+// 6: past
+
+// available shifts --> not assigned (uses geo fencing)
+// upcoming shifts --> assigned to hcp (starting soon)
+export async function postUpcomingShifts(page = 1): Promise<IShiftResponse> {
+  return postResource<{ shift_status: string; page: number }, IShiftResponse>(
+    "/shift",
+    {
+      shift_status: "upcoming",
+      page,
+    },
+  );
+}
+
 export async function postPendingShifts(page = 1): Promise<IShiftResponse> {
   return postResource<{ shift_status: string; page: number }, IShiftResponse>(
     "/shift",
@@ -35,11 +55,11 @@ export async function postRunningShifts(page = 1): Promise<IShiftResponse> {
   );
 }
 
-export async function postTransferedShifts(page = 1): Promise<IShiftResponse> {
+export async function postTransferredShifts(page = 1): Promise<IShiftResponse> {
   return postResource<{ shift_status: string; page: number }, IShiftResponse>(
     "/shift",
     {
-      shift_status: "transfered",
+      shift_status: "transferred",
       page,
     },
   );
