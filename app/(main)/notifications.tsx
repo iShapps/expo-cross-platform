@@ -72,7 +72,7 @@ export default function NotificationsScreen() {
 
   const [activeTab, setActiveTab] = useState(tabTypes[0]);
 
-  const { width: screenWidth } = useWindowDimensions();
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const contentScrollRef = useRef<ScrollView>(null);
 
   const handleTabPress = useCallback(
@@ -108,7 +108,7 @@ export default function NotificationsScreen() {
 
   let colorScheme = useColorScheme();
   if (!colorScheme) colorScheme = "light";
-  const styles = getStyles(colorScheme);
+  const styles = getStyles(colorScheme, screenHeight);
 
   return (
     <SafeAreaView edges={["top"]} style={styles.safeArea}>
@@ -223,14 +223,13 @@ export default function NotificationsScreen() {
   );
 }
 
-const getStyles = (colorScheme: string) =>
+const getStyles = (colorScheme: string, screenHeight: number) =>
   StyleSheet.create({
     safeArea: {
       flex: 1,
       backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
     },
     container: {
-      // flex: 1,
       backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff",
       paddingHorizontal: 8,
       display: "flex",
@@ -263,8 +262,7 @@ const getStyles = (colorScheme: string) =>
       backgroundColor: colorScheme === "dark" ? "#FFD966" : "#70C601",
     },
     listContainer: {
-      height: "auto",
-      minHeight: "100%",
+      minHeight: screenHeight,
       paddingBottom: 120,
       paddingTop: 10,
       paddingHorizontal: 2,

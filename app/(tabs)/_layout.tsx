@@ -88,9 +88,6 @@ export default function TabLayout() {
       bar: {
         backgroundColor: "#F8FFF0",
         position: "absolute",
-        height: 60,
-        paddingBottom: 8,
-        paddingTop: 8,
         justifyContent: "center",
         alignItems: "center",
         borderTopColor: "#D3D3D3",

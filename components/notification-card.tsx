@@ -4,7 +4,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { formatDistanceToNow } from "date-fns";
 import { Href, Link } from "expo-router";
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 interface NotificationCardProps {
   notification: INotification;
@@ -73,42 +73,44 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
     }
   };
   return (
-    <Link href={getHref()}>
-      <View
-        style={[styles.card, !notification.is_expired && styles.unreadCard]}
-      >
+    <Link href={getHref()} asChild>
+      <Pressable>
         <View
-          style={[
-            styles.iconContainer,
-            { backgroundColor: `${getNotificationColor()}20` },
-          ]}
+          style={[styles.card, !notification.is_expired && styles.unreadCard]}
         >
-          <MaterialCommunityIcons
-            name={getNotificationIcon()}
-            size={24}
-            color={getNotificationColor()}
-          />
-          {!notification.is_expired && <View style={styles.unreadDot} />}
-        </View>
-
-        <View style={styles.content}>
-          <View style={styles.header}>
-            <Text style={styles.title}>{notification.title}</Text>
+          <View
+            style={[
+              styles.iconContainer,
+              { backgroundColor: `${getNotificationColor()}20` },
+            ]}
+          >
+            <MaterialCommunityIcons
+              name={getNotificationIcon()}
+              size={24}
+              color={getNotificationColor()}
+            />
+            {!notification.is_expired && <View style={styles.unreadDot} />}
           </View>
-          <Text style={styles.message} numberOfLines={2}>
-            {notification.message}
-          </Text>
-          <Text style={styles.time}>{timeFormatted}</Text>
-        </View>
 
-        <View style={styles.detailHint}>
-          <MaterialCommunityIcons
-            name="chevron-right"
-            size={20}
-            color="#C4C4C4"
-          />
+          <View style={styles.content}>
+            <View style={styles.header}>
+              <Text style={styles.title}>{notification.title}</Text>
+            </View>
+            <Text style={styles.message} numberOfLines={2}>
+              {notification.message}
+            </Text>
+            <Text style={styles.time}>{timeFormatted}</Text>
+          </View>
+
+          <View style={styles.detailHint}>
+            <MaterialCommunityIcons
+              name="chevron-right"
+              size={20}
+              color="#C4C4C4"
+            />
+          </View>
         </View>
-      </View>
+      </Pressable>
     </Link>
   );
 };

@@ -60,7 +60,7 @@ export default function DocumentsScreen() {
   }, [documents]);
 
   const [activeDocType, setActiveDocType] = useState<string>("All");
-  const { width: screenWidth } = useWindowDimensions();
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const contentScrollRef = useRef<ScrollView>(null);
 
   const handleTabPress = useCallback(
@@ -102,7 +102,6 @@ export default function DocumentsScreen() {
         {/* <View style={styles.underline} /> */}
       </View>
       <View style={styles.container}>
-        {/* Tabs Row */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -133,7 +132,6 @@ export default function DocumentsScreen() {
           })}
         </ScrollView>
 
-        {/* Horizontal paging ScrollView for tab content */}
         <ScrollView
           ref={contentScrollRef}
           horizontal
@@ -141,7 +139,7 @@ export default function DocumentsScreen() {
           showsHorizontalScrollIndicator={false}
           onMomentumScrollEnd={handleContentScrollEnd}
           scrollEventThrottle={16}
-          onScrollBeginDrag={() => {}} // prevent flicker
+          onScrollBeginDrag={() => {}}
         >
           {documentTypes.map((docType, index) => (
             <View
@@ -165,7 +163,7 @@ export default function DocumentsScreen() {
                       contentContainerStyle={{
                         paddingBottom: 120,
                         paddingTop: 10,
-                        flexGrow: 1,
+                        minHeight: screenHeight,
                         gap: 4,
                       }}
                       refreshing={isRefetching}
@@ -306,7 +304,7 @@ export default function DocumentsScreen() {
                     contentContainerStyle={{
                       paddingBottom: 120,
                       paddingTop: 10,
-                      flexGrow: 1,
+                      minHeight: screenHeight,
                       gap: 4,
                     }}
                     refreshing={isRefetching}
@@ -326,7 +324,6 @@ export default function DocumentsScreen() {
 const getStyles = (colorScheme: string) =>
   StyleSheet.create({
     container: {
-      flex: 1,
       backgroundColor: colorScheme === "dark" ? "#232A2E" : "#ffffff",
       paddingHorizontal: 10,
     },
