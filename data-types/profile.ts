@@ -6,11 +6,6 @@ export interface IProfileResponse {
   };
 }
 
-export interface IChangePasswordResponse {
-  status: boolean;
-  message: string;
-}
-
 export interface IChangePasswordRequest {
   current_password: string;
   new_password: string;
