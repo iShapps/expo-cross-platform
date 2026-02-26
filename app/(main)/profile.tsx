@@ -1,16 +1,26 @@
+import { updateAvailability } from "@/api-queries/profile";
 import Header from "@/components/Header";
 import { useProfileData } from "@/data-store/use-account-store";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { ScrollView, StyleSheet, Switch, Text, View } from "react-native";
+import {
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function ProfileScreen() {
   let colorScheme = useColorScheme();
   if (!colorScheme) colorScheme = "light";
   const styles = getStyles(colorScheme);
+  const queryClient = useQueryClient();
   const profileStore = useProfileData();
   const userDetails = profileStore.userDetails;
   const hcp = userDetails?.hcp;
@@ -18,6 +28,42 @@ export default function ProfileScreen() {
   const [isAvailable, setIsAvailable] = useState(
     Boolean(hcp?.available_for_job),
   );
+
+  const updateAvailabilityMutation = useMutation({
+    mutationFn: (status: number) => updateAvailability(status),
+  });
+
+  const toggleAvailability = (value: boolean) => {
+    const status = value ? 1 : 0;
+
+    // optimistic UI update
+    setIsAvailable(value);
+
+    updateAvailabilityMutation.mutate(status, {
+      onSuccess: (response) => {
+        if (response.status) {
+          queryClient.setQueryData(["profile-details"], (oldData: any) => {
+            return {
+              ...oldData,
+              hcp: {
+                ...oldData?.hcp,
+                available_for_job: status === 1,
+              },
+            };
+          });
+
+          Alert.alert("Success", response.message);
+        } else {
+          setIsAvailable(!value);
+          Alert.alert("Error", response.message);
+        }
+      },
+      onError: () => {
+        setIsAvailable(!value);
+        Alert.alert("Error", "An error occurred while updating your status.");
+      },
+    });
+  };
 
   useEffect(() => {
     setIsAvailable(Boolean(hcp?.available_for_job));
@@ -58,7 +104,8 @@ export default function ProfileScreen() {
             </View>
             <Switch
               value={isAvailable}
-              onValueChange={setIsAvailable}
+              onValueChange={toggleAvailability}
+              disabled={updateAvailabilityMutation.isPending}
               thumbColor={isAvailable ? "#fff" : "#f4f4f4"}
               trackColor={{ false: "#E5E7EB", true: "#70C601" }}
             />

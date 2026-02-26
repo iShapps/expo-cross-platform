@@ -2,10 +2,12 @@ import Feather from "@expo/vector-icons/Feather";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 
+import { updateAvailability } from "@/api-queries/profile";
 import Header from "@/components/Header";
 import { useProfileData } from "@/data-store/use-account-store";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { MaterialIcons } from "@expo/vector-icons";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import React, { useState } from "react";
@@ -23,6 +25,7 @@ import { useSession } from "../ctx";
 
 export default function More() {
   const { signOut } = useSession();
+  const queryClient = useQueryClient();
   const profileStore = useProfileData();
   const userDetails = profileStore.userDetails;
   const hcp = userDetails?.hcp;
@@ -53,21 +56,44 @@ export default function More() {
     // signOut();
     // router.replace("/(main)/index")
   };
+
+  const updateAvailabilityMutation = useMutation({
+    mutationFn: (status: number) => updateAvailability(status),
+  });
+
+  const toggleAvailability = (value: boolean) => {
+    const status = value ? 1 : 0;
+
+    // optimistic UI update
+    setIsAvailable(value);
+
+    updateAvailabilityMutation.mutate(status, {
+      onSuccess: (response) => {
+        if (response.status) {
+          queryClient.setQueryData(["profile-details"], (oldData: any) => {
+            return {
+              ...oldData,
+              hcp: {
+                ...oldData?.hcp,
+                available_for_job: status === 1,
+              },
+            };
+          });
+
+          Alert.alert("Success", response.message);
+        } else {
+          setIsAvailable(!value);
+          Alert.alert("Error", response.message);
+        }
+      },
+      onError: () => {
+        setIsAvailable(!value);
+        Alert.alert("Error", "An error occurred while updating your status.");
+      },
+    });
+  };
   return (
     <SafeAreaView style={styles.safeArea}>
-      {/* <View style={styles.topBarContainer}>
-        <Pressable
-          onPress={() => router.back()}
-          style={styles.backIconContainer}
-        >
-          <Fontisto name="arrow-left-l" size={15} color="white" />
-        </Pressable>
-        <Text style={styles.locationText}>Profile</Text>
-        <Pressable onPress={handleLogout} style={styles.backIconContainer}>
-          <AntDesign name="login" size={15} color="white" />
-        </Pressable>
-      </View> */}
-
       <Header
         title="Profile"
         onBack={() => router.back()}
@@ -130,7 +156,8 @@ export default function More() {
               </View>
               <Switch
                 value={isAvailable}
-                onValueChange={setIsAvailable}
+                onValueChange={toggleAvailability}
+                disabled={updateAvailabilityMutation.isPending}
                 thumbColor={isAvailable ? "#fff" : "#f4f4f4"}
                 trackColor={{ false: "#E5E7EB", true: "#70C601" }}
               />
