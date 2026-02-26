@@ -6,6 +6,17 @@ export interface IProfileResponse {
   };
 }
 
+export interface IChangePasswordResponse {
+  status: boolean;
+  message: string;
+}
+
+export interface IChangePasswordRequest {
+  current_password: string;
+  new_password: string;
+  confirm_new_password: string;
+}
+
 export interface IProfileHcp {
   id: number;
   hcp_prefix: string;

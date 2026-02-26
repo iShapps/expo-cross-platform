@@ -4,6 +4,7 @@ import { ShiftCardBaseSkeleton } from "@/components/skeletons";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 
+import TabsHeader from "@/components/shared/tabs-header";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import React from "react";
@@ -55,9 +56,7 @@ export default function Shifts() {
   const styles = getStyles(colorScheme);
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Shifts</Text>
-      </View>
+      <TabsHeader title="Shifts" />
       <View style={styles.container}>
         <FlatList
           data={isLoading ? [...Array(6)] : shifts}

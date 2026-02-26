@@ -106,6 +106,20 @@ export default function ChangePasswordScreen() {
     }
   }, [changePasswordMutation.isPending, spinAnim]);
 
+  const changePasswordMutation = useMutation({
+    mutationFn: changePassword,
+    onSuccess: () => {
+      Alert.alert("Success", "Password changed successfully.", [
+        { text: "OK", onPress: () => signOut() },
+      ]);
+    },
+    onError: () => {
+      Alert.alert("Error", "Failed to change password. Please try again.", [
+        { text: "OK" },
+      ]);
+    },
+  });
+
   return (
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
       <Header title="Change Password" onBack={() => router.back()} />

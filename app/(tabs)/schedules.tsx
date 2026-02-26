@@ -7,6 +7,7 @@ import {
   postTransferredShifts,
 } from "@/api-queries/post-pending-shifts";
 import { ShiftCardBase } from "@/components/pay-run";
+import TabsHeader from "@/components/shared/tabs-header";
 import { ShiftCardBaseSkeleton } from "@/components/skeletons/payrun-card-base-skeleton";
 import { IShift } from "@/data-types/shifts";
 import { useColorScheme } from "@/hooks/use-color-scheme";
@@ -154,9 +155,7 @@ export default function Schedules() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Schedule</Text>
-      </View>
+      <TabsHeader title="Schedule" />
       <View style={styles.container}>
         <ScrollView
           ref={tabScrollRef}
@@ -520,7 +519,6 @@ const getStyles = (colorScheme: string) =>
       flex: 1,
       backgroundColor: colorScheme === "dark" ? "#232A2E" : "#ffffff",
       paddingHorizontal: 8,
-      paddingTop: 16,
     },
     safeArea: {
       flex: 1,
@@ -553,7 +551,6 @@ const getStyles = (colorScheme: string) =>
     tabsRow: {
       flexDirection: "row",
       gap: 8,
-      paddingBottom: 2,
     },
     tabButton: {
       paddingVertical: 6,

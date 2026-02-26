@@ -1,5 +1,6 @@
 import { postProfile } from "@/api-queries/profile";
 import DocumentCard from "@/components/document-card";
+import TabsHeader from "@/components/shared/tabs-header";
 import { DocumentCardSkeleton } from "@/components/skeletons";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -97,10 +98,7 @@ export default function DocumentsScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.header}>
-        <Text style={styles.title}>My documents</Text>
-        {/* <View style={styles.underline} /> */}
-      </View>
+      <TabsHeader title="My documents" />
       <View style={styles.container}>
         <ScrollView
           horizontal

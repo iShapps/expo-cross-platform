@@ -1,8 +1,6 @@
 import { postResource } from "@/api-actions/mutations";
 import {
   IChangePasswordResponse,
-  IJobAvailabilityResponse,
-  IPasswordChangeRequest,
   IProfileResponse,
 } from "@/data-types/profile";
 
