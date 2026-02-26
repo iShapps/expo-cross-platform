@@ -15,6 +15,9 @@ import {
 
 // available shifts --> not assigned (uses geo fencing)
 // upcoming shifts --> assigned to hcp (starting soon)
+
+//  "upcoming" = your scheduled/active shifts;
+// "available" = shifts you can apply for.
 export async function postUpcomingShifts(page = 1): Promise<IShiftResponse> {
   return postResource<{ shift_status: string; page: number }, IShiftResponse>(
     "/shift",
