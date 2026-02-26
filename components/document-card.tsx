@@ -1,4 +1,4 @@
-import { IProfileDocument } from "@/data-types/profile";
+import { IDocument } from "@/data-types/documents";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
@@ -11,7 +11,7 @@ import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 interface DocumentCardProps {
-  document: IProfileDocument;
+  document: IDocument;
 }
 
 const isExpired = (expiry?: string) => {
@@ -33,7 +33,7 @@ const DocumentCard: React.FC<DocumentCardProps> = ({ document }) => {
       style={styles.icon}
     />
   );
-  const docName = document.name.toLowerCase();
+  const docName = document.document.name.toLowerCase();
   if (docName.includes("ain qualification")) {
     iconComponent = (
       <AntDesign
@@ -114,7 +114,7 @@ const DocumentCard: React.FC<DocumentCardProps> = ({ document }) => {
         <View
           style={[
             styles.statusDot,
-            document.status === "active"
+            document.document.status === "active"
               ? styles.statusDotActive
               : styles.statusDotInactive,
           ]}
@@ -129,16 +129,18 @@ const DocumentCard: React.FC<DocumentCardProps> = ({ document }) => {
             style={[styles.name, expired && styles.expiredText]}
             numberOfLines={1}
           >
-            {document.name}
+            {document.document.name}
           </Text>
         </View>
         <View style={styles.metaRow}>
           <Text style={styles.metaText}>
-            {document.mandatory_status === "yes" ? "Mandatory" : "Optional"}
+            {document.document.mandatory_status === "yes"
+              ? "Mandatory"
+              : "Optional"}
           </Text>
           <Text style={styles.dot}>•</Text>
           <Text style={styles.metaText}>
-            {document.expiry_date_mandatory === "yes"
+            {document.document.expiry_date_mandatory === "yes"
               ? "Expiry required"
               : "No expiry"}
           </Text>
@@ -151,7 +153,7 @@ const DocumentCard: React.FC<DocumentCardProps> = ({ document }) => {
         }}
         hitSlop={8}
       >
-        <MaterialIcons name="more-horiz" size={26} color="#2979ff" />
+        <MaterialIcons name="more-horiz" size={26} color="#70C601" />
       </Pressable>
     </View>
   );

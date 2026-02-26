@@ -63,7 +63,7 @@ export default function Schedules() {
   ] as const;
   const [activeStatus, setActiveStatus] =
     useState<(typeof statusTabs)[number]>("Running");
-  const { width: screenWidth } = useWindowDimensions();
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
 
   const contentScrollRef = useRef<ScrollView>(null);
   const tabScrollRef = useRef<ScrollView>(null);
@@ -336,7 +336,7 @@ export default function Schedules() {
                       contentContainerStyle={{
                         paddingBottom: 120,
                         paddingTop: 10,
-                        flexGrow: 1,
+                        minHeight: screenHeight,
                         gap: 10,
                       }}
                       refreshing={isRefetching && !isFetchingNextPage}
@@ -487,7 +487,7 @@ export default function Schedules() {
                     contentContainerStyle={{
                       paddingBottom: 120,
                       paddingTop: 10,
-                      flexGrow: 1,
+                      minHeight: screenHeight,
                       gap: 10,
                     }}
                     refreshing={isRefetching && !isFetchingNextPage}
