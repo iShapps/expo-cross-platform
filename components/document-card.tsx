@@ -10,6 +10,8 @@ import React from "react";
 
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { useRouter } from "expo-router";
+
 interface DocumentCardProps {
   document: IDocument;
 }
@@ -24,6 +26,7 @@ const DocumentCard: React.FC<DocumentCardProps> = ({ document }) => {
   let colorScheme = useColorScheme();
   if (!colorScheme) colorScheme = "light";
   const styles = getStyles(colorScheme);
+  const router = useRouter();
   // Dynamic icon selection based on document name
   let iconComponent = (
     <MaterialCommunityIcons
@@ -108,7 +111,16 @@ const DocumentCard: React.FC<DocumentCardProps> = ({ document }) => {
     );
   }
   return (
-    <View style={[styles.card, expired && styles.expiredCard]}>
+    <Pressable
+      onPress={() => {
+        router.push({
+          pathname: "/(main)/document-details",
+          params: { id: document.id, doc: JSON.stringify(document) },
+        });
+      }}
+      hitSlop={8}
+      style={[styles.card, expired && styles.expiredCard]}
+    >
       <View style={styles.iconWrapper}>
         {iconComponent}
         <View
@@ -146,16 +158,10 @@ const DocumentCard: React.FC<DocumentCardProps> = ({ document }) => {
           </Text>
         </View>
       </View>
-      <Pressable
-        style={styles.moreIconBtn}
-        onPress={() => {
-          /* TODO: open document details page */
-        }}
-        hitSlop={8}
-      >
+      <View style={styles.moreIconBtn}>
         <MaterialIcons name="more-horiz" size={26} color="#70C601" />
-      </Pressable>
-    </View>
+      </View>
+    </Pressable>
   );
 };
 

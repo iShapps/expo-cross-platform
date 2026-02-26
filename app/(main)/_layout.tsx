@@ -13,6 +13,7 @@ export default function MainLayout() {
       <Stack.Screen name="change-password" options={{ headerShown: false }} />
       <Stack.Screen name="notifications" options={{ headerShown: false }} />
       <Stack.Screen name="profile" options={{ headerShown: false }} />
+      <Stack.Screen name="document-details" options={{ headerShown: false }} />
     </Stack>
   );
 }
