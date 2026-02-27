@@ -22,7 +22,7 @@
       "entitlements": {
         "aps-environment": "development",
         "com.apple.security.application-groups": [
-          "group.com.smarthealthcare.ishapps.onesignal"
+          "group.com.smarthealthcare.ishapps"
         ]
       }
     },
