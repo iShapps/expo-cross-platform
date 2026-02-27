@@ -16,12 +16,13 @@
         "ITSAppUsesNonExemptEncryption": false,
         "NSLocationWhenInUseUsageDescription": "Allow $(PRODUCT_NAME) to access your location while using the app to navigate to assigned shift locations and verify arrival when starting or ending a shift.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Allow $(PRODUCT_NAME) to access your location in the background to monitor travel to assigned shift locations and verify presence at the facility when starting or ending a shift.",
-        "UIBackgroundModes": ["location", "remote-notification"]
+        "UIBackgroundModes": ["location", "remote-notification"],
+        "NSSupportsLiveActivities": true
       },
       "entitlements": {
-        "aps-environment": "development", //"production"
+        "aps-environment": "development",
         "com.apple.security.application-groups": [
-          "group.com.smarthealthcare.ishapps.onesignal"
+          "group.com.smarthealthcare.ishapps"
         ]
       }
     },
@@ -53,7 +54,28 @@
       [
         "onesignal-expo-plugin",
         {
-          "mode": "development" //"production"
+          "mode": "development"
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "deploymentTarget": "16.4",
+            "useFrameworks": "static"
+          },
+          "android": {
+            "compileSdkVersion": 34,
+            "targetSdkVersion": 34,
+            "minSdkVersion": 24
+          }
+        }
+      ],
+      [
+        "voltra",
+        {
+          "groupIdentifier": "group.com.smarthealthcare.ishapps",
+          "enablePushNotifications": true
         }
       ],
       [

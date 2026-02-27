@@ -13,6 +13,7 @@ import { Colors } from "@/constants/theme";
 import { useProfileData } from "@/data-store/use-account-store";
 import { IShift } from "@/data-types/shifts";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useLiveActivity } from "@/hooks/use-live-activity";
 import { useLocation } from "@/hooks/use-location";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import Feather from "@expo/vector-icons/Feather";
@@ -209,6 +210,8 @@ export default function ShiftDetails() {
   const shift = data?.data?.shift as IShift;
   const shiftStatus = Number(shift?.shift_status);
 
+  const { start: startLiveActivityForShift } = useLiveActivity();
+
   const acceptShiftMutation = useMutation({
     mutationFn: (id: number) => postAcceptShift(id),
   });
@@ -315,6 +318,10 @@ export default function ShiftDetails() {
         return;
       }
       showAlert("Success", startResponse.message);
+
+      console.log("About to start live activity");
+      await startLiveActivityForShift(shift);
+      console.log("Live activity started call completed");
       profileStore.setAcceptedShift(null); // remove accepted shift from global state on start
       await refetch();
     } catch (error) {
