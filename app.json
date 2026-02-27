@@ -64,14 +64,6 @@
         }
       ],
       [
-        "expo-build-properties",
-        {
-          "ios": {
-            "deploymentTarget": "16.0"
-          }
-        }
-      ],
-      [
         "expo-document-picker",
         {
           "iCloudContainerEnvironment": "Production"
@@ -132,7 +124,8 @@
           "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location."
         }
       ],
-      "expo-background-task"
+      "expo-background-task",
+      "expo-build-properties"
     ],
     "experiments": {
       "typedRoutes": true,
