@@ -1,6 +1,8 @@
+import { useSettingsStore } from "@/data-store/use-settings-store";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import {
   authenticateWithBiometrics,
+  isBiometricAllowed,
   isBiometricAvailable,
 } from "@/utils/biometrics";
 import { AntDesign, Entypo, FontAwesome6, Ionicons } from "@expo/vector-icons";
@@ -36,6 +38,12 @@ export default function Login() {
   const { signIn, isLoading } = useSession();
 
   const [biometricSupported, setBiometricSupported] = useState(false);
+  const [biometricAllowed, setBiometricAllowed] = useState(false);
+
+  const biometricsEnabled = useSettingsStore(
+    (state) => state.biometricsEnabled,
+  );
+
   const spinAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -61,12 +69,13 @@ export default function Login() {
     })();
   }, []);
 
-  // Check for biometric support on mount
+  // Check if biometrics are allowed
   useEffect(() => {
     (async () => {
-      setBiometricSupported(await isBiometricAvailable());
+      setBiometricAllowed(await isBiometricAllowed());
     })();
   }, []);
+
   // TODO:encrypt stored credentials for production security(only token)
   const storeCredentials = async (email: string, password: string) => {
     await SecureStore.setItemAsync("ishapps_email", email);
@@ -112,8 +121,13 @@ export default function Login() {
         device_type: Device.deviceType?.toString() ?? "Unknown Device", //Device.osName ?? "Unknown Device",
         device_version: Device.osVersion ?? "Unknown Version",
       });
-      // Ask for biometric consent after successful login
-      if (biometricSupported) {
+
+      if (biometricSupported && biometricAllowed) {
+        await storeCredentials(email, password);
+      }
+
+      // Ask for biometric consent after successful login if supported but not yet allowed
+      if (biometricSupported && !biometricAllowed) {
         Alert.alert(
           "Enable Biometric Login?",
           "Would you like to enable biometric login for future sign-ins? Your credentials will be securely stored.",
@@ -249,29 +263,31 @@ export default function Login() {
                 color: colorScheme === "dark" ? "#fff" : undefined,
               }}
             />
-            <Pressable onPress={handleBiometricLogin}>
-              {Platform.OS === "ios" ? (
-                <View style={styles.iconContainer}>
+            {biometricSupported && biometricAllowed && biometricsEnabled && (
+              <Pressable onPress={handleBiometricLogin}>
+                {Platform.OS === "ios" ? (
+                  <View style={styles.iconContainer}>
+                    <Ionicons
+                      name="scan-outline"
+                      size={30}
+                      color={colorScheme === "dark" ? "#b0b8ca" : "#7393B3"}
+                    />
+                    <FontAwesome6
+                      name="face-kiss"
+                      size={10}
+                      color={colorScheme === "dark" ? "#b0b8ca" : "#7393B3"}
+                      style={styles.overlayIcon}
+                    />
+                  </View>
+                ) : (
                   <Ionicons
-                    name="scan-outline"
-                    size={30}
+                    name="finger-print"
+                    size={24}
                     color={colorScheme === "dark" ? "#b0b8ca" : "#7393B3"}
                   />
-                  <FontAwesome6
-                    name="face-kiss"
-                    size={10}
-                    color={colorScheme === "dark" ? "#b0b8ca" : "#7393B3"}
-                    style={styles.overlayIcon}
-                  />
-                </View>
-              ) : (
-                <Ionicons
-                  name="finger-print"
-                  size={24}
-                  color={colorScheme === "dark" ? "#b0b8ca" : "#7393B3"}
-                />
-              )}
-            </Pressable>
+                )}
+              </Pressable>
+            )}
           </View>
         </View>
 
@@ -304,23 +320,22 @@ export default function Login() {
                 color: colorScheme === "dark" ? "#b0b8ca" : undefined,
               }}
             />
-            {biometricSupported && (
-              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                {showPassword ? (
-                  <Entypo
-                    name="eye"
-                    size={20}
-                    color={colorScheme === "dark" ? "#b0b8ca" : "#7393B3"}
-                  />
-                ) : (
-                  <Entypo
-                    name="eye-with-line"
-                    size={20}
-                    color={colorScheme === "dark" ? "#b0b8ca" : "#7393B3"}
-                  />
-                )}
-              </TouchableOpacity>
-            )}
+
+            <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+              {showPassword ? (
+                <Entypo
+                  name="eye"
+                  size={20}
+                  color={colorScheme === "dark" ? "#b0b8ca" : "#7393B3"}
+                />
+              ) : (
+                <Entypo
+                  name="eye-with-line"
+                  size={20}
+                  color={colorScheme === "dark" ? "#b0b8ca" : "#7393B3"}
+                />
+              )}
+            </TouchableOpacity>
           </View>
         </View>
         <View>
@@ -445,7 +460,7 @@ const getStyles = (colorScheme: string) =>
       flex: 1,
       width: "100%",
       height: "50%",
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff",
+      backgroundColor: colorScheme === "dark" ? "#36454F" : "#fff",
       paddingVertical: 20,
       paddingHorizontal: 20,
       borderTopRightRadius: 30,

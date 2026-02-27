@@ -6,6 +6,12 @@ export interface IProfileResponse {
   };
 }
 
+export interface IChangePasswordRequest {
+  current_password: string;
+  new_password: string;
+  confirm_new_password: string;
+}
+
 export interface IProfileHcp {
   id: number;
   hcp_prefix: string;
@@ -242,4 +248,22 @@ export interface IProfileLevel {
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
+}
+
+export interface IJobAvailabilityResponse {
+  status: boolean;
+  message: string;
+  data: null;
+}
+
+export interface IPasswordChangeRequest {
+  current_password: string;
+  new_password: string;
+}
+
+export interface IChangePasswordResponse {
+  status: boolean;
+  message: string;
+  data: null;
+  errors?: Record<string, string[]> | string[];
 }

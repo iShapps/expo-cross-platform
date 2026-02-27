@@ -5,15 +5,17 @@ import {
   postStartShift,
 } from "@/api-queries/post-pending-shifts";
 import { postShiftDetails } from "@/api-queries/shifts";
+import Header from "@/components/Header";
 import { ShiftType, ShiftTypePill } from "@/components/shift-type-pill";
 import { ShiftDetailsSkeleton } from "@/components/skeletons";
 import { SwipeButton } from "@/components/swipe-button";
+import { Colors } from "@/constants/theme";
 import { useProfileData } from "@/data-store/use-account-store";
 import { IShift } from "@/data-types/shifts";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useLocation } from "@/hooks/use-location";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import Feather from "@expo/vector-icons/Feather";
-import Fontisto from "@expo/vector-icons/Fontisto";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -27,9 +29,9 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  useColorScheme,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const iconMap: Record<string, { name: string; bg: string; color: string }> = {
   "Afternoon start": {
@@ -114,8 +116,10 @@ const TimelineItem = ({
     bg: "#F0F0F0",
     color: "#70C601",
   };
-  const colorScheme = useColorScheme() || "light";
-  const styles = getStyles(colorScheme);
+
+  const colorScheme = useColorScheme();
+  const theme = Colors[colorScheme ?? "light"];
+  const styles = getStyles(theme);
   return (
     <View style={styles.timelineItemWrap}>
       <View style={styles.timelineIconColumn}>
@@ -344,8 +348,9 @@ export default function ShiftDetails() {
     await refetch();
   };
 
-  const colorScheme = useColorScheme() || "light";
-  const styles = getStyles(colorScheme);
+  const colorScheme = useColorScheme();
+  const theme = Colors[colorScheme ?? "light"];
+  const styles = getStyles(theme);
 
   if (isLoading || isRefetching) {
     return <ShiftDetailsSkeleton />;
@@ -354,16 +359,10 @@ export default function ShiftDetails() {
   if (!isLoading && (isError || !shift || isRefetchError)) {
     return (
       <View
-        style={[
-          styles.errorScreen,
-          { backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff" },
-        ]}
+        style={[styles.errorScreen, { backgroundColor: theme.whiteBackground }]}
       >
         <View
-          style={[
-            styles.errorCard,
-            { backgroundColor: colorScheme === "dark" ? "#36454F" : "#fff" },
-          ]}
+          style={[styles.errorCard, { backgroundColor: theme.whiteBackground }]}
         >
           <View
             style={[
@@ -379,20 +378,10 @@ export default function ShiftDetails() {
               color="#FFB2B2"
             />
           </View>
-          <Text
-            style={[
-              styles.errorTitle,
-              { color: colorScheme === "dark" ? "#FFD966" : "#111" },
-            ]}
-          >
+          <Text style={[styles.errorTitle, { color: theme.errorTitle }]}>
             Something went wrong
           </Text>
-          <Text
-            style={[
-              styles.errorSubtitle,
-              { color: colorScheme === "dark" ? "#FFD966" : "#6B7280" },
-            ]}
-          >
+          <Text style={[styles.errorSubtitle, { color: theme.errorTitle }]}>
             {data?.message ??
               "We couldn’t load this shift right now. Check your connection and try again."}
           </Text>
@@ -401,23 +390,13 @@ export default function ShiftDetails() {
               style={[
                 styles.errorPrimaryBtn,
                 {
-                  backgroundColor:
-                    colorScheme === "dark" ? "#FFD966" : "#FFB2B2",
+                  backgroundColor: theme.errorBg,
                 },
               ]}
               onPress={handleRefetch}
             >
-              <Feather
-                name="rotate-ccw"
-                size={18}
-                color={colorScheme === "dark" ? "#232A2E" : "#ffffff"}
-              />
-              <Text
-                style={[
-                  styles.errorPrimaryText,
-                  { color: colorScheme === "dark" ? "#232A2E" : "#fff" },
-                ]}
-              >
+              <Feather name="rotate-ccw" size={18} color={theme.white} />
+              <Text style={[styles.errorPrimaryText, { color: theme.white }]}>
                 Try again
               </Text>
             </Pressable>
@@ -425,8 +404,7 @@ export default function ShiftDetails() {
               style={[
                 styles.errorSecondaryBtn,
                 {
-                  backgroundColor:
-                    colorScheme === "dark" ? "#232A2E" : "#F2F5EF",
+                  backgroundColor: theme.whiteBackground,
                 },
               ]}
               onPress={() => router.canGoBack() && router.back()}
@@ -434,12 +412,12 @@ export default function ShiftDetails() {
               <Ionicons
                 name="return-up-back"
                 size={18}
-                color={colorScheme === "dark" ? "#FFD966" : "#4B5563"}
+                color={theme.errorSubtitle}
               />
               <Text
                 style={[
                   styles.errorSecondaryText,
-                  { color: colorScheme === "dark" ? "#FFD966" : "#4B5563" },
+                  { color: theme.errorSubtitle },
                 ]}
               >
                 Go back
@@ -455,58 +433,22 @@ export default function ShiftDetails() {
   const startDate = new Date(shift?.start_time);
   const endDate = new Date(shift?.end_time);
   return (
-    <View
+    <SafeAreaView
+      edges={["top"]}
       style={{
         flex: 1,
-        backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff",
+        backgroundColor: theme.background,
       }}
     >
-      <View
-        style={[
-          styles.container,
-          { backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601" },
-        ]}
-      >
-        <View
-          style={[
-            styles.topBarContainer,
-            { backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601" },
-          ]}
-        >
-          <Pressable
-            onPress={() => router.canGoBack() && router.back()}
-            style={[
-              styles.backIconContainer,
-              { borderColor: colorScheme === "dark" ? "#b0b8ca" : "#D3D3D3" },
-            ]}
-          >
-            <Fontisto
-              name="arrow-left-l"
-              size={15}
-              color={colorScheme === "dark" ? "#b0b8ca" : "#fff"}
-            />
-          </Pressable>
-          <Text
-            style={[
-              styles.locationText,
-              { color: colorScheme === "dark" ? "#fff" : "#fff" },
-            ]}
-          >
-            Shift Details
-          </Text>
-          <Pressable
-            style={[
-              styles.faintbackIconContainer,
-              { borderColor: colorScheme === "dark" ? "#232A2E" : "#70C601" },
-            ]}
-          ></Pressable>
-        </View>
-      </View>
+      <Header
+        title="Shift Details"
+        onBack={() => router.canGoBack() && router.back()}
+      />
 
       <ScrollView
         contentContainerStyle={[
           styles.content,
-          { backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff" },
+          { backgroundColor: theme.whiteBackground },
         ]}
         showsVerticalScrollIndicator={false}
       >
@@ -515,8 +457,8 @@ export default function ShiftDetails() {
           style={[
             styles.heroCard,
             {
-              backgroundColor: colorScheme === "dark" ? "#232A2E" : "#F8FFF0",
-              borderColor: colorScheme === "dark" ? "#36454F" : "#E6F0D8",
+              backgroundColor: theme.heroBg,
+              borderColor: theme.heroBorder,
             },
           ]}
         >
@@ -524,39 +466,24 @@ export default function ShiftDetails() {
             style={[
               styles.heroIconWrap,
               {
-                backgroundColor: colorScheme === "dark" ? "#36454F" : "#EAF7D2",
+                backgroundColor: theme.heroIconBg,
               },
             ]}
           >
             <MaterialCommunityIcons
               name="office-building-marker"
               size={32}
-              color={colorScheme === "dark" ? "#FFD966" : "#70C601"}
+              color={theme.primary}
             />
           </View>
           <View style={styles.heroContent}>
-            <Text
-              style={[
-                styles.heroName,
-                { color: colorScheme === "dark" ? "#FFD966" : "#111" },
-              ]}
-            >
+            <Text style={[styles.heroName, { color: theme.primaryText }]}>
               {shift?.facility?.name ?? "—"}
             </Text>
-            <Text
-              style={[
-                styles.heroMeta,
-                { color: colorScheme === "dark" ? "#FFD966" : "#6B7280" },
-              ]}
-            >
+            <Text style={[styles.heroMeta, { color: theme.secondaryText }]}>
               {shift?.address ?? "—"}
             </Text>
-            <Text
-              style={[
-                styles.heroMeta,
-                { color: colorScheme === "dark" ? "#FFD966" : "#6B7280" },
-              ]}
-            >
+            <Text style={[styles.heroMeta, { color: theme.secondaryText }]}>
               {shift?.state?.name ?? "—"}
             </Text>
             <View style={styles.chipRow}>
@@ -714,14 +641,14 @@ export default function ShiftDetails() {
           index={0}
           snapPoints={[110]}
           backgroundStyle={{
-            backgroundColor: colorScheme === "dark" ? "#232A2E" : "#E6F0D8",
-            borderTopWidth: 3,
-            borderTopColor: colorScheme === "dark" ? "#FFD966" : "#70C601",
-            borderTopLeftRadius: 15,
-            borderTopRightRadius: 15,
+            backgroundColor: theme.heroBorder,
+            // borderTopWidth: 3,
+            // borderTopColor: colorScheme === "dark" ? "#FFD966" : "#70C601",
+            // borderTopLeftRadius: 15,
+            // borderTopRightRadius: 15,
           }}
           handleIndicatorStyle={{
-            backgroundColor: colorScheme === "dark" ? "#FFD966" : "#70C601",
+            backgroundColor: theme.primary,
           }}
         >
           <BottomSheetView style={styles.contentContainer}>
@@ -737,7 +664,7 @@ export default function ShiftDetails() {
                   }
                 }}
                 disabled={isBusy}
-                bgColor={colorScheme === "dark" ? "#FFD966" : "#70C601"}
+                bgColor={theme.primary}
                 processing={isAccepting}
                 completed={acceptShiftMutation.isSuccess}
               />
@@ -759,7 +686,7 @@ export default function ShiftDetails() {
                   }
                 }}
                 disabled={isBusy}
-                bgColor={colorScheme === "dark" ? "#FFD966" : "#70C601"}
+                bgColor={theme.primary}
                 processing={isStarting}
                 completed={startShiftMutation.isSuccess}
               />
@@ -776,7 +703,7 @@ export default function ShiftDetails() {
                   }
                 }}
                 disabled={isBusy}
-                bgColor={colorScheme === "dark" ? "#E55353" : "#E55353"}
+                bgColor={theme.danger}
                 processing={isEnding}
                 completed={endShiftMutation.isSuccess}
               />
@@ -784,11 +711,11 @@ export default function ShiftDetails() {
           </BottomSheetView>
         </BottomSheet>
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 
-const getStyles = (colorScheme: string) =>
+const getStyles = (theme: typeof Colors.light) =>
   StyleSheet.create({
     contentContainer: {
       height: 110,
@@ -797,133 +724,31 @@ const getStyles = (colorScheme: string) =>
       justifyContent: "center",
       paddingBottom: 50,
     },
-    container: {
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
-      width: "100%",
-      height: "13%",
-      display: "flex",
-      flexDirection: "column",
-      paddingVertical: 30,
-    },
-    backIconContainer: {
-      height: 40,
-      width: 40,
-      borderRadius: 50,
-      display: "flex",
-      flexDirection: "row",
-      justifyContent: "center",
-      alignContent: "center",
-      alignItems: "center",
-      padding: 2,
-      borderWidth: 1,
-      borderColor: colorScheme === "dark" ? "#FFD966" : "#D3D3D3",
-    },
-    locationText: {
-      fontFamily: "Roboto",
-      fontSize: 18,
-      fontWeight: "700",
-      color: colorScheme === "dark" ? "#FFD966" : "#fff",
-    },
-    faintbackIconContainer: {
-      height: 40,
-      width: 40,
-      borderRadius: 50,
-      display: "flex",
-      flexDirection: "row",
-      justifyContent: "center",
-      alignContent: "center",
-      alignItems: "center",
-      padding: 2,
-      borderWidth: 1,
-      borderColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
-    },
-    topBarContainer: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      paddingHorizontal: 10,
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
-      marginTop: 20,
-    },
-    iconCircle: {
-      height: 40,
-      width: 40,
-      borderRadius: 20,
-      backgroundColor: "#F0F0F0",
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    pageTitle: {
-      fontSize: 18,
-      fontWeight: "700",
-      color: "#111",
-    },
+
     content: {
       paddingBottom: 140,
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff",
+      backgroundColor: theme.whiteBackground,
       paddingHorizontal: 10,
       // flex: 1,
     },
-    actionBarTop: {
-      paddingHorizontal: 12,
-      paddingBottom: 12,
-      paddingTop: 4,
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#ffffff",
-      borderBottomWidth: 1,
-      borderBottomColor: "#E6F0D8",
-    },
-    actionButton: {
-      borderRadius: 999,
-      paddingVertical: 14,
-      paddingHorizontal: 18,
-      alignItems: "center",
-      justifyContent: "center",
-      borderWidth: 1,
-      borderColor: "#E6F0D8",
-      shadowColor: "#70C601",
-      shadowOffset: { width: 0, height: 10 },
-      shadowOpacity: 0.22,
-      shadowRadius: 14,
-      elevation: 5,
-    },
-    actionButtonPressed: {
-      transform: [{ scale: 0.98 }],
-    },
-    actionButtonDisabled: {
-      opacity: 0.6,
-    },
-    actionButtonText: {
-      color: "#ffffff",
-      fontSize: 16,
-      fontWeight: "700",
-      letterSpacing: 0.4,
-    },
-    actionButtonAccept: {
-      backgroundColor: "#70C601",
-    },
-    actionButtonStart: {
-      backgroundColor: "#4CAF50",
-    },
-    actionButtonEnd: {
-      backgroundColor: "#E55353",
-    },
+
     heroCard: {
       marginTop: 8,
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#F8FFF0",
+      backgroundColor: theme.heroBg,
       borderRadius: 5,
       padding: 10,
       flexDirection: "row",
       alignItems: "center",
       gap: 12,
       borderWidth: 1,
-      borderColor: colorScheme === "dark" ? "#36454F" : "#E6F0D8",
+      borderColor: theme.heroBorder,
       marginBottom: 12,
     },
     heroIconWrap: {
       height: 64,
       width: 64,
       borderRadius: 5,
-      backgroundColor: colorScheme === "dark" ? "#36454F" : "#EAF7D2",
+      backgroundColor: theme.heroIconBg,
       alignItems: "center",
       justifyContent: "center",
       overflow: "hidden",
@@ -934,11 +759,11 @@ const getStyles = (colorScheme: string) =>
     heroName: {
       fontSize: 16,
       fontWeight: "700",
-      color: colorScheme === "dark" ? "#b0b8ca" : "#111",
+      color: theme.primaryText,
     },
     heroMeta: {
       fontSize: 12,
-      color: colorScheme === "dark" ? "#b0b8ca" : "#6B7280",
+      color: theme.secondaryText,
       marginTop: 2,
     },
     sectionCard: {
@@ -946,14 +771,14 @@ const getStyles = (colorScheme: string) =>
       borderRadius: 5,
       padding: 14,
       borderWidth: 1,
-      borderColor: "#F0F0F0",
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff",
+      borderColor: theme.grayBorder,
+      backgroundColor: theme.whiteBackground,
       marginBottom: 8,
     },
     sectionTitle: {
       fontSize: 13,
       fontWeight: "700",
-      color: colorScheme === "dark" ? "#b0b8ca" : "#111",
+      color: theme.tertiaryText,
       marginBottom: 10,
       textTransform: "uppercase",
       letterSpacing: 0.4,
@@ -970,7 +795,7 @@ const getStyles = (colorScheme: string) =>
     detailValue: {
       fontSize: 14,
       fontWeight: "600",
-      color: colorScheme === "dark" ? "#b0b8ca" : "#111",
+      color: theme.tertiaryText,
       marginTop: 4,
     },
     chipRow: {
@@ -978,19 +803,6 @@ const getStyles = (colorScheme: string) =>
       gap: 8,
       marginTop: 10,
       marginBottom: -8,
-    },
-    chip: {
-      backgroundColor: "#F0F8E8",
-      borderRadius: 999,
-      paddingHorizontal: 14,
-      paddingVertical: 4,
-      marginRight: 4,
-    },
-    chipText: {
-      color: "#70C601",
-      fontWeight: "700",
-      fontSize: 13,
-      letterSpacing: 0.5,
     },
     timelineContainer: {
       marginTop: 8,
@@ -1041,19 +853,19 @@ const getStyles = (colorScheme: string) =>
     },
     timelineLabel: {
       fontSize: 13,
-      color: colorScheme === "dark" ? "#b0b8ca" : "#36454F",
+      color: theme.tertiaryText,
       fontWeight: "400",
       textTransform: "capitalize",
     },
     timelineTime: {
       fontSize: 13,
-      color: "#818589",
+      color: theme.secondaryText,
       fontWeight: "300",
       textTransform: "capitalize",
     },
     errorScreen: {
       flex: 1,
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#ffffff",
+      backgroundColor: theme.whiteBackground,
       alignItems: "center",
       justifyContent: "center",
       padding: 16,
@@ -1061,14 +873,14 @@ const getStyles = (colorScheme: string) =>
     errorCard: {
       width: "100%",
       maxWidth: 420,
-      backgroundColor: colorScheme === "dark" ? "#36454F" : "#fff",
+      backgroundColor: theme.whiteBackground,
       borderRadius: 8,
       paddingVertical: 20,
       paddingHorizontal: 20,
       borderWidth: 1,
-      borderColor: colorScheme === "dark" ? "#232A2E" : "#E6F0D8",
+      borderColor: theme.grayBorder,
       alignItems: "center",
-      shadowColor: colorScheme === "dark" ? "#70C601" : "#000",
+      shadowColor: theme.darkText,
       shadowOffset: { width: 0, height: 6 },
       shadowOpacity: 0.12,
       shadowRadius: 14,
@@ -1078,7 +890,7 @@ const getStyles = (colorScheme: string) =>
       width: 64,
       height: 64,
       borderRadius: 32,
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#FBF2F2",
+      backgroundColor: theme.mutedText,
       alignItems: "center",
       justifyContent: "center",
       marginBottom: 12,
@@ -1086,11 +898,11 @@ const getStyles = (colorScheme: string) =>
     errorTitle: {
       fontSize: 18,
       fontWeight: "700",
-      color: colorScheme === "dark" ? "#FFD966" : "#111",
+      color: theme.errorTitle,
     },
     errorSubtitle: {
       fontSize: 13,
-      color: colorScheme === "dark" ? "#FFD966" : "#6B7280",
+      color: theme.errorSubtitle,
       textAlign: "center",
       marginTop: 8,
       lineHeight: 18,
@@ -1103,7 +915,7 @@ const getStyles = (colorScheme: string) =>
       gap: 10,
     },
     errorPrimaryBtn: {
-      backgroundColor: colorScheme === "dark" ? "#FFD966" : "#FFB2B2",
+      backgroundColor: theme.errorBg,
       display: "flex",
       flexDirection: "row",
       gap: 8,
@@ -1114,12 +926,12 @@ const getStyles = (colorScheme: string) =>
       alignItems: "center",
     },
     errorPrimaryText: {
-      color: colorScheme === "dark" ? "#232A2E" : "#fff",
+      color: theme.errorTitle,
       fontSize: 14,
       fontWeight: "500",
     },
     errorSecondaryBtn: {
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#F2F5EF",
+      backgroundColor: theme.whiteBackground,
       paddingVertical: 12,
       borderRadius: 5,
       alignItems: "center",
@@ -1131,7 +943,7 @@ const getStyles = (colorScheme: string) =>
       gap: 8,
     },
     errorSecondaryText: {
-      color: colorScheme === "dark" ? "#FFD966" : "#4B5563",
+      color: theme.errorSubtitle,
       fontSize: 14,
       fontWeight: "500",
     },

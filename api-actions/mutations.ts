@@ -85,7 +85,7 @@ async function authorizedMutation<Req, Res>(
       );
     }
 
-    console.log("API response:", data);
+    // console.log("API response:", data);
     // return (
     //   "data" in data && data.data !== undefined ? data.data : data
     // ) as Res;
@@ -104,7 +104,6 @@ async function authorizedMutation<Req, Res>(
   }
 }
 
-// POST: Create resource
 export async function postResource<Req, Res>(
   endpoint: string,
   payload: Req,
@@ -120,7 +119,6 @@ export async function postResource<Req, Res>(
   );
 }
 
-// PUT: Update resource
 export async function putResource<Req, Res>(
   endpoint: string,
   payload: Req,
@@ -134,7 +132,3 @@ export async function putResource<Req, Res>(
     validateResponse,
   );
 }
-
-// Example usage for TanStack Query:
-// const mutation = useMutation((payload: ShiftCreatePayload) => postResource<ShiftCreatePayload, ShiftResponse>("/shifts", payload, isShiftResponse));
-// const updateMutation = useMutation((payload: ShiftUpdatePayload) => putResource<ShiftUpdatePayload, ShiftResponse>(`/shifts/${id}`, payload, isShiftResponse));

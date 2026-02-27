@@ -1,9 +1,11 @@
+import { useSettingsStore } from "@/data-store/use-settings-store";
+import { useOneSignal } from "@/hooks/use-one-signal";
+import { usePermissionMonitor } from "@/hooks/use-permission-monitor";
 import { useShiftWatcher } from "@/hooks/use-shift-watcher";
-import { ActionSheetProvider } from "@expo/react-native-action-sheet";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { SplashScreen, Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useColorScheme } from "react-native";
+import { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SessionProvider, useSession } from "./ctx";
 import { SplashScreenController } from "./splash";
@@ -19,21 +21,20 @@ SplashScreen.preventAutoHideAsync();
 const queryClient = new QueryClient();
 
 export default function Root() {
-  // Set up the auth context
-  const colorScheme = useColorScheme();
-  console.log("Current color scheme:", colorScheme);
-
   useShiftWatcher();
+  useOneSignal();
+  usePermissionMonitor();
+  useEffect(() => {
+    useSettingsStore.getState().hydrate();
+  }, []);
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <ActionSheetProvider>
-        <QueryClientProvider client={queryClient}>
-          <SessionProvider>
-            <SplashScreenController />
-            <RootNavigator />
-          </SessionProvider>
-        </QueryClientProvider>
-      </ActionSheetProvider>
+      <QueryClientProvider client={queryClient}>
+        <SessionProvider>
+          <SplashScreenController />
+          <RootNavigator />
+        </SessionProvider>
+      </QueryClientProvider>
       <StatusBar style="auto" />
     </GestureHandlerRootView>
   );
@@ -41,9 +42,6 @@ export default function Root() {
 
 function RootNavigator() {
   const { session } = useSession();
-  // initiate one signal before login
-  // useOneSignal();
-
   return (
     <Stack>
       <Stack.Protected guard={!!session}>
