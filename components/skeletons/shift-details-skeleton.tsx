@@ -1,8 +1,9 @@
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { Fontisto } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import Header from "../Header";
 import { SkeletonBase } from "./skeleton-base";
 
 export const ShiftDetailsSkeleton: React.FC = () => {
@@ -11,19 +12,17 @@ export const ShiftDetailsSkeleton: React.FC = () => {
   if (!colorScheme) colorScheme = "light";
   const styles = getStyles(colorScheme);
   return (
-    <View style={{ flex: 1 }}>
-      <View style={styles.container}>
-        <View style={styles.topBarContainer}>
-          <Pressable
-            onPress={() => router.canGoBack() && router.back()}
-            style={styles.backIconContainer}
-          >
-            <Fontisto name="arrow-left-l" size={15} color="#fff" />
-          </Pressable>
-          <Text style={styles.locationText}>Shift Details</Text>
-          <Pressable style={styles.faintbackIconContainer}></Pressable>
-        </View>
-      </View>
+    <SafeAreaView
+      edges={["top"]}
+      style={{
+        flex: 1,
+        backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
+      }}
+    >
+      <Header
+        title="Shift Details"
+        onBack={() => router.canGoBack() && router.back()}
+      />
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
@@ -192,60 +191,12 @@ export const ShiftDetailsSkeleton: React.FC = () => {
           </View>
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 };
 
 const getStyles = (colorScheme: string) =>
   StyleSheet.create({
-    container: {
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
-      width: "100%",
-      height: "13%",
-      display: "flex",
-      flexDirection: "column",
-      paddingVertical: 30,
-    },
-    backIconContainer: {
-      height: 40,
-      width: 40,
-      borderRadius: 50,
-      display: "flex",
-      flexDirection: "row",
-      justifyContent: "center",
-      alignContent: "center",
-      alignItems: "center",
-      padding: 2,
-      borderWidth: 1,
-      borderColor: colorScheme === "dark" ? "#36454F" : "#D3D3D3",
-    },
-    locationText: {
-      fontFamily: "Roboto",
-      fontSize: 18,
-      fontWeight: "700",
-      color: colorScheme === "dark" ? "#fff" : "#fff",
-    },
-    faintbackIconContainer: {
-      height: 40,
-      width: 40,
-      borderRadius: 50,
-      display: "flex",
-      flexDirection: "row",
-      justifyContent: "center",
-      alignContent: "center",
-      alignItems: "center",
-      padding: 2,
-      borderWidth: 1,
-      borderColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
-    },
-    topBarContainer: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      paddingHorizontal: 10,
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
-      marginTop: 20,
-    },
     content: {
       paddingBottom: 32,
       flex: 1,

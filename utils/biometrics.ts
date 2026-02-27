@@ -3,9 +3,22 @@ import * as LocalAuthentication from "expo-local-authentication";
 // Checks if biometric authentication is available on the device.
 export async function isBiometricAvailable(): Promise<boolean> {
   const hasHardware = await LocalAuthentication.hasHardwareAsync();
-  if (!hasHardware) return false;
+  return hasHardware;
+}
+
+export async function isBiometricAllowed(): Promise<boolean> {
   const isEnrolled = await LocalAuthentication.isEnrolledAsync();
   return isEnrolled;
+}
+
+export async function canUseBiometrics(): Promise<boolean> {
+  const hasHardware = await LocalAuthentication.hasHardwareAsync();
+  if (!hasHardware) return false;
+
+  const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+  if (!isEnrolled) return false;
+
+  return true;
 }
 
 // Prompts the user for biometric authentication (FaceID, TouchID, or device credentials).

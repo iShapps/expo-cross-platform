@@ -4,9 +4,10 @@ import {
   postPastShifts,
   postRunningShifts,
   postScheduledShifts,
-  postTransferedShifts,
+  postTransferredShifts,
 } from "@/api-queries/post-pending-shifts";
 import { ShiftCardBase } from "@/components/pay-run";
+import TabsHeader from "@/components/shared/tabs-header";
 import { ShiftCardBaseSkeleton } from "@/components/skeletons/payrun-card-base-skeleton";
 import { IShift } from "@/data-types/shifts";
 import { useColorScheme } from "@/hooks/use-color-scheme";
@@ -62,7 +63,7 @@ export default function Schedules() {
   ] as const;
   const [activeStatus, setActiveStatus] =
     useState<(typeof statusTabs)[number]>("Running");
-  const { width: screenWidth } = useWindowDimensions();
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
 
   const contentScrollRef = useRef<ScrollView>(null);
   const tabScrollRef = useRef<ScrollView>(null);
@@ -88,9 +89,9 @@ export default function Schedules() {
   );
 
   // transfered shifts
-  const transferedQuery = useShiftInfiniteQuery(
+  const transferredQuery = useShiftInfiniteQuery(
     "transfered-shifts",
-    postTransferedShifts,
+    postTransferredShifts,
   );
 
   // past shifts
@@ -154,9 +155,7 @@ export default function Schedules() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Schedule</Text>
-      </View>
+      <TabsHeader title="Schedule" />
       <View style={styles.container}>
         <ScrollView
           ref={tabScrollRef}
@@ -289,18 +288,18 @@ export default function Schedules() {
                     isRefetching = cancelledQuery.isRefetching;
                     break;
                   case "Transferred":
-                    isLoading = transferedQuery.isLoading;
+                    isLoading = transferredQuery.isLoading;
                     data =
-                      transferedQuery.data?.pages.flatMap(
+                      transferredQuery.data?.pages.flatMap(
                         (page) => page?.data?.shifts?.data ?? [],
                       ) || [];
-                    isError = transferedQuery.isError;
-                    shiftError = transferedQuery.error;
-                    refetchFn = transferedQuery.refetch;
-                    isFetchingNextPage = transferedQuery.isFetchingNextPage;
-                    hasNextPage = !!transferedQuery.hasNextPage;
-                    fetchNextPage = transferedQuery.fetchNextPage;
-                    isRefetching = transferedQuery.isRefetching;
+                    isError = transferredQuery.isError;
+                    shiftError = transferredQuery.error;
+                    refetchFn = transferredQuery.refetch;
+                    isFetchingNextPage = transferredQuery.isFetchingNextPage;
+                    hasNextPage = !!transferredQuery.hasNextPage;
+                    fetchNextPage = transferredQuery.fetchNextPage;
+                    isRefetching = transferredQuery.isRefetching;
                     break;
                   case "Pending Payment":
                     isLoading = completedQuery.isLoading;
@@ -337,7 +336,7 @@ export default function Schedules() {
                       contentContainerStyle={{
                         paddingBottom: 120,
                         paddingTop: 10,
-                        flexGrow: 1,
+                        minHeight: screenHeight,
                         gap: 10,
                       }}
                       refreshing={isRefetching && !isFetchingNextPage}
@@ -350,14 +349,9 @@ export default function Schedules() {
                   return (
                     <View
                       style={{
-                        flex: 1,
-                        justifyContent: "center",
+                        // flex: 1,
                         alignItems: "center",
-                        position: "absolute",
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
+                        justifyContent: "center",
                       }}
                     >
                       <MaterialCommunityIcons
@@ -493,7 +487,7 @@ export default function Schedules() {
                     contentContainerStyle={{
                       paddingBottom: 120,
                       paddingTop: 10,
-                      flexGrow: 1,
+                      minHeight: screenHeight,
                       gap: 10,
                     }}
                     refreshing={isRefetching && !isFetchingNextPage}
@@ -525,7 +519,6 @@ const getStyles = (colorScheme: string) =>
       flex: 1,
       backgroundColor: colorScheme === "dark" ? "#232A2E" : "#ffffff",
       paddingHorizontal: 8,
-      paddingTop: 16,
     },
     safeArea: {
       flex: 1,
@@ -558,7 +551,6 @@ const getStyles = (colorScheme: string) =>
     tabsRow: {
       flexDirection: "row",
       gap: 8,
-      paddingBottom: 2,
     },
     tabButton: {
       paddingVertical: 6,

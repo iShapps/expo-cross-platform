@@ -1,5 +1,3 @@
-import { Tabs } from "expo-router";
-import React from "react";
 import { HapticTab } from "@/components/haptic-tab";
 import {
   TabBarFAFiveWIcon,
@@ -7,9 +5,14 @@ import {
   TabBarIMaterialIcon,
   TabBarOctIcon,
 } from "@/components/ui/tab-bar-icon";
-import { useIsFetching } from "@tanstack/react-query";
-import { Animated, Easing, Platform, StyleSheet, View } from "react-native";
+import { useSettingsStore } from "@/data-store/use-settings-store";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useOneSignal } from "@/hooks/use-one-signal";
+import { useShiftWatcher } from "@/hooks/use-shift-watcher";
+import { useIsFetching } from "@tanstack/react-query";
+import { Tabs } from "expo-router";
+import React, { useEffect } from "react";
+import { Animated, Easing, Platform, StyleSheet, View } from "react-native";
 
 const FetchingSnakeBar = () => {
   const isFetching = useIsFetching({
@@ -18,6 +21,12 @@ const FetchingSnakeBar = () => {
 
   const translateX = React.useRef(new Animated.Value(0)).current;
   const [barWidth, setBarWidth] = React.useState(0);
+
+  useShiftWatcher();
+  useOneSignal();
+  useEffect(() => {
+    useSettingsStore.getState().hydrate();
+  }, []);
 
   React.useEffect(() => {
     if (!isFetching || barWidth === 0) return;
@@ -62,7 +71,7 @@ const FetchingSnakeBar = () => {
 };
 
 export default function TabLayout() {
-    const colorScheme = useColorScheme();
+  const colorScheme = useColorScheme();
   const lightTabBar = {
     activeTint: "#70C601",
     inactiveTint: "#71797E",
@@ -79,9 +88,6 @@ export default function TabLayout() {
       bar: {
         backgroundColor: "#F8FFF0",
         position: "absolute",
-        height: 60,
-        paddingBottom: 8,
-        paddingTop: 8,
         justifyContent: "center",
         alignItems: "center",
         borderTopColor: "#D3D3D3",
@@ -114,14 +120,17 @@ export default function TabLayout() {
     }),
   };
   const tabBarTheme = colorScheme === "dark" ? darkTabBar : lightTabBar;
-  
+
   return (
     <Tabs
       backBehavior="history"
       screenOptions={{
         tabBarActiveTintColor: tabBarTheme.activeTint,
         tabBarInactiveTintColor: tabBarTheme.inactiveTint,
-        tabBarStyle: Platform.OS === "ios" ? tabBarTheme.iosBar.bar : tabBarTheme.androidBar.bar,
+        tabBarStyle:
+          Platform.OS === "ios"
+            ? tabBarTheme.iosBar.bar
+            : tabBarTheme.androidBar.bar,
         tabBarBackground: () => <FetchingSnakeBar />,
         headerShown: false,
         tabBarButton: HapticTab,
@@ -172,70 +181,6 @@ export default function TabLayout() {
           ),
         }}
       />
-      <Tabs.Screen
-        name="notifications"
-        options={{
-          headerShown: false,
-          title: "Notifications",
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          headerShown: false,
-          title: "Profile",
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="change-password"
-        options={{
-          headerShown: false,
-          title: "Change Password",
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="account"
-        options={{
-          headerShown: false,
-          title: "Account",
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="interviews"
-        options={{
-          headerShown: false,
-          title: "Interviews",
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="facilities"
-        options={{
-          headerShown: false,
-          title: "Facilities",
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="settings"
-        options={{
-          headerShown: false,
-          title: "Settings",
-          href: null,
-        }}
-      />
-      {/* <Tabs.Screen
-        name="[shiftId]"
-        options={{
-          headerShown: false,
-          title: "Shift Details",
-          href: null,
-        }}
-      /> */}
     </Tabs>
   );
 }
