@@ -1,12 +1,13 @@
-import { PushNotification } from "@/data-types/dashboard";
+import { INotification } from "@/data-types/notifications";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { formatDistanceToNow } from "date-fns";
+import { Href, Link } from "expo-router";
 import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 interface NotificationCardProps {
-  notification: PushNotification;
+  notification: INotification;
   onPress?: () => void;
 }
 
@@ -19,30 +20,26 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
   const styles = getStyles(colorScheme);
 
   const getNotificationIcon = () => {
-    switch (notification.type) {
-      case "shift_available":
+    switch (notification.notification_type) {
+      case "shifts":
         return "calendar-plus";
-      case "shift_reminder":
-        return "bell-ring";
-      case "payment":
-        return "currency-usd";
-      case "general":
-        return "information-variant";
+      case "statement-details":
+        return "currency-usd"; // "receipt-long ";
+      case "documents":
+        return "file-document-arrow-right-outline";
       default:
         return "bell";
     }
   };
 
   const getNotificationColor = () => {
-    switch (notification.type) {
-      case "shift_available":
+    switch (notification.notification_type) {
+      case "shifts":
         return "#70C601";
-      case "shift_reminder":
+      case "statement-details":
         return "#4A90E2";
-      case "payment":
+      case "documents":
         return "#28A745";
-      case "general":
-        return "#4A90E2";
       default:
         return "#70C601";
     }
@@ -52,44 +49,69 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
     addSuffix: true,
   });
 
+  const timeFormatted = new Date(notification.created_at).toLocaleString(
+    undefined,
+    {
+      dateStyle: "medium",
+      timeStyle: "short",
+    },
+  );
+
+  const getHref = (): Href => {
+    switch (notification.notification_type) {
+      case "shifts":
+        return {
+          pathname: "/(main)/[shiftId]",
+          params: { shiftId: notification.shift_id.toString() },
+        };
+
+      case "documents":
+        return "/(tabs)/documents";
+
+      default:
+        return "/(main)/notifications";
+    }
+  };
   return (
-    <TouchableOpacity
-      style={[styles.card, !notification.is_read && styles.unreadCard]}
-      onPress={onPress}
-      activeOpacity={0.7}
-    >
-      <View
-        style={[
-          styles.iconContainer,
-          { backgroundColor: `${getNotificationColor()}20` },
-        ]}
-      >
-        <MaterialCommunityIcons
-          name={getNotificationIcon()}
-          size={24}
-          color={getNotificationColor()}
-        />
-        {!notification.is_read && <View style={styles.unreadDot} />}
-      </View>
+    <Link href={getHref()} asChild>
+      <Pressable>
+        <View
+          style={[styles.card, !notification.is_expired && styles.unreadCard]}
+        >
+          <View
+            style={[
+              styles.iconContainer,
+              { backgroundColor: `${getNotificationColor()}20` },
+            ]}
+          >
+            <MaterialCommunityIcons
+              name={getNotificationIcon()}
+              size={24}
+              color={getNotificationColor()}
+            />
+            {!notification.is_expired && <View style={styles.unreadDot} />}
+          </View>
 
-      <View style={styles.content}>
-        <View style={styles.header}>
-          <Text style={styles.title}>{notification.title}</Text>
+          <View style={styles.content}>
+            <View style={styles.header}>
+              <Text style={styles.title}>{notification.title}</Text>
+            </View>
+            <Text style={styles.message} numberOfLines={2}>
+              {notification.message}
+            </Text>
+            <Text style={styles.time}>{timeFormatted}</Text>
+          </View>
+
+          <View style={styles.detailHint}>
+            <MaterialCommunityIcons
+              name="chevron-right"
+              size={20}
+              color="#C4C4C4"
+            />
+          </View>
         </View>
-        <Text style={styles.message} numberOfLines={2}>
-          {notification.message}
-        </Text>
-        <Text style={styles.time}>{timeAgo}</Text>
-      </View>
-
-      <View style={styles.detailHint}>
-        <MaterialCommunityIcons
-          name="chevron-right"
-          size={20}
-          color="#C4C4C4"
-        />
-      </View>
-    </TouchableOpacity>
+      </Pressable>
+    </Link>
   );
 };
 

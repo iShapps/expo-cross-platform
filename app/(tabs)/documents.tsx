@@ -1,11 +1,17 @@
-import { postProfile } from "@/api-queries/profile";
+import {
+  getDutyStatementDocuments,
+  getGenaralStatementDocuments,
+  getProfessionDocuments,
+} from "@/api-queries/documents";
 import DocumentCard from "@/components/document-card";
+import TabsHeader from "@/components/shared/tabs-header";
 import { DocumentCardSkeleton } from "@/components/skeletons";
+import { IDocument } from "@/data-types/documents";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
-import { useQuery } from "@tanstack/react-query";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useInfiniteQuery } from "@tanstack/react-query";
+import { useCallback, useRef, useState } from "react";
 import {
   FlatList,
   Pressable,
@@ -18,60 +24,78 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const formatDocumentType = (docType: string): string => {
-  const typeMap: Record<string, string> = {
-    profession: "Professional",
-    "general-statement": "General",
-  };
-
-  return typeMap[docType] || docType;
+const useShiftInfiniteQuery = (
+  key: string,
+  queryFn: (page?: number) => Promise<any>,
+) => {
+  return useInfiniteQuery({
+    queryKey: [key],
+    queryFn: ({ pageParam = 1 }) => queryFn(pageParam),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      const pagination = lastPage?.data?.shifts;
+      if (!pagination) return undefined;
+      if (pagination.current_page < pagination.last_page) {
+        return pagination.current_page + 1;
+      }
+      return undefined;
+    },
+    refetchInterval: 30 * 60 * 1000,
+    refetchIntervalInBackground: true,
+    gcTime: 1000 * 60 * 60,
+    staleTime: 1000 * 60 * 60 * 24,
+  });
 };
 
 export default function DocumentsScreen() {
-  const {
-    data,
-    isLoading,
-    isError,
-    refetch,
-    isRefetching,
-    // isRefetchError,
-    error: documentError,
-  } = useQuery({
-    queryKey: ["profile-details"],
-    queryFn: () => postProfile(),
-    refetchInterval: 30 * 60 * 1000, // 30 minutes
-    gcTime: 1000 * 60 * 60,
-    staleTime: 1000 * 60 * 60 * 24,
-    refetchIntervalInBackground: true,
-  });
+  const documentTabs = ["General", "Professional", "Others"] as const;
+  const [activeStatus, setActiveStatus] =
+    useState<(typeof documentTabs)[number]>("General");
 
-  const documents = useMemo(() => {
-    return data?.data?.hcp?.documents ?? [];
-  }, [data?.data?.hcp?.documents]);
-
-  // Extract unique document types from the documents
-  const documentTypes = useMemo(() => {
-    return [
-      "All",
-      ...Array.from(new Set(documents.map((doc: any) => doc.doc_type))).filter(
-        Boolean,
-      ),
-    ] as string[];
-  }, [documents]);
-
-  const [activeDocType, setActiveDocType] = useState<string>("All");
-  const { width: screenWidth } = useWindowDimensions();
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const contentScrollRef = useRef<ScrollView>(null);
+  const tabScrollRef = useRef<ScrollView>(null);
+  const tabOffsetsRef = useRef<number[]>([]);
+  const tabWidthsRef = useRef<number[]>([]);
+
+  const generalQuery = useShiftInfiniteQuery(
+    "general-documents",
+    getGenaralStatementDocuments,
+  );
+
+  const dutyQuery = useShiftInfiniteQuery(
+    "duty-statement-documents",
+    getDutyStatementDocuments,
+  );
+
+  const professionQuery = useShiftInfiniteQuery(
+    "profession-documents",
+    getProfessionDocuments,
+  );
+
+  const scrollTabIntoView = useCallback(
+    (index: number) => {
+      const offset = tabOffsetsRef.current[index];
+      const width = tabWidthsRef.current[index];
+      if (offset == null || width == null) return;
+      tabScrollRef.current?.scrollTo({
+        x: offset - screenWidth / 2 + width / 2,
+        animated: true,
+      });
+    },
+    [screenWidth],
+  );
 
   const handleTabPress = useCallback(
     (index: number) => {
-      setActiveDocType(documentTypes[index]);
+      setActiveStatus(documentTabs[index]);
+      scrollTabIntoView(index);
       contentScrollRef.current?.scrollTo({
         x: index * screenWidth,
         animated: true,
       });
     },
-    [screenWidth, documentTypes],
+    [screenWidth, scrollTabIntoView],
   );
 
   const handleContentScrollEnd = useCallback(
@@ -80,16 +104,13 @@ export default function DocumentsScreen() {
       const index = Math.round(offsetX / screenWidth);
       const clampedIndex = Math.min(
         Math.max(index, 0),
-        documentTypes.length - 1,
+        documentTabs.length - 1,
       );
-      setActiveDocType(documentTypes[clampedIndex]);
+      setActiveStatus(documentTabs[clampedIndex]);
+      scrollTabIntoView(clampedIndex);
     },
-    [screenWidth, documentTypes],
+    [screenWidth, scrollTabIntoView],
   );
-
-  const handlePullToRefresh = async () => {
-    await refetch();
-  };
 
   let colorScheme = useColorScheme();
   if (!colorScheme) colorScheme = "light";
@@ -97,30 +118,31 @@ export default function DocumentsScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.header}>
-        <Text style={styles.title}>My documents</Text>
-        {/* <View style={styles.underline} /> */}
-      </View>
+      <TabsHeader title="My documents" />
       <View style={styles.container}>
-        {/* Tabs Row */}
         <ScrollView
+          ref={tabScrollRef}
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.tabsRow}
         >
-          {documentTypes.map((docType, index) => {
-            const isActive = activeDocType === docType;
+          {documentTabs.map((status, index) => {
+            const isActive = activeStatus === status;
             return (
-              <TouchableOpacity
-                key={docType}
+              <Pressable
+                key={status}
                 onPress={() => handleTabPress(index)}
                 style={styles.tabButton}
-                activeOpacity={0.7}
+                android_ripple={{ color: "#ccc" }}
+                onLayout={(e) => {
+                  tabOffsetsRef.current[index] = e.nativeEvent.layout.x;
+                  tabWidthsRef.current[index] = e.nativeEvent.layout.width;
+                }}
               >
                 <Text
                   style={[styles.tabText, isActive && styles.tabTextActive]}
                 >
-                  {formatDocumentType(docType)}
+                  {status}
                 </Text>
                 <View
                   style={[
@@ -128,10 +150,23 @@ export default function DocumentsScreen() {
                     isActive && styles.tabUnderlineActive,
                   ]}
                 />
-              </TouchableOpacity>
+              </Pressable>
             );
           })}
         </ScrollView>
+        {/* <FlatList
+          // style={{ flex: 1 }}
+          data={sample_payruns}
+          renderItem={({ item }) => <PayrunCardBase payrun={item} />}
+          keyExtractor={(item) => item.id}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{
+            paddingBottom: 120,
+            paddingTop: 10,
+            flexGrow: 1,
+            gap: 10,
+          }}
+        /> */}
 
         {/* Horizontal paging ScrollView for tab content */}
         <ScrollView
@@ -139,36 +174,93 @@ export default function DocumentsScreen() {
           horizontal
           pagingEnabled
           showsHorizontalScrollIndicator={false}
+          showsVerticalScrollIndicator={false}
           onMomentumScrollEnd={handleContentScrollEnd}
-          scrollEventThrottle={16}
           onScrollBeginDrag={() => {}} // prevent flicker
         >
-          {documentTypes.map((docType, index) => (
+          {documentTabs.map((status, index) => (
             <View
-              key={docType}
-              style={{ width: screenWidth - 24, paddingHorizontal: 4 }}
+              key={status}
+              style={{ width: screenWidth - 16, paddingHorizontal: 4 }}
             >
               {(() => {
-                // Filter documents by type
-                const filteredDocuments =
-                  docType === "All"
-                    ? documents
-                    : documents.filter((doc: any) => doc.doc_type === docType);
-
+                let isLoading = false;
+                let data: IDocument[] = [];
+                let refetchFn = undefined as undefined | (() => Promise<any>);
+                let isError = false;
+                let shiftError: any = null;
+                let isFetchingNextPage = false;
+                let hasNextPage = false;
+                let fetchNextPage: undefined | (() => Promise<any>) = undefined;
+                let isRefetching = false;
+                switch (status) {
+                  case "General":
+                    isLoading = generalQuery.isLoading;
+                    data =
+                      generalQuery.data?.pages.flatMap(
+                        (page) => page?.data?.hcps?.data ?? [],
+                      ) || [];
+                    isError = generalQuery.isError;
+                    shiftError = generalQuery.error;
+                    refetchFn = generalQuery.refetch;
+                    isFetchingNextPage = generalQuery.isFetchingNextPage;
+                    hasNextPage = !!generalQuery.hasNextPage;
+                    fetchNextPage = generalQuery.fetchNextPage;
+                    isRefetching = generalQuery.isRefetching;
+                    break;
+                  case "Others":
+                    isLoading = dutyQuery.isLoading;
+                    data =
+                      dutyQuery.data?.pages.flatMap(
+                        (page) => page?.data?.hcps?.data ?? [],
+                      ) || [];
+                    isError = dutyQuery.isError;
+                    shiftError = dutyQuery.error;
+                    refetchFn = dutyQuery.refetch;
+                    isFetchingNextPage = dutyQuery.isFetchingNextPage;
+                    hasNextPage = !!dutyQuery.hasNextPage;
+                    fetchNextPage = dutyQuery.fetchNextPage;
+                    isRefetching = dutyQuery.isRefetching;
+                    break;
+                  case "Professional":
+                    isLoading = professionQuery.isLoading;
+                    data =
+                      professionQuery.data?.pages.flatMap(
+                        (page) => page?.data?.hcps?.data ?? [],
+                      ) || [];
+                    isError = professionQuery.isError;
+                    shiftError = professionQuery.error;
+                    refetchFn = professionQuery.refetch;
+                    isFetchingNextPage = professionQuery.isFetchingNextPage;
+                    hasNextPage = !!professionQuery.hasNextPage;
+                    fetchNextPage = professionQuery.fetchNextPage;
+                    isRefetching = professionQuery.isRefetching;
+                    break;
+                  default:
+                    data = [];
+                }
+                const handlePullToRefresh = async () => {
+                  if (refetchFn) await refetchFn();
+                };
+                const handleLoadMore = () => {
+                  if (hasNextPage && !isFetchingNextPage && fetchNextPage) {
+                    fetchNextPage();
+                  }
+                };
                 if (isLoading) {
                   return (
                     <FlatList
-                      data={[...Array(6)]}
+                      data={Array.from({ length: 5 })}
                       renderItem={() => <DocumentCardSkeleton />}
                       keyExtractor={(_, idx) => `skeleton-${idx}`}
                       showsVerticalScrollIndicator={false}
                       contentContainerStyle={{
                         paddingBottom: 120,
                         paddingTop: 10,
-                        flexGrow: 1,
-                        gap: 4,
+                        minHeight: screenHeight,
+                        gap: 10,
                       }}
-                      refreshing={isRefetching}
+                      refreshing={isRefetching && !isFetchingNextPage}
                       onRefresh={handlePullToRefresh}
                     />
                   );
@@ -178,13 +270,13 @@ export default function DocumentsScreen() {
                   return (
                     <View
                       style={{
-                        flex: 1,
-                        justifyContent: "center",
+                        // flex: 1,
                         alignItems: "center",
+                        justifyContent: "center",
                       }}
                     >
                       <MaterialCommunityIcons
-                        name="alert-circle-outline"
+                        name="folder"
                         size={72}
                         color="#ff6f61"
                         style={{ marginBottom: 16 }}
@@ -208,9 +300,12 @@ export default function DocumentsScreen() {
                           marginBottom: 12,
                         }}
                       >
-                        Something went wrong while fetching documents. Please
-                        pull to refresh or try again later. (
-                        {documentError instanceof Error && (
+                        Something went wrong while fetching{" "}
+                        <Text style={{ textTransform: "lowercase" }}>
+                          {status}
+                        </Text>{" "}
+                        documents. Please pull to refresh or try again later. (
+                        {shiftError instanceof Error && (
                           <Text
                             style={{
                               fontSize: 13,
@@ -218,12 +313,12 @@ export default function DocumentsScreen() {
                               textAlign: "center",
                             }}
                           >
-                            {documentError.message}
+                            {shiftError.message}
                           </Text>
                         )}
                         )
                       </Text>
-                      <Pressable
+                      <TouchableOpacity
                         onPress={handlePullToRefresh}
                         style={{
                           backgroundColor: "#FBF2F2",
@@ -250,12 +345,12 @@ export default function DocumentsScreen() {
                         >
                           Retry
                         </Text>
-                      </Pressable>
+                      </TouchableOpacity>
                     </View>
                   );
                 }
 
-                if (!isLoading && filteredDocuments.length === 0) {
+                if (!isLoading && (!data || data.length === 0)) {
                   return (
                     <View
                       style={{
@@ -265,7 +360,7 @@ export default function DocumentsScreen() {
                       }}
                     >
                       <MaterialCommunityIcons
-                        name="calendar-remove-outline"
+                        name="folder"
                         size={72}
                         color="#e0e0e0"
                         style={{ marginBottom: 16 }}
@@ -278,7 +373,7 @@ export default function DocumentsScreen() {
                           marginBottom: 8,
                         }}
                       >
-                        No Documents Yet
+                        No Documets Yet
                       </Text>
                       <Text
                         style={{
@@ -288,30 +383,45 @@ export default function DocumentsScreen() {
                           maxWidth: 260,
                         }}
                       >
-                        There are no{" "}
-                        {docType === "All" ? "" : docType.toLowerCase()}{" "}
-                        documents at the moment. Check back later or explore
-                        other tabs!
+                        You have no{" "}
+                        <Text
+                          style={{
+                            textTransform: "lowercase",
+                          }}
+                        >
+                          {status}
+                        </Text>{" "}
+                        documents for this category at the moment.
                       </Text>
                     </View>
                   );
                 }
-
                 return (
                   <FlatList
-                    data={filteredDocuments}
+                    data={data}
                     renderItem={({ item }) => <DocumentCard document={item} />}
-                    keyExtractor={(item, idx) => String(`${idx}-${item.id}`)}
+                    keyExtractor={(item) =>
+                      item.id?.toString?.() || String(item.id)
+                    }
                     showsVerticalScrollIndicator={false}
                     contentContainerStyle={{
                       paddingBottom: 120,
                       paddingTop: 10,
-                      flexGrow: 1,
-                      gap: 4,
+                      minHeight: screenHeight,
+                      gap: 10,
                     }}
-                    refreshing={isRefetching}
+                    refreshing={isRefetching && !isFetchingNextPage}
                     onRefresh={handlePullToRefresh}
+                    onEndReached={handleLoadMore}
                     onEndReachedThreshold={0.6}
+                    ListFooterComponent={
+                      isFetchingNextPage ? (
+                        <View style={{ gap: 10, paddingTop: 10 }}>
+                          <DocumentCardSkeleton />
+                          <DocumentCardSkeleton />
+                        </View>
+                      ) : null
+                    }
                   />
                 );
               })()}
@@ -328,7 +438,7 @@ const getStyles = (colorScheme: string) =>
     container: {
       flex: 1,
       backgroundColor: colorScheme === "dark" ? "#232A2E" : "#ffffff",
-      paddingHorizontal: 10,
+      paddingHorizontal: 8,
     },
     safeArea: {
       flex: 1,
@@ -341,7 +451,7 @@ const getStyles = (colorScheme: string) =>
       backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
       width: "100%",
       margin: 8,
-      paddingHorizontal: 10,
+      paddingHorizontal: 12,
       paddingTop: 12,
       paddingBottom: 8,
     },
@@ -383,16 +493,6 @@ const getStyles = (colorScheme: string) =>
       marginTop: 6,
     },
     tabUnderlineActive: {
-      backgroundColor: colorScheme === "dark" ? "#FFD966" : "#70C601",
-    },
-    androidContainer: {
-      flex: 1,
-      height: "100%",
-      width: "100%",
-      display: "flex",
-      flexDirection: "column",
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#ffffff",
-      paddingTop: 50,
-      paddingBottom: 70,
+      backgroundColor: colorScheme === "dark" ? "#fff" : "#70C601",
     },
   });

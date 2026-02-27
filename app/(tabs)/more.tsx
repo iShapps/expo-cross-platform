@@ -1,11 +1,13 @@
-import AntDesign from "@expo/vector-icons/AntDesign";
 import Feather from "@expo/vector-icons/Feather";
-import Fontisto from "@expo/vector-icons/Fontisto";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 
+import { updateAvailability } from "@/api-queries/profile";
+import Header from "@/components/Header";
 import { useProfileData } from "@/data-store/use-account-store";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { MaterialIcons } from "@expo/vector-icons";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import React, { useState } from "react";
@@ -18,10 +20,12 @@ import {
   Text,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useSession } from "../ctx";
 
 export default function More() {
   const { signOut } = useSession();
+  const queryClient = useQueryClient();
   const profileStore = useProfileData();
   const userDetails = profileStore.userDetails;
   const hcp = userDetails?.hcp;
@@ -52,20 +56,54 @@ export default function More() {
     // signOut();
     // router.replace("/(main)/index")
   };
+
+  const updateAvailabilityMutation = useMutation({
+    mutationFn: (status: number) => updateAvailability(status),
+  });
+
+  const toggleAvailability = (value: boolean) => {
+    const status = value ? 1 : 0;
+
+    // optimistic UI update
+    setIsAvailable(value);
+
+    updateAvailabilityMutation.mutate(status, {
+      onSuccess: (response) => {
+        if (response.status) {
+          queryClient.setQueryData(["profile-details"], (oldData: any) => {
+            return {
+              ...oldData,
+              hcp: {
+                ...oldData?.hcp,
+                available_for_job: status === 1,
+              },
+            };
+          });
+
+          Alert.alert("Success", response.message);
+        } else {
+          setIsAvailable(!value);
+          Alert.alert("Error", response.message);
+        }
+      },
+      onError: () => {
+        setIsAvailable(!value);
+        Alert.alert("Error", "An error occurred while updating your status.");
+      },
+    });
+  };
   return (
-    <View style={styles.container}>
-      <View style={styles.topBarContainer}>
-        <Pressable
-          onPress={() => router.back()}
-          style={styles.backIconContainer}
-        >
-          <Fontisto name="arrow-left-l" size={15} color="white" />
-        </Pressable>
-        <Text style={styles.locationText}>Profile</Text>
-        <Pressable onPress={handleLogout} style={styles.backIconContainer}>
-          <AntDesign name="login" size={15} color="white" />
-        </Pressable>
-      </View>
+    <SafeAreaView style={styles.safeArea}>
+      <Header
+        title="Profile"
+        onBack={() => router.back()}
+        right={
+          <Pressable onPress={handleLogout} style={{ paddingRight: 10 }}>
+            {/* <AntDesign name="login" size={20} color="white" /> */}
+            <MaterialIcons name="login" size={24} color="white" />
+          </Pressable>
+        }
+      />
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
@@ -118,7 +156,8 @@ export default function More() {
               </View>
               <Switch
                 value={isAvailable}
-                onValueChange={setIsAvailable}
+                onValueChange={toggleAvailability}
+                disabled={updateAvailabilityMutation.isPending}
                 thumbColor={isAvailable ? "#fff" : "#f4f4f4"}
                 trackColor={{ false: "#E5E7EB", true: "#70C601" }}
               />
@@ -127,7 +166,7 @@ export default function More() {
         </View>
         <View style={styles.linksSection}>
           <Pressable
-            onPress={() => router.push("/(tabs)/account")}
+            onPress={() => router.push("/(main)/account")}
             style={styles.profileLinks}
           >
             <View style={styles.profileContainer}>
@@ -145,7 +184,7 @@ export default function More() {
             />
           </Pressable>
           <Pressable
-            onPress={() => router.push("/(tabs)/facilities")}
+            onPress={() => router.push("/(main)/facilities")}
             style={styles.profileLinks}
           >
             <View style={styles.profileContainer}>
@@ -163,7 +202,7 @@ export default function More() {
             />
           </Pressable>
           <Pressable
-            onPress={() => router.push("/(tabs)/interviews")}
+            onPress={() => router.push("/(main)/interviews")}
             style={styles.profileLinks}
           >
             <View style={styles.profileContainer}>
@@ -181,7 +220,7 @@ export default function More() {
             />
           </Pressable>
           <Pressable
-            onPress={() => router.push("/(tabs)/settings")}
+            onPress={() => router.push("/(main)/settings")}
             style={styles.profileLinks}
           >
             <View style={styles.profileContainer}>
@@ -196,12 +235,16 @@ export default function More() {
           </Pressable>
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const getStyles = (colorScheme: string) =>
   StyleSheet.create({
+    safeArea: {
+      flex: 1,
+      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
+    },
     container: {
       flex: 1,
       height: "100%",
@@ -387,8 +430,8 @@ const getStyles = (colorScheme: string) =>
       alignContent: "center",
       alignItems: "center",
       padding: 2,
-      borderWidth: 1,
-      borderColor: colorScheme === "dark" ? "#36454F" : "#D3D3D3",
+      // borderWidth: 1,
+      // borderColor: colorScheme === "dark" ? "#36454F" : "#D3D3D3",
     },
     locationText: {
       fontFamily: "Roboto",
