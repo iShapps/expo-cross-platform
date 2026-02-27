@@ -19,7 +19,7 @@
         "UIBackgroundModes": ["location", "remote-notification"]
       },
       "entitlements": {
-        "aps-environment": "development", //"production"
+        "aps-environment": "development",
         "com.apple.security.application-groups": [
           "group.com.smarthealthcare.ishapps.onesignal"
         ]
@@ -53,7 +53,22 @@
       [
         "onesignal-expo-plugin",
         {
-          "mode": "development" //"production"
+          "mode": "development"
+        }
+      ],
+      [
+        "voltra",
+        {
+          "groupIdentifier": "group.com.smarthealthcare.ishapps",
+          "enablePushNotifications": true
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "deploymentTarget": "16.1"
+          }
         }
       ],
       [
@@ -117,7 +132,8 @@
           "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location."
         }
       ],
-      "expo-background-task"
+      "expo-background-task",
+      "expo-build-properties"
     ],
     "experiments": {
       "typedRoutes": true,
