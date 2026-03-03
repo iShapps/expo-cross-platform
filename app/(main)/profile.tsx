@@ -1,13 +1,12 @@
 import { updateAvailability } from "@/api-queries/profile";
 import Header from "@/components/Header";
 import { Colors } from "@/constants/theme";
-import { useProfileData } from "@/data-store/use-account-store";
 import { User } from "@/data-types/auth";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Image } from "expo-image";
 import { router } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   Alert,
   ScrollView,
@@ -25,67 +24,53 @@ export default function ProfileScreen() {
   const styles = getStyles(theme);
 
   const queryClient = useQueryClient();
-  const profileStore = useProfileData();
-  const userDetails = profileStore.userDetails;
+
+  const { data: userDetails } = useQuery<User>({
+    queryKey: ["profile-details"],
+    queryFn: () => queryClient.getQueryData<User>(["profile-details"]) as User,
+    enabled: false,
+    staleTime: Infinity,
+  });
   const hcp = userDetails?.hcp;
+  const [optimisticValue, setOptimisticValue] = useState<boolean | null>(null);
+  const isAvailable =
+    optimisticValue !== null
+      ? optimisticValue
+      : Boolean(hcp?.available_for_job);
+
   const professions = hcp?.hcp_professions ?? [];
-  const [isAvailable, setIsAvailable] = useState(
-    Boolean(hcp?.available_for_job),
-  );
 
   const updateAvailabilityMutation = useMutation({
     mutationFn: (status: number) => updateAvailability(status),
   });
 
   const toggleAvailability = (value: boolean) => {
-    const status = value ? 1 : 0;
-
-    // optimistic UI update
-    setIsAvailable(value);
-
-    updateAvailabilityMutation.mutate(status, {
+    setOptimisticValue(value);
+    updateAvailabilityMutation.mutate(value ? 1 : 0, {
       onSuccess: (response) => {
+        setOptimisticValue(null);
         if (response.status) {
           queryClient.setQueryData<User | undefined>(
             ["profile-details"],
-            (oldData) => {
-              if (!oldData) return oldData;
-              const updated = {
-                ...oldData,
-                hcp: {
-                  ...oldData.hcp,
-                  available_for_job: status,
-                },
+            (old) => {
+              if (!old) return old;
+              return {
+                ...old,
+                hcp: { ...old.hcp, available_for_job: value ? 1 : 0 },
               };
-              return updated;
             },
           );
-          // Sync Zustand store
-          if (profileStore.userDetails) {
-            profileStore.setUserDetails({
-              ...profileStore.userDetails,
-              hcp: {
-                ...profileStore.userDetails.hcp,
-                available_for_job: status,
-              },
-            });
-          }
           Alert.alert("Success", response.message);
         } else {
-          setIsAvailable(!value);
           Alert.alert("Error", response.message);
         }
       },
       onError: () => {
-        setIsAvailable(!value);
+        setOptimisticValue(null);
         Alert.alert("Error", "An error occurred while updating your status.");
       },
     });
   };
-
-  useEffect(() => {
-    setIsAvailable(Boolean(hcp?.available_for_job));
-  }, [hcp?.available_for_job]);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
