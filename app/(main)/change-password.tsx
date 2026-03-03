@@ -1,5 +1,6 @@
 import { changePassword } from "@/api-queries/profile";
 import Header from "@/components/Header";
+import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { AntDesign } from "@expo/vector-icons";
 import Entypo from "@expo/vector-icons/Entypo";
@@ -22,7 +23,8 @@ import { useSession } from "../ctx";
 export default function ChangePasswordScreen() {
   let colorScheme = useColorScheme();
   if (!colorScheme) colorScheme = "light";
-  const styles = getStyles(colorScheme);
+  const theme = Colors[colorScheme];
+  const styles = getStyles(theme);
 
   const { signOut } = useSession();
 
@@ -127,27 +129,23 @@ export default function ChangePasswordScreen() {
               onChangeText={setCurrentPassword}
               secureTextEntry={!showCurrentPassword}
               placeholder="••••••••"
-              placeholderTextColor={colorScheme === "dark" ? "#aaa" : "#999"}
-              cursorColor={colorScheme === "dark" ? "#b0b8ca" : "#70C601"}
+              placeholderTextColor={theme.secondaryText}
+              cursorColor={theme.primary}
               style={{
                 flex: 1,
-                color: colorScheme === "dark" ? "#b0b8ca" : undefined,
+                color: theme.primaryText,
               }}
             />
             <Pressable
               onPress={() => setShowCurrentPassword(!showCurrentPassword)}
             >
               {showCurrentPassword ? (
-                <Entypo
-                  name="eye"
-                  size={20}
-                  color={colorScheme === "dark" ? "#b0b8ca" : "#7393B3"}
-                />
+                <Entypo name="eye" size={20} color={theme.secondaryText} />
               ) : (
                 <Entypo
                   name="eye-with-line"
                   size={20}
-                  color={colorScheme === "dark" ? "#b0b8ca" : "#7393B3"}
+                  color={theme.secondaryText}
                 />
               )}
             </Pressable>
@@ -170,25 +168,21 @@ export default function ChangePasswordScreen() {
               onChangeText={setNewPassword}
               secureTextEntry={!showNewPassword}
               placeholder="••••••••"
-              placeholderTextColor={colorScheme === "dark" ? "#aaa" : "#999"}
-              cursorColor={colorScheme === "dark" ? "#b0b8ca" : "#70C601"}
+              placeholderTextColor={theme.secondaryText}
+              cursorColor={theme.primary}
               style={{
                 flex: 1,
-                color: colorScheme === "dark" ? "#b0b8ca" : undefined,
+                color: theme.primaryText,
               }}
             />
             <Pressable onPress={() => setShowNewPassword(!showNewPassword)}>
               {showNewPassword ? (
-                <Entypo
-                  name="eye"
-                  size={20}
-                  color={colorScheme === "dark" ? "#b0b8ca" : "#7393B3"}
-                />
+                <Entypo name="eye" size={20} color={theme.secondaryText} />
               ) : (
                 <Entypo
                   name="eye-with-line"
                   size={20}
-                  color={colorScheme === "dark" ? "#b0b8ca" : "#7393B3"}
+                  color={theme.secondaryText}
                 />
               )}
             </Pressable>
@@ -211,27 +205,23 @@ export default function ChangePasswordScreen() {
               onChangeText={setConfirmPassword}
               secureTextEntry={!showConfirmPassword}
               placeholder="••••••••"
-              placeholderTextColor={colorScheme === "dark" ? "#aaa" : "#999"}
-              cursorColor={colorScheme === "dark" ? "#b0b8ca" : "#70C601"}
+              placeholderTextColor={theme.secondaryText}
+              cursorColor={theme.primary}
               style={{
                 flex: 1,
-                color: colorScheme === "dark" ? "#b0b8ca" : undefined,
+                color: theme.primaryText,
               }}
             />
             <Pressable
               onPress={() => setShowConfirmPassword(!showConfirmPassword)}
             >
               {showConfirmPassword ? (
-                <Entypo
-                  name="eye"
-                  size={20}
-                  color={colorScheme === "dark" ? "#b0b8ca" : "#7393B3"}
-                />
+                <Entypo name="eye" size={20} color={theme.secondaryText} />
               ) : (
                 <Entypo
                   name="eye-with-line"
                   size={20}
-                  color={colorScheme === "dark" ? "#b0b8ca" : "#7393B3"}
+                  color={theme.secondaryText}
                 />
               )}
             </Pressable>
@@ -264,7 +254,7 @@ export default function ChangePasswordScreen() {
               <AntDesign
                 name="loading-3-quarters"
                 size={20}
-                color={colorScheme === "dark" ? "#232A2E" : "#fff"}
+                color={theme.white}
               />
             </Animated.View>
           )}
@@ -279,18 +269,18 @@ export default function ChangePasswordScreen() {
   );
 }
 
-const getStyles = (colorScheme: string) =>
+const getStyles = (theme: typeof Colors.light) =>
   StyleSheet.create({
     safeArea: {
       flex: 1,
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
+      backgroundColor: theme.background,
     },
     formCard: {
       display: "flex",
       flexDirection: "column",
       gap: 4,
       width: "100%",
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff",
+      backgroundColor: theme.whiteBackground,
       flex: 1,
       paddingHorizontal: 12,
       paddingTop: 16,
@@ -304,7 +294,7 @@ const getStyles = (colorScheme: string) =>
       flexDirection: "row",
       justifyContent: "space-between",
       borderBottomWidth: 1,
-      borderBottomColor: colorScheme === "dark" ? "#b0b8ca" : "#ccc",
+      borderBottomColor: theme.greyBorder,
       paddingVertical: 8,
       fontSize: 16,
       gap: 8,
@@ -314,26 +304,26 @@ const getStyles = (colorScheme: string) =>
       flexDirection: "row",
       justifyContent: "space-between",
       borderBottomWidth: 1,
-      borderBottomColor: colorScheme === "dark" ? "#b0b8ca" : "#70C601",
+      borderBottomColor: theme.primary,
       paddingVertical: 8,
       fontSize: 16,
       gap: 8,
     },
     label: {
       fontSize: 14,
-      color: colorScheme === "dark" ? "#b0b8ca" : "#000",
+      color: theme.tertiaryText,
       fontWeight: "700",
       marginBottom: 6,
     },
     labelFilled: {
       fontSize: 14,
-      color: colorScheme === "dark" ? "#fff" : "#70C601",
+      color: theme.primary,
       fontWeight: "700",
       marginBottom: 6,
     },
     primaryButton: {
       marginTop: 16,
-      backgroundColor: colorScheme === "dark" ? "#b0b8ca" : "#70C601",
+      backgroundColor: theme.activeText,
       borderRadius: 5,
       paddingVertical: 12,
       alignItems: "center",
@@ -342,7 +332,7 @@ const getStyles = (colorScheme: string) =>
       justifyContent: "center",
     },
     primaryButtonText: {
-      color: colorScheme === "dark" ? "#232A2E" : "#fff",
+      color: theme.white,
       fontSize: 14,
     },
   });

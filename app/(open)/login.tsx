@@ -1,3 +1,4 @@
+import { Colors } from "@/constants/theme";
 import { useSettingsStore } from "@/data-store/use-settings-store";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import {
@@ -29,7 +30,8 @@ import { useSession } from "../ctx";
 
 export default function Login() {
   const colorScheme = useColorScheme() || "light";
-  const styles = getStyles(colorScheme);
+  const theme = Colors[colorScheme];
+  const styles = getStyles(theme);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -199,7 +201,7 @@ export default function Login() {
     >
       <View
         style={{
-          backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
+          backgroundColor: theme.background,
           height: "50%",
           justifyContent: "flex-start",
           alignItems: "center",
@@ -217,7 +219,7 @@ export default function Login() {
           <Text
             style={{
               fontSize: 28,
-              color: colorScheme === "dark" ? "#fff" : "#000",
+              color: theme.primaryText,
               fontWeight: "700",
               marginBottom: 10,
             }}
@@ -227,7 +229,7 @@ export default function Login() {
           <Text
             style={{
               fontSize: 14,
-              color: colorScheme === "dark" ? "#b0b8ca" : "#999",
+              color: theme.secondaryText,
             }}
           >
             Login to securely access your account and manage your shifts
@@ -253,14 +255,14 @@ export default function Login() {
               clearButtonMode="while-editing"
               autoFocus={true}
               clearTextOnFocus={false}
-              cursorColor={colorScheme === "dark" ? "#fff" : "#70C601"}
+              cursorColor={theme.primaryText}
               enterKeyHint="next"
               placeholder="johnwilliams@gmail.com"
               onChangeText={setEmail}
-              placeholderTextColor={colorScheme === "dark" ? "#aaa" : "#999"}
+              placeholderTextColor={theme.secondaryText}
               style={{
                 flex: 1,
-                color: colorScheme === "dark" ? "#fff" : undefined,
+                color: theme.primaryText,
               }}
             />
             {biometricSupported && biometricAllowed && biometricsEnabled && (
@@ -270,12 +272,12 @@ export default function Login() {
                     <Ionicons
                       name="scan-outline"
                       size={30}
-                      color={colorScheme === "dark" ? "#b0b8ca" : "#7393B3"}
+                      color={theme.secondaryText}
                     />
                     <FontAwesome6
                       name="face-kiss"
                       size={10}
-                      color={colorScheme === "dark" ? "#b0b8ca" : "#7393B3"}
+                      color={theme.secondaryText}
                       style={styles.overlayIcon}
                     />
                   </View>
@@ -283,7 +285,7 @@ export default function Login() {
                   <Ionicons
                     name="finger-print"
                     size={24}
-                    color={colorScheme === "dark" ? "#b0b8ca" : "#7393B3"}
+                    color={theme.secondaryText}
                   />
                 )}
               </Pressable>
@@ -305,7 +307,7 @@ export default function Login() {
             <TextInput
               value={password}
               autoFocus={true}
-              cursorColor={colorScheme === "dark" ? "#fff" : "#70C601"}
+              cursorColor={theme.primaryText}
               keyboardType="default"
               enterKeyHint="done"
               clearButtonMode="while-editing"
@@ -313,26 +315,22 @@ export default function Login() {
               clearTextOnFocus={false}
               onChangeText={setPassword}
               placeholder="••••••••"
-              placeholderTextColor={colorScheme === "dark" ? "#aaa" : "#999"}
+              placeholderTextColor={theme.secondaryText}
               secureTextEntry={!showPassword}
               style={{
                 flex: 1,
-                color: colorScheme === "dark" ? "#b0b8ca" : undefined,
+                color: theme.primaryText,
               }}
             />
 
             <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
               {showPassword ? (
-                <Entypo
-                  name="eye"
-                  size={20}
-                  color={colorScheme === "dark" ? "#b0b8ca" : "#7393B3"}
-                />
+                <Entypo name="eye" size={20} color={theme.secondaryText} />
               ) : (
                 <Entypo
                   name="eye-with-line"
                   size={20}
-                  color={colorScheme === "dark" ? "#b0b8ca" : "#7393B3"}
+                  color={theme.secondaryText}
                 />
               )}
             </TouchableOpacity>
@@ -342,7 +340,7 @@ export default function Login() {
           <Link href="/(open)/forgot-password">
             <Text
               style={{
-                color: colorScheme === "dark" ? "#b0b8ca" : "#70C601",
+                color: theme.activeText,
                 textAlign: "right",
                 textDecorationLine: "underline",
               }}
@@ -363,25 +361,14 @@ export default function Login() {
               style={styles.checkbox}
               value={isTermsChecked}
               onValueChange={setIsTermsChecked}
-              color={
-                isTermsChecked
-                  ? colorScheme === "dark"
-                    ? "#fff"
-                    : "#70C601"
-                  : undefined
-              }
+              color={isTermsChecked ? theme.activeText : undefined}
             />
-            <Text
-              style={[
-                styles.remember,
-                { color: colorScheme === "dark" ? "#b0b8ca" : "#555" },
-              ]}
-            >
+            <Text style={[styles.remember, { color: theme.tertiaryText }]}>
               I agree to the
               <Link href="https://www.ishapps.com/terms-of-service">
                 <Text
                   style={{
-                    color: colorScheme === "dark" ? "#b0b8ca" : "#70C601",
+                    color: theme.activeText,
                     textDecorationLine: "underline",
                   }}
                 >
@@ -393,7 +380,7 @@ export default function Login() {
               <Link href="https://www.ishapps.com/privacy-policy">
                 <Text
                   style={{
-                    color: colorScheme === "dark" ? "#b0b8ca" : "#70C601",
+                    color: theme.activeText,
                     textDecorationLine: "underline",
                   }}
                 >
@@ -408,7 +395,7 @@ export default function Login() {
           style={[
             styles.button,
             isLoading && { opacity: 0.6 },
-            colorScheme === "dark" && { backgroundColor: "#FFD966" },
+            { backgroundColor: theme.activeText },
           ]}
           onPress={handleLogin}
           disabled={isLoading}
@@ -430,16 +417,11 @@ export default function Login() {
               <AntDesign
                 name="loading-3-quarters"
                 size={20}
-                color={colorScheme === "dark" ? "#232A2E" : "#fff"}
+                color={theme.white}
               />
             </Animated.View>
           )}
-          <Text
-            style={[
-              styles.buttonText,
-              colorScheme === "dark" && { color: "#232A2E" },
-            ]}
-          >
+          <Text style={[styles.buttonText, { color: theme.white }]}>
             {isLoading ? "signing you in..." : "Sign in"}
           </Text>
         </TouchableOpacity>
@@ -448,19 +430,19 @@ export default function Login() {
   );
 }
 
-const getStyles = (colorScheme: string) =>
+const getStyles = (theme: typeof Colors.light) =>
   StyleSheet.create({
     container: {
       height: "100%",
       display: "flex",
       flexDirection: "column",
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff",
+      backgroundColor: theme.whiteBackground,
     },
     bottomContainer: {
       flex: 1,
       width: "100%",
       height: "50%",
-      backgroundColor: colorScheme === "dark" ? "#36454F" : "#fff",
+      backgroundColor: theme.whiteBackground,
       paddingVertical: 20,
       paddingHorizontal: 20,
       borderTopRightRadius: 30,
@@ -493,7 +475,7 @@ const getStyles = (colorScheme: string) =>
       flexDirection: "row",
       justifyContent: "space-between",
       borderBottomWidth: 1,
-      borderBottomColor: colorScheme === "dark" ? "#b0b8ca" : "#ccc",
+      borderBottomColor: theme.secondaryText,
       paddingVertical: 8,
       fontSize: 16,
       gap: 8,
@@ -503,32 +485,32 @@ const getStyles = (colorScheme: string) =>
       flexDirection: "row",
       justifyContent: "space-between",
       borderBottomWidth: 1,
-      borderBottomColor: colorScheme === "dark" ? "#b0b8ca" : "#70C601",
+      borderBottomColor: theme.primary,
       paddingVertical: 8,
       fontSize: 16,
       gap: 8,
     },
     label: {
       fontSize: 14,
-      color: colorScheme === "dark" ? "#fff" : "#000",
+      color: theme.primaryText,
       fontWeight: "700",
       marginBottom: 6,
     },
     labelFilled: {
       fontSize: 14,
-      color: colorScheme === "dark" ? "#fff" : "#70C601",
+      color: theme.primary,
       fontWeight: "700",
       marginBottom: 6,
     },
     input: {
       borderBottomWidth: 1,
-      borderBottomColor: colorScheme === "dark" ? "#FFD966" : "#ccc",
+      borderBottomColor: theme.secondaryText,
       paddingVertical: 8,
       fontSize: 16,
     },
     inputFilled: {
       borderBottomWidth: 1,
-      borderBottomColor: colorScheme === "dark" ? "#FFD966" : "#70C601",
+      borderBottomColor: theme.primary,
       paddingVertical: 8,
       fontSize: 16,
     },
@@ -538,16 +520,16 @@ const getStyles = (colorScheme: string) =>
       marginVertical: 16,
     },
     remember: {
-      color: colorScheme === "dark" ? "#FFD966" : "#555",
+      color: theme.secondaryText,
       fontSize: 14,
     },
     forgot: {
-      color: colorScheme === "dark" ? "#FFD966" : "#70C601",
+      color: theme.primary,
       fontSize: 14,
       fontWeight: "600",
     },
     button: {
-      backgroundColor: colorScheme === "dark" ? "#FFD966" : "#70C601",
+      backgroundColor: theme.primary,
       paddingVertical: 10,
       borderRadius: 4,
       alignItems: "center",
@@ -556,16 +538,16 @@ const getStyles = (colorScheme: string) =>
       marginTop: 6,
     },
     buttonText: {
-      color: colorScheme === "dark" ? "#232A2E" : "#fff",
+      color: theme.white,
       fontSize: 16,
       fontWeight: "400",
     },
     footer: {
       marginTop: 20,
-      color: colorScheme === "dark" ? "#FFD966" : "#555",
+      color: theme.secondaryText,
     },
     signup: {
-      color: colorScheme === "dark" ? "#FFD966" : "#70C601",
+      color: theme.primary,
       fontWeight: "700",
     },
     checkbox: {

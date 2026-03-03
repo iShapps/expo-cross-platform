@@ -2,6 +2,7 @@ import { getFacilities } from "@/api-queries/facilities";
 import FacilityCard from "@/components/facility";
 import Header from "@/components/Header";
 import FacilityCardSkeleton from "@/components/skeletons/facility-card-skeleton";
+import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
@@ -36,7 +37,8 @@ export default function FacilitiesScreen() {
 
   let colorScheme = useColorScheme();
   if (!colorScheme) colorScheme = "light";
-  const styles = getStyles(colorScheme);
+  const theme = Colors[colorScheme];
+  const styles = getStyles(theme);
 
   return (
     <SafeAreaView edges={["top"]} style={styles.safeArea}>
@@ -70,7 +72,7 @@ export default function FacilitiesScreen() {
                 <MaterialCommunityIcons
                   name="office-building-outline"
                   size={72}
-                  color="#e0e0e0"
+                  color={theme.mutedText}
                   style={{ marginBottom: 16 }}
                 />
                 <Text style={styles.emptyTitle}>No Facilities Found</Text>
@@ -88,7 +90,7 @@ export default function FacilitiesScreen() {
             <MaterialCommunityIcons
               name="alert-circle-outline"
               size={72}
-              color="#ff6f61"
+              color={theme.danger}
               style={{ marginBottom: 16 }}
             />
             <Text style={styles.errorTitle}>Error Loading Facilities</Text>
@@ -109,22 +111,22 @@ export default function FacilitiesScreen() {
   );
 }
 
-const getStyles = (colorScheme: string) =>
+const getStyles = (theme: typeof Colors.light) =>
   StyleSheet.create({
     safeArea: {
       flex: 1,
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
+      backgroundColor: theme.background,
     },
     container: {
       flex: 1,
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#ffffff",
+      backgroundColor: theme.whiteBackground,
       paddingHorizontal: 10,
     },
     card: {
       padding: 16,
       borderRadius: 14,
-      backgroundColor: colorScheme === "dark" ? "#2f373c" : "#ffffff",
-      shadowColor: "#000",
+      backgroundColor: theme.whiteBackground,
+      shadowColor: theme.primaryText,
       shadowOpacity: 0.05,
       shadowRadius: 6,
       elevation: 2,
@@ -132,11 +134,11 @@ const getStyles = (colorScheme: string) =>
     cardTitle: {
       fontSize: 16,
       fontWeight: "700",
-      color: colorScheme === "dark" ? "#ffffff" : "#000000",
+      color: theme.primaryText,
     },
     cardSubtitle: {
       fontSize: 13,
-      color: "#818589",
+      color: theme.secondaryText,
       marginTop: 4,
     },
     emptyContainer: {
@@ -148,12 +150,12 @@ const getStyles = (colorScheme: string) =>
     emptyTitle: {
       fontSize: 20,
       fontWeight: "700",
-      color: "#70C601",
+      color: theme.activeText,
       marginBottom: 8,
     },
     emptySubtitle: {
       fontSize: 15,
-      color: "#818589",
+      color: theme.secondaryText,
       textAlign: "center",
       maxWidth: 260,
     },
@@ -171,17 +173,17 @@ const getStyles = (colorScheme: string) =>
     errorTitle: {
       fontSize: 20,
       fontWeight: "700",
-      color: "#ff6f61",
+      color: theme.danger,
       marginBottom: 8,
     },
     errorSubtitle: {
       fontSize: 15,
-      color: "#818589",
+      color: theme.secondaryText,
       textAlign: "center",
       marginBottom: 12,
     },
     retryButton: {
-      backgroundColor: "#FBF2F2",
+      backgroundColor: theme.mutedText,
       paddingHorizontal: 24,
       paddingVertical: 10,
       borderRadius: 20,
@@ -190,7 +192,7 @@ const getStyles = (colorScheme: string) =>
       gap: 8,
     },
     retryText: {
-      color: "#71797E",
+      color: theme.secondaryText,
       fontSize: 16,
       fontWeight: "700",
     },

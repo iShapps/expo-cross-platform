@@ -1,12 +1,14 @@
+import { Colors } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import React from "react";
 import { StyleSheet, View } from "react-native";
 import { SkeletonBase } from "./skeleton-base";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 
 export const NotificationCardSkeleton: React.FC = () => {
   let colorScheme = useColorScheme();
   if (!colorScheme) colorScheme = "light";
-  const styles = getStyles(colorScheme);
+  const theme = Colors[colorScheme];
+  const styles = getStyles(theme);
 
   return (
     <View style={styles.card}>
@@ -35,47 +37,48 @@ export const NotificationCardSkeleton: React.FC = () => {
   );
 };
 
-const getStyles = (colorScheme: string) => StyleSheet.create({
-  card: {
-    backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff",
-    borderRadius: 5,
-    padding: 12,
-    marginBottom: 4,
-    flexDirection: "row",
-    alignItems: "flex-start",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 1,
+const getStyles = (theme: typeof Colors.light) =>
+  StyleSheet.create({
+    card: {
+      backgroundColor: theme.whiteBackground,
+      borderRadius: 5,
+      padding: 12,
+      marginBottom: 4,
+      flexDirection: "row",
+      alignItems: "flex-start",
+      shadowColor: "#000",
+      shadowOffset: {
+        width: 0,
+        height: 1,
+      },
+      shadowOpacity: 0.05,
+      shadowRadius: 2,
+      elevation: 2,
+      borderWidth: 1,
+      borderColor: theme.greyBorder,
     },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: colorScheme === "dark" ? "#36454F" : "#f0f0f0",
-  },
-  iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
-    backgroundColor: colorScheme === "dark" ? "#36454F" : undefined,
-  },
-  content: {
-    flex: 1,
-    gap: 4,
-  },
-  title: {
-    marginBottom: 4,
-  },
-  message: {
-    marginBottom: 4,
-  },
-  detailHint: {
-    alignSelf: "flex-start",
-    marginLeft: 8,
-    marginTop: 2,
-  },
-});
+    iconContainer: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      justifyContent: "center",
+      alignItems: "center",
+      marginRight: 12,
+      backgroundColor: theme.greyBorder,
+    },
+    content: {
+      flex: 1,
+      gap: 4,
+    },
+    title: {
+      marginBottom: 4,
+    },
+    message: {
+      marginBottom: 4,
+    },
+    detailHint: {
+      alignSelf: "flex-start",
+      marginLeft: 8,
+      marginTop: 2,
+    },
+  });
