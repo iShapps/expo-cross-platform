@@ -1,5 +1,6 @@
 import { updateAvailability } from "@/api-queries/profile";
 import Header from "@/components/Header";
+import { Colors } from "@/constants/theme";
 import { useProfileData } from "@/data-store/use-account-store";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -19,7 +20,9 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export default function ProfileScreen() {
   let colorScheme = useColorScheme();
   if (!colorScheme) colorScheme = "light";
-  const styles = getStyles(colorScheme);
+  const theme = Colors[colorScheme];
+  const styles = getStyles(theme);
+
   const queryClient = useQueryClient();
   const profileStore = useProfileData();
   const userDetails = profileStore.userDetails;
@@ -214,17 +217,17 @@ export default function ProfileScreen() {
   );
 }
 
-const getStyles = (colorScheme: string) =>
+const getStyles = (theme: typeof Colors.light) =>
   StyleSheet.create({
     safeArea: {
       flex: 1,
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
+      backgroundColor: theme.background,
     },
     container: {
       flex: 1,
       height: "100%",
       width: "100%",
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
+      backgroundColor: theme.background,
       display: "flex",
       flexDirection: "column",
       gap: 20,
@@ -237,19 +240,19 @@ const getStyles = (colorScheme: string) =>
       alignItems: "center",
       justifyContent: "space-between",
       gap: 25,
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
+      backgroundColor: theme.background,
       paddingHorizontal: 10,
     },
     locationText: {
       fontFamily: "Roboto",
       fontSize: 18,
       fontWeight: "700",
-      color: colorScheme === "dark" ? "#fff" : "#ffffff",
+      color: theme.white,
     },
     content: {
       paddingHorizontal: 10,
       paddingBottom: 32,
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff",
+      backgroundColor: theme.whiteBackground,
     },
     headerRow: {
       flexDirection: "row",
@@ -272,7 +275,7 @@ const getStyles = (colorScheme: string) =>
       alignItems: "center",
       padding: 2,
       borderWidth: 1,
-      borderColor: colorScheme === "dark" ? "#b0b8ca" : "#D3D3D3",
+      borderColor: theme.greyBorder,
     },
     faintbackIconContainer: {
       height: 40,
@@ -285,7 +288,7 @@ const getStyles = (colorScheme: string) =>
       alignItems: "center",
       padding: 2,
       borderWidth: 1,
-      borderColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
+      borderColor: theme.background,
     },
     backSpacer: {
       width: 52,
@@ -293,24 +296,24 @@ const getStyles = (colorScheme: string) =>
     title: {
       fontSize: 18,
       fontWeight: "700",
-      color: colorScheme === "dark" ? "#b0b8ca" : "#111",
+      color: theme.primaryText,
     },
     heroCard: {
       marginTop: 8,
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#F8FFF0",
+      backgroundColor: theme.heroBg,
       borderRadius: 5,
       padding: 10,
       flexDirection: "row",
       alignItems: "center",
       gap: 12,
       borderWidth: 1,
-      borderColor: colorScheme === "dark" ? "#36454F" : "#E6F0D8",
+      borderColor: theme.heroBorder,
     },
     avatarWrap: {
       height: 64,
       width: 64,
       borderRadius: 5,
-      backgroundColor: colorScheme === "dark" ? "#36454F" : "#EAF7D2",
+      backgroundColor: theme.heroIconBg,
       alignItems: "center",
       justifyContent: "center",
       overflow: "hidden",
@@ -323,7 +326,7 @@ const getStyles = (colorScheme: string) =>
     avatarFallback: {
       fontSize: 22,
       fontWeight: "700",
-      color: colorScheme === "dark" ? "#b0b8ca" : "#70C601",
+      color: theme.activeText,
     },
     heroContent: {
       flex: 1,
@@ -331,11 +334,11 @@ const getStyles = (colorScheme: string) =>
     heroName: {
       fontSize: 16,
       fontWeight: "700",
-      color: colorScheme === "dark" ? "#b0b8ca" : "#111",
+      color: theme.tertiaryText,
     },
     heroMeta: {
       fontSize: 12,
-      color: colorScheme === "dark" ? "#b0b8ca" : "#6B7280",
+      color: theme.secondaryText,
       marginTop: 2,
     },
     sectionCard: {
@@ -343,13 +346,13 @@ const getStyles = (colorScheme: string) =>
       borderRadius: 5,
       padding: 14,
       borderWidth: 1,
-      borderColor: colorScheme === "dark" ? "#36454F" : "#F0F0F0",
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff",
+      borderColor: theme.greyBorder,
+      backgroundColor: theme.whiteBackground,
     },
     sectionTitle: {
       fontSize: 13,
       fontWeight: "700",
-      color: colorScheme === "dark" ? "#b0b8ca" : "#111",
+      color: theme.tertiaryText,
       marginBottom: 10,
       textTransform: "uppercase",
       letterSpacing: 0.4,
@@ -362,17 +365,17 @@ const getStyles = (colorScheme: string) =>
     rowTitle: {
       fontSize: 14,
       fontWeight: "600",
-      color: colorScheme === "dark" ? "#b0b8ca" : "#111",
+      color: theme.tertiaryText,
     },
     rowSubtitle: {
       fontSize: 12,
-      color: colorScheme === "dark" ? "#b0b8ca" : "#6B7280",
+      color: theme.secondaryText,
       marginTop: 2,
     },
     detailRow: {
       paddingVertical: 8,
       borderBottomWidth: 1,
-      borderBottomColor: colorScheme === "dark" ? "#232A2E" : "#F3F4F6",
+      borderBottomColor: theme.greyBorder,
     },
     professionList: {
       gap: 12,
@@ -383,40 +386,12 @@ const getStyles = (colorScheme: string) =>
     },
     detailLabel: {
       fontSize: 12,
-      color: colorScheme === "dark" ? "#b0b8ca" : "#6B7280",
+      color: theme.secondaryText,
     },
     detailValue: {
       fontSize: 14,
       fontWeight: "600",
-      color: colorScheme === "dark" ? "#b0b8ca" : "#111",
+      color: theme.tertiaryText,
       marginTop: 4,
-    },
-    actionsRow: {
-      flexDirection: "row",
-      gap: 10,
-      marginTop: 16,
-    },
-    actionButton: {
-      flex: 1,
-      borderRadius: 5,
-      paddingVertical: 12,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    primaryButton: {
-      backgroundColor: colorScheme === "dark" ? "#b0b8ca" : "#70C601",
-    },
-    primaryButtonText: {
-      color: colorScheme === "dark" ? "#232A2E" : "#fff",
-      fontWeight: "700",
-    },
-    outlineButton: {
-      borderWidth: 1,
-      borderColor: colorScheme === "dark" ? "#b0b8ca" : "#E5E7EB",
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff",
-    },
-    outlineButtonText: {
-      color: colorScheme === "dark" ? "#b0b8ca" : "#111",
-      fontWeight: "700",
     },
   });

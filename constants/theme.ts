@@ -52,12 +52,16 @@ export const Colors = {
       backgroundColor: "#FFF7E6",
       borderColor: "#FFC107",
     },
+    linksContainerBg: "#fff",
+    shadow: "#70C601",
+    settingTitle: "#232A2E",
   },
   dark: {
     tint: tintColorDark,
     tabIconSelected: tintColorDark,
     white: "#fff",
     primary: "#70C601",
+    shadow: "#000",
     safeAreaBg: "#232A2E",
     darkText: "#70C601",
     greyBorder: "#36454F",
@@ -96,6 +100,8 @@ export const Colors = {
       backgroundColor: "#2E2E2E",
       borderColor: "#FFD600",
     },
+    linksContainerBg: "#232A2E",
+    settingTitle: "#fff",
   },
 };
 
