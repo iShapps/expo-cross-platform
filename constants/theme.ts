@@ -33,6 +33,23 @@ export const Colors = {
     errorSubtitle: "#4B5563",
     heroIconBg: "#EAF7D2",
     mutedText: "#FBF2F2",
+    notificationFaint: "#FFFFFF4D",
+    dashboardCardAvailable: {
+      backgroundColor: "#F8FFF0",
+      borderColor: "#5ba000",
+    },
+    dashboardCardScheduled: {
+      backgroundColor: "#F0F7FF",
+      borderColor: "#4A90E2",
+    },
+    dashboardCardMy: {
+      backgroundColor: "#F0F7FF",
+      borderColor: "#4A90E2",
+    },
+    dashboardCardUpcoming: {
+      backgroundColor: "#FFF7E6",
+      borderColor: "#FFC107",
+    },
   },
   dark: {
     tint: tintColorDark,
@@ -57,6 +74,23 @@ export const Colors = {
     errorSubtitle: "#FFD966",
     heroIconBg: "#36454F",
     mutedText: "#232A2E",
+    notificationFaint: "#3434344D",
+    dashboardCardAvailable: {
+      backgroundColor: "#232A2E",
+      borderColor: "#70C601",
+    },
+    dashboardCardScheduled: {
+      backgroundColor: "#232A2E",
+      borderColor: "#4A90E2",
+    },
+    dashboardCardMy: {
+      backgroundColor: "#232A2E",
+      borderColor: "#4A90E2",
+    },
+    dashboardCardUpcoming: {
+      backgroundColor: "#2E2E2E",
+      borderColor: "#FFD600",
+    },
   },
 };
 
