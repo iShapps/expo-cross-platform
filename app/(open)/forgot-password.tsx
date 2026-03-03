@@ -1,4 +1,5 @@
 import OTPInput, { useOTPInput } from "@/components/shared/otp-input";
+import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import {
   AuthenticationError,
@@ -30,7 +31,8 @@ import {
 export default function ForgotPassword() {
   const router = useRouter();
   const colorScheme = useColorScheme() || "light";
-  const styles = getStyles(colorScheme);
+  const theme = Colors[colorScheme];
+  const styles = getStyles(theme);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -223,7 +225,7 @@ export default function ForgotPassword() {
     >
       <View
         style={{
-          backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
+          backgroundColor: theme.background,
           flex: 1,
         }}
       >
@@ -233,22 +235,21 @@ export default function ForgotPassword() {
             style={[
               styles.topAbsContainerLeft,
               {
-                backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
+                backgroundColor: theme.background,
               },
             ]}
           ></View>
           <View
             style={[
               styles.topAbsContainerRight,
-              { backgroundColor: colorScheme === "dark" ? "#36454F" : "#fff" },
+              { backgroundColor: theme.lightBorder },
             ]}
           >
             <View
               style={[
                 styles.innerContainer,
                 {
-                  backgroundColor:
-                    colorScheme === "dark" ? "#232A2E" : "#70C601",
+                  backgroundColor: theme.background,
                 },
               ]}
             ></View>
@@ -259,7 +260,7 @@ export default function ForgotPassword() {
             <Text
               style={{
                 fontSize: 28,
-                color: colorScheme === "dark" ? "#fff" : "#000",
+                color: theme.primaryText,
                 fontWeight: "700",
                 marginBottom: 10,
               }}
@@ -269,7 +270,7 @@ export default function ForgotPassword() {
             <Text
               style={{
                 fontSize: 14,
-                color: colorScheme === "dark" ? "#b0b8ca" : "#999",
+                color: theme.secondaryText,
               }}
             >
               {showInputs
@@ -289,11 +290,11 @@ export default function ForgotPassword() {
               autoComplete="email"
               clearButtonMode="while-editing"
               autoFocus={!showInputs}
-              cursorColor="#70C601"
+              cursorColor={theme.primary}
               enterKeyHint="next"
               placeholder="johnwilliams@gmail.com"
               onChangeText={setEmail}
-              placeholderTextColor="#999"
+              placeholderTextColor={theme.secondaryText}
               editable={!showInputs && !isLoading}
               style={email ? styles.inputFilled : styles.input}
             />
@@ -315,13 +316,13 @@ export default function ForgotPassword() {
                 <TextInput
                   value={password}
                   autoFocus={showInputs}
-                  cursorColor="#70C601"
+                  cursorColor={theme.primary}
                   enterKeyHint="next"
                   clearButtonMode="while-editing"
                   autoComplete="new-password"
                   onChangeText={setPassword}
                   placeholder="••••••••"
-                  placeholderTextColor="#999"
+                  placeholderTextColor={theme.tertiaryText}
                   secureTextEntry={!showPassword}
                   editable={!isResetting}
                   style={{
@@ -332,9 +333,13 @@ export default function ForgotPassword() {
                   onPress={() => setShowPassword(!showPassword)}
                 >
                   {showPassword ? (
-                    <Entypo name="eye" size={20} color="black" />
+                    <Entypo name="eye" size={20} color={theme.primaryText} />
                   ) : (
-                    <Entypo name="eye-with-line" size={20} color="black" />
+                    <Entypo
+                      name="eye-with-line"
+                      size={20}
+                      color={theme.primaryText}
+                    />
                   )}
                 </TouchableOpacity>
               </View>
@@ -355,13 +360,13 @@ export default function ForgotPassword() {
               >
                 <TextInput
                   value={confirmPassword}
-                  cursorColor="#70C601"
+                  cursorColor={theme.primary}
                   enterKeyHint="done"
                   clearButtonMode="while-editing"
                   autoComplete="new-password"
                   onChangeText={setConfirmPassword}
                   placeholder="••••••••"
-                  placeholderTextColor="#999"
+                  placeholderTextColor={theme.tertiaryText}
                   secureTextEntry={!showConfirmPassword}
                   editable={!isResetting}
                   style={{
@@ -372,9 +377,13 @@ export default function ForgotPassword() {
                   onPress={() => setShowConfirmPassword(!showConfirmPassword)}
                 >
                   {showConfirmPassword ? (
-                    <Entypo name="eye" size={20} color="black" />
+                    <Entypo name="eye" size={20} color={theme.primaryText} />
                   ) : (
-                    <Entypo name="eye-with-line" size={20} color="black" />
+                    <Entypo
+                      name="eye-with-line"
+                      size={20}
+                      color={theme.primaryText}
+                    />
                   )}
                 </TouchableOpacity>
               </View>
@@ -389,7 +398,7 @@ export default function ForgotPassword() {
               disabled={isResetting}
             >
               {isResetting ? (
-                <ActivityIndicator color="#fff" />
+                <ActivityIndicator color={theme.white} />
               ) : (
                 <Text style={styles.buttonText}>Reset password</Text>
               )}
@@ -414,7 +423,11 @@ export default function ForgotPassword() {
                     ],
                   }}
                 >
-                  <AntDesign name="loading-3-quarters" size={20} color="#fff" />
+                  <AntDesign
+                    name="loading-3-quarters"
+                    size={20}
+                    color={theme.white}
+                  />
                 </Animated.View>
               )}
               <Text style={styles.buttonText}>
@@ -424,17 +437,12 @@ export default function ForgotPassword() {
           )}
 
           {/* Footer */}
-          <Text
-            style={[
-              styles.footer,
-              { color: colorScheme === "dark" ? "#b0b8ca" : "#555" },
-            ]}
-          >
+          <Text style={[styles.footer, { color: theme.secondaryText }]}>
             Remembered password?{" "}
             <Link href="/(open)/login">
               <Text
                 style={{
-                  color: colorScheme === "dark" ? "#b0b8ca" : "#70C601",
+                  color: theme.activeText,
                   textDecorationLine: "underline",
                 }}
               >
@@ -558,7 +566,7 @@ export default function ForgotPassword() {
       </View>
       <View
         style={{
-          backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff",
+          backgroundColor: theme.whiteBackground,
           height: "auto",
         }}
       ></View>
@@ -566,11 +574,11 @@ export default function ForgotPassword() {
   );
 }
 
-const getStyles = (colorScheme: string) =>
+const getStyles = (theme: typeof Colors.light) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff",
+      backgroundColor: theme.whiteBackground,
     },
     modalContent: {
       flex: 1,
@@ -584,7 +592,7 @@ const getStyles = (colorScheme: string) =>
       gap: 5,
     },
     modalBody: {
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#ffffff",
+      backgroundColor: theme.background,
       padding: 10,
       borderRadius: 8,
       width: "92%",
@@ -598,7 +606,7 @@ const getStyles = (colorScheme: string) =>
       flex: 1,
       height: "auto",
       width: "100%",
-      backgroundColor: colorScheme === "dark" ? "#36454F" : "#ffffff",
+      backgroundColor: theme.lightBorder,
       paddingVertical: 20,
       paddingHorizontal: 20,
       borderTopLeftRadius: 55,
@@ -616,14 +624,14 @@ const getStyles = (colorScheme: string) =>
       flexDirection: "row",
     },
     topAbsContainerLeft: {
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
+      backgroundColor: theme.background,
       height: "100%",
       width: "50%",
       marginTop: -50,
       borderTopLeftRadius: 55,
     },
     topAbsContainerRight: {
-      backgroundColor: colorScheme === "dark" ? "#36454F" : "#fff",
+      backgroundColor: theme.heroBorder,
       height: "100%",
       width: "50%",
       marginTop: 10,
@@ -631,7 +639,7 @@ const getStyles = (colorScheme: string) =>
     innerContainer: {
       height: "100%",
       width: "100%",
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
+      backgroundColor: theme.background,
       borderBottomRightRadius: 55,
       marginTop: -10,
     },
@@ -643,7 +651,7 @@ const getStyles = (colorScheme: string) =>
       flexDirection: "row",
       justifyContent: "space-between",
       borderBottomWidth: 1,
-      borderBottomColor: colorScheme === "dark" ? "#FFD966" : "#ccc",
+      borderBottomColor: theme.activeText,
       paddingVertical: 8,
       fontSize: 16,
       gap: 8,
@@ -653,36 +661,36 @@ const getStyles = (colorScheme: string) =>
       flexDirection: "row",
       justifyContent: "space-between",
       borderBottomWidth: 1,
-      borderBottomColor: colorScheme === "dark" ? "#FFD966" : "#70C601",
+      borderBottomColor: theme.primary,
       paddingVertical: 8,
       fontSize: 16,
       gap: 8,
     },
     label: {
       fontSize: 14,
-      color: colorScheme === "dark" ? "#b0b8ca" : "#000",
+      color: theme.tertiaryText,
       fontWeight: "700",
       marginBottom: 6,
     },
     labelFilled: {
       fontSize: 14,
-      color: colorScheme === "dark" ? "#FFD966" : "#70C601",
+      color: theme.activeText,
       fontWeight: "700",
       marginBottom: 6,
     },
     input: {
       borderBottomWidth: 1,
-      borderBottomColor: colorScheme === "dark" ? "#b0b8ca" : "#ccc",
+      borderBottomColor: theme.secondaryText,
       paddingVertical: 8,
       fontSize: 16,
-      color: colorScheme === "dark" ? "#FFD966" : undefined,
+      color: theme.activeText,
     },
     inputFilled: {
       borderBottomWidth: 1,
-      borderBottomColor: colorScheme === "dark" ? "#FFD966" : "#70C601",
+      borderBottomColor: theme.primary,
       paddingVertical: 8,
       fontSize: 16,
-      color: colorScheme === "dark" ? "#FFD966" : undefined,
+      color: theme.activeText,
     },
     optionsRow: {
       flexDirection: "row",
@@ -690,16 +698,16 @@ const getStyles = (colorScheme: string) =>
       marginVertical: 16,
     },
     remember: {
-      color: colorScheme === "dark" ? "#FFD966" : "#555",
+      color: theme.tertiaryText,
       fontSize: 14,
     },
     forgot: {
-      color: colorScheme === "dark" ? "#FFD966" : "#70C601",
+      color: theme.activeText,
       fontSize: 14,
       fontWeight: "600",
     },
     button: {
-      backgroundColor: colorScheme === "dark" ? "#FFD966" : "#70C601",
+      backgroundColor: theme.activeText,
       paddingVertical: 10,
       borderRadius: 4,
       alignItems: "center",
@@ -712,23 +720,23 @@ const getStyles = (colorScheme: string) =>
       opacity: 0.6,
     },
     modalButton: {
-      backgroundColor: colorScheme === "dark" ? "#FFD966" : "#70C601",
+      backgroundColor: theme.activeText,
       paddingVertical: 10,
       borderRadius: 5,
       alignItems: "center",
       marginTop: 6,
     },
     buttonText: {
-      color: colorScheme === "dark" ? "#232A2E" : "#fff",
+      color: theme.white,
       fontSize: 16,
       fontWeight: "400",
     },
     footer: {
       marginTop: 20,
-      color: colorScheme === "dark" ? "#FFD966" : "#555",
+      color: theme.tertiaryText,
     },
     signup: {
-      color: colorScheme === "dark" ? "#FFD966" : "#70C601",
+      color: theme.activeText,
       fontWeight: "700",
     },
     checkbox: {

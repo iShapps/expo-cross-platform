@@ -26,6 +26,8 @@ export const Colors = {
     whiteText: "#fff",
     heroBg: "#F8FFF0",
     heroBorder: "#E6F0D8",
+    lightBorder: "#fff",
+
     errorBg: "#FFB2B2",
     errorTitle: "#111",
     errorSubtitle: "#4B5563",
@@ -49,6 +51,7 @@ export const Colors = {
     whiteText: "#FFD966",
     heroBg: "#232A2E",
     heroBorder: "#36454F",
+    lightBorder: "#36454F",
     errorBg: "#FFD966",
     errorTitle: "#FFD966",
     errorSubtitle: "#FFD966",
