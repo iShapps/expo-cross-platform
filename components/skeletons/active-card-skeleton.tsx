@@ -1,12 +1,15 @@
+import { Colors } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import React from "react";
 import { StyleSheet, View } from "react-native";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { SkeletonBase } from "./skeleton-base";
 
 export const ActiveCardSkeleton: React.FC = () => {
   let colorScheme = useColorScheme();
   if (!colorScheme) colorScheme = "light";
-  const styles = getStyles(colorScheme);
+  const theme = Colors[colorScheme];
+  const styles = getStyles(theme);
+
   return (
     <View style={styles.card}>
       <View style={styles.topContent}>
@@ -40,44 +43,45 @@ export const ActiveCardSkeleton: React.FC = () => {
   );
 };
 
-const getStyles = (colorScheme: string) => StyleSheet.create({
-  card: {
-    borderRadius: 8,
-    padding: 10,
-    gap: 5,
-    marginTop: 10,
-    backgroundColor: colorScheme === "dark" ? "#232A2E" : "#f5f5f5",
-    borderWidth: 1,
-    borderColor: colorScheme === "dark" ? "#36454F" : "#f0f0f0",
-  },
-  topContent: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 4,
-  },
-  title: {
-    marginTop: 4,
-    marginBottom: 4,
-  },
-  subtitle: {
-    marginBottom: 8,
-  },
-  infoPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    backgroundColor: colorScheme === "dark" ? "#36454F" : "#f0f0f0",
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 8,
-  },
-  addressPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    backgroundColor: colorScheme === "dark" ? "#36454F" : "#f0f0f0",
-    padding: 12,
-    borderRadius: 8,
-  },
-});
+const getStyles = (theme: typeof Colors.light) =>
+  StyleSheet.create({
+    card: {
+      borderRadius: 8,
+      padding: 10,
+      gap: 5,
+      marginTop: 10,
+      backgroundColor: theme.skeletonBg,
+      borderWidth: 1,
+      borderColor: theme.greyBorder,
+    },
+    topContent: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 4,
+    },
+    title: {
+      marginTop: 4,
+      marginBottom: 4,
+    },
+    subtitle: {
+      marginBottom: 8,
+    },
+    infoPill: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+      backgroundColor: theme.greyBorder,
+      padding: 12,
+      borderRadius: 8,
+      marginBottom: 8,
+    },
+    addressPill: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      backgroundColor: theme.greyBorder,
+      padding: 12,
+      borderRadius: 8,
+    },
+  });

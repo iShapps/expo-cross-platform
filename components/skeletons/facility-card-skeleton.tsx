@@ -5,10 +5,10 @@ import { StyleSheet, View } from "react-native";
 import { SkeletonBase } from "./skeleton-base";
 
 const FacilityCardSkeleton: React.FC = () => {
-  const colorScheme = useColorScheme();
-  const theme = Colors[colorScheme ?? "light"];
+  let colorScheme = useColorScheme();
+  if (!colorScheme) colorScheme = "light";
+  const theme = Colors[colorScheme];
   const styles = getStyles(theme);
-
   return (
     <View style={styles.heroCard}>
       <View style={styles.heroContent}>

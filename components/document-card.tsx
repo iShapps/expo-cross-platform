@@ -10,6 +10,7 @@ import React from "react";
 
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { Colors } from "@/constants/theme";
 import { useRouter } from "expo-router";
 
 interface DocumentCardProps {
@@ -25,7 +26,9 @@ const DocumentCard: React.FC<DocumentCardProps> = ({ document }) => {
   const expired = isExpired(document.expiry_date);
   let colorScheme = useColorScheme();
   if (!colorScheme) colorScheme = "light";
-  const styles = getStyles(colorScheme);
+  const theme = Colors[colorScheme];
+  const styles = getStyles(theme);
+
   const router = useRouter();
   // Dynamic icon selection based on document name
   let iconComponent = (
@@ -159,7 +162,7 @@ const DocumentCard: React.FC<DocumentCardProps> = ({ document }) => {
         </View>
       </View>
       <View style={styles.moreIconBtn}>
-        <MaterialIcons name="more-horiz" size={26} color="#70C601" />
+        <MaterialIcons name="more-horiz" size={26} color={theme.primary} />
       </View>
     </Pressable>
   );
@@ -167,21 +170,21 @@ const DocumentCard: React.FC<DocumentCardProps> = ({ document }) => {
 
 export default DocumentCard;
 
-const getStyles = (colorScheme: string) =>
+const getStyles = (theme: typeof Colors.light) =>
   StyleSheet.create({
     card: {
       flexDirection: "row",
       alignItems: "center",
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff",
+      backgroundColor: theme.whiteBackground,
       borderRadius: 5,
       padding: 5,
-      borderColor: colorScheme === "dark" ? "#36454F" : "#f1f1f1",
+      borderColor: theme.greyBorder,
       borderWidth: 1,
       gap: 0,
     },
     expiredCard: {
-      borderColor: colorScheme === "dark" ? "#e53935" : "#e53935",
-      backgroundColor: colorScheme === "dark" ? "#2E2E2E" : "#fff5f5",
+      borderColor: theme.danger,
+      backgroundColor: theme.errorBg,
     },
     iconWrapper: {
       position: "relative",
@@ -203,14 +206,14 @@ const getStyles = (colorScheme: string) =>
       height: 10,
       borderRadius: 5,
       borderWidth: 1.5,
-      borderColor: colorScheme === "dark" ? "#36454F" : "#fff",
+      borderColor: theme.whiteBackground,
       zIndex: 2,
     },
     statusDotActive: {
-      backgroundColor: colorScheme === "dark" ? "#43d047" : "#43d047",
+      backgroundColor: theme.primary,
     },
     statusDotInactive: {
-      backgroundColor: colorScheme === "dark" ? "#e53935" : "#e53935",
+      backgroundColor: theme.danger,
     },
     infoColumn: {
       flex: 1,
@@ -219,7 +222,7 @@ const getStyles = (colorScheme: string) =>
     },
     createdAt: {
       fontSize: 11,
-      color: colorScheme === "dark" ? "#a8a49f" : "#aaa",
+      color: theme.secondaryText,
       marginBottom: 2,
       marginLeft: 2,
     },
@@ -232,7 +235,7 @@ const getStyles = (colorScheme: string) =>
     name: {
       fontSize: 15,
       fontWeight: "600",
-      color: colorScheme === "dark" ? "#a8a49f" : "#222",
+      color: theme.darkText,
       flexShrink: 1,
       marginRight: 8,
       letterSpacing: 0.2,
@@ -251,17 +254,17 @@ const getStyles = (colorScheme: string) =>
     },
     metaText: {
       fontSize: 11,
-      color: colorScheme === "dark" ? "#a8a49f" : "#888",
+      color: theme.secondaryText,
       fontWeight: "500",
     },
     dot: {
       fontSize: 10,
-      color: colorScheme === "dark" ? "#efece2" : "#bbb",
+      color: theme.secondaryText,
       marginHorizontal: 3,
       marginTop: -1,
     },
     expiredText: {
-      color: colorScheme === "dark" ? "#e53935" : "#e53935",
+      color: theme.danger,
       fontWeight: "bold",
     },
   });

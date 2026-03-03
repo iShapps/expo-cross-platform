@@ -55,6 +55,9 @@ export const Colors = {
     linksContainerBg: "#fff",
     shadow: "#70C601",
     settingTitle: "#232A2E",
+    skeletonBg: "#f5f5f5",
+    activeBorder: "#d0e6a5",
+    statusText: "#fff",
   },
   dark: {
     tint: tintColorDark,
@@ -102,6 +105,9 @@ export const Colors = {
     },
     linksContainerBg: "#232A2E",
     settingTitle: "#fff",
+    skeletonBg: "#232A2E",
+    activeBorder: "#36454F",
+    statusText: "#a8a49f",
   },
 };
 
