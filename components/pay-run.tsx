@@ -1,3 +1,4 @@
+import { Colors } from "@/constants/theme";
 import { IShift } from "@/data-types/shifts";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -27,7 +28,8 @@ export const ShiftCardBase: React.FC<ShiftCardProps> = ({ shift, onPress }) => {
 
   let colorScheme = useColorScheme();
   if (!colorScheme) colorScheme = "light";
-  const styles = getStyles(colorScheme);
+  const theme = Colors[colorScheme];
+  const styles = getStyles(theme);
 
   return (
     <Link
@@ -111,7 +113,7 @@ export const ShiftCardBase: React.FC<ShiftCardProps> = ({ shift, onPress }) => {
                 gap: 2,
               }}
             >
-              <Ionicons name="time-outline" size={18} color="#70C601" />
+              <Ionicons name="time-outline" size={18} color={theme.primary} />
               <Text
                 style={{
                   ...styles.periodText,
@@ -132,7 +134,11 @@ export const ShiftCardBase: React.FC<ShiftCardProps> = ({ shift, onPress }) => {
                 gap: 2,
               }}
             >
-              <Ionicons name="location-outline" size={18} color="#70C601" />
+              <Ionicons
+                name="location-outline"
+                size={18}
+                color={theme.primary}
+              />
               <Text
                 style={{
                   ...styles.locationText,
@@ -153,14 +159,14 @@ export const ShiftCardBase: React.FC<ShiftCardProps> = ({ shift, onPress }) => {
   );
 };
 
-const getStyles = (colorScheme: string) =>
+const getStyles = (theme: typeof Colors.light) =>
   StyleSheet.create({
     card: {
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#ffffff",
+      backgroundColor: theme.whiteBackground,
       borderRadius: 5,
       padding: 8,
       borderWidth: 1,
-      borderColor: colorScheme === "dark" ? "#36454F" : "#d0e6a5",
+      borderColor: theme.activeBorder,
       display: "flex",
       flexDirection: "row",
       width: "100%",
@@ -184,22 +190,22 @@ const getStyles = (colorScheme: string) =>
     title: {
       fontSize: 14,
       lineHeight: 20,
-      color: colorScheme === "dark" ? "#a8a49f" : undefined,
+      color: theme.secondaryText,
     },
     categoryText: {
       fontSize: 12,
       lineHeight: 18,
-      color: colorScheme === "dark" ? "#a8a49f" : "#708090",
+      color: theme.secondaryText,
     },
     periodText: {
       fontSize: 12,
       lineHeight: 18,
-      color: colorScheme === "dark" ? "#a8a49f" : "#36454F",
+      color: theme.secondaryText,
     },
     locationText: {
       fontSize: 13,
       lineHeight: 18,
-      color: colorScheme === "dark" ? "#a8a49f" : "#818589",
+      color: theme.secondaryText,
       fontWeight: "600",
     },
     statusBadge: {
@@ -209,7 +215,7 @@ const getStyles = (colorScheme: string) =>
       borderRadius: 12,
     },
     dateCard: {
-      backgroundColor: colorScheme === "dark" ? "#36454F" : "#70C601",
+      backgroundColor: theme.background,
       borderRadius: 5,
       padding: 4,
       display: "flex",
@@ -221,11 +227,11 @@ const getStyles = (colorScheme: string) =>
     },
     dateText: {
       fontSize: 17,
-      color: colorScheme === "dark" ? "#a8a49f" : "#fff",
+      color: theme.statusText,
       textAlign: "center",
     },
     statusText: {
-      color: colorScheme === "dark" ? "#a8a49f" : "#fff",
+      color: theme.statusText,
       fontSize: 12,
       fontWeight: "600",
     },

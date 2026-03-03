@@ -7,6 +7,7 @@ import {
   AuthenticationError,
   NetworkError,
 } from "@/utils/auth-api";
+import { useQueryClient } from "@tanstack/react-query";
 import { usePathname, useRouter, useSegments } from "expo-router";
 import React, { useEffect } from "react";
 import { Alert } from "react-native";
@@ -76,6 +77,7 @@ export function SessionProvider(props: React.PropsWithChildren) {
 
   useProtectedRoute(session);
   const profileStore = useProfileData();
+  const queryClient = useQueryClient();
 
   const user = userJson ? JSON.parse(userJson) : null;
 
@@ -92,6 +94,8 @@ export function SessionProvider(props: React.PropsWithChildren) {
       // Update profile store if needed
       profileStore.setToken(result.data.access_token);
       profileStore.setUserDetails(result.data.user);
+      // Cache profile data for global access
+      queryClient.setQueryData(["profile-details"], result.data.user);
 
       // Login to OneSignal for push notifications
       // await onLoginSuccess(result.data.user.id.toString());

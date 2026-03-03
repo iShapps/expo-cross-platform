@@ -1,3 +1,4 @@
+import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useRouter } from "expo-router";
 import React from "react";
@@ -10,13 +11,14 @@ export const ShiftDetailsSkeleton: React.FC = () => {
   const router = useRouter();
   let colorScheme = useColorScheme();
   if (!colorScheme) colorScheme = "light";
-  const styles = getStyles(colorScheme);
+  const theme = Colors[colorScheme];
+  const styles = getStyles(theme);
   return (
     <SafeAreaView
       edges={["top"]}
       style={{
         flex: 1,
-        backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
+        backgroundColor: theme.background,
       }}
     >
       <Header
@@ -195,24 +197,24 @@ export const ShiftDetailsSkeleton: React.FC = () => {
   );
 };
 
-const getStyles = (colorScheme: string) =>
+const getStyles = (theme: typeof Colors.light) =>
   StyleSheet.create({
     content: {
       paddingBottom: 32,
       flex: 1,
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#ffffff",
+      backgroundColor: theme.whiteBackground,
       paddingHorizontal: 10,
     },
     heroCard: {
       marginTop: 8,
-      backgroundColor: colorScheme === "dark" ? "#36454F" : "#F8FFF0",
+      backgroundColor: theme.heroBg,
       borderRadius: 5,
       padding: 10,
       flexDirection: "row",
       alignItems: "center",
       gap: 12,
       borderWidth: 1,
-      borderColor: colorScheme === "dark" ? "#36454F" : "#E6F0D8",
+      borderColor: theme.heroBorder,
       marginBottom: 12,
     },
     heroContent: {
@@ -229,14 +231,14 @@ const getStyles = (colorScheme: string) =>
       borderRadius: 5,
       padding: 14,
       borderWidth: 1,
-      borderColor: colorScheme === "dark" ? "#36454F" : "#F0F0F0",
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff",
+      borderColor: theme.greyBorder,
+      backgroundColor: theme.whiteBackground,
       marginBottom: 8,
     },
     detailRow: {
       paddingVertical: 8,
       borderBottomWidth: 1,
-      borderBottomColor: colorScheme === "dark" ? "#36454F" : "#F3F4F6",
+      borderBottomColor: theme.greyBorder,
     },
     detailRowNoBorder: {
       paddingVertical: 8,

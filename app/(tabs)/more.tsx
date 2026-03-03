@@ -4,7 +4,9 @@ import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 
 import { updateAvailability } from "@/api-queries/profile";
 import Header from "@/components/Header";
+import { Colors } from "@/constants/theme";
 import { useProfileData } from "@/data-store/use-account-store";
+import { User } from "@/data-types/auth";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -35,7 +37,8 @@ export default function More() {
 
   let colorScheme = useColorScheme();
   if (!colorScheme) colorScheme = "light";
-  const styles = getStyles(colorScheme);
+  const theme = Colors[colorScheme];
+  const styles = getStyles(theme);
 
   const handleLogout = () => {
     // add confirmation dialog
@@ -70,16 +73,30 @@ export default function More() {
     updateAvailabilityMutation.mutate(status, {
       onSuccess: (response) => {
         if (response.status) {
-          queryClient.setQueryData(["profile-details"], (oldData: any) => {
-            return {
-              ...oldData,
+          queryClient.setQueryData<User | undefined>(
+            ["profile-details"],
+            (oldData) => {
+              if (!oldData) return oldData;
+              const updated = {
+                ...oldData,
+                hcp: {
+                  ...oldData.hcp,
+                  available_for_job: status,
+                },
+              };
+              return updated;
+            },
+          );
+          // Sync Zustand store
+          if (profileStore.userDetails) {
+            profileStore.setUserDetails({
+              ...profileStore.userDetails,
               hcp: {
-                ...oldData?.hcp,
-                available_for_job: status === 1,
+                ...profileStore.userDetails.hcp,
+                available_for_job: status,
               },
-            };
-          });
-
+            });
+          }
           Alert.alert("Success", response.message);
         } else {
           setIsAvailable(!value);
@@ -239,17 +256,17 @@ export default function More() {
   );
 }
 
-const getStyles = (colorScheme: string) =>
+const getStyles = (theme: typeof Colors.light) =>
   StyleSheet.create({
     safeArea: {
       flex: 1,
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
+      backgroundColor: theme.background,
     },
     container: {
       flex: 1,
       height: "100%",
       width: "100%",
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
+      backgroundColor: theme.background,
       display: "flex",
       flexDirection: "column",
       gap: 20,
@@ -267,13 +284,13 @@ const getStyles = (colorScheme: string) =>
       borderRadius: 5,
       padding: 14,
       borderWidth: 1,
-      borderColor: colorScheme === "dark" ? "#36454F" : "#F0F0F0",
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff",
+      borderColor: theme.greyBorder,
+      backgroundColor: theme.whiteBackground,
       width: "100%",
     },
     scroll: {
       flex: 1,
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#ffffff",
+      backgroundColor: theme.whiteBackground,
       paddingHorizontal: 10,
       paddingVertical: 10,
     },
@@ -283,7 +300,7 @@ const getStyles = (colorScheme: string) =>
     sectionTitle: {
       fontSize: 13,
       fontWeight: "700",
-      color: colorScheme === "dark" ? "#b0b8ca" : "#111",
+      color: theme.tertiaryText,
       marginBottom: 10,
       textTransform: "uppercase",
       letterSpacing: 0.4,
@@ -296,11 +313,11 @@ const getStyles = (colorScheme: string) =>
     rowTitle: {
       fontSize: 14,
       fontWeight: "600",
-      color: colorScheme === "dark" ? "#b0b8ca" : "#111",
+      color: theme.tertiaryText,
     },
     rowSubtitle: {
       fontSize: 12,
-      color: colorScheme === "dark" ? "#b0b8ca" : "#6B7280",
+      color: theme.secondaryText,
       marginTop: 2,
     },
     topSection: {
@@ -318,11 +335,11 @@ const getStyles = (colorScheme: string) =>
       marginVertical: 5,
     },
     profileCard: {
-      backgroundColor: colorScheme === "dark" ? "#36454F" : "#F8FFF0",
+      backgroundColor: theme.heroBg,
       borderRadius: 5,
       padding: 14,
       borderWidth: 1,
-      borderColor: colorScheme === "dark" ? "#36454F" : "#E6F0D8",
+      borderColor: theme.heroBorder,
       flexDirection: "row",
       gap: 12,
       width: "100%",
@@ -331,7 +348,7 @@ const getStyles = (colorScheme: string) =>
       height: 68,
       width: 68,
       borderRadius: 34,
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#EAF7D2",
+      backgroundColor: theme.heroIconBg,
       alignItems: "center",
       justifyContent: "center",
       overflow: "hidden",
@@ -342,12 +359,12 @@ const getStyles = (colorScheme: string) =>
       borderRadius: 34,
     },
     rowText: {
-      color: colorScheme === "dark" ? "#fff" : "#111",
+      color: theme.primaryText,
     },
     avatarFallback: {
       fontSize: 22,
       fontWeight: "700",
-      color: colorScheme === "dark" ? "#b0b8ca" : "#70C601",
+      color: theme.primary,
     },
     profileInfo: {
       flex: 1,
@@ -355,11 +372,11 @@ const getStyles = (colorScheme: string) =>
     profileName: {
       fontSize: 16,
       fontWeight: "700",
-      color: colorScheme === "dark" ? "#fff" : "#111",
+      color: theme.primaryText,
     },
     profileEmail: {
       fontSize: 12,
-      color: colorScheme === "dark" ? "#fff" : "#6B7280",
+      color: theme.secondaryText,
       marginTop: 2,
     },
     profileTagRow: {
@@ -372,18 +389,18 @@ const getStyles = (colorScheme: string) =>
     profileTag: {
       fontSize: 11,
       fontWeight: "600",
-      color: colorScheme === "dark" ? "#FFD966" : "#3B4B3F",
-      backgroundColor: colorScheme === "dark" ? "#adb3b7" : "#EAF7D2",
+      color: theme.errorSubtitle,
+      backgroundColor: theme.heroBg,
       paddingHorizontal: 8,
       paddingVertical: 4,
       borderRadius: 999,
     },
     profileTagDivider: {
-      color: colorScheme === "dark" ? "#FFD966" : "#9CA3AF",
+      color: theme.errorSubtitle,
       fontSize: 12,
     },
     serviceIContainer: {
-      backgroundColor: colorScheme === "dark" ? "#36454F" : "#f4f4f4",
+      backgroundColor: theme.grayBorder,
       padding: 4,
       height: 100,
       width: 100,
@@ -400,7 +417,7 @@ const getStyles = (colorScheme: string) =>
       fontWeight: "bold",
       fontSize: 13,
       fontFamily: "Roboto",
-      color: colorScheme === "dark" ? "#FFD966" : undefined,
+      color: theme.primary,
     },
     profileContainer: {
       display: "flex",
@@ -416,7 +433,7 @@ const getStyles = (colorScheme: string) =>
       alignContent: "center",
       alignItems: "center",
       justifyContent: "space-between",
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
+      backgroundColor: theme.background,
       gap: 25,
       paddingHorizontal: 10,
     },
@@ -437,14 +454,14 @@ const getStyles = (colorScheme: string) =>
       fontFamily: "Roboto",
       fontSize: 18,
       fontWeight: "700",
-      color: colorScheme === "dark" ? "#fff" : "#fff",
+      color: theme.white,
     },
     searchInputContainer: {
       display: "flex",
       flexDirection: "column",
       width: "100%",
       gap: 15,
-      borderBottomColor: colorScheme === "dark" ? "#36454F" : "#d3d3d3",
+      borderBottomColor: theme.greyBorder,
       borderBottomWidth: 1,
       paddingBottom: 25,
     },
@@ -465,23 +482,23 @@ const getStyles = (colorScheme: string) =>
       alignItems: "center",
       gap: 5,
       borderBottomWidth: 1,
-      borderBottomColor: colorScheme === "dark" ? "#36454F" : "#f4f4f4",
+      borderBottomColor: theme.divider,
       paddingVertical: 12,
     },
     currentLocationText: {
       fontFamily: "Roboto",
       fontSize: 16,
       fontWeight: "500",
-      color: colorScheme === "dark" ? "#FFD966" : undefined,
+      color: theme.activeText,
     },
     formLabelText: {
-      color: colorScheme === "dark" ? "#FFD966" : "gray",
+      color: theme.activeText,
     },
     formInput: {
-      backgroundColor: colorScheme === "dark" ? "#36454F" : "#F4F4F4",
+      backgroundColor: theme.grayBorder,
       borderRadius: 7,
       padding: 9,
-      color: colorScheme === "dark" ? "#FFD966" : undefined,
+      color: theme.activeText,
     },
     formContainer: {
       width: "100%",
@@ -497,32 +514,32 @@ const getStyles = (colorScheme: string) =>
       width: "100%",
     },
     button: {
-      backgroundColor: colorScheme === "dark" ? "#FFD966" : "#70C601",
+      backgroundColor: theme.activeText,
       borderRadius: 22,
       padding: 12,
-      color: colorScheme === "dark" ? "#232A2E" : "#ffffff",
+      color: theme.whiteBackground,
       justifyContent: "center",
       alignItems: "center",
     },
     buttonText: {
-      color: colorScheme === "dark" ? "#232A2E" : "#ffffff",
+      color: theme.whiteBackground,
     },
     dropdown: {
-      backgroundColor: colorScheme === "dark" ? "#36454F" : "#F4F4F4",
+      backgroundColor: theme.grayBorder,
       borderRadius: 7,
       padding: 9,
-      color: colorScheme === "dark" ? "#FFD966" : undefined,
+      color: theme.activeText,
     },
     icon: {
       marginRight: 5,
     },
     placeholderStyle: {
       fontSize: 16,
-      color: colorScheme === "dark" ? "#FFD966" : undefined,
+      color: theme.activeText,
     },
     selectedTextStyle: {
       fontSize: 16,
-      color: colorScheme === "dark" ? "#FFD966" : undefined,
+      color: theme.activeText,
     },
     iconStyle: {
       width: 20,
@@ -531,6 +548,6 @@ const getStyles = (colorScheme: string) =>
     inputSearchStyle: {
       height: 40,
       fontSize: 16,
-      color: colorScheme === "dark" ? "#FFD966" : undefined,
+      color: theme.activeText,
     },
   });

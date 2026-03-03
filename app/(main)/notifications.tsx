@@ -2,6 +2,7 @@ import { getNotifications } from "@/api-queries/notifcations";
 import Header from "@/components/Header";
 import { NotificationCard } from "@/components/notification-card";
 import { NotificationCardSkeleton } from "@/components/skeletons";
+import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useInfiniteQuery } from "@tanstack/react-query";
@@ -108,7 +109,8 @@ export default function NotificationsScreen() {
 
   let colorScheme = useColorScheme();
   if (!colorScheme) colorScheme = "light";
-  const styles = getStyles(colorScheme, screenHeight);
+  const theme = Colors[colorScheme];
+  const styles = getStyles(theme, screenHeight);
 
   return (
     <SafeAreaView edges={["top"]} style={styles.safeArea}>
@@ -171,7 +173,7 @@ export default function NotificationsScreen() {
                   <MaterialCommunityIcons
                     name="broadcast-off"
                     size={72}
-                    color="#e0e0e0"
+                    color={theme.mutedText}
                   />
                   <Text style={styles.emptyTitle}>
                     No {tabTypes[index].toLowerCase()} notifications Yet
@@ -211,11 +213,13 @@ export default function NotificationsScreen() {
           <MaterialCommunityIcons
             name="alert-circle-outline"
             size={72}
-            color="#ff6f61"
+            color={theme.danger}
           />
           <Text style={styles.errorTitle}>Error Loading Notifications</Text>
           <Pressable onPress={handlePullToRefresh} style={styles.retryButton}>
-            <Text style={{ color: "#71797E", fontWeight: "700" }}>Retry</Text>
+            <Text style={{ color: theme.secondaryText, fontWeight: "700" }}>
+              Retry
+            </Text>
           </Pressable>
         </View>
       )}
@@ -223,14 +227,14 @@ export default function NotificationsScreen() {
   );
 }
 
-const getStyles = (colorScheme: string, screenHeight: number) =>
+const getStyles = (theme: typeof Colors.light, screenHeight: number) =>
   StyleSheet.create({
     safeArea: {
       flex: 1,
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
+      backgroundColor: theme.background,
     },
     container: {
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff",
+      backgroundColor: theme.whiteBackground,
       paddingHorizontal: 8,
       display: "flex",
       flexDirection: "column",
@@ -246,10 +250,10 @@ const getStyles = (colorScheme: string, screenHeight: number) =>
     tabText: {
       fontSize: 14,
       fontWeight: "600",
-      color: colorScheme === "dark" ? "#fff" : "#667085",
+      color: theme.secondaryText,
     },
     tabTextActive: {
-      color: colorScheme === "dark" ? "#FFD966" : "#70C601",
+      color: theme.activeText,
     },
     tabUnderline: {
       height: 2,
@@ -259,7 +263,7 @@ const getStyles = (colorScheme: string, screenHeight: number) =>
       borderRadius: 999,
     },
     tabUnderlineActive: {
-      backgroundColor: colorScheme === "dark" ? "#FFD966" : "#70C601",
+      backgroundColor: theme.activeText,
     },
     listContainer: {
       minHeight: screenHeight,
@@ -276,7 +280,7 @@ const getStyles = (colorScheme: string, screenHeight: number) =>
     emptyTitle: {
       fontSize: 18,
       fontWeight: "700",
-      color: "#70C601",
+      color: theme.activeText,
       marginTop: 12,
     },
     errorOverlay: {
@@ -292,7 +296,7 @@ const getStyles = (colorScheme: string, screenHeight: number) =>
     errorTitle: {
       fontSize: 18,
       fontWeight: "700",
-      color: "#ff6f61",
+      color: theme.errorTitle,
       marginTop: 12,
     },
     retryButton: {

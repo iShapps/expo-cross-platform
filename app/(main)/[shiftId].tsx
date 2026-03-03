@@ -375,14 +375,14 @@ export default function ShiftDetails() {
             style={[
               styles.errorIconWrap,
               {
-                backgroundColor: colorScheme === "dark" ? "#232A2E" : "#FBF2F2",
+                backgroundColor: theme.errorBg,
               },
             ]}
           >
             <MaterialCommunityIcons
               name="cloud-alert-outline"
               size={34}
-              color="#FFB2B2"
+              color={theme.danger}
             />
           </View>
           <Text style={[styles.errorTitle, { color: theme.errorTitle }]}>
@@ -778,7 +778,7 @@ const getStyles = (theme: typeof Colors.light) =>
       borderRadius: 5,
       padding: 14,
       borderWidth: 1,
-      borderColor: theme.grayBorder,
+      borderColor: theme.divider,
       backgroundColor: theme.whiteBackground,
       marginBottom: 8,
     },
@@ -793,11 +793,11 @@ const getStyles = (theme: typeof Colors.light) =>
     detailRow: {
       paddingVertical: 8,
       borderBottomWidth: 1,
-      borderBottomColor: "#F3F4F6",
+      borderBottomColor: theme.divider,
     },
     detailLabel: {
       fontSize: 12,
-      color: "#6B7280",
+      color: theme.secondaryText,
     },
     detailValue: {
       fontSize: 14,
@@ -833,7 +833,7 @@ const getStyles = (theme: typeof Colors.light) =>
       transform: [{ translateX: -1.5 }],
       width: 2,
       borderRadius: 2,
-      backgroundColor: "#E0E0E0",
+      backgroundColor: theme.grayBorder,
       zIndex: 0,
       height: "50%",
     },
@@ -845,8 +845,8 @@ const getStyles = (theme: typeof Colors.light) =>
       justifyContent: "center",
       zIndex: 1,
       borderWidth: 1,
-      borderColor: "#fff",
-      shadowColor: "#000",
+      borderColor: theme.white,
+      shadowColor: theme.shadow,
       shadowOffset: { width: 0, height: 1 },
       shadowOpacity: 0.08,
       shadowRadius: 2,

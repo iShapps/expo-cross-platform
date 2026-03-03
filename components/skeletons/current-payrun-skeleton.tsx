@@ -1,11 +1,13 @@
+import { Colors } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import React from "react";
 import { StyleSheet, View } from "react-native";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 
 export const CurrentPayrunSkeleton: React.FC = () => {
   let colorScheme = useColorScheme();
   if (!colorScheme) colorScheme = "light";
-  const styles = getStyles(colorScheme);
+  const theme = Colors[colorScheme];
+  const styles = getStyles(theme);
 
   return (
     <View style={styles.payrunCard}>
@@ -18,45 +20,46 @@ export const CurrentPayrunSkeleton: React.FC = () => {
   );
 };
 
-const getStyles = (colorScheme: string) => StyleSheet.create({
-  payrunCard: {
-    marginTop: 12,
-    borderRadius: 5,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: colorScheme === "dark" ? "#36454F" : "#DDE7D6",
-    backgroundColor: colorScheme === "dark" ? "#232A2E" : "#F8FFF0",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    elevation: 3,
-  },
-  payrunHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    width: "100%",
-    gap: 8,
-  },
-  iconPillPayrun: {
-    width: 28,
-    height: 28,
-    borderRadius: 999,
-    backgroundColor: colorScheme === "dark" ? "#36454F" : "#E0E0E0",
-  },
-  labelSkeleton: {
-    height: 16,
-    width: 120,
-    borderRadius: 4,
-    backgroundColor: colorScheme === "dark" ? "#36454F" : "#E0E0E0",
-    flexGrow: 1,
-    marginLeft: 8,
-  },
-  valueSkeleton: {
-    height: 18,
-    width: 100,
-    borderRadius: 4,
-    backgroundColor: colorScheme === "dark" ? "#36454F" : "#E0E0E0",
-    marginTop: 8,
-  },
-});
+const getStyles = (theme: typeof Colors.light) =>
+  StyleSheet.create({
+    payrunCard: {
+      marginTop: 12,
+      borderRadius: 5,
+      padding: 12,
+      borderWidth: 1,
+      borderColor: theme.greyBorder,
+      backgroundColor: theme.skeletonBg,
+      shadowColor: theme.shadow,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.08,
+      shadowRadius: 10,
+      elevation: 3,
+    },
+    payrunHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      width: "100%",
+      gap: 8,
+    },
+    iconPillPayrun: {
+      width: 28,
+      height: 28,
+      borderRadius: 999,
+      backgroundColor: theme.greyBorder,
+    },
+    labelSkeleton: {
+      height: 16,
+      width: 120,
+      borderRadius: 4,
+      backgroundColor: theme.greyBorder,
+      flexGrow: 1,
+      marginLeft: 8,
+    },
+    valueSkeleton: {
+      height: 18,
+      width: 100,
+      borderRadius: 4,
+      backgroundColor: theme.greyBorder,
+      marginTop: 8,
+    },
+  });
