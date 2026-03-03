@@ -27,7 +27,7 @@ export const Colors = {
     heroBg: "#F8FFF0",
     heroBorder: "#E6F0D8",
     lightBorder: "#fff",
-
+    safeAreaBg: "#ffffff",
     errorBg: "#FFB2B2",
     errorTitle: "#111",
     errorSubtitle: "#4B5563",
@@ -56,6 +56,7 @@ export const Colors = {
     tabIconSelected: tintColorDark,
     white: "#fff",
     primary: "#70C601",
+    safeAreaBg: "#232A2E",
     darkText: "#70C601",
     background: "#232A2E",
     activeText: "#FFD966",
