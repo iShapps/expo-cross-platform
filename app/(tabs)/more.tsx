@@ -6,6 +6,7 @@ import { updateAvailability } from "@/api-queries/profile";
 import Header from "@/components/Header";
 import { Colors } from "@/constants/theme";
 import { useProfileData } from "@/data-store/use-account-store";
+import { User } from "@/data-types/auth";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -72,16 +73,30 @@ export default function More() {
     updateAvailabilityMutation.mutate(status, {
       onSuccess: (response) => {
         if (response.status) {
-          queryClient.setQueryData(["profile-details"], (oldData: any) => {
-            return {
-              ...oldData,
+          queryClient.setQueryData<User | undefined>(
+            ["profile-details"],
+            (oldData) => {
+              if (!oldData) return oldData;
+              const updated = {
+                ...oldData,
+                hcp: {
+                  ...oldData.hcp,
+                  available_for_job: status,
+                },
+              };
+              return updated;
+            },
+          );
+          // Sync Zustand store
+          if (profileStore.userDetails) {
+            profileStore.setUserDetails({
+              ...profileStore.userDetails,
               hcp: {
-                ...oldData?.hcp,
-                available_for_job: status === 1,
+                ...profileStore.userDetails.hcp,
+                available_for_job: status,
               },
-            };
-          });
-
+            });
+          }
           Alert.alert("Success", response.message);
         } else {
           setIsAvailable(!value);
