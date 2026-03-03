@@ -9,6 +9,7 @@ import {
 import { ShiftCardBase } from "@/components/pay-run";
 import TabsHeader from "@/components/shared/tabs-header";
 import { ShiftCardBaseSkeleton } from "@/components/skeletons/payrun-card-base-skeleton";
+import { Colors } from "@/constants/theme";
 import { IShift } from "@/data-types/shifts";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -151,7 +152,8 @@ export default function Schedules() {
 
   let colorScheme = useColorScheme();
   if (!colorScheme) colorScheme = "light";
-  const styles = getStyles(colorScheme);
+  const theme = Colors[colorScheme];
+  const styles = getStyles(theme);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -170,7 +172,7 @@ export default function Schedules() {
                 key={status}
                 onPress={() => handleTabPress(index)}
                 style={styles.tabButton}
-                android_ripple={{ color: "#ccc" }}
+                android_ripple={{ color: theme.grayBorder }}
                 onLayout={(e) => {
                   tabOffsetsRef.current[index] = e.nativeEvent.layout.x;
                   tabWidthsRef.current[index] = e.nativeEvent.layout.width;
@@ -357,14 +359,14 @@ export default function Schedules() {
                       <MaterialCommunityIcons
                         name="alert-circle-outline"
                         size={72}
-                        color="#ff6f61"
+                        color={theme.danger}
                         style={{ marginBottom: 16 }}
                       />
                       <Text
                         style={{
                           fontSize: 20,
                           fontWeight: "700",
-                          color: "#ff6f61",
+                          color: theme.danger,
                           marginBottom: 8,
                         }}
                       >
@@ -373,7 +375,7 @@ export default function Schedules() {
                       <Text
                         style={{
                           fontSize: 15,
-                          color: "#818589",
+                          color: theme.tertiaryText,
                           textAlign: "center",
                           maxWidth: 260,
                           marginBottom: 12,
@@ -388,7 +390,7 @@ export default function Schedules() {
                           <Text
                             style={{
                               fontSize: 13,
-                              color: "#818589",
+                              color: theme.tertiaryText,
                               textAlign: "center",
                             }}
                           >
@@ -400,7 +402,7 @@ export default function Schedules() {
                       <TouchableOpacity
                         onPress={handlePullToRefresh}
                         style={{
-                          backgroundColor: "#FBF2F2",
+                          backgroundColor: theme.mutedText,
                           paddingHorizontal: 24,
                           paddingVertical: 10,
                           borderRadius: 20,
@@ -413,11 +415,11 @@ export default function Schedules() {
                         <FontAwesome6
                           name="rotate-left"
                           size={20}
-                          color="#71797E"
+                          color={theme.secondaryText}
                         />
                         <Text
                           style={{
-                            color: "#71797E",
+                            color: theme.secondaryText,
                             fontSize: 16,
                             fontWeight: "700",
                           }}
@@ -441,14 +443,14 @@ export default function Schedules() {
                       <MaterialCommunityIcons
                         name="calendar-remove-outline"
                         size={72}
-                        color="#e0e0e0"
+                        color={theme.grayBorder}
                         style={{ marginBottom: 16 }}
                       />
                       <Text
                         style={{
                           fontSize: 20,
                           fontWeight: "700",
-                          color: "#70C601",
+                          color: theme.primary,
                           marginBottom: 8,
                         }}
                       >
@@ -457,7 +459,7 @@ export default function Schedules() {
                       <Text
                         style={{
                           fontSize: 15,
-                          color: "#818589",
+                          color: theme.secondaryText,
                           textAlign: "center",
                           maxWidth: 260,
                         }}
@@ -513,38 +515,27 @@ export default function Schedules() {
   );
 }
 
-const getStyles = (colorScheme: string) =>
+const getStyles = (theme: typeof Colors.light) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#ffffff",
+      backgroundColor: theme.safeAreaBg,
       paddingHorizontal: 8,
     },
     safeArea: {
       flex: 1,
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
-    },
-    header: {
-      display: "flex",
-      flexDirection: "column",
-      gap: 4,
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
-      width: "100%",
-      margin: 8,
-      paddingHorizontal: 12,
-      paddingTop: 12,
-      paddingBottom: 8,
+      backgroundColor: theme.background,
     },
     title: {
       fontSize: 18,
       fontWeight: "700",
-      color: colorScheme === "dark" ? "#fff" : "#ffffff",
+      color: theme.white,
     },
     underline: {
       height: 3,
       width: 56,
       borderRadius: 999,
-      backgroundColor: colorScheme === "dark" ? "#FFD966" : "#70C601",
+      backgroundColor: theme.activeText,
       opacity: 0.85,
       marginTop: 6,
     },
@@ -560,10 +551,10 @@ const getStyles = (colorScheme: string) =>
     tabText: {
       fontSize: 14,
       fontWeight: "600",
-      color: colorScheme === "dark" ? "#fff" : "#667085",
+      color: theme.secondaryText,
     },
     tabTextActive: {
-      color: colorScheme === "dark" ? "#fff" : "#70C601",
+      color: theme.primary,
     },
     tabUnderline: {
       height: 2,
@@ -573,6 +564,6 @@ const getStyles = (colorScheme: string) =>
       marginTop: 6,
     },
     tabUnderlineActive: {
-      backgroundColor: colorScheme === "dark" ? "#fff" : "#70C601",
+      backgroundColor: theme.primary,
     },
   });

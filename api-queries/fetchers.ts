@@ -1,8 +1,7 @@
 import { TokenStorage } from "@/utils/auth-api";
 // TODO: Implement proper typing for shift data and responses
 
-const API_BASE_URL =
-  process.env.EXPO_PUBLIC_API_URL || "https://admin.ishapps.com/shapp-dev/api";
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 const API_TIMEOUT = 30000;
 
 export class ShiftApiError extends Error {

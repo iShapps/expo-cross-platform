@@ -1,3 +1,4 @@
+import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import React from "react";
 import { StyleSheet, View } from "react-native";
@@ -6,13 +7,14 @@ import { SkeletonBase } from "./skeleton-base";
 export const DashboardAnalyticsSkeleton: React.FC = () => {
   let colorScheme = useColorScheme();
   if (!colorScheme) colorScheme = "light";
-  const styles = getStyles(colorScheme);
+  const theme = Colors[colorScheme];
+  const styles = getStyles(theme);
 
   return (
     <View style={styles.container}>
       <View style={styles.dashboardRow}>
         {/* Available Shifts Card */}
-        <View style={[styles.dashboardCard, styles.dashboardCardAvailable]}>
+        <View style={[styles.dashboardCard, theme.dashboardCardAvailable]}>
           <View style={styles.dashboardTopRow}>
             <View style={[styles.iconPill, styles.iconPillAvailable]}>
               <SkeletonBase width={16} height={16} borderRadius={4} />
@@ -23,7 +25,7 @@ export const DashboardAnalyticsSkeleton: React.FC = () => {
         </View>
 
         {/* My Shifts Card */}
-        <View style={[styles.dashboardCard, styles.dashboardCardMy]}>
+        <View style={[styles.dashboardCard, theme.dashboardCardMy]}>
           <View style={styles.dashboardTopRow}>
             <View style={[styles.iconPill, styles.iconPillMy]}>
               <SkeletonBase width={16} height={16} borderRadius={4} />
@@ -34,7 +36,7 @@ export const DashboardAnalyticsSkeleton: React.FC = () => {
         </View>
 
         {/* Upcoming Shifts Card */}
-        <View style={[styles.dashboardCard, styles.dashboardCardUpcoming]}>
+        <View style={[styles.dashboardCard, theme.dashboardCardUpcoming]}>
           <View style={styles.dashboardTopRow}>
             <View style={[styles.iconPill, styles.iconPillUpcoming]}>
               <SkeletonBase width={16} height={16} borderRadius={4} />
@@ -48,10 +50,10 @@ export const DashboardAnalyticsSkeleton: React.FC = () => {
   );
 };
 
-const getStyles = (colorScheme: string) =>
+const getStyles = (theme: typeof Colors.light) =>
   StyleSheet.create({
     container: {
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : undefined,
+      backgroundColor: theme.background,
       paddingHorizontal: 0,
     },
     dashboardRow: {
@@ -65,20 +67,8 @@ const getStyles = (colorScheme: string) =>
       borderWidth: 1,
       width: "31%",
       shadowColor: "#000",
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : undefined,
-      borderColor: colorScheme === "dark" ? "#36454F" : undefined,
-    },
-    dashboardCardAvailable: {
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : undefined,
-      borderColor: colorScheme === "dark" ? "#70C601" : "#f0f0f0",
-    },
-    dashboardCardMy: {
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : undefined,
-      borderColor: colorScheme === "dark" ? "#4A90E2" : "#4A90E2",
-    },
-    dashboardCardUpcoming: {
-      backgroundColor: colorScheme === "dark" ? "#2E2E2E" : undefined,
-      borderColor: colorScheme === "dark" ? "#FFD600" : "#FFD600",
+      backgroundColor: theme.whiteBackground,
+      borderColor: theme.greyBorder,
     },
     dashboardTopRow: {
       flexDirection: "row",

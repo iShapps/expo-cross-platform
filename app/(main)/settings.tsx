@@ -1,4 +1,5 @@
 import Header from "@/components/Header";
+import { Colors } from "@/constants/theme";
 import { useSettingsStore } from "@/data-store/use-settings-store";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -11,7 +12,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export default function SettingsScreen() {
   let colorScheme = useColorScheme();
   if (!colorScheme) colorScheme = "light";
-  const styles = getStyles(colorScheme);
+  const appTheme = Colors[colorScheme];
+  const styles = getStyles(appTheme);
 
   // State for toggles
   const {
@@ -41,7 +43,7 @@ export default function SettingsScreen() {
                 <Ionicons
                   name="location-sharp"
                   size={22}
-                  color={colorScheme === "dark" ? "#FFD966" : "#70C601"}
+                  color={appTheme.activeText}
                 />
               </View>
               <View style={styles.settingTextWrap}>
@@ -53,8 +55,8 @@ export default function SettingsScreen() {
               <Switch
                 value={locationEnabled}
                 onValueChange={setLocation}
-                thumbColor={locationEnabled ? "#fff" : "#fff"}
-                trackColor={{ false: "gray", true: "#70C601" }}
+                thumbColor={appTheme.white}
+                trackColor={{ false: "gray", true: appTheme.primary }}
               />
             </View>
 
@@ -64,7 +66,7 @@ export default function SettingsScreen() {
                 <Ionicons
                   name="notifications"
                   size={22}
-                  color={colorScheme === "dark" ? "#FFD966" : "#70C601"}
+                  color={appTheme.activeText}
                 />
               </View>
               <View style={styles.settingTextWrap}>
@@ -76,8 +78,8 @@ export default function SettingsScreen() {
               <Switch
                 value={notificationsEnabled}
                 onValueChange={setNotifications}
-                thumbColor={notificationsEnabled ? "#fff" : "#fff"}
-                trackColor={{ false: "gray", true: "#70C601" }}
+                thumbColor={appTheme.white}
+                trackColor={{ false: "gray", true: appTheme.primary }}
               />
             </View>
 
@@ -87,7 +89,7 @@ export default function SettingsScreen() {
                 <MaterialCommunityIcons
                   name="theme-light-dark"
                   size={22}
-                  color={colorScheme === "dark" ? "#FFD966" : "#70C601"}
+                  color={appTheme.activeText}
                 />
               </View>
               <View style={styles.settingTextWrap}>
@@ -99,10 +101,10 @@ export default function SettingsScreen() {
               <Switch
                 value={theme === "dark"}
                 onValueChange={(value) => setTheme(value ? "dark" : "light")}
-                thumbColor={theme === "dark" ? "#fff" : "#fff"}
+                thumbColor={appTheme.white}
                 trackColor={{
                   false: "gray",
-                  true: "#70C601",
+                  true: appTheme.primary,
                 }}
               />
             </View>
@@ -113,7 +115,7 @@ export default function SettingsScreen() {
                 <Ionicons
                   name="finger-print"
                   size={22}
-                  color={colorScheme === "dark" ? "#FFD966" : "#70C601"}
+                  color={appTheme.activeText}
                 />
               </View>
               <View style={styles.settingTextWrap}>
@@ -127,8 +129,8 @@ export default function SettingsScreen() {
               <Switch
                 value={biometricsEnabled}
                 onValueChange={setBiometrics}
-                thumbColor={biometricsEnabled ? "#fff" : "#fff"}
-                trackColor={{ false: "gray", true: "#70C601" }}
+                thumbColor={appTheme.white}
+                trackColor={{ false: "gray", true: appTheme.primary }}
               />
             </View>
           </View>
@@ -142,22 +144,22 @@ export default function SettingsScreen() {
   );
 }
 
-const getStyles = (colorScheme: string) =>
+const getStyles = (appTheme: typeof Colors.light) =>
   StyleSheet.create({
     safeArea: {
       flex: 1,
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
+      backgroundColor: appTheme.background,
     },
     linksContainer: {
       display: "flex",
       flexDirection: "column",
       gap: 8,
       width: "100%",
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff",
+      backgroundColor: appTheme.whiteBackground,
       flex: 1,
       paddingHorizontal: 10,
       paddingTop: 24,
-      shadowColor: colorScheme === "dark" ? "#000" : "#70C601",
+      shadowColor: appTheme.shadow,
       shadowOpacity: 0.08,
       shadowRadius: 12,
       elevation: 2,
@@ -165,7 +167,7 @@ const getStyles = (colorScheme: string) =>
     sectionHeader: {
       fontSize: 15,
       fontWeight: "700",
-      color: colorScheme === "dark" ? "#b0b8ca" : "#232A2E",
+      color: appTheme.tertiaryText,
       marginLeft: 2,
     },
     settingsWrap: {
@@ -174,31 +176,31 @@ const getStyles = (colorScheme: string) =>
       gap: 5,
       width: "100%",
       marginVertical: 5,
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff",
+      backgroundColor: appTheme.whiteBackground,
       borderWidth: 1,
-      borderColor: colorScheme === "dark" ? "#36454F" : "#f0f0f0",
+      borderColor: appTheme.divider,
       borderRadius: 5,
     },
     settingCard: {
       flexDirection: "row",
       alignItems: "center",
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff",
+      backgroundColor: appTheme.whiteBackground,
       borderRadius: 5,
       padding: 10,
       marginBottom: 2,
-      shadowColor: colorScheme === "dark" ? "#000" : "#70C601",
+      shadowColor: appTheme.shadow,
       shadowOpacity: 0.06,
       shadowRadius: 8,
       elevation: 1,
       gap: 12,
       borderBottomWidth: 1,
-      borderColor: colorScheme === "dark" ? "#36454F" : "#f0f0f0",
+      borderColor: appTheme.greyBorder,
     },
     settingIconWrap: {
       width: 38,
       height: 38,
       borderRadius: 50,
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#eafbe7",
+      backgroundColor: appTheme.heroBg,
       alignItems: "center",
       justifyContent: "center",
       marginRight: 8,
@@ -211,20 +213,20 @@ const getStyles = (colorScheme: string) =>
     settingTitle: {
       fontSize: 15,
       fontWeight: "700",
-      color: colorScheme === "dark" ? "#fff" : "#232A2E",
+      color: appTheme.settingTitle,
     },
     settingDesc: {
       fontSize: 12,
-      color: colorScheme === "dark" ? "#b0b8ca" : "#6b7280",
+      color: appTheme.secondaryText,
     },
     versionContainer: {
       alignItems: "center",
       paddingVertical: 16,
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff",
+      backgroundColor: appTheme.whiteBackground,
     },
 
     versionText: {
       fontSize: 12,
-      color: colorScheme === "dark" ? "#b0b8ca" : "#9ca3af",
+      color: appTheme.secondaryText,
     },
   });

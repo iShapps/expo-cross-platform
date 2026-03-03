@@ -1,4 +1,5 @@
 import Header from "@/components/Header";
+import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { router } from "expo-router";
@@ -9,7 +10,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export default function AccountScreen() {
   let colorScheme = useColorScheme();
   if (!colorScheme) colorScheme = "light";
-  const styles = getStyles(colorScheme);
+  const theme = Colors[colorScheme];
+  const styles = getStyles(theme);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
@@ -24,18 +26,14 @@ export default function AccountScreen() {
             <MaterialCommunityIcons
               name="account-cog-outline"
               size={24}
-              color={colorScheme === "dark" ? "#b0b8ca" : "#70C601"}
+              color={theme.primary}
             />
-            <Text
-              style={{ color: colorScheme === "dark" ? "#fff" : undefined }}
-            >
-              My account
-            </Text>
+            <Text style={{ color: theme.primaryText }}>My account</Text>
           </View>
           <MaterialCommunityIcons
             name="chevron-right"
             size={24}
-            color={colorScheme === "dark" ? "#b0b8ca" : "#70C601"}
+            color={theme.primary}
           />
         </Pressable>
 
@@ -47,18 +45,14 @@ export default function AccountScreen() {
             <MaterialCommunityIcons
               name="lock-reset"
               size={24}
-              color={colorScheme === "dark" ? "#b0b8ca" : "#70C601"}
+              color={theme.primary}
             />
-            <Text
-              style={{ color: colorScheme === "dark" ? "#fff" : undefined }}
-            >
-              Change password
-            </Text>
+            <Text style={{ color: theme.primaryText }}>Change password</Text>
           </View>
           <MaterialCommunityIcons
             name="chevron-right"
             size={24}
-            color={colorScheme === "dark" ? "#b0b8ca" : "#70C601"}
+            color={theme.primary}
           />
         </Pressable>
       </View>
@@ -66,11 +60,11 @@ export default function AccountScreen() {
   );
 }
 
-const getStyles = (colorScheme: string) =>
+const getStyles = (theme: typeof Colors.light) =>
   StyleSheet.create({
     safeArea: {
       flex: 1,
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#70C601",
+      backgroundColor: theme.background,
     },
     linksContainer: {
       display: "flex",
@@ -78,7 +72,7 @@ const getStyles = (colorScheme: string) =>
       gap: 4,
       width: "100%",
       paddingHorizontal: 10,
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff",
+      backgroundColor: theme.linksContainerBg,
       flex: 1,
     },
     profileLinks: {
@@ -90,7 +84,7 @@ const getStyles = (colorScheme: string) =>
       alignItems: "center",
       gap: 5,
       borderBottomWidth: 1,
-      borderBottomColor: colorScheme === "dark" ? "#232A2E" : "#f4f4f4",
+      borderBottomColor: theme.greyBorder,
       paddingVertical: 12,
     },
     profileContainer: {
