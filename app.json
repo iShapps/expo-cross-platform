@@ -7,7 +7,6 @@
     "icon": "./assets/images/smhealth.png",
     "scheme": "ishapps",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.smarthealthcare.ishapps",
@@ -20,7 +19,7 @@
         "NSSupportsLiveActivities": true
       },
       "entitlements": {
-        "aps-environment": "development",
+        "aps-environment": "production",
         "com.apple.security.application-groups": [
           "group.com.smarthealthcare.ishapps"
         ]
@@ -33,7 +32,6 @@
         "backgroundImage": "./assets/images/ishapps.png",
         "monochromeImage": "./assets/images/ishapps.png"
       },
-      "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "softwareKeyboardLayoutMode": "pan",
       "permissions": [
@@ -54,7 +52,7 @@
       [
         "onesignal-expo-plugin",
         {
-          "mode": "development"
+          "mode": "production"
         }
       ],
       [
@@ -65,8 +63,8 @@
             "useFrameworks": "static"
           },
           "android": {
-            "compileSdkVersion": 34,
-            "targetSdkVersion": 34,
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 35,
             "minSdkVersion": 24
           }
         }
