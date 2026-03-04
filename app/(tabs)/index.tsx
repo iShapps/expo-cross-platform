@@ -9,7 +9,11 @@ import { DashboardResponse } from "@/data-types/dashboard";
 import { useLocation } from "@/hooks/use-location";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import {
+  useInfiniteQuery,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { format } from "date-fns";
 import { router } from "expo-router";
 import { useEffect } from "react";
@@ -18,6 +22,7 @@ import { getHCPDashboard } from "@/api-queries/dashboard";
 import { getNotifications } from "@/api-queries/notifcations";
 import { Colors } from "@/constants/theme";
 import { useSettingsStore } from "@/data-store/use-settings-store";
+import { User } from "@/data-types/auth";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useOneSignal } from "@/hooks/use-one-signal";
 import { useShiftWatcher } from "@/hooks/use-shift-watcher";
@@ -39,6 +44,7 @@ export default function HomeScreen() {
   const styles = getStyles(theme);
   const profileStore = useProfileData();
   const userDetails = profileStore.userDetails;
+  const queryClient = useQueryClient();
 
   useShiftWatcher();
   useOneSignal();
@@ -55,6 +61,18 @@ export default function HomeScreen() {
       refetchIntervalInBackground: true,
       enabled: !!userDetails?.id,
     });
+
+  // Hydrate React Query cache with Zustand userDetails on load
+  useEffect(() => {
+    if (!userDetails) return;
+
+    queryClient.setQueryData<User | undefined>(["profile-details"], (old) => {
+      if (JSON.stringify(old) === JSON.stringify(userDetails)) {
+        return old;
+      }
+      return userDetails;
+    });
+  }, [userDetails]);
 
   const {
     data,

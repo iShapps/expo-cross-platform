@@ -1,6 +1,6 @@
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { MaterialIcons } from "@expo/vector-icons";
+import { FontAwesome6 } from "@expo/vector-icons";
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
@@ -19,9 +19,9 @@ const Header: React.FC<HeaderProps> = ({ title, onBack, right }) => {
       <View style={styles.headerRow}>
         {onBack ? (
           <Pressable onPress={onBack}>
-            <MaterialIcons
+            <FontAwesome6
               name="chevron-left"
-              size={30}
+              size={24}
               color={theme.whiteText}
             />
           </Pressable>
@@ -42,13 +42,14 @@ const getStyles = (theme: typeof Colors.light) =>
       backgroundColor: theme.background,
     },
     header: {
-      paddingVertical: 10,
+      paddingVertical: 8,
       backgroundColor: theme.background,
     },
     headerRow: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
+      paddingHorizontal: 12,
     },
     title: {
       fontSize: 18,
