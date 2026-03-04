@@ -137,7 +137,7 @@ const DocumentCard: React.FC<DocumentCardProps> = ({ document }) => {
       </View>
       <View style={styles.infoColumn}>
         <Text style={styles.createdAt}>
-          uploaded on {new Date(document.created_at).toLocaleDateString()}
+          Uploaded on {new Date(document.created_at).toLocaleDateString()}
         </Text>
         <View style={styles.nameRow}>
           <Text

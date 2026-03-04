@@ -785,7 +785,7 @@ const getStyles = (theme: typeof Colors.light) =>
     sectionTitle: {
       fontSize: 13,
       fontWeight: "700",
-      color: theme.tertiaryText,
+      color: theme.primary,
       marginBottom: 10,
       textTransform: "uppercase",
       letterSpacing: 0.4,

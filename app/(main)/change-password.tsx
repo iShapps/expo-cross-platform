@@ -1,3 +1,4 @@
+import { ApiMutationError } from "@/api-actions/mutations";
 import { changePassword } from "@/api-queries/profile";
 import Header from "@/components/Header";
 import { Colors } from "@/constants/theme";
@@ -52,8 +53,9 @@ export default function ChangePasswordScreen() {
       }
     },
 
-    onError: (error: any) => {
-      const message = error?.response?.data?.message || "Something went wrong.";
+    onError: (error: ApiMutationError) => {
+      const message =
+        error?.message || "Password change failed. Please try again.";
 
       Alert.alert("Error", message);
     },
