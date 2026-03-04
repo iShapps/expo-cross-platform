@@ -58,14 +58,29 @@ async function authorizedMutation<Req, Res>(
         status: response.status,
         body: data,
       });
-      const apiMessage =
-        isObject(data) &&
-        (typeof data.message === "string" ? data.message : data.error)
-          ? (data as { message?: string; error?: string }).message ||
-            (data as { error?: string }).error
-          : `Failed to ${method === "POST" ? "create" : "update"}`;
+
+      const apiMessage = isObject(data)
+        ? // body.message
+          (isObject((data as any).body) &&
+            typeof (data as any).body.message === "string" &&
+            (data as any).body.message) ||
+          // body.errors
+          (isObject((data as any).body) &&
+            Array.isArray((data as any).body.errors) &&
+            (data as any).body.errors.length > 0 &&
+            (data as any).body.errors[0]) ||
+          // message at root
+          (typeof (data as any).message === "string" &&
+            (data as any).message) ||
+          // error at root
+          (typeof (data as any).error === "string" && (data as any).error)
+        : undefined;
+
+      const finalMessage =
+        apiMessage || `Failed to ${method === "POST" ? "create" : "update"}`;
+      console.error("API error finalMessage:", finalMessage);
       throw new ApiMutationError(
-        apiMessage || "API error",
+        finalMessage || "API error",
         response.status,
         data,
       );

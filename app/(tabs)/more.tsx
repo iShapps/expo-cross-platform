@@ -1,5 +1,4 @@
 import Feather from "@expo/vector-icons/Feather";
-import Ionicons from "@expo/vector-icons/Ionicons";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 
 import { updateAvailability } from "@/api-queries/profile";
@@ -206,7 +205,7 @@ export default function More() {
               color="#70C601"
             />
           </Pressable>
-          <Pressable
+          {/* <Pressable
             onPress={() => router.push("/(main)/interviews")}
             style={styles.profileLinks}
           >
@@ -223,7 +222,7 @@ export default function More() {
               size={24}
               color="#70C601"
             />
-          </Pressable>
+          </Pressable> */}
           <Pressable
             onPress={() => router.push("/(main)/settings")}
             style={styles.profileLinks}
