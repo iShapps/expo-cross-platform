@@ -4,13 +4,13 @@ import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Fontisto, MaterialCommunityIcons } from "@expo/vector-icons";
 import React from "react";
 import {
-    Alert,
-    Linking,
-    Platform,
-    Pressable,
-    StyleSheet,
-    Text,
-    View,
+  Alert,
+  Linking,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 
 interface FacilityCardCardProps {
@@ -66,11 +66,12 @@ const FacilityCard: React.FC<FacilityCardCardProps> = ({ facility }) => {
             color={theme.activeText}
           />
           <Text style={[styles.heroMeta, { color: theme.secondaryText }]}>
-            {facility.contact_person ?? "—"} - {facility.contact_number ?? "—"}
+            {facility.contact_person ?? "—"}
+            {/* - {facility.contact_number ?? "—"} */}
           </Text>
         </View>
 
-        <View style={styles.heroText}>
+        {/* <View style={styles.heroText}>
           <MaterialCommunityIcons
             name="email-newsletter"
             size={15}
@@ -79,7 +80,7 @@ const FacilityCard: React.FC<FacilityCardCardProps> = ({ facility }) => {
           <Text style={[styles.heroMeta, { color: theme.secondaryText }]}>
             {facility.post_code ?? "—"}
           </Text>
-        </View>
+        </View> */}
         <View style={styles.heroText}>
           <MaterialCommunityIcons
             name="map-marker-outline"
