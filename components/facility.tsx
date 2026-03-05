@@ -58,8 +58,7 @@ const FacilityCard: React.FC<FacilityCardCardProps> = ({ facility }) => {
         <Text style={[styles.heroName, { color: theme.primaryText }]}>
           {facility.name ?? "—"}
         </Text>
-        <View style={styles.heroText}>
-          {/* phone icon */}
+        {/* <View style={styles.heroText}>
           <MaterialCommunityIcons
             name="phone"
             size={15}
@@ -67,9 +66,9 @@ const FacilityCard: React.FC<FacilityCardCardProps> = ({ facility }) => {
           />
           <Text style={[styles.heroMeta, { color: theme.secondaryText }]}>
             {facility.contact_person ?? "—"}
-            {/* - {facility.contact_number ?? "—"} */}
+            - {facility.contact_number ?? "—"}
           </Text>
-        </View>
+        </View> */}
 
         {/* <View style={styles.heroText}>
           <MaterialCommunityIcons
