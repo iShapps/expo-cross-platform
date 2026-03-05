@@ -106,7 +106,7 @@ export default FacilityCard;
 const getStyles = (theme: typeof Colors.light) =>
   StyleSheet.create({
     heroCard: {
-      marginTop: 8,
+      // marginTop: 4,
       backgroundColor: theme.heroBg,
       borderRadius: 5,
       padding: 10,
