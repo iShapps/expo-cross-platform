@@ -96,6 +96,10 @@ export default function More() {
     });
   };
 
+  const avatarImageSource = `${process.env.EXPO_PUBLIC_BUCKET_NAME}/uploads/hcps/${encodeURIComponent(
+    `${userDetails?.hcp?.hcp_prefix}${userDetails?.hcp?.id}`,
+  )}/image/${userDetails?.hcp?.image}`;
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <Header
@@ -118,7 +122,7 @@ export default function More() {
             <View style={styles.avatarContainer}>
               {userDetails?.hcp && userDetails?.hcp.image ? (
                 <Image
-                  source={{ uri: userDetails?.hcp.image }}
+                  source={{ uri: avatarImageSource }}
                   style={styles.avatarImage}
                 />
               ) : (
