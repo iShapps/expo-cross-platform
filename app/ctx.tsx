@@ -1,5 +1,6 @@
 import { useProfileData } from "@/data-store/use-account-store";
 import LoginCredentials, { User } from "@/data-types/auth";
+import { onLoginSuccess } from "@/hooks/use-one-signal";
 import { removeToken, setToken as setAuthToken } from "@/utils/auth";
 import {
   login as apiLogin,
@@ -98,7 +99,7 @@ export function SessionProvider(props: React.PropsWithChildren) {
       queryClient.setQueryData(["profile-details"], result.data.user);
 
       // Login to OneSignal for push notifications
-      // await onLoginSuccess(result.data.user.id.toString());
+      await onLoginSuccess(result.data.user.id.toString());
 
       Alert.alert("Success", "Login successful!", [{ text: "OK" }]);
     } catch (error) {

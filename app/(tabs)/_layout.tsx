@@ -146,20 +146,20 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="schedules"
-        options={{
-          title: "Schedules",
-          tabBarIcon: ({ color }) => (
-            <TabBarFAFiveWIcon size={22} name="calendar" color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
         name="shifts"
         options={{
           title: "Shifts",
           tabBarIcon: ({ color }) => (
             <TabBarFeatherIcon size={22} name="clock" color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="schedules"
+        options={{
+          title: "Schedules",
+          tabBarIcon: ({ color }) => (
+            <TabBarFAFiveWIcon size={22} name="calendar" color={color} />
           ),
         }}
       />

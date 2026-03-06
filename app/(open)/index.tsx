@@ -1,6 +1,7 @@
 import { Colors } from "@/constants/theme";
 import { useSettingsStore } from "@/data-store/use-settings-store";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { waitForSubscriptionId } from "@/hooks/use-one-signal";
 import {
   authenticateWithBiometrics,
   isBiometricAllowed,
@@ -102,6 +103,7 @@ export default function Login() {
       return;
     }
     try {
+      const subscriptionId = await waitForSubscriptionId();
       await signIn({
         email,
         password,
@@ -118,7 +120,7 @@ export default function Login() {
         // Device.designName; // Android: "kminilte"; iOS: null; web: null
         // Device.brand; // Android: "google", "xiaomi"; iOS: "Apple"; web: null
 
-        device_id: Device.osInternalBuildId ?? "", //to change to oneSignal's sub id for push notifications
+        device_id: subscriptionId ?? "", //to change to oneSignal's sub id for push notifications
         device_name: Device.deviceName ?? Device.modelName ?? "Unknown Device",
         device_type: Device.deviceType?.toString() ?? "Unknown Device", //Device.osName ?? "Unknown Device",
         device_version: Device.osVersion ?? "Unknown Version",

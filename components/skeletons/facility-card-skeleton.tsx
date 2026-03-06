@@ -19,10 +19,6 @@ const FacilityCardSkeleton: React.FC = () => {
         </View>
         <View style={styles.heroText}>
           <SkeletonBase width={16} height={16} style={{ borderRadius: 8 }} />
-          <SkeletonBase width={70} height={14} style={styles.heroMeta} />
-        </View>
-        <View style={styles.heroText}>
-          <SkeletonBase width={16} height={16} style={{ borderRadius: 8 }} />
           <SkeletonBase width={110} height={14} style={styles.heroMeta} />
         </View>
         <View style={styles.heroText}>
