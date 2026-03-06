@@ -23,7 +23,8 @@ export const useProfileData = create<AccountStoreType>()(
       setAcceptedShift: (shift) => set({ acceptedShift: shift }),
       setUserDetails: (userDetails) => set({ userDetails }),
       setToken: (token) => set({ token: token }),
-      clearDetails: () => set({ token: null }),
+      clearDetails: () =>
+        set({ token: null, userDetails: null, acceptedShift: null }),
     }),
     {
       name: "ishapps-account-data",
