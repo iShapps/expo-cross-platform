@@ -3,7 +3,7 @@ import { useSettingsStore } from "@/data-store/use-settings-store";
 import { AppNotification } from "@/data-types/notifications";
 import Constants from "expo-constants";
 import { router } from "expo-router";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   LogLevel,
   NotificationClickEvent,
@@ -17,6 +17,7 @@ export const useOneSignal = () => {
   );
   const session = useSession();
   const isInitialized = useRef(false);
+  const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
     const appId = Constants.expoConfig?.extra?.eas?.oneSignalAppId;
@@ -34,8 +35,10 @@ export const useOneSignal = () => {
 
     OneSignal.initialize(appId);
     isInitialized.current = true;
+    setInitialized(true);
 
     console.log("OneSignal initialized");
+    initNotifications();
 
     const handleClick = (event: NotificationClickEvent) => {
       console.log("Notification clicked:", event);
@@ -125,24 +128,30 @@ export const useOneSignal = () => {
 
         await OneSignal.User.pushSubscription.optIn();
       } else {
-        console.log("Disabling notifications...");
-
-        await OneSignal.User.pushSubscription.optOut();
-
-        if (session?.user?.id) {
-          await OneSignal.logout();
-          console.log("Logged out from OneSignal");
-        }
+        console.log("Notifications disabled — requesting permission...");
+        initNotifications();
       }
     };
 
     handleNotificationState();
-  }, [notificationsEnabled, session?.user?.id]);
+  }, [notificationsEnabled, session?.user?.id, initialized]);
 
   return {
-    isInitialized: isInitialized.current,
+    isInitialized: initialized,
   };
 };
+
+async function initNotifications() {
+  const permission = await OneSignal.Notifications.getPermissionAsync();
+  const canRequest = await OneSignal.Notifications.canRequestPermission();
+
+  console.log("Current permission:", permission);
+
+  if (!permission && canRequest) {
+    const granted = await OneSignal.Notifications.requestPermission(true);
+    console.log("Permission granted:", granted);
+  }
+}
 
 export const onLoginSuccess = async (userId: string) => {
   try {
@@ -204,4 +213,23 @@ const extractNotification = (
   event: NotificationClickEvent | NotificationWillDisplayEvent,
 ): AppNotification => {
   return event.notification as AppNotification;
+};
+
+export const waitForSubscriptionId = async (): Promise<string | null> => {
+  let subscriptionId = await OneSignal.User.pushSubscription.getIdAsync();
+
+  if (subscriptionId) return subscriptionId;
+
+  return new Promise((resolve) => {
+    const listener = (event: any) => {
+      const id = event.current?.id;
+
+      if (id) {
+        OneSignal.User.pushSubscription.removeEventListener("change", listener);
+        resolve(id);
+      }
+    };
+
+    OneSignal.User.pushSubscription.addEventListener("change", listener);
+  });
 };
