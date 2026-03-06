@@ -356,7 +356,7 @@ export default function DocumentsScreen() {
                   return (
                     <View
                       style={{
-                        flex: 1,
+                        // flex: 1,
                         alignItems: "center",
                         justifyContent: "center",
                       }}
