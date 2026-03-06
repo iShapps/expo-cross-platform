@@ -203,4 +203,6 @@ export interface IShiftActionResponse {
 export interface IShiftLocationParams {
   latitude: number;
   longitude: number;
+  shift_id: number;
+  facility_id: number;
 }
