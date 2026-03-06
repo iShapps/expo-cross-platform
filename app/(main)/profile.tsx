@@ -72,6 +72,9 @@ export default function ProfileScreen() {
     });
   };
 
+  const avatarImageSource = `${process.env.EXPO_PUBLIC_BUCKET_NAME}/uploads/hcps/${encodeURIComponent(
+    `${userDetails?.hcp?.hcp_prefix}${userDetails?.hcp?.id}`,
+  )}/image/${userDetails?.hcp?.image}`;
   return (
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
       <Header title="Profile" onBack={() => router.back()} />
@@ -82,7 +85,10 @@ export default function ProfileScreen() {
         <View style={styles.heroCard}>
           <View style={styles.avatarWrap}>
             {hcp?.image ? (
-              <Image source={{ uri: hcp.image }} style={styles.avatarImage} />
+              <Image
+                source={{ uri: avatarImageSource }}
+                style={styles.avatarImage}
+              />
             ) : (
               <Text style={styles.avatarFallback}>
                 {userDetails?.name?.[0] ?? "H"}
