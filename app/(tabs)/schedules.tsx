@@ -10,12 +10,13 @@ import { ShiftCardBase } from "@/components/pay-run";
 import TabsHeader from "@/components/shared/tabs-header";
 import { ShiftCardBaseSkeleton } from "@/components/skeletons/payrun-card-base-skeleton";
 import { Colors } from "@/constants/theme";
+import { useProfileData } from "@/data-store/use-account-store";
 import { IShift } from "@/data-types/shifts";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   FlatList,
   Pressable,
@@ -155,6 +156,18 @@ export default function Schedules() {
   const theme = Colors[colorScheme];
   const styles = getStyles(theme);
 
+  const profileStore = useProfileData();
+
+  const scheduledShifts =
+    scheduledQuery.data?.pages.flatMap(
+      (page) => page?.data?.shifts?.data ?? [],
+    ) || [];
+
+  useEffect(() => {
+    if (scheduledShifts.length === 1) {
+      profileStore.setAcceptedShift(scheduledShifts[0]);
+    }
+  }, [scheduledShifts.length]);
   return (
     <SafeAreaView style={styles.safeArea}>
       <TabsHeader title="Schedule" />
@@ -430,54 +443,6 @@ export default function Schedules() {
                     </View>
                   );
                 }
-
-                if (!isLoading && (!data || data.length === 0)) {
-                  return (
-                    <View
-                      style={{
-                        flex: 1,
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <MaterialCommunityIcons
-                        name="calendar-remove-outline"
-                        size={72}
-                        color={theme.grayBorder}
-                        style={{ marginBottom: 16 }}
-                      />
-                      <Text
-                        style={{
-                          fontSize: 20,
-                          fontWeight: "700",
-                          color: theme.primary,
-                          marginBottom: 8,
-                        }}
-                      >
-                        No Shifts Yet
-                      </Text>
-                      <Text
-                        style={{
-                          fontSize: 15,
-                          color: theme.secondaryText,
-                          textAlign: "center",
-                          maxWidth: 260,
-                        }}
-                      >
-                        You have no{" "}
-                        <Text
-                          style={{
-                            textTransform: "lowercase",
-                          }}
-                        >
-                          {status}
-                        </Text>{" "}
-                        shifts for this category at the moment. Check back later
-                        or explore other tabs!
-                      </Text>
-                    </View>
-                  );
-                }
                 return (
                   <FlatList
                     data={data}
@@ -503,6 +468,51 @@ export default function Schedules() {
                           <ShiftCardBaseSkeleton />
                         </View>
                       ) : null
+                    }
+                    ListEmptyComponent={
+                      <View
+                        style={{
+                          flex: 1,
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <MaterialCommunityIcons
+                          name="calendar-remove-outline"
+                          size={72}
+                          color={theme.grayBorder}
+                          style={{ marginBottom: 16 }}
+                        />
+                        <Text
+                          style={{
+                            fontSize: 20,
+                            fontWeight: "700",
+                            color: theme.primary,
+                            marginBottom: 8,
+                          }}
+                        >
+                          No Shifts Yet
+                        </Text>
+                        <Text
+                          style={{
+                            fontSize: 15,
+                            color: theme.secondaryText,
+                            textAlign: "center",
+                            maxWidth: 260,
+                          }}
+                        >
+                          You have no{" "}
+                          <Text
+                            style={{
+                              textTransform: "lowercase",
+                            }}
+                          >
+                            {status}
+                          </Text>{" "}
+                          shifts for this category at the moment. Check back
+                          later or explore other tabs!
+                        </Text>
+                      </View>
                     }
                   />
                 );
