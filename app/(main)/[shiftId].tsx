@@ -210,7 +210,8 @@ export default function ShiftDetails() {
   const shift = data?.data?.shift as IShift;
   const shiftStatus = Number(shift?.shift_status);
 
-  const { start: startLiveActivityForShift } = useLiveActivity();
+  const { start: startLiveActivityForShift, stop: endLiveActivityForShift } =
+    useLiveActivity();
 
   const acceptShiftMutation = useMutation({
     mutationFn: (id: number) => postAcceptShift(id),
@@ -342,6 +343,8 @@ export default function ShiftDetails() {
       }
       showAlert("Success", response.message);
       profileStore.setAcceptedShift(null); // remove accepted shift from global state on end
+      // stop live activity
+      await endLiveActivityForShift();
       await refetch();
     } catch (error) {
       showAlert(
