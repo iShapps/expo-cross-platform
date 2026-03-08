@@ -13,8 +13,10 @@ import { Colors } from "@/constants/theme";
 import { useProfileData } from "@/data-store/use-account-store";
 import { IShift } from "@/data-types/shifts";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useCalendarAndReminders } from "@/hooks/use-calendar-and-reminders";
 import { useLiveActivity } from "@/hooks/use-live-activity";
 import { useLocation } from "@/hooks/use-location";
+import { shiftToCalendarEvent } from "@/utils/shift-calendar-utils";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import Feather from "@expo/vector-icons/Feather";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -213,6 +215,8 @@ export default function ShiftDetails() {
   const { start: startLiveActivityForShift, stop: endLiveActivityForShift } =
     useLiveActivity();
 
+  const { addShiftToCalendar } = useCalendarAndReminders();
+
   const acceptShiftMutation = useMutation({
     mutationFn: (id: number) => postAcceptShift(id),
   });
@@ -272,6 +276,20 @@ export default function ShiftDetails() {
         showAlert("Shift not accepted", response.message);
         return;
       }
+
+      // Add shift to calendar and set up reminders
+      try {
+        const calendarEvent = shiftToCalendarEvent(shift);
+        await addShiftToCalendar(calendarEvent);
+      } catch (calendarError) {
+        console.error("Failed to add shift to calendar:", calendarError);
+        // Don't fail the entire shift acceptance if calendar fails
+        Alert.alert(
+          "Info",
+          "Shift accepted but calendar/reminder setup failed. You can set reminders manually.",
+        );
+      }
+
       showAlert("Success", response.message);
       profileStore.setAcceptedShift(shift); // Store accepted shift in global state
       await refetch();

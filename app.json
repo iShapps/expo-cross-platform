@@ -16,7 +16,9 @@
         "NSLocationWhenInUseUsageDescription": "Allow $(PRODUCT_NAME) to access your location while using the app to navigate to assigned shift locations and verify arrival when starting or ending a shift.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Allow $(PRODUCT_NAME) to access your location in the background to monitor travel to assigned shift locations and verify presence at the facility when starting or ending a shift.",
         "UIBackgroundModes": ["location", "remote-notification"],
-        "NSSupportsLiveActivities": true
+        "NSSupportsLiveActivities": true,
+        "NSCalendarsUsageDescription": "Allow $(PRODUCT_NAME) to access your calendar to view and manage your scheduled shifts.",
+        "NSRemindersUsageDescription": "Allow $(PRODUCT_NAME) to access your reminders to set shift-related reminders and notifications."
       },
       "entitlements": {
         "aps-environment": "production",
@@ -137,7 +139,13 @@
           "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location."
         }
       ],
-      "expo-background-task"
+      "expo-background-task",
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "Allow $(PRODUCT_NAME) to access your calendar to view and manage your scheduled shifts."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
