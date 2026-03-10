@@ -4,6 +4,7 @@ import {
   isBiometricAvailable,
 } from "@/utils/biometrics";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Calendar from "expo-calendar";
 import * as LocalAuthentication from "expo-local-authentication";
 import * as Location from "expo-location";
 import { Alert, Linking, Platform } from "react-native";
@@ -15,11 +16,13 @@ type Theme = "system" | "light" | "dark";
 interface SettingsState {
   locationEnabled: boolean;
   notificationsEnabled: boolean;
+  calendarEnabled: boolean;
   theme: Theme;
   biometricsEnabled: boolean;
 
   setLocation: (value: boolean) => void;
   setNotifications: (value: boolean) => void;
+  setCalendar: (value: boolean) => void;
   setTheme: (value: Theme) => void;
   setBiometrics: (value: boolean) => void;
   hydrate: () => Promise<void>;
@@ -27,25 +30,66 @@ interface SettingsState {
   openAppSettings: () => void;
 }
 
+let isCheckingPermissions = false;
+
+const showPermissionDeniedAlert = (
+  feature: string,
+  description: string,
+  openSettings: () => void,
+) => {
+  Alert.alert(
+    `${feature} Permission Required`,
+    `${description} Please enable it in your device settings.`,
+    [
+      { text: "Not Now", style: "cancel" },
+      { text: "Open Settings", onPress: openSettings },
+    ],
+  );
+};
+
+const showFeatureDisabledAlert = (
+  feature: string,
+  openSettings: () => void,
+) => {
+  Alert.alert(
+    `${feature} Disabled`,
+    `${feature} has been turned off. To fully revoke access, go to your device settings.`,
+    [
+      { text: "OK", style: "default" },
+      { text: "Open Settings", onPress: openSettings },
+    ],
+  );
+};
+
 export const useSettingsStore = create<SettingsState>((set, get) => ({
   locationEnabled: false,
   notificationsEnabled: false,
+  calendarEnabled: false,
   biometricsEnabled: false,
   theme: "light",
 
   setLocation: async (value) => {
     try {
       if (value) {
+        const { status: currentStatus } =
+          await Location.getForegroundPermissionsAsync();
+
+        if (currentStatus === "denied") {
+          showPermissionDeniedAlert(
+            "Location",
+            "Location access was previously denied.",
+            get().openAppSettings,
+          );
+          return;
+        }
+
         const { status } = await Location.requestForegroundPermissionsAsync();
 
         if (status !== "granted") {
-          Alert.alert(
-            "Location Permission Required",
-            "Please enable location permissions in your device settings to use this feature.",
-            [
-              { text: "Cancel", style: "cancel" },
-              { text: "Open Settings", onPress: () => get().openAppSettings() },
-            ],
+          showPermissionDeniedAlert(
+            "Location",
+            "Location is needed to verify your arrival at shift locations.",
+            get().openAppSettings,
           );
           set({ locationEnabled: false });
           await AsyncStorage.setItem("location", JSON.stringify(false));
@@ -57,15 +101,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       } else {
         set({ locationEnabled: false });
         await AsyncStorage.setItem("location", JSON.stringify(false));
-
-        Alert.alert(
-          "Location Disabled",
-          "Location has been disabled in the app. To completely revoke permissions, please go to your device settings.",
-          [
-            { text: "OK", style: "default" },
-            { text: "Open Settings", onPress: () => get().openAppSettings() },
-          ],
-        );
+        showFeatureDisabledAlert("Location", get().openAppSettings);
       }
     } catch (error) {
       console.error("Failed to set location permission:", error);
@@ -80,18 +116,16 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
           await OneSignal.Notifications.requestPermission(true);
 
         if (!permission) {
-          Alert.alert(
-            "Notification Permission Required",
-            "Please enable notifications in your device settings to receive updates.",
-            [
-              { text: "Cancel", style: "cancel" },
-              { text: "Open Settings", onPress: () => get().openAppSettings() },
-            ],
+          showPermissionDeniedAlert(
+            "Notification",
+            "Notifications are needed to alert you about upcoming shifts.",
+            get().openAppSettings,
           );
           set({ notificationsEnabled: false });
           await AsyncStorage.setItem("notifications", JSON.stringify(false));
           return;
         }
+
         await OneSignal.User.pushSubscription.optIn();
         set({ notificationsEnabled: true });
         await AsyncStorage.setItem("notifications", JSON.stringify(true));
@@ -99,19 +133,82 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         await OneSignal.User.pushSubscription.optOut();
         set({ notificationsEnabled: false });
         await AsyncStorage.setItem("notifications", JSON.stringify(false));
-
-        Alert.alert(
-          "Notifications Disabled",
-          "Notifications have been disabled. To completely revoke permissions, please go to your device settings.",
-          [
-            { text: "OK", style: "default" },
-            { text: "Open Settings", onPress: () => get().openAppSettings() },
-          ],
-        );
+        showFeatureDisabledAlert("Notifications", get().openAppSettings);
       }
     } catch (error) {
       console.error("Failed to set notification permission:", error);
       set({ notificationsEnabled: false });
+    }
+  },
+
+  setCalendar: async (value) => {
+    try {
+      if (value) {
+        const { status: currentStatus } =
+          await Calendar.getCalendarPermissionsAsync();
+
+        if (currentStatus === "denied") {
+          showPermissionDeniedAlert(
+            "Calendar",
+            "Calendar access was previously denied.",
+            get().openAppSettings,
+          );
+          return;
+        }
+
+        if (Platform.OS === "ios") {
+          const calendarResult =
+            await Calendar.requestCalendarPermissionsAsync();
+
+          if (calendarResult.status !== "granted") {
+            showPermissionDeniedAlert(
+              "Calendar",
+              "Calendar access is needed to add your shifts automatically.",
+              get().openAppSettings,
+            );
+            set({ calendarEnabled: false });
+            await AsyncStorage.setItem("calendar", JSON.stringify(false));
+            return;
+          }
+
+          const remindersResult =
+            await Calendar.requestRemindersPermissionsAsync();
+
+          if (remindersResult.status !== "granted") {
+            showPermissionDeniedAlert(
+              "Reminders",
+              "Reminders access is required alongside calendar access on iOS.",
+              get().openAppSettings,
+            );
+            set({ calendarEnabled: false });
+            await AsyncStorage.setItem("calendar", JSON.stringify(false));
+            return;
+          }
+        } else {
+          const { status } = await Calendar.requestCalendarPermissionsAsync();
+
+          if (status !== "granted") {
+            showPermissionDeniedAlert(
+              "Calendar",
+              "Calendar access is needed to add your shifts automatically.",
+              get().openAppSettings,
+            );
+            set({ calendarEnabled: false });
+            await AsyncStorage.setItem("calendar", JSON.stringify(false));
+            return;
+          }
+        }
+
+        set({ calendarEnabled: true });
+        await AsyncStorage.setItem("calendar", JSON.stringify(true));
+      } else {
+        set({ calendarEnabled: false });
+        await AsyncStorage.setItem("calendar", JSON.stringify(false));
+        showFeatureDisabledAlert("Calendar", get().openAppSettings);
+      }
+    } catch (error) {
+      console.error("Failed to set calendar permission:", error);
+      set({ calendarEnabled: false });
     }
   },
 
@@ -129,24 +226,22 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
           Alert.alert(
             "Biometrics Not Supported",
             "Your device doesn't support biometric authentication.",
-            [{ text: "OK", style: "cancel" }],
+            [{ text: "OK" }],
           );
           set({ biometricsEnabled: false });
           await AsyncStorage.setItem("biometrics", JSON.stringify(false));
           return;
         }
+
         const isEnrolled = await isBiometricAllowed();
 
         if (!isEnrolled) {
           Alert.alert(
             "Biometrics Not Set Up",
-            "Please set up biometrics on your device first.",
+            "Please set up Face ID or fingerprint in your device settings first.",
             [
               { text: "Cancel", style: "cancel" },
-              {
-                text: "Open Settings",
-                onPress: () => get().openAppSettings(),
-              },
+              { text: "Open Settings", onPress: get().openAppSettings },
             ],
           );
           set({ biometricsEnabled: false });
@@ -164,27 +259,14 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         } else {
           set({ biometricsEnabled: false });
           await AsyncStorage.setItem("biometrics", JSON.stringify(false));
-
-          Alert.alert(
-            "Authentication Failed",
-            "Biometric authentication failed. Please try again.",
-            [{ text: "OK", style: "default" }],
-          );
         }
       } else {
-        const shouldAuthenticate = get().biometricsEnabled;
-
-        if (shouldAuthenticate) {
+        if (get().biometricsEnabled) {
           const authenticated = await authenticateWithBiometrics(
             "Verify your identity to disable biometric login",
           );
 
           if (!authenticated) {
-            Alert.alert(
-              "Authentication Required",
-              "You must authenticate to disable biometric login.",
-              [{ text: "OK", style: "default" }],
-            );
             return;
           }
         }
@@ -196,36 +278,43 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       console.error("Failed to set biometrics:", error);
       set({ biometricsEnabled: false });
       await AsyncStorage.setItem("biometrics", JSON.stringify(false));
-
-      Alert.alert(
-        "Error",
-        "An error occurred while setting up biometric authentication.",
-        [{ text: "OK", style: "default" }],
-      );
     }
   },
 
-  // Check current device-level permissions and update local state
-
   checkPermissions: async () => {
-    try {
-      const locationStatus = await Location.getForegroundPermissionsAsync();
-      const locationGranted = locationStatus.status === "granted";
+    if (isCheckingPermissions) return;
+    isCheckingPermissions = true;
 
-      const notificationPermission =
-        await OneSignal.Notifications.getPermissionAsync();
-      const hasSubscription =
-        await OneSignal.User.pushSubscription.getIdAsync();
+    try {
+      const [
+        locationStatus,
+        calendarStatus,
+        notificationPermission,
+        hasSubscription,
+        hasHardware,
+        isEnrolled,
+        storedLocation,
+        storedNotifications,
+        storedCalendar,
+        storedBiometrics,
+      ] = await Promise.all([
+        Location.getForegroundPermissionsAsync(),
+        Calendar.getCalendarPermissionsAsync(),
+        OneSignal.Notifications.getPermissionAsync(),
+        OneSignal.User.pushSubscription.getIdAsync(),
+        LocalAuthentication.hasHardwareAsync(),
+        LocalAuthentication.isEnrolledAsync(),
+        AsyncStorage.getItem("location"),
+        AsyncStorage.getItem("notifications"),
+        AsyncStorage.getItem("calendar"),
+        AsyncStorage.getItem("biometrics"),
+      ]);
+
+      const locationGranted = locationStatus.status === "granted";
+      const calendarGranted = calendarStatus.status === "granted";
       const notificationsGranted =
         notificationPermission === true && !!hasSubscription;
-
-      const hasHardware = await LocalAuthentication.hasHardwareAsync();
-      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
       const biometricsAvailable = hasHardware && isEnrolled;
-
-      const storedLocation = await AsyncStorage.getItem("location");
-      const storedNotifications = await AsyncStorage.getItem("notifications");
-      const storedBiometrics = await AsyncStorage.getItem("biometrics");
 
       const wantedLocation = storedLocation
         ? JSON.parse(storedLocation)
@@ -233,64 +322,112 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       const wantedNotifications = storedNotifications
         ? JSON.parse(storedNotifications)
         : false;
+      const wantedCalendar = storedCalendar
+        ? JSON.parse(storedCalendar)
+        : false;
       const wantedBiometrics = storedBiometrics
         ? JSON.parse(storedBiometrics)
         : false;
 
-      set({
-        locationEnabled: locationGranted && wantedLocation,
-        notificationsEnabled: notificationsGranted && wantedNotifications,
-        biometricsEnabled: biometricsAvailable && wantedBiometrics,
-      });
+      const nextLocation = locationGranted && wantedLocation;
+      const nextNotifications = notificationsGranted && wantedNotifications;
+      const nextCalendar = calendarGranted && wantedCalendar;
+      const nextBiometrics = biometricsAvailable && wantedBiometrics;
 
-      if (wantedLocation && !locationGranted) {
-        await AsyncStorage.setItem("location", JSON.stringify(false));
+      const current = get();
+      if (
+        current.locationEnabled !== nextLocation ||
+        current.notificationsEnabled !== nextNotifications ||
+        current.calendarEnabled !== nextCalendar ||
+        current.biometricsEnabled !== nextBiometrics
+      ) {
+        set({
+          locationEnabled: nextLocation,
+          notificationsEnabled: nextNotifications,
+          calendarEnabled: nextCalendar,
+          biometricsEnabled: nextBiometrics,
+        });
       }
-      if (wantedNotifications && !notificationsGranted) {
-        await AsyncStorage.setItem("notifications", JSON.stringify(false));
-      }
-      if (wantedBiometrics && !biometricsAvailable) {
-        await AsyncStorage.setItem("biometrics", JSON.stringify(false));
-      }
+
+      await Promise.all([
+        wantedLocation && !locationGranted
+          ? AsyncStorage.setItem("location", JSON.stringify(false))
+          : Promise.resolve(),
+        wantedNotifications && !notificationsGranted
+          ? AsyncStorage.setItem("notifications", JSON.stringify(false))
+          : Promise.resolve(),
+        wantedCalendar && !calendarGranted
+          ? AsyncStorage.setItem("calendar", JSON.stringify(false))
+          : Promise.resolve(),
+        wantedBiometrics && !biometricsAvailable
+          ? AsyncStorage.setItem("biometrics", JSON.stringify(false))
+          : Promise.resolve(),
+      ]);
     } catch (error) {
       console.error("Failed to check permissions:", error);
+    } finally {
+      isCheckingPermissions = false;
     }
   },
 
   hydrate: async () => {
     try {
-      const locationStatus = await Location.getForegroundPermissionsAsync();
-      const locationEnabled = locationStatus.status === "granted";
+      const [
+        locationStatus,
+        calendarStatus,
+        notificationPermission,
+        hasSubscription,
+        hasHardware,
+        isEnrolled,
+        theme,
+        storedLocation,
+        storedCalendar,
+        storedBiometrics,
+        storedNotifications,
+      ] = await Promise.all([
+        Location.getForegroundPermissionsAsync(),
+        Calendar.getCalendarPermissionsAsync(),
+        OneSignal.Notifications.getPermissionAsync(),
+        OneSignal.User.pushSubscription.getIdAsync(),
+        LocalAuthentication.hasHardwareAsync(),
+        LocalAuthentication.isEnrolledAsync(),
+        AsyncStorage.getItem("theme"),
+        AsyncStorage.getItem("location"),
+        AsyncStorage.getItem("calendar"),
+        AsyncStorage.getItem("biometrics"),
+        AsyncStorage.getItem("notifications"),
+      ]);
 
-      const permission = await OneSignal.Notifications.getPermissionAsync();
-      const hasSubscription =
-        await OneSignal.User.pushSubscription.getIdAsync();
-
-      const notificationsEnabled = permission === true && !!hasSubscription;
-
-      const hasHardware = await LocalAuthentication.hasHardwareAsync();
-      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
-      const biometricsEnabled = hasHardware && isEnrolled;
-
-      const theme = (await AsyncStorage.getItem("theme")) as Theme | null;
-
-      const storedLocation = await AsyncStorage.getItem("location");
-      const storedBiometrics = await AsyncStorage.getItem("biometrics");
+      const locationGranted = locationStatus.status === "granted";
+      const calendarGranted = calendarStatus.status === "granted";
+      const notificationsActive =
+        notificationPermission === true && !!hasSubscription;
+      const biometricsAvailable = hasHardware && isEnrolled;
 
       set({
-        locationEnabled: storedLocation
-          ? JSON.parse(storedLocation)
-          : locationEnabled,
-        notificationsEnabled,
-        biometricsEnabled: storedBiometrics
-          ? JSON.parse(storedBiometrics)
-          : biometricsEnabled,
-        theme: theme || "light",
+        locationEnabled:
+          storedLocation !== null
+            ? JSON.parse(storedLocation) && locationGranted
+            : locationGranted,
+        notificationsEnabled:
+          storedNotifications !== null
+            ? JSON.parse(storedNotifications) && notificationsActive
+            : notificationsActive,
+        calendarEnabled:
+          storedCalendar !== null
+            ? JSON.parse(storedCalendar) && calendarGranted
+            : calendarGranted,
+        biometricsEnabled:
+          storedBiometrics !== null
+            ? JSON.parse(storedBiometrics) && biometricsAvailable
+            : biometricsAvailable,
+        theme: (theme as Theme) || "light",
       });
     } catch (err) {
       console.error("Failed to hydrate settings store", err);
     }
   },
+
   openAppSettings: () => {
     if (Platform.OS === "ios") {
       Linking.openURL("app-settings:");
