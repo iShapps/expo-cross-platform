@@ -1,7 +1,11 @@
 import { IShift } from "@/data-types/shifts";
 import { buildVariants } from "@/utils/live-activity-variants";
 import { useCallback, useEffect, useRef } from "react";
-import { startLiveActivity, updateLiveActivity } from "voltra/client";
+import {
+  startLiveActivity,
+  stopLiveActivity,
+  updateLiveActivity,
+} from "voltra/client";
 
 const activeActivities = new Map<string, string>();
 
@@ -11,10 +15,25 @@ export function useLiveActivity() {
   const updateIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isStartingRef = useRef<boolean>(false);
 
+  const stopRef = useRef<() => Promise<void>>(async () => {});
+
   const stop = useCallback(async () => {
     if (updateIntervalRef.current) {
       clearInterval(updateIntervalRef.current);
       updateIntervalRef.current = null;
+    }
+
+    const activityId = activityIdRef.current;
+
+    if (activityId) {
+      try {
+        await stopLiveActivity(activityId, {
+          dismissalPolicy: { after: 2 },
+        });
+        console.log("Live activity stopped:", activityId);
+      } catch (err) {
+        console.warn("Failed to stop live activity:", err);
+      }
     }
 
     if (currentShiftIdRef.current) {
@@ -27,10 +46,17 @@ export function useLiveActivity() {
   }, []);
 
   useEffect(() => {
-    return () => {
-      stop();
-    };
+    stopRef.current = stop;
   }, [stop]);
+
+  useEffect(() => {
+    return () => {
+      if (updateIntervalRef.current) {
+        clearInterval(updateIntervalRef.current);
+        updateIntervalRef.current = null;
+      }
+    };
+  }, []);
 
   const start = useCallback(
     async (shift: IShift) => {
@@ -41,13 +67,11 @@ export function useLiveActivity() {
 
       const shiftId = shift.id.toString();
 
-      // Prevent duplicate starts
       if (isStartingRef.current) {
         console.log("Already starting a live activity");
         return;
       }
 
-      // Check if activity already exists for this shift
       const existingActivityId = activeActivities.get(shiftId);
       if (existingActivityId) {
         console.log("Live activity already exists for this shift:", shiftId);
@@ -56,13 +80,11 @@ export function useLiveActivity() {
         return;
       }
 
-      // Check if currently running activity is for the same shift
       if (activityIdRef.current && currentShiftIdRef.current === shiftId) {
         console.log("Live activity already running for this shift");
         return;
       }
 
-      // Stop any existing activity for different shift
       if (activityIdRef.current && currentShiftIdRef.current !== shiftId) {
         console.log("Stopping previous live activity");
         await stop();
@@ -74,7 +96,6 @@ export function useLiveActivity() {
         const now = new Date();
         const shiftEnd = new Date(shift.end_time);
 
-        // Don't start if shift already ended
         if (now.getTime() >= shiftEnd.getTime()) {
           console.log("Shift already ended, not starting live activity");
           isStartingRef.current = false;
@@ -94,13 +115,13 @@ export function useLiveActivity() {
 
           if (!id) {
             clearInterval(updateIntervalRef.current!);
+            updateIntervalRef.current = null;
             return;
           }
 
-          // Check if shift ended
           if (tick.getTime() >= shiftEnd.getTime()) {
             console.log("Shift ended, stopping live activity");
-            await stop();
+            await stopRef.current();
             return;
           }
 
@@ -116,7 +137,6 @@ export function useLiveActivity() {
         console.error("Failed to start live activity:", err);
         isStartingRef.current = false;
 
-        // Clean up on error
         if (currentShiftIdRef.current) {
           activeActivities.delete(currentShiftIdRef.current);
         }

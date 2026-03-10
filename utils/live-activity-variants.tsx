@@ -2,6 +2,9 @@ import { IShift } from "@/data-types/shifts";
 import React from "react";
 import { Voltra } from "voltra";
 
+const BG = "#111827";
+const BG_COMPACT = "#111827";
+
 export function buildVariants(shift: IShift, now: Date) {
   const shiftStart = new Date(shift.start_time).getTime();
   const shiftEnd = new Date(shift.end_time).getTime();
@@ -33,14 +36,30 @@ export function buildVariants(shift: IShift, now: Date) {
         })();
 
   const minimal = (
-    <Voltra.Text style={{ color: "#70C601", fontSize: 12, fontWeight: "700" }}>
-      {timeRemaining}
-    </Voltra.Text>
+    <Voltra.View
+      style={{
+        backgroundColor: BG,
+        borderRadius: 8,
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+      }}
+    >
+      <Voltra.Text
+        style={{ color: "#70C601", fontSize: 12, fontWeight: "700" }}
+      >
+        {timeRemaining}
+      </Voltra.Text>
+    </Voltra.View>
   );
 
   const compact = (
     <Voltra.HStack
-      style={{ alignItems: "center", gap: 8, paddingHorizontal: 8 }}
+      style={{
+        alignItems: "center",
+        gap: 8,
+        paddingHorizontal: 8,
+        backgroundColor: BG_COMPACT,
+      }}
     >
       <Voltra.Text style={{ fontSize: 11 }}>🟢</Voltra.Text>
       <Voltra.Text
@@ -63,6 +82,7 @@ export function buildVariants(shift: IShift, now: Date) {
         paddingVertical: 20,
         alignItems: "flex-start",
         gap: 0,
+        backgroundColor: BG,
       }}
     >
       <Voltra.HStack
