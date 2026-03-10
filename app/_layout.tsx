@@ -25,7 +25,12 @@ export default function Root() {
   useOneSignal();
   usePermissionMonitor();
   useEffect(() => {
-    useSettingsStore.getState().hydrate();
+    const initializeApp = async () => {
+      const store = useSettingsStore.getState();
+      await store.hydrate();
+      await store.requestAllPermissionsOnLaunch();
+    };
+    initializeApp();
   }, []);
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

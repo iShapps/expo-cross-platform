@@ -96,7 +96,7 @@ export function buildVariants(shift: IShift, now: Date) {
       >
         <Voltra.HStack
           style={{
-            backgroundColor: "rgba(112,198,1,0.18)",
+            // backgroundColor: "rgba(112,198,1,0.18)",
             borderRadius: 8,
             paddingHorizontal: 10,
             paddingVertical: 4,
@@ -115,7 +115,9 @@ export function buildVariants(shift: IShift, now: Date) {
               textAlign: "left",
             }}
           >
-            {shift.shift_type} · shift in progress
+            {shift.shift_type.charAt(0).toUpperCase() +
+              shift.shift_type.slice(1)}{" "}
+            · shift in progress
           </Voltra.Text>
         </Voltra.HStack>
 
