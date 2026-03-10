@@ -36,18 +36,13 @@ export const useOneSignal = () => {
     OneSignal.initialize(appId);
     isInitialized.current = true;
     setInitialized(true);
-
     console.log("OneSignal initialized");
-    initNotifications();
 
     const handleClick = (event: NotificationClickEvent) => {
       console.log("Notification clicked:", event);
       const notification = extractNotification(event);
-      console.log("Extracted notification data:", notification);
 
-      // redirect based on notification type
-      if (notification && notification.additionalData) {
-        // navigate to shift details page
+      if (notification?.additionalData) {
         switch (notification.additionalData.notification_type) {
           case "shifts":
             router.navigate(
@@ -97,24 +92,32 @@ export const useOneSignal = () => {
     };
   }, []);
 
-  // notification state changes
   useEffect(() => {
     if (!isInitialized.current) return;
 
     const handleNotificationState = async () => {
-      console.log("Notification state changed:", {
-        enabled: notificationsEnabled,
-        userId: session?.user?.id,
-      });
-
       if (notificationsEnabled) {
-        console.log("Enabling notifications...");
+        console.log("Notifications enabled — syncing OneSignal...");
 
-        const canRequest = await OneSignal.Notifications.canRequestPermission();
+        const alreadyGranted =
+          await OneSignal.Notifications.getPermissionAsync();
 
-        if (canRequest) {
-          const granted = await OneSignal.Notifications.requestPermission(true);
-          console.log("Permission granted:", granted);
+        if (!alreadyGranted) {
+          const canRequest =
+            await OneSignal.Notifications.canRequestPermission();
+
+          if (canRequest) {
+            const granted =
+              await OneSignal.Notifications.requestPermission(true);
+            console.log("Permission granted:", granted);
+
+            if (!granted) return;
+          } else {
+            console.log(
+              "Cannot request permission — user must enable in device settings",
+            );
+            return;
+          }
         }
 
         if (session?.user?.id) {
@@ -128,13 +131,13 @@ export const useOneSignal = () => {
 
         await OneSignal.User.pushSubscription.optIn();
       } else {
-        console.log("Notifications disabled — requesting permission...");
-        initNotifications();
+        console.log("Notifications disabled — opting out of push...");
+        await OneSignal.User.pushSubscription.optOut();
       }
     };
 
     handleNotificationState();
-  }, [notificationsEnabled, session?.user?.id, initialized]);
+  }, [notificationsEnabled, session?.user?.id]);
 
   return {
     isInitialized: initialized,
