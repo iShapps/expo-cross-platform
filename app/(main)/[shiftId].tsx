@@ -22,7 +22,7 @@ import Feather from "@expo/vector-icons/Feather";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useRef } from "react";
 import {
@@ -185,6 +185,7 @@ export default function ShiftDetails() {
   const bottomSheetRef = useRef<BottomSheet>(null);
 
   const profileStore = useProfileData();
+  const queryClient = useQueryClient();
   const { shiftId } = useLocalSearchParams();
   const {
     getCurrentLocation,
@@ -303,6 +304,18 @@ export default function ShiftDetails() {
       showAlert("Success", response.message);
       profileStore.setAcceptedShift(shift); // Store accepted shift in global state
       await refetch();
+
+      // invalidate caches
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["scheduled-shifts"] }),
+        queryClient.invalidateQueries({ queryKey: ["running-shifts"] }),
+        queryClient.invalidateQueries({ queryKey: ["cancelled-shifts"] }),
+        queryClient.invalidateQueries({ queryKey: ["transferred-shifts"] }),
+        queryClient.invalidateQueries({ queryKey: ["completed-shifts"] }),
+        queryClient.invalidateQueries({ queryKey: ["pending-shifts"] }),
+        queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
+        queryClient.invalidateQueries({ queryKey: ["notifications"] }),
+      ]);
     } catch (error) {
       showAlert(
         "Error",
@@ -364,6 +377,17 @@ export default function ShiftDetails() {
       console.log("Live activity started call completed");
       profileStore.setAcceptedShift(null); // remove accepted shift from global state on start
       await refetch();
+      // invalidate caches
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["scheduled-shifts"] }),
+        queryClient.invalidateQueries({ queryKey: ["running-shifts"] }),
+        queryClient.invalidateQueries({ queryKey: ["cancelled-shifts"] }),
+        queryClient.invalidateQueries({ queryKey: ["transferred-shifts"] }),
+        queryClient.invalidateQueries({ queryKey: ["completed-shifts"] }),
+        queryClient.invalidateQueries({ queryKey: ["pending-shifts"] }),
+        queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
+        queryClient.invalidateQueries({ queryKey: ["notifications"] }),
+      ]);
     } catch (error) {
       showAlert(
         "Error",
@@ -384,7 +408,19 @@ export default function ShiftDetails() {
       profileStore.setAcceptedShift(null); // remove accepted shift from global state on end
       // stop live activity
       await endLiveActivityForShift();
+
       await refetch();
+      // invalidate caches
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["scheduled-shifts"] }),
+        queryClient.invalidateQueries({ queryKey: ["running-shifts"] }),
+        queryClient.invalidateQueries({ queryKey: ["cancelled-shifts"] }),
+        queryClient.invalidateQueries({ queryKey: ["transferred-shifts"] }),
+        queryClient.invalidateQueries({ queryKey: ["completed-shifts"] }),
+        queryClient.invalidateQueries({ queryKey: ["pending-shifts"] }),
+        queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
+        queryClient.invalidateQueries({ queryKey: ["notifications"] }),
+      ]);
     } catch (error) {
       showAlert(
         "Error",

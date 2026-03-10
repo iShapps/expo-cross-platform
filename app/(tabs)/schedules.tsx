@@ -92,7 +92,7 @@ export default function Schedules() {
 
   // transfered shifts
   const transferredQuery = useShiftInfiniteQuery(
-    "transfered-shifts",
+    "transferred-shifts",
     postTransferredShifts,
   );
 

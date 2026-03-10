@@ -84,7 +84,7 @@ export default function HomeScreen() {
     isFetchingNextPage,
     // error: notificationsError,
   } = useInfiniteQuery({
-    queryKey: ["noifications"],
+    queryKey: ["notifications"],
     queryFn: ({ pageParam = 1 }) => getNotifications(pageParam),
     initialPageParam: 1,
     getNextPageParam: (lastPage) => {
