@@ -27,6 +27,7 @@ interface SettingsState {
   setBiometrics: (value: boolean) => void;
   hydrate: () => Promise<void>;
   checkPermissions: () => Promise<void>;
+  requestAllPermissionsOnLaunch: () => Promise<void>;
   openAppSettings: () => void;
 }
 
@@ -425,6 +426,71 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       });
     } catch (err) {
       console.error("Failed to hydrate settings store", err);
+    }
+  },
+
+  requestAllPermissionsOnLaunch: async () => {
+    try {
+      // Request location permission
+      const { status: locationStatus } =
+        await Location.requestForegroundPermissionsAsync();
+      if (locationStatus === "granted") {
+        set({ locationEnabled: true });
+        await AsyncStorage.setItem("location", JSON.stringify(true));
+      }
+
+      // Request notifications permission
+      try {
+        const notificationPermission =
+          await OneSignal.Notifications.requestPermission(true);
+        if (notificationPermission) {
+          await OneSignal.User.pushSubscription.optIn();
+          set({ notificationsEnabled: true });
+          await AsyncStorage.setItem("notifications", JSON.stringify(true));
+        }
+      } catch (error) {
+        console.error("Failed to request notification permission:", error);
+      }
+
+      // Request calendar permission
+      if (Platform.OS === "ios") {
+        const calendarResult = await Calendar.requestCalendarPermissionsAsync();
+
+        if (calendarResult.status === "granted") {
+          const remindersResult =
+            await Calendar.requestRemindersPermissionsAsync();
+
+          if (remindersResult.status === "granted") {
+            set({ calendarEnabled: true });
+            await AsyncStorage.setItem("calendar", JSON.stringify(true));
+          }
+        }
+      } else {
+        const { status: calendarStatus } =
+          await Calendar.requestCalendarPermissionsAsync();
+
+        if (calendarStatus === "granted") {
+          set({ calendarEnabled: true });
+          await AsyncStorage.setItem("calendar", JSON.stringify(true));
+        }
+      }
+
+      // Request biometrics permission
+      const hasHardware = await isBiometricAvailable();
+      const isEnrolled = await isBiometricAllowed();
+
+      if (hasHardware && isEnrolled) {
+        const authenticated = await authenticateWithBiometrics(
+          "Verify your identity to enable biometric login",
+        );
+
+        if (authenticated) {
+          set({ biometricsEnabled: true });
+          await AsyncStorage.setItem("biometrics", JSON.stringify(true));
+        }
+      }
+    } catch (error) {
+      console.error("Failed to request permissions on launch:", error);
     }
   },
 
