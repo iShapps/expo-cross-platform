@@ -119,7 +119,7 @@ export default function SettingsScreen() {
               <View style={styles.settingTextWrap}>
                 <Text style={styles.settingTitle}>Theme</Text>
                 <Text style={styles.settingDesc}>
-                  Toggle between Light, Dark, theme for the app.
+                  Toggle between Light and Dark theme for the app.
                 </Text>
               </View>
               <Switch
