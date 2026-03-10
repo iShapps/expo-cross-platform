@@ -23,7 +23,8 @@ export default function SettingsScreen() {
     setLocation,
     notificationsEnabled,
     setNotifications,
-
+    calendarEnabled,
+    setCalendar,
     biometricsEnabled,
     setBiometrics,
   } = useSettingsStore();
@@ -78,6 +79,29 @@ export default function SettingsScreen() {
               <Switch
                 value={notificationsEnabled}
                 onValueChange={setNotifications}
+                thumbColor={appTheme.white}
+                trackColor={{ false: "gray", true: appTheme.primary }}
+              />
+            </View>
+
+            {/* Calendar & Reminders */}
+            <View style={styles.settingCard}>
+              <View style={styles.settingIconWrap}>
+                <Ionicons
+                  name="calendar"
+                  size={22}
+                  color={appTheme.activeText}
+                />
+              </View>
+              <View style={styles.settingTextWrap}>
+                <Text style={styles.settingTitle}>Calendar & Reminders</Text>
+                <Text style={styles.settingDesc}>
+                  Allow app to add shifts to your calendar with reminders.
+                </Text>
+              </View>
+              <Switch
+                value={calendarEnabled}
+                onValueChange={setCalendar}
                 thumbColor={appTheme.white}
                 trackColor={{ false: "gray", true: appTheme.primary }}
               />
