@@ -12,8 +12,8 @@ import { SwipeButton } from "@/components/swipe-button";
 import { Colors } from "@/constants/theme";
 import { useProfileData } from "@/data-store/use-account-store";
 import { IShift } from "@/data-types/shifts";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useCalendarAndReminders } from "@/hooks/use-calendar-and-reminders";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useLiveActivity } from "@/hooks/use-live-activity";
 import { useLocation } from "@/hooks/use-location";
 import { shiftToCalendarEvent } from "@/utils/shift-calendar-utils";
@@ -21,6 +21,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import Feather from "@expo/vector-icons/Feather";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useRef } from "react";
@@ -215,7 +216,8 @@ export default function ShiftDetails() {
   const { start: startLiveActivityForShift, stop: endLiveActivityForShift } =
     useLiveActivity();
 
-  const { addShiftToCalendar } = useCalendarAndReminders();
+  const { addShiftToCalendar, removeShiftFromCalendar } =
+    useCalendarAndReminders();
 
   const acceptShiftMutation = useMutation({
     mutationFn: (id: number) => postAcceptShift(id),
@@ -279,8 +281,16 @@ export default function ShiftDetails() {
 
       // Add shift to calendar and set up reminders
       try {
+        console.log("calendarEvent", shift);
+
         const calendarEvent = shiftToCalendarEvent(shift);
-        await addShiftToCalendar(calendarEvent);
+        const result = await addShiftToCalendar(calendarEvent);
+
+        // Store the eventId linked to this shift
+        await AsyncStorage.setItem(
+          `calendar_event_${shift.id}`,
+          result.eventId,
+        );
       } catch (calendarError) {
         console.error("Failed to add shift to calendar:", calendarError);
         // Don't fail the entire shift acceptance if calendar fails
@@ -303,6 +313,17 @@ export default function ShiftDetails() {
 
   const handleStartShift = async () => {
     if (!shift?.id) return;
+    try {
+      // Retrieve the stored eventId for this shift
+      const eventId = await AsyncStorage.getItem(`calendar_event_${shift.id}`);
+
+      if (eventId) {
+        await removeShiftFromCalendar(eventId);
+        await AsyncStorage.removeItem(`calendar_event_${shift.id}`); // clean up
+      }
+    } catch (calendarError) {
+      console.error("Failed to remove shift from calendar:", calendarError);
+    }
     try {
       const currentLocation = await getCurrentLocation();
       if (!currentLocation) {

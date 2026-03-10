@@ -143,7 +143,8 @@
       [
         "expo-calendar",
         {
-          "calendarPermission": "Allow $(PRODUCT_NAME) to access your calendar to view and manage your scheduled shifts."
+          "calendarPermission": "Allow $(PRODUCT_NAME) to access your calendar to view and manage your scheduled shifts.",
+          "remindersPermission": "Allow $(PRODUCT_NAME) to access your reminders to set shift-related reminders and notifications."
         }
       ]
     ],
