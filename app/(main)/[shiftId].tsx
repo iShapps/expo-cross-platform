@@ -584,6 +584,30 @@ export default function ShiftDetails() {
             </View>
           </View>
         </Pressable>
+        {/* show transfer button for shifts accepted but not started */}
+        {/* {[1].includes(shiftStatus) && (
+          <View
+            style={{
+              display: "flex",
+              flexDirection: "row",
+              justifyContent: "flex-start",
+            }}
+          >
+            <Pressable
+              style={[styles.button, { backgroundColor: theme.activeText }]}
+              onPress={() =>
+                router.push(`/(main)/transfer-shift?shiftId=${shift?.id}`)
+              }
+            >
+              <MaterialIcons
+                name="transfer-within-a-station"
+                size={18}
+                color={theme.whiteText}
+              />
+              <Text style={styles.buttonText}>Transfer shift</Text>
+            </Pressable>
+          </View>
+        )} */}
 
         <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>Shift Info</Text>
@@ -1031,5 +1055,21 @@ const getStyles = (theme: typeof Colors.light) =>
       color: theme.errorSubtitle,
       fontSize: 14,
       fontWeight: "500",
+    },
+    button: {
+      backgroundColor: theme.primary,
+      borderRadius: 4,
+      paddingHorizontal: 16,
+      paddingVertical: 9,
+      display: "flex",
+      gap: 8,
+      alignItems: "center",
+      flexDirection: "row",
+      justifyContent: "center",
+    },
+    buttonText: {
+      color: theme.white,
+      fontSize: 13,
+      fontWeight: "400",
     },
   });
