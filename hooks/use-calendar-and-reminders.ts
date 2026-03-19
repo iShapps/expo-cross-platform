@@ -25,6 +25,43 @@ interface CalendarEventResult {
 const CALENDAR_NAME = "Shifts Calendar";
 const CALENDAR_COLOR = "#70C601";
 
+const normalizeEventId = (rawEventId: unknown): string | null => {
+  if (typeof rawEventId === "string") {
+    const trimmed = rawEventId.trim();
+    if (!trimmed) return null;
+
+    if (
+      (trimmed.startsWith("{") && trimmed.endsWith("}")) ||
+      (trimmed.startsWith('"') && trimmed.endsWith('"'))
+    ) {
+      try {
+        return normalizeEventId(JSON.parse(trimmed));
+      } catch {
+        return trimmed;
+      }
+    }
+
+    return trimmed;
+  }
+
+  if (typeof rawEventId === "number") {
+    return String(rawEventId);
+  }
+
+  if (rawEventId && typeof rawEventId === "object") {
+    const record = rawEventId as Record<string, unknown>;
+    const nested =
+      record.eventId ??
+      record.id ??
+      record.identifier ??
+      record.eventIdentifier;
+
+    return nested != null ? normalizeEventId(nested) : null;
+  }
+
+  return null;
+};
+
 /**
  * Hook for managing calendar events and reminders for shifts
  * Handles permissions, event creation, and reminder setup
@@ -243,8 +280,14 @@ export const useCalendarAndReminders = () => {
   };
 
   // Remove a shift event from the calendar
-  const removeShiftFromCalendar = async (eventId: string): Promise<void> => {
+  const removeShiftFromCalendar = async (eventId: unknown): Promise<void> => {
     try {
+      const normalizedEventId = normalizeEventId(eventId);
+      if (!normalizedEventId) {
+        console.warn("No valid calendar event id provided for removal");
+        return;
+      }
+
       // On iOS, reminders permission is needed before getCalendarsAsync
       if (Platform.OS === "ios") {
         await Calendar.requestRemindersPermissionsAsync();
@@ -262,11 +305,9 @@ export const useCalendarAndReminders = () => {
         return;
       }
 
-      await Calendar.deleteEventAsync(eventId, {
-        instanceStartDate: new Date(),
-      });
+      await Calendar.deleteEventAsync(normalizedEventId);
 
-      console.log("Shift removed from calendar:", eventId);
+      console.log("Shift removed from calendar:", normalizedEventId);
     } catch (error) {
       console.error("Error removing shift from calendar:", error);
       throw error;

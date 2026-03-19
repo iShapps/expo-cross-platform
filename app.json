@@ -2,13 +2,14 @@
   "expo": {
     "name": "iShapps",
     "slug": "ishapps",
-    "version": "1.0.0",
+    "version": "1.5.0",
     "orientation": "portrait",
     "icon": "./assets/images/smhealth.png",
     "scheme": "ishapps",
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
+      "buildNumber": "15",
       "bundleIdentifier": "com.smarthealthcare.ishapps",
       "infoPlist": {
         "NSFaceIDUsageDescription": "Allow $(PRODUCT_NAME) to use Face ID for authentication.",
@@ -28,6 +29,7 @@
       }
     },
     "android": {
+      "versionCode": 15,
       "adaptiveIcon": {
         "backgroundColor": "#70C601",
         "foregroundImage": "./assets/images/ishapps.png",
