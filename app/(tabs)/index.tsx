@@ -72,7 +72,7 @@ export default function HomeScreen() {
       }
       return userDetails;
     });
-  }, [userDetails]);
+  }, [queryClient, userDetails]);
 
   const {
     data,
@@ -124,7 +124,7 @@ export default function HomeScreen() {
 
   useEffect(() => {
     requestPermission();
-  }, []);
+  }, [requestPermission]);
 
   const handlePullToRefresh = async () => {
     await refetch();

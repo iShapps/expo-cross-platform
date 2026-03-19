@@ -1,13 +1,16 @@
 import { updateAvailability } from "@/api-queries/profile";
 import Header from "@/components/Header";
 import { Colors } from "@/constants/theme";
+import { useConfigSettings } from "@/data-store/config-store";
 import { User } from "@/data-types/auth";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { BlurView } from "expo-blur";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   ScrollView,
   StyleSheet,
@@ -18,6 +21,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function ProfileScreen() {
+  const configSettings = useConfigSettings();
   let colorScheme = useColorScheme();
   if (!colorScheme) colorScheme = "light";
   const theme = Colors[colorScheme];
@@ -72,7 +76,7 @@ export default function ProfileScreen() {
     });
   };
 
-  const avatarImageSource = `${process.env.EXPO_PUBLIC_BUCKET_NAME}/uploads/hcps/${encodeURIComponent(
+  const avatarImageSource = `${configSettings?.configSettings?.image_path?.hcp_path}${encodeURIComponent(
     `${userDetails?.hcp?.hcp_prefix}${userDetails?.hcp?.id}`,
   )}/image/${userDetails?.hcp?.image}`;
   return (
@@ -219,6 +223,20 @@ export default function ProfileScreen() {
           </View>
         </View>
       </ScrollView>
+
+      {updateAvailabilityMutation.isPending && (
+        <View style={styles.busyOverlay} pointerEvents="auto">
+          <BlurView
+            intensity={45}
+            tint="dark"
+            style={StyleSheet.absoluteFill}
+          />
+          <View style={styles.busyCard}>
+            <ActivityIndicator size="large" color={theme.white} />
+            <Text style={styles.busyText}>Updating profile status...</Text>
+          </View>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -399,5 +417,30 @@ const getStyles = (theme: typeof Colors.light) =>
       fontWeight: "600",
       color: theme.tertiaryText,
       marginTop: 4,
+    },
+    busyOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      zIndex: 999,
+      elevation: 999,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: "rgba(10, 16, 26, 0.18)",
+    },
+    busyCard: {
+      minWidth: 220,
+      paddingHorizontal: 18,
+      paddingVertical: 16,
+      borderRadius: 10,
+      alignItems: "center",
+      gap: 12,
+      backgroundColor: "rgba(0, 0, 0, 0.45)",
+      borderWidth: 1,
+      borderColor: "rgba(255, 255, 255, 0.25)",
+    },
+    busyText: {
+      color: theme.white,
+      fontSize: 14,
+      fontWeight: "600",
+      textAlign: "center",
     },
   });

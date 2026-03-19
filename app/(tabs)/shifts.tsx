@@ -8,15 +8,26 @@ import TabsHeader from "@/components/shared/tabs-header";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import React from "react";
-import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import React, { useCallback, useRef, useState } from "react";
+import {
+  FlatList,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+const STATUS_TABS = ["Available", "Transfers"] as const;
 
 export default function Shifts() {
   const {
     data,
     isLoading,
     isError,
+    isRefetching,
     refetch,
     fetchNextPage,
     hasNextPage,
@@ -27,11 +38,14 @@ export default function Shifts() {
     queryFn: ({ pageParam = 1 }) => postPendingShifts(pageParam),
     initialPageParam: 1,
     getNextPageParam: (lastPage) => {
-      const pagination = lastPage?.data?.shifts;
+      const pagination = lastPage?.data?.shifts?.available_shifts;
+
       if (!pagination) return undefined;
+
       if (pagination.current_page < pagination.last_page) {
         return pagination.current_page + 1;
       }
+
       return undefined;
     },
     refetchInterval: 30 * 60 * 1000, // 30 minutes
@@ -40,8 +54,23 @@ export default function Shifts() {
     staleTime: 1000 * 60 * 60 * 24,
   });
 
+  const [activeStatus, setActiveStatus] =
+    useState<(typeof STATUS_TABS)[number]>("Available");
+
+  console.log("Pending shifts data:", data);
+
   const shifts =
-    data?.pages.flatMap((page) => page?.data?.shifts?.data ?? []) ?? [];
+    data?.pages.flatMap(
+      (page) => page?.data?.shifts?.available_shifts?.data ?? [],
+    ) ?? [];
+
+  const transferShifts =
+    data?.pages.flatMap(
+      (page) => page?.data?.shifts?.transfer_shifts?.data ?? [],
+    ) ?? [];
+
+  const showSkeletonLoading =
+    isLoading || (isRefetching && !isFetchingNextPage);
 
   const handlePullToRefresh = async () => {
     await refetch();
@@ -55,86 +84,189 @@ export default function Shifts() {
   let colorScheme = useColorScheme();
   if (!colorScheme) colorScheme = "light";
   const theme = Colors[colorScheme];
+
   const styles = getStyles(theme);
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+
+  const contentScrollRef = useRef<ScrollView>(null);
+  const tabScrollRef = useRef<ScrollView>(null);
+  const tabOffsetsRef = useRef<number[]>([]);
+  const tabWidthsRef = useRef<number[]>([]);
+
+  const scrollTabIntoView = useCallback(
+    (index: number) => {
+      const offset = tabOffsetsRef.current[index];
+      const width = tabWidthsRef.current[index];
+      if (offset == null || width == null) return;
+      tabScrollRef.current?.scrollTo({
+        x: offset - screenWidth / 2 + width / 2, // center the active tab
+        animated: true,
+      });
+    },
+    [screenWidth],
+  );
+
+  const handleTabPress = useCallback(
+    (index: number) => {
+      setActiveStatus(STATUS_TABS[index]);
+      scrollTabIntoView(index);
+      contentScrollRef.current?.scrollTo({
+        x: index * screenWidth,
+        animated: true,
+      });
+    },
+    [screenWidth, scrollTabIntoView],
+  );
+
+  const handleContentScrollEnd = useCallback(
+    (e: any) => {
+      const offsetX = e.nativeEvent.contentOffset.x;
+      const index = Math.round(offsetX / screenWidth);
+      const clampedIndex = Math.min(Math.max(index, 0), STATUS_TABS.length - 1);
+      setActiveStatus(STATUS_TABS[clampedIndex]);
+      scrollTabIntoView(clampedIndex);
+    },
+    [screenWidth, scrollTabIntoView],
+  );
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <TabsHeader title="Shifts" />
       <View style={styles.container}>
-        <FlatList
-          data={isLoading ? [...Array(6)] : shifts}
-          renderItem={
-            isLoading
-              ? () => <ShiftCardBaseSkeleton />
-              : ({ item }) => <ShiftCardBase shift={item} />
-          }
-          keyExtractor={
-            isLoading
-              ? (_, idx) => `skeleton-${idx}`
-              : (item) => String(item.id)
-          }
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{
-            paddingBottom: 120,
-            paddingTop: 10,
-            flexGrow: 1,
-            gap: 10,
-          }}
-          refreshing={isFetchingNextPage}
-          onRefresh={handlePullToRefresh}
-          onEndReached={handleLoadMore}
-          onEndReachedThreshold={0.6}
-          ListFooterComponent={
-            !isLoading && isFetchingNextPage ? (
-              <View style={{ gap: 10, paddingTop: 10 }}>
-                <ShiftCardBaseSkeleton />
-                <ShiftCardBaseSkeleton />
-              </View>
-            ) : null
-          }
-          ListEmptyComponent={
-            !isLoading && !isError && shifts.length === 0 ? (
-              <View
-                style={{
-                  flex: 1,
-                  alignItems: "center",
-                  justifyContent: "center",
+        <ScrollView
+          ref={tabScrollRef}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.tabsRow}
+        >
+          {STATUS_TABS.map((status, index) => {
+            const isActive = activeStatus === status;
+            return (
+              <Pressable
+                key={status}
+                onPress={() => handleTabPress(index)}
+                style={styles.tabButton}
+                android_ripple={{ color: theme.grayBorder }}
+                onLayout={(e) => {
+                  tabOffsetsRef.current[index] = e.nativeEvent.layout.x;
+                  tabWidthsRef.current[index] = e.nativeEvent.layout.width;
                 }}
               >
-                <MaterialCommunityIcons
-                  name="calendar-remove-outline"
-                  size={72}
-                  color={theme.grayBorder}
-                  style={{ marginBottom: 16 }}
+                <Text
+                  style={[styles.tabText, isActive && styles.tabTextActive]}
+                >
+                  {status}
+                </Text>
+                <View
+                  style={[
+                    styles.tabUnderline,
+                    isActive && styles.tabUnderlineActive,
+                  ]}
                 />
-                <Text
-                  style={{
-                    fontSize: 20,
-                    fontWeight: "700",
-                    color: theme.primary,
-                    marginBottom: 8,
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+
+        <ScrollView
+          ref={contentScrollRef}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          showsVerticalScrollIndicator={false}
+          onMomentumScrollEnd={handleContentScrollEnd}
+          directionalLockEnabled
+          nestedScrollEnabled
+        >
+          {STATUS_TABS.map((status) => {
+            const tabData = status === "Available" ? shifts : transferShifts;
+
+            return (
+              <View
+                key={status}
+                style={{ width: screenWidth - 20, paddingHorizontal: 4 }}
+              >
+                <FlatList
+                  data={showSkeletonLoading ? [...Array(6)] : tabData}
+                  renderItem={
+                    showSkeletonLoading
+                      ? () => <ShiftCardBaseSkeleton />
+                      : ({ item }) => <ShiftCardBase shift={item} />
+                  }
+                  keyExtractor={
+                    showSkeletonLoading
+                      ? (_, idx) => `${status.toLowerCase()}-skeleton-${idx}`
+                      : (item) => String(item.id)
+                  }
+                  showsVerticalScrollIndicator={false}
+                  contentContainerStyle={{
+                    paddingBottom: 120,
+                    paddingTop: 10,
+                    flexGrow: 1,
+                    minHeight: screenHeight,
+                    gap: 10,
                   }}
-                >
-                  No Shifts Yet
-                </Text>
-                <Text
-                  style={{
-                    fontSize: 15,
-                    color: theme.secondaryText,
-                    textAlign: "center",
-                    maxWidth: 260,
-                  }}
-                >
-                  There&apos;s no shifts for this the moment. Check back later
-                  or explore other tabs!
-                </Text>
+                  refreshing={false}
+                  onRefresh={handlePullToRefresh}
+                  onEndReached={handleLoadMore}
+                  onEndReachedThreshold={0.6}
+                  nestedScrollEnabled
+                  ListFooterComponent={
+                    !showSkeletonLoading && isFetchingNextPage ? (
+                      <View style={{ gap: 10, paddingTop: 10 }}>
+                        <ShiftCardBaseSkeleton />
+                        <ShiftCardBaseSkeleton />
+                      </View>
+                    ) : null
+                  }
+                  ListEmptyComponent={
+                    !showSkeletonLoading && !isError && tabData.length === 0 ? (
+                      <View
+                        style={{
+                          flex: 1,
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <MaterialCommunityIcons
+                          name="calendar-remove-outline"
+                          size={72}
+                          color={theme.grayBorder}
+                          style={{ marginBottom: 16 }}
+                        />
+                        <Text
+                          style={{
+                            fontSize: 20,
+                            fontWeight: "700",
+                            color: theme.primary,
+                            marginBottom: 8,
+                          }}
+                        >
+                          No shifts {status.toLowerCase()} yet
+                        </Text>
+                        <Text
+                          style={{
+                            fontSize: 15,
+                            color: theme.secondaryText,
+                            textAlign: "center",
+                            maxWidth: 260,
+                          }}
+                        >
+                          There are no shifts {status.toLowerCase()} at the
+                          moment. Pull to refresh or check back later.
+                        </Text>
+                      </View>
+                    ) : null
+                  }
+                />
               </View>
-            ) : null
-          }
-        />
-        {isError && (
+            );
+          })}
+        </ScrollView>
+        {isError && !showSkeletonLoading && (
           <View
             style={{
-              flex: 1,
+              // flex: 1,
               justifyContent: "center",
               alignItems: "center",
               position: "absolute",
