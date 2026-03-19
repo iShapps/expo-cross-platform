@@ -476,17 +476,41 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       }
 
       // Request biometrics permission
-      const hasHardware = await isBiometricAvailable();
-      const isEnrolled = await isBiometricAllowed();
+      // const hasHardware = await isBiometricAvailable();
+      // const isEnrolled = await isBiometricAllowed();
 
-      if (hasHardware && isEnrolled) {
-        const authenticated = await authenticateWithBiometrics(
-          "Verify your identity to enable biometric login",
-        );
+      // if (hasHardware && isEnrolled) {
+      //   const authenticated = await authenticateWithBiometrics(
+      //     "Verify your identity to enable biometric login",
+      //   );
 
-        if (authenticated) {
-          set({ biometricsEnabled: true });
-          await AsyncStorage.setItem("biometrics", JSON.stringify(true));
+      //   if (authenticated) {
+      //     set({ biometricsEnabled: true });
+      //     await AsyncStorage.setItem("biometrics", JSON.stringify(true));
+      //   }
+      // }
+
+      const storedBiometrics = await AsyncStorage.getItem("biometrics");
+      const alreadyDecided = storedBiometrics !== null;
+
+      if (!alreadyDecided) {
+        const hasHardware = await isBiometricAvailable();
+        const isEnrolled = await isBiometricAllowed();
+
+        if (hasHardware && isEnrolled) {
+          const authenticated = await authenticateWithBiometrics(
+            "Verify your identity to enable biometric login",
+          );
+
+          if (authenticated) {
+            set({ biometricsEnabled: true });
+            await AsyncStorage.setItem("biometrics", JSON.stringify(true));
+          } else {
+            set({ biometricsEnabled: false });
+            await AsyncStorage.setItem("biometrics", JSON.stringify(false));
+          }
+        } else {
+          await AsyncStorage.setItem("biometrics", JSON.stringify(false));
         }
       }
     } catch (error) {
