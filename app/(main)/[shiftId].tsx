@@ -737,20 +737,20 @@ export default function ShiftDetails() {
         </View>
 
         <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Rates & Hours</Text>
-          <View style={styles.detailRow}>
+          <Text style={styles.sectionTitle}>Hours</Text>
+          {/* <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Rate per hour</Text>
             <Text style={styles.detailValue}>${shift?.hcp_per_rate}</Text>
-          </View>
+          </View> */}
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Total Hours</Text>
             <Text style={styles.detailValue}>{shift?.hours}</Text>
           </View>
-          <View style={styles.detailRow}>
+          {/* <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Amount</Text>
             <Text style={styles.detailValue}>${shift?.hcp_amount}</Text>
-          </View>
-          <Text
+          </View> */}
+          {/* <Text
             style={{
               fontSize: 11,
               color: "#818589",
@@ -759,7 +759,7 @@ export default function ShiftDetails() {
             }}
           >
             All amounts are tax inclusive.
-          </Text>
+          </Text> */}
         </View>
 
         {isSleepover && (
