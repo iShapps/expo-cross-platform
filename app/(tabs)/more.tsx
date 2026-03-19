@@ -4,14 +4,17 @@ import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { updateAvailability } from "@/api-queries/profile";
 import Header from "@/components/Header";
 import { Colors } from "@/constants/theme";
+import { useConfigSettings } from "@/data-store/config-store";
 import { User } from "@/data-types/auth";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { BlurView } from "expo-blur";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   Pressable,
   ScrollView,
@@ -25,6 +28,7 @@ import { useSession } from "../ctx";
 
 export default function More() {
   const { signOut } = useSession();
+  const configSettings = useConfigSettings();
   const queryClient = useQueryClient();
   const { data: userDetails } = useQuery<User>({
     queryKey: ["profile-details"],
@@ -96,7 +100,7 @@ export default function More() {
     });
   };
 
-  const avatarImageSource = `${process.env.EXPO_PUBLIC_BUCKET_NAME}/uploads/hcps/${encodeURIComponent(
+  const avatarImageSource = `${configSettings?.configSettings?.image_path?.hcp_path}${encodeURIComponent(
     `${userDetails?.hcp?.hcp_prefix}${userDetails?.hcp?.id}`,
   )}/image/${userDetails?.hcp?.image}`;
 
@@ -243,6 +247,20 @@ export default function More() {
           </Pressable>
         </View>
       </ScrollView>
+
+      {updateAvailabilityMutation.isPending && (
+        <View style={styles.busyOverlay} pointerEvents="auto">
+          <BlurView
+            intensity={45}
+            tint="dark"
+            style={StyleSheet.absoluteFill}
+          />
+          <View style={styles.busyCard}>
+            <ActivityIndicator size="large" color={theme.white} />
+            <Text style={styles.busyText}>Updating availability...</Text>
+          </View>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -540,5 +558,30 @@ const getStyles = (theme: typeof Colors.light) =>
       height: 40,
       fontSize: 16,
       color: theme.activeText,
+    },
+    busyOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      zIndex: 999,
+      elevation: 999,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: "rgba(10, 16, 26, 0.18)",
+    },
+    busyCard: {
+      minWidth: 220,
+      paddingHorizontal: 18,
+      paddingVertical: 16,
+      borderRadius: 10,
+      alignItems: "center",
+      gap: 12,
+      backgroundColor: "rgba(0, 0, 0, 0.45)",
+      borderWidth: 1,
+      borderColor: "rgba(255, 255, 255, 0.25)",
+    },
+    busyText: {
+      color: theme.white,
+      fontSize: 14,
+      fontWeight: "600",
+      textAlign: "center",
     },
   });

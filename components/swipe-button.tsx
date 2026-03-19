@@ -39,11 +39,12 @@ export const SwipeButton = ({
     if (!completed && !processing) {
       translateX.value = withSpring(0);
     }
-  }, [completed, processing]);
+  }, [completed, processing, translateX]);
 
   const BUTTON_HEIGHT = 60;
   const KNOB_SIZE = 52;
   const PADDING = 4;
+  const LABEL_SIDE_INSET = KNOB_SIZE + PADDING + 6;
   const maxTranslate = SCREEN_WIDTH * 0.7 - KNOB_SIZE - PADDING * 2;
 
   const progress = useDerivedValue(() =>
@@ -120,7 +121,19 @@ export const SwipeButton = ({
         ]}
       />
 
-      <Animated.Text style={[styles.label, animatedTextStyle]}>
+      <Animated.Text
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.82}
+        style={[
+          styles.label,
+          animatedTextStyle,
+          {
+            left: LABEL_SIDE_INSET,
+            right: LABEL_SIDE_INSET,
+          },
+        ]}
+      >
         {completed ? "" : text}
       </Animated.Text>
 
@@ -194,8 +207,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#fff",
     letterSpacing: 0.5,
-    left: 0,
-    right: 0,
     textAlign: "center",
   },
 });

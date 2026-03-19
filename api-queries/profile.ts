@@ -4,6 +4,8 @@ import {
   IJobAvailabilityResponse,
   IPasswordChangeRequest,
   IProfileResponse,
+  IShiftTransferRequest,
+  IShiftTransferResponse,
 } from "@/data-types/profile";
 
 export async function postProfile(): Promise<IProfileResponse> {
@@ -35,5 +37,17 @@ export async function changePassword(
     current_password: request.current_password,
     new_password: request.new_password,
     new_password_again: request.new_password,
+  });
+}
+
+export async function transferShift(
+  request: IShiftTransferRequest,
+): Promise<IShiftTransferResponse> {
+  return postResource<
+    { shift_id: number; transfer_hcp_id: number },
+    IShiftTransferResponse
+  >("/shift/transfer", {
+    shift_id: request.shift_id,
+    transfer_hcp_id: request.transfer_hcp_id,
   });
 }

@@ -159,8 +159,28 @@ export interface IShift {
   facility: IFacility;
   cancelled_shift: any | null;
   shift_transfer_from: any | null;
-  shift_transfer_to: any | null;
+  shift_transfer_to: IShiftTransferTo | null;
   state: IState;
+}
+
+export interface IShiftTransferTo {
+  id: number;
+  shift_id: number;
+  hcp_id: number;
+  transfer_hcp_id: number;
+  status: string;
+  created_by: number;
+  updated_by: number;
+  created_at: Date;
+  updated_at: Date;
+  hcp: IShiftTransferToHcp;
+}
+
+export interface IShiftTransferToHcp {
+  id: number;
+  first_name: string;
+  last_name: string;
+  average_rating: string;
 }
 
 export interface IPaginatedShiftsResponse {
@@ -205,4 +225,16 @@ export interface IShiftLocationParams {
   longitude: number;
   shift_id: number;
   facility_id: number;
+}
+
+export interface IAvailableShiftResponse {
+  status: boolean;
+  message: string;
+  data: {
+    shifts: {
+      available_shifts: IPaginatedShiftsResponse;
+      transfer_shifts: IPaginatedShiftsResponse;
+      swap_shifts: IPaginatedShiftsResponse;
+    };
+  };
 }
