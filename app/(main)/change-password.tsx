@@ -6,9 +6,11 @@ import { useColorScheme } from "@/hooks/use-color-scheme";
 import { AntDesign } from "@expo/vector-icons";
 import Entypo from "@expo/vector-icons/Entypo";
 import { useMutation } from "@tanstack/react-query";
+import { BlurView } from "expo-blur";
 import { router } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   Animated,
   Easing,
@@ -267,6 +269,20 @@ export default function ChangePasswordScreen() {
           </Text>
         </Pressable>
       </View>
+
+      {changePasswordMutation.isPending && (
+        <View style={styles.busyOverlay} pointerEvents="auto">
+          <BlurView
+            intensity={45}
+            tint="dark"
+            style={StyleSheet.absoluteFill}
+          />
+          <View style={styles.busyCard}>
+            <ActivityIndicator size="large" color={theme.white} />
+            <Text style={styles.busyText}>Changing password...</Text>
+          </View>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -336,5 +352,30 @@ const getStyles = (theme: typeof Colors.light) =>
     primaryButtonText: {
       color: theme.white,
       fontSize: 14,
+    },
+    busyOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      zIndex: 999,
+      elevation: 999,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: "rgba(10, 16, 26, 0.18)",
+    },
+    busyCard: {
+      minWidth: 220,
+      paddingHorizontal: 18,
+      paddingVertical: 16,
+      borderRadius: 10,
+      alignItems: "center",
+      gap: 12,
+      backgroundColor: "rgba(0, 0, 0, 0.45)",
+      borderWidth: 1,
+      borderColor: "rgba(255, 255, 255, 0.25)",
+    },
+    busyText: {
+      color: theme.white,
+      fontSize: 14,
+      fontWeight: "600",
+      textAlign: "center",
     },
   });

@@ -1,5 +1,6 @@
 import {
   postAcceptShift,
+  postAcceptShiftTransfer,
   postEndShift,
   postShiftTracking,
   postStartShift,
@@ -23,9 +24,11 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { BlurView } from "expo-blur";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useRef } from "react";
 import {
+  ActivityIndicator,
   Alert,
   Linking,
   Platform,
@@ -229,6 +232,11 @@ export default function ShiftDetails() {
   const endShiftMutation = useMutation({
     mutationFn: (id: number) => postEndShift(id),
   });
+
+  const acceptShiftTransferMutation = useMutation({
+    mutationFn: (id: number) => postAcceptShiftTransfer(id),
+  });
+
   const trackingMutation = useMutation({
     mutationFn: (params: {
       shift_id: number;
@@ -239,12 +247,13 @@ export default function ShiftDetails() {
   });
 
   const isAccepting = acceptShiftMutation.isPending;
+  const isAcceptingTransfer = acceptShiftTransferMutation.isPending;
   const isStarting =
     locationLoading ||
     trackingMutation.isPending ||
     startShiftMutation.isPending;
   const isEnding = endShiftMutation.isPending;
-  const isBusy = isAccepting || isStarting || isEnding;
+  const isBusy = isAccepting || isAcceptingTransfer || isStarting || isEnding;
 
   const openMaps = async () => {
     const address = shift?.address;
@@ -320,6 +329,61 @@ export default function ShiftDetails() {
       showAlert(
         "Error",
         error instanceof Error ? error.message : "Failed to accept shift.",
+      );
+    }
+  };
+
+  const handleAcceptShiftTransfer = async () => {
+    if (!shift?.id) return;
+    try {
+      const response = await acceptShiftTransferMutation.mutateAsync(shift.id);
+      if (!response.status) {
+        showAlert("Shift transfer not accepted", response.message);
+        return;
+      }
+
+      // Add shift to calendar and set up reminders
+      try {
+        console.log("calendarEvent", shift);
+
+        const calendarEvent = shiftToCalendarEvent(shift);
+        const result = await addShiftToCalendar(calendarEvent);
+
+        // Store the eventId linked to this shift
+        await AsyncStorage.setItem(
+          `calendar_event_${shift.id}`,
+          result.eventId,
+        );
+      } catch (calendarError) {
+        console.error("Failed to add shift to calendar:", calendarError);
+        // Don't fail the entire shift acceptance if calendar fails
+        Alert.alert(
+          "Info",
+          "Shift transfer accepted but calendar/reminder setup failed. You can set reminders manually.",
+        );
+      }
+
+      showAlert("Success", response.message);
+      profileStore.setAcceptedShift(shift); // Store accepted shift in global state
+      await refetch();
+
+      // invalidate caches
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["scheduled-shifts"] }),
+        queryClient.invalidateQueries({ queryKey: ["running-shifts"] }),
+        queryClient.invalidateQueries({ queryKey: ["cancelled-shifts"] }),
+        queryClient.invalidateQueries({ queryKey: ["transferred-shifts"] }),
+        queryClient.invalidateQueries({ queryKey: ["completed-shifts"] }),
+        queryClient.invalidateQueries({ queryKey: ["pending-shifts"] }),
+        queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
+        queryClient.invalidateQueries({ queryKey: ["notifications"] }),
+      ]);
+    } catch (error) {
+      showAlert(
+        "Error",
+        error instanceof Error
+          ? error.message
+          : "Failed to accept shift transfer.",
       );
     }
   };
@@ -778,28 +842,53 @@ export default function ShiftDetails() {
                 completed={acceptShiftMutation.isSuccess}
               />
             )}
-            {shiftStatus === 1 && (
-              <SwipeButton
-                text="Swipe to Start"
-                onSwipeComplete={async () => {
-                  // await handleStartShift();
-                  // startShiftMutation.reset();
-                  // trackingMutation.reset();
 
-                  try {
-                    await handleStartShift();
-                  } catch {
-                  } finally {
-                    setTimeout(() => startShiftMutation.reset(), 1500);
-                    trackingMutation.reset();
-                  }
-                }}
-                disabled={isBusy}
-                bgColor={theme.primary}
-                processing={isStarting}
-                completed={startShiftMutation.isSuccess}
-              />
-            )}
+            {shiftStatus === 1 &&
+              shift?.shift_transfer_to &&
+              shift.shift_transfer_to.status === "pending" && (
+                <SwipeButton
+                  text="Swipe to Accept Transfer"
+                  onSwipeComplete={async () => {
+                    try {
+                      await handleAcceptShiftTransfer();
+                    } catch {
+                    } finally {
+                      setTimeout(
+                        () => acceptShiftTransferMutation.reset(),
+                        1500,
+                      );
+                    }
+                  }}
+                  disabled={isBusy}
+                  bgColor={theme.primary}
+                  processing={isAccepting}
+                  completed={acceptShiftTransferMutation.isSuccess}
+                />
+              )}
+            {shiftStatus === 1 &&
+              (!shift?.shift_transfer_to ||
+                shift.shift_transfer_to.status !== "pending") && (
+                <SwipeButton
+                  text="Swipe to Start"
+                  onSwipeComplete={async () => {
+                    // await handleStartShift();
+                    // startShiftMutation.reset();
+                    // trackingMutation.reset();
+
+                    try {
+                      await handleStartShift();
+                    } catch {
+                    } finally {
+                      setTimeout(() => startShiftMutation.reset(), 1500);
+                      trackingMutation.reset();
+                    }
+                  }}
+                  disabled={isBusy}
+                  bgColor={theme.primary}
+                  processing={isStarting}
+                  completed={startShiftMutation.isSuccess}
+                />
+              )}
             {shiftStatus === 2 && (
               <SwipeButton
                 text="Swipe to End"
@@ -819,6 +908,30 @@ export default function ShiftDetails() {
             )}
           </BottomSheetView>
         </BottomSheet>
+      )}
+
+      {isBusy && (
+        <View style={styles.busyOverlay} pointerEvents="auto">
+          <BlurView
+            intensity={45}
+            tint="dark"
+            style={StyleSheet.absoluteFill}
+          />
+          <View style={styles.busyCard}>
+            <ActivityIndicator size="large" color={theme.white} />
+            <Text style={styles.busyText}>
+              {isAccepting
+                ? "Accepting shift..."
+                : isStarting
+                  ? "Starting shift..."
+                  : isEnding
+                    ? "Ending shift..."
+                    : isAcceptingTransfer
+                      ? "Accepting shift transfer..."
+                      : "Processing shift action..."}
+            </Text>
+          </View>
+        </View>
       )}
     </SafeAreaView>
   );
@@ -1071,5 +1184,30 @@ const getStyles = (theme: typeof Colors.light) =>
       color: theme.white,
       fontSize: 13,
       fontWeight: "400",
+    },
+    busyOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      zIndex: 999,
+      elevation: 999,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: "rgba(10, 16, 26, 0.2)",
+    },
+    busyCard: {
+      minWidth: 220,
+      paddingHorizontal: 18,
+      paddingVertical: 16,
+      borderRadius: 10,
+      backgroundColor: "rgba(0, 0, 0, 0.45)",
+      borderWidth: 1,
+      borderColor: "rgba(255, 255, 255, 0.25)",
+      alignItems: "center",
+      gap: 12,
+    },
+    busyText: {
+      color: theme.white,
+      fontSize: 14,
+      fontWeight: "600",
+      textAlign: "center",
     },
   });

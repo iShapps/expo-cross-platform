@@ -1,5 +1,6 @@
 import { postResource } from "@/api-actions/mutations";
 import {
+  IAvailableShiftResponse,
   IShiftActionResponse,
   IShiftLocationParams,
   IShiftResponse,
@@ -28,14 +29,16 @@ export async function postUpcomingShifts(page = 1): Promise<IShiftResponse> {
   );
 }
 
-export async function postPendingShifts(page = 1): Promise<IShiftResponse> {
-  return postResource<{ shift_status: string; page: number }, IShiftResponse>(
-    "/shift",
-    {
-      shift_status: "available", //pending
-      page,
-    },
-  );
+export async function postPendingShifts(
+  page = 1,
+): Promise<IAvailableShiftResponse> {
+  return postResource<
+    { shift_status: string; page: number },
+    IAvailableShiftResponse
+  >("/shift", {
+    shift_status: "available", //pending
+    page,
+  });
 }
 
 export async function postScheduledShifts(page = 1): Promise<IShiftResponse> {
@@ -103,6 +106,15 @@ export async function postAcceptShift(
 ): Promise<IShiftActionResponse> {
   return postResource<{ shift_id: number }, IShiftActionResponse>(
     "/shift/accept",
+    { shift_id },
+  );
+}
+
+export async function postAcceptShiftTransfer(
+  shift_id: number,
+): Promise<IShiftActionResponse> {
+  return postResource<{ shift_id: number }, IShiftActionResponse>(
+    "/shift/accept-transfer-request",
     { shift_id },
   );
 }
