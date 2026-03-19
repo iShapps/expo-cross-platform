@@ -4,6 +4,7 @@ import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { updateAvailability } from "@/api-queries/profile";
 import Header from "@/components/Header";
 import { Colors } from "@/constants/theme";
+import { useConfigSettings } from "@/data-store/config-store";
 import { User } from "@/data-types/auth";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { MaterialIcons } from "@expo/vector-icons";
@@ -27,6 +28,7 @@ import { useSession } from "../ctx";
 
 export default function More() {
   const { signOut } = useSession();
+  const configSettings = useConfigSettings();
   const queryClient = useQueryClient();
   const { data: userDetails } = useQuery<User>({
     queryKey: ["profile-details"],
@@ -98,7 +100,7 @@ export default function More() {
     });
   };
 
-  const avatarImageSource = `${process.env.EXPO_PUBLIC_BUCKET_NAME}/uploads/hcps/${encodeURIComponent(
+  const avatarImageSource = `${configSettings?.configSettings?.image_path?.hcp_path}${encodeURIComponent(
     `${userDetails?.hcp?.hcp_prefix}${userDetails?.hcp?.id}`,
   )}/image/${userDetails?.hcp?.image}`;
 

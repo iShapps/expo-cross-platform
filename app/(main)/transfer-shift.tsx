@@ -4,45 +4,47 @@ import { transferShift } from "@/api-queries/profile";
 import { ShiftCardBaseSkeleton } from "@/components/skeletons";
 import HcpListSkeleton from "@/components/skeletons/hcp-skeleton";
 import { Colors } from "@/constants/theme";
+import { useConfigSettings } from "@/data-store/config-store";
 import { IHcp } from "@/data-types/hcps";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import {
-    AntDesign,
-    FontAwesome6,
-    MaterialCommunityIcons,
+  AntDesign,
+  FontAwesome6,
+  MaterialCommunityIcons,
 } from "@expo/vector-icons";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import {
-    useInfiniteQuery,
-    useMutation,
-    useQueryClient,
+  useInfiniteQuery,
+  useMutation,
+  useQueryClient,
 } from "@tanstack/react-query";
 import { Image } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
-    Alert,
-    Animated,
-    Easing,
-    FlatList,
-    Pressable,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  Animated,
+  Easing,
+  FlatList,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 // Avatar image source for HCPs
-const getAvatarImageSource = (hcp: IHcp) => {
+const getAvatarImageSource = (hcp: IHcp, imagePath: string) => {
   if (!hcp?.image) return undefined;
-  return `${process.env.EXPO_PUBLIC_BUCKET_NAME}/uploads/hcps/${encodeURIComponent(
+  return `${imagePath}${encodeURIComponent(
     `${hcp.hcp_prefix}${hcp.id}`,
   )}/image/${hcp.image}`;
 };
 
 const TransferShift = () => {
   const { shiftId } = useLocalSearchParams();
+  const configSettings = useConfigSettings();
   const parsedShiftId = Array.isArray(shiftId)
     ? Number(shiftId[0])
     : Number(shiftId);
@@ -258,7 +260,13 @@ const TransferShift = () => {
                 >
                   {/* Avatar image source for HCPs */}
                   <Image
-                    source={{ uri: getAvatarImageSource(item) }}
+                    source={{
+                      uri: getAvatarImageSource(
+                        item,
+                        configSettings?.configSettings?.image_path?.hcp_path ??
+                          "",
+                      ),
+                    }}
                     style={{
                       width: 40,
                       height: 40,

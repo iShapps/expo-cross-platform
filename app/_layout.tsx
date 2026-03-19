@@ -9,6 +9,7 @@ import { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SessionProvider, useSession } from "./ctx";
 import { SplashScreenController } from "./splash";
+import { GlobalUpdateGate } from "../components/global-update-gate";
 
 // onlineManager.setEventListener((setOnline) => {
 //   const eventSubscription = Network.addNetworkStateListener((state) => {
@@ -38,6 +39,7 @@ export default function Root() {
         <SessionProvider>
           <SplashScreenController />
           <RootNavigator />
+          <GlobalUpdateGate />
         </SessionProvider>
       </QueryClientProvider>
       <StatusBar style="auto" />

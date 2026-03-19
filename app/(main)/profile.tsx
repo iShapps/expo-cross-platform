@@ -1,6 +1,7 @@
 import { updateAvailability } from "@/api-queries/profile";
 import Header from "@/components/Header";
 import { Colors } from "@/constants/theme";
+import { useConfigSettings } from "@/data-store/config-store";
 import { User } from "@/data-types/auth";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -20,6 +21,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function ProfileScreen() {
+  const configSettings = useConfigSettings();
   let colorScheme = useColorScheme();
   if (!colorScheme) colorScheme = "light";
   const theme = Colors[colorScheme];
@@ -74,7 +76,7 @@ export default function ProfileScreen() {
     });
   };
 
-  const avatarImageSource = `${process.env.EXPO_PUBLIC_BUCKET_NAME}/uploads/hcps/${encodeURIComponent(
+  const avatarImageSource = `${configSettings?.configSettings?.image_path?.hcp_path}${encodeURIComponent(
     `${userDetails?.hcp?.hcp_prefix}${userDetails?.hcp?.id}`,
   )}/image/${userDetails?.hcp?.image}`;
   return (
@@ -224,7 +226,11 @@ export default function ProfileScreen() {
 
       {updateAvailabilityMutation.isPending && (
         <View style={styles.busyOverlay} pointerEvents="auto">
-          <BlurView intensity={45} tint="dark" style={StyleSheet.absoluteFill} />
+          <BlurView
+            intensity={45}
+            tint="dark"
+            style={StyleSheet.absoluteFill}
+          />
           <View style={styles.busyCard}>
             <ActivityIndicator size="large" color={theme.white} />
             <Text style={styles.busyText}>Updating profile status...</Text>
