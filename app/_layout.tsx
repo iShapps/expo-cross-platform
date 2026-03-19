@@ -7,9 +7,9 @@ import { SplashScreen, Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { GlobalUpdateGate } from "../components/global-update-gate";
 import { SessionProvider, useSession } from "./ctx";
 import { SplashScreenController } from "./splash";
-import { GlobalUpdateGate } from "../components/global-update-gate";
 
 // onlineManager.setEventListener((setOnline) => {
 //   const eventSubscription = Network.addNetworkStateListener((state) => {
@@ -26,6 +26,7 @@ export default function Root() {
   useOneSignal();
   usePermissionMonitor();
   useEffect(() => {
+    console.log("Initializing app...");
     const initializeApp = async () => {
       const store = useSettingsStore.getState();
       await store.hydrate();
@@ -37,9 +38,10 @@ export default function Root() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <QueryClientProvider client={queryClient}>
         <SessionProvider>
-          <SplashScreenController />
-          <RootNavigator />
-          <GlobalUpdateGate />
+          <SplashScreenController>
+            <RootNavigator />
+            <GlobalUpdateGate />
+          </SplashScreenController>
         </SessionProvider>
       </QueryClientProvider>
       <StatusBar style="auto" />
@@ -49,6 +51,7 @@ export default function Root() {
 
 function RootNavigator() {
   const { session } = useSession();
+
   return (
     <Stack>
       <Stack.Protected guard={!!session}>
