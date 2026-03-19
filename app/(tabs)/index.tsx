@@ -186,7 +186,10 @@ export default function HomeScreen() {
           <DashboardAnalyticsSkeleton />
         ) : (
           <View style={styles.dashboardRow}>
-            <View style={[styles.dashboardCard, theme.dashboardCardAvailable]}>
+            <TouchableOpacity
+              onPress={() => router.push("/(tabs)/shifts")}
+              style={[styles.dashboardCard, theme.dashboardCardAvailable]}
+            >
               <View style={styles.dashboardTopRow}>
                 <View style={[styles.iconPill, styles.iconPillAvailable]}>
                   <MaterialIcons
@@ -198,8 +201,12 @@ export default function HomeScreen() {
                 <Text style={styles.dashboardValue}>{availableShifts}</Text>
               </View>
               <Text style={styles.dashboardTitle}>Available</Text>
-            </View>
-            <View style={[styles.dashboardCard, theme.dashboardCardUpcoming]}>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => router.push("/(tabs)/schedules")}
+              style={[styles.dashboardCard, theme.dashboardCardUpcoming]}
+            >
               <View style={styles.dashboardTopRow}>
                 <View style={[styles.iconPill, styles.iconPillUpcoming]}>
                   <MaterialIcons name="schedule" size={16} color="#FFC107" />
@@ -207,8 +214,11 @@ export default function HomeScreen() {
                 <Text style={styles.dashboardValue}>{upcomingShifts}</Text>
               </View>
               <Text style={styles.dashboardTitle}>Upcoming</Text>
-            </View>
-            <View style={[styles.dashboardCard, theme.dashboardCardMy]}>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => router.push("/(tabs)/shifts")}
+              style={[styles.dashboardCard, theme.dashboardCardMy]}
+            >
               <View style={styles.dashboardTopRow}>
                 <View style={[styles.iconPill, styles.iconPillMy]}>
                   <MaterialIcons
@@ -220,7 +230,7 @@ export default function HomeScreen() {
                 <Text style={styles.dashboardValue}>{scheduledShifts}</Text>
               </View>
               <Text style={styles.dashboardTitle}>My Shifts</Text>
-            </View>
+            </TouchableOpacity>
           </View>
         )}
 
@@ -433,7 +443,7 @@ const getStyles = (theme: typeof Colors.light) =>
     },
     dashboardRow: {
       flexDirection: "row",
-      flexWrap: "wrap",
+      // flexWrap: "wrap",
       gap: 10,
     },
     dashboardCard: {
