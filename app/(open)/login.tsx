@@ -310,7 +310,6 @@ export default function Login() {
           >
             <TextInput
               value={password}
-              autoFocus={true}
               cursorColor={theme.primaryText}
               keyboardType="default"
               enterKeyHint="done"
