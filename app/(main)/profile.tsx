@@ -112,7 +112,7 @@ export default function ProfileScreen() {
             <View>
               <Text style={styles.rowTitle}>Available for jobs</Text>
               <Text style={styles.rowSubtitle}>
-                Toggle to appear in available shifts
+                Toggle your availability for shifts
               </Text>
             </View>
             <Switch

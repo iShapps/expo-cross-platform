@@ -352,52 +352,6 @@ export default function DocumentsScreen() {
                   );
                 }
 
-                if (!isLoading && (!data || data.length === 0)) {
-                  return (
-                    <View
-                      style={{
-                        // flex: 1,
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <MaterialCommunityIcons
-                        name="folder"
-                        size={72}
-                        color="#e0e0e0"
-                        style={{ marginBottom: 16 }}
-                      />
-                      <Text
-                        style={{
-                          fontSize: 20,
-                          fontWeight: "700",
-                          color: "#70C601",
-                          marginBottom: 8,
-                        }}
-                      >
-                        No Documets Yet
-                      </Text>
-                      <Text
-                        style={{
-                          fontSize: 15,
-                          color: "#818589",
-                          textAlign: "center",
-                          maxWidth: 260,
-                        }}
-                      >
-                        You have no{" "}
-                        <Text
-                          style={{
-                            textTransform: "lowercase",
-                          }}
-                        >
-                          {status}
-                        </Text>{" "}
-                        documents for this category at the moment.
-                      </Text>
-                    </View>
-                  );
-                }
                 return (
                   <FlatList
                     data={data}
@@ -423,6 +377,50 @@ export default function DocumentsScreen() {
                           <DocumentCardSkeleton />
                         </View>
                       ) : null
+                    }
+                    ListEmptyComponent={
+                      <View
+                        style={{
+                          flex: 1,
+                          alignItems: "center",
+                          top: screenHeight * 0.2,
+                        }}
+                      >
+                        <MaterialCommunityIcons
+                          name="folder"
+                          size={72}
+                          color={theme.grayBorder}
+                          style={{ marginBottom: 16 }}
+                        />
+                        <Text
+                          style={{
+                            fontSize: 20,
+                            fontWeight: "700",
+                            color: theme.primary,
+                            marginBottom: 8,
+                          }}
+                        >
+                          No Documets Yet
+                        </Text>
+                        <Text
+                          style={{
+                            fontSize: 15,
+                            color: theme.secondaryText,
+                            textAlign: "center",
+                            maxWidth: 260,
+                          }}
+                        >
+                          You have no{" "}
+                          <Text
+                            style={{
+                              textTransform: "lowercase",
+                            }}
+                          >
+                            {status}
+                          </Text>{" "}
+                          documents for this category at the moment.
+                        </Text>
+                      </View>
                     }
                   />
                 );
@@ -462,6 +460,8 @@ const getStyles = (theme: typeof Colors.light) =>
     tabsRow: {
       flexDirection: "row",
       gap: 8,
+      paddingBottom: 2,
+      paddingTop: 10,
     },
     tabButton: {
       paddingVertical: 6,

@@ -173,10 +173,35 @@ export default function NotificationsScreen() {
                   <MaterialCommunityIcons
                     name="broadcast-off"
                     size={72}
-                    color={theme.mutedText}
+                    color={theme.grayBorder}
                   />
-                  <Text style={styles.emptyTitle}>
-                    No {tabTypes[index].toLowerCase()} notifications Yet
+                  <Text
+                    style={{
+                      fontSize: 20,
+                      fontWeight: "700",
+                      color: theme.primary,
+                      marginBottom: 8,
+                    }}
+                  >
+                    No notifications yet
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 15,
+                      color: theme.secondaryText,
+                      textAlign: "center",
+                      maxWidth: 260,
+                    }}
+                  >
+                    You have no{" "}
+                    <Text
+                      style={{
+                        textTransform: "lowercase",
+                      }}
+                    >
+                      {tabTypes[index].toLowerCase()}
+                    </Text>{" "}
+                    notifications at the moment.
                   </Text>
                 </View>
               ) : (
@@ -242,7 +267,8 @@ const getStyles = (theme: typeof Colors.light, screenHeight: number) =>
     tabsRow: {
       flexDirection: "row",
       gap: 8,
-      paddingTop: 5,
+      paddingBottom: 5,
+      paddingTop: 15,
     },
     tabButton: {
       alignItems: "center",
@@ -273,9 +299,9 @@ const getStyles = (theme: typeof Colors.light, screenHeight: number) =>
       gap: 4,
     },
     emptyState: {
+      flex: 1,
       alignItems: "center",
-      justifyContent: "center",
-      marginTop: 60,
+      top: screenHeight * 0.2,
     },
     emptyTitle: {
       fontSize: 18,
