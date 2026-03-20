@@ -630,7 +630,7 @@ export default function ShiftDetails() {
               {shift?.facility?.name ?? "—"}
             </Text>
             <Text style={[styles.heroMeta, { color: theme.secondaryText }]}>
-              {shift?.address ?? "—"}
+              {shift?.facility?.address ?? "—"}
             </Text>
             <Text style={[styles.heroMeta, { color: theme.secondaryText }]}>
               {shift?.state?.name ?? "—"}
