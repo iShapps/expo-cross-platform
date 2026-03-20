@@ -474,7 +474,7 @@ export default function Schedules() {
                         style={{
                           flex: 1,
                           alignItems: "center",
-                          justifyContent: "center",
+                          top: screenHeight * 0.2,
                         }}
                       >
                         <MaterialCommunityIcons
@@ -552,6 +552,8 @@ const getStyles = (theme: typeof Colors.light) =>
     tabsRow: {
       flexDirection: "row",
       gap: 8,
+      paddingBottom: 2,
+      paddingTop: 10,
     },
     tabButton: {
       paddingVertical: 6,
