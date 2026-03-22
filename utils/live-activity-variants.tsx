@@ -89,7 +89,7 @@ export function buildVariants(shift: IShift, now: Date) {
         style={{
           width: "100%",
           justifyContent: "space-between",
-          alignItems: "center",
+          alignItems: "flex-start",
           gap: 12,
           marginBottom: 12,
         }}
@@ -97,12 +97,14 @@ export function buildVariants(shift: IShift, now: Date) {
         <Voltra.HStack
           style={{
             // backgroundColor: "rgba(112,198,1,0.18)",
+            width: "100%",
             borderRadius: 8,
-            paddingHorizontal: 10,
+            paddingHorizontal: 0,
             paddingVertical: 4,
             alignItems: "flex-start",
             gap: 5,
             flex: 1,
+            marginLeft: -50,
           }}
         >
           <Voltra.Text style={{ fontSize: 11 }}>🟢</Voltra.Text>
