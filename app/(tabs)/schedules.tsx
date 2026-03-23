@@ -34,6 +34,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 // a4cfbbf7-fae5-470b-bb0c-b6bc8f673ade -android app id
 
 export default function Schedules() {
+  const filterState = useProfileData();
   const startDate = useProfileData((s) => s.startDate || undefined);
   const endDate = useProfileData((s) => s.endDate || undefined);
   console.log("Schedules received store dates:", { startDate, endDate });
@@ -379,6 +380,9 @@ export default function Schedules() {
                     data = [];
                 }
                 const handlePullToRefresh = async () => {
+                  // reset start date and end date
+                  filterState.setStartDate(null);
+                  filterState.setEndDate(null);
                   if (refetchFn) await refetchFn();
                 };
                 const handleLoadMore = () => {
