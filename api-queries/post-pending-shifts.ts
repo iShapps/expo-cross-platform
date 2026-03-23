@@ -41,64 +41,88 @@ export async function postPendingShifts(
   });
 }
 
-export async function postScheduledShifts(page = 1): Promise<IShiftResponse> {
-  return postResource<{ shift_status: string; page: number }, IShiftResponse>(
-    "/shift",
-    {
-      shift_status: "scheduled",
-      page,
-    },
-  );
+export async function postScheduledShifts(
+  page = 1,
+  startDate?: string,
+  endDate?: string,
+): Promise<IShiftResponse> {
+  const body: any = {
+    shift_status: "scheduled",
+    page,
+  };
+  if (startDate) body.filter_start_date = startDate;
+  if (endDate) body.filter_end_date = endDate;
+  return postResource("/shift", body);
 }
 
-export async function postRunningShifts(page = 1): Promise<IShiftResponse> {
-  return postResource<{ shift_status: string; page: number }, IShiftResponse>(
-    "/shift",
-    {
-      shift_status: "running",
-      page,
-    },
-  );
+export async function postRunningShifts(
+  page = 1,
+  startDate?: string,
+  endDate?: string,
+): Promise<IShiftResponse> {
+  const body: any = {
+    shift_status: "running",
+    page,
+  };
+  if (startDate) body.filter_start_date = startDate;
+  if (endDate) body.filter_end_date = endDate;
+  return postResource("/shift", body);
 }
 
-export async function postTransferredShifts(page = 1): Promise<IShiftResponse> {
-  return postResource<{ shift_status: string; page: number }, IShiftResponse>(
-    "/shift",
-    {
-      shift_status: "transferred",
-      page,
-    },
-  );
+export async function postTransferredShifts(
+  page = 1,
+  startDate?: string,
+  endDate?: string,
+): Promise<IShiftResponse> {
+  const body: any = {
+    shift_status: "transferred",
+    page,
+  };
+  if (startDate) body.filter_start_date = startDate;
+  if (endDate) body.filter_end_date = endDate;
+  return postResource("/shift", body);
 }
 
-export async function postPastShifts(page = 1): Promise<IShiftResponse> {
-  return postResource<{ shift_status: string; page: number }, IShiftResponse>(
-    "/shift",
-    {
-      shift_status: "past",
-      page,
-    },
-  );
+export async function postPastShifts(
+  page = 1,
+  startDate?: string,
+  endDate?: string,
+): Promise<IShiftResponse> {
+  const body: any = {
+    shift_status: "past",
+    page,
+  };
+  if (startDate) body.filter_start_date = startDate;
+  if (endDate) body.filter_end_date = endDate;
+  return postResource("/shift", body);
 }
 
-export async function postCompletedShifts(page = 1): Promise<IShiftResponse> {
-  return postResource<{ shift_status: string; page: number }, IShiftResponse>(
-    "/shift",
-    {
-      shift_status: "completed",
-      page,
-    },
-  );
+export async function postCompletedShifts(
+  page = 1,
+  startDate?: string,
+  endDate?: string,
+): Promise<IShiftResponse> {
+  const body: any = {
+    shift_status: "completed",
+    page,
+  };
+  if (startDate) body.filter_start_date = startDate;
+  if (endDate) body.filter_end_date = endDate;
+  return postResource("/shift", body);
 }
 
-export async function postCancelledShifts(page = 1): Promise<IShiftResponse> {
-  return postResource<{ shift_status: string; page: number }, IShiftResponse>(
-    "/shift",
-    {
-      shift_status: "cancelled",
-      page,
-    },
-  );
+export async function postCancelledShifts(
+  page = 1,
+  startDate?: string,
+  endDate?: string,
+): Promise<IShiftResponse> {
+  const body: any = {
+    shift_status: "cancelled",
+    page,
+  };
+  if (startDate) body.filter_start_date = startDate;
+  if (endDate) body.filter_end_date = endDate;
+  return postResource("/shift", body);
 }
 
 export async function postAcceptShift(

@@ -485,6 +485,15 @@ export default function ShiftDetails() {
         queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
         queryClient.invalidateQueries({ queryKey: ["notifications"] }),
       ]);
+      router.push({
+        pathname: "/review",
+        params: {
+          shift_id: shift.id,
+          facility_id: shift.facility?.id ?? shift.facility_id,
+          category_id: shift.category?.id ?? shift.category_id,
+          profession_id: shift.profession?.id ?? shift.profession_id,
+        },
+      });
     } catch (error) {
       showAlert(
         "Error",
@@ -492,6 +501,21 @@ export default function ShiftDetails() {
       );
     }
   };
+
+  // Test review formsheet navigation
+  // useEffect(() => {
+  //   if (shift?.id) {
+  //     router.push({
+  //       pathname: "/review",
+  //       params: {
+  //         shift_id: shift.id,
+  //         facility_id: shift.facility?.id ?? shift.facility_id,
+  //         category_id: shift.category?.id ?? shift.category_id,
+  //         profession_id: shift.profession?.id ?? shift.profession_id,
+  //       },
+  //     });
+  //   }
+  // }, [shift?.id]);
 
   const handleRefetch = async () => {
     await refetch();
@@ -593,7 +617,6 @@ export default function ShiftDetails() {
         title="Shift Details"
         onBack={() => router.canGoBack() && router.back()}
       />
-
       <ScrollView
         contentContainerStyle={[
           styles.content,
