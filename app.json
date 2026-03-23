@@ -32,9 +32,9 @@
       "versionCode": 15,
       "adaptiveIcon": {
         "backgroundColor": "#70C601",
-        "foregroundImage": "./assets/images/ishapps.png",
-        "backgroundImage": "./assets/images/ishapps.png",
-        "monochromeImage": "./assets/images/ishapps.png"
+        "foregroundImage": "./assets/images/smhealth.png",
+        "backgroundImage": "./assets/images/smhealth.png",
+        "monochromeImage": "./assets/images/smhealth.png"
       },
       "predictiveBackGestureEnabled": false,
       "softwareKeyboardLayoutMode": "pan",
@@ -107,12 +107,12 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/ishapps.png",
+          "image": "./assets/images/smhealth.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#70C601",
           "dark": {
-            "backgroundColor": "#70C601"
+            "backgroundColor": "#232A2E"
           }
         }
       ],
