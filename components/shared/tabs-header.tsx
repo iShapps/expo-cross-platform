@@ -5,15 +5,17 @@ import { StyleSheet, Text, View } from "react-native";
 
 interface TabsHeaderProps {
   title: string;
+  right?: React.ReactNode;
 }
 
-const TabsHeader: React.FC<TabsHeaderProps> = ({ title }) => {
+const TabsHeader: React.FC<TabsHeaderProps> = ({ title, right }) => {
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme ?? "light"];
   const styles = getStyles(theme);
   return (
     <View style={styles.header}>
       <Text style={styles.title}>{title}</Text>
+      {right && right}
     </View>
   );
 };
@@ -22,7 +24,8 @@ const getStyles = (theme: typeof Colors.light) =>
   StyleSheet.create({
     header: {
       display: "flex",
-      flexDirection: "column",
+      flexDirection: "row",
+      justifyContent: "space-between",
       gap: 4,
       backgroundColor: theme.background,
       width: "100%",
