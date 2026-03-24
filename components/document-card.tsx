@@ -11,16 +11,12 @@ import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { Colors } from "@/constants/theme";
+import { formatMediumDate, isExpired } from "@/utils/date-time";
 import { useRouter } from "expo-router";
 
 interface DocumentCardProps {
   document: IDocument;
 }
-
-const isExpired = (expiry?: string) => {
-  if (!expiry) return false;
-  return new Date(expiry) < new Date();
-};
 
 const DocumentCard: React.FC<DocumentCardProps> = ({ document }) => {
   const expired = isExpired(document.expiry_date);
@@ -136,25 +132,27 @@ const DocumentCard: React.FC<DocumentCardProps> = ({ document }) => {
         />
       </View>
       <View style={styles.infoColumn}>
-        <Text style={styles.createdAt}>
-          Uploaded on {new Date(document.created_at).toLocaleDateString()}
+        <Text style={[styles.createdAt, expired && styles.errorText]}>
+          {expired
+            ? `Expired on ${formatMediumDate(document.expiry_date)}`
+            : `Uploaded on ${formatMediumDate(document.created_at)}`}
         </Text>
         <View style={styles.nameRow}>
           <Text
-            style={[styles.name, expired && styles.expiredText]}
+            style={[styles.name, expired && styles.errorText]}
             numberOfLines={1}
           >
             {document.document.name}
           </Text>
         </View>
         <View style={styles.metaRow}>
-          <Text style={styles.metaText}>
+          <Text style={[styles.metaText, expired && styles.errorText]}>
             {document.document.mandatory_status === "yes"
               ? "Mandatory"
               : "Optional"}
           </Text>
           <Text style={styles.dot}>•</Text>
-          <Text style={styles.metaText}>
+          <Text style={[styles.metaText, expired && styles.errorText]}>
             {document.document.expiry_date_mandatory === "yes"
               ? "Expiry required"
               : "No expiry"}
@@ -162,7 +160,11 @@ const DocumentCard: React.FC<DocumentCardProps> = ({ document }) => {
         </View>
       </View>
       <View style={styles.moreIconBtn}>
-        <MaterialIcons name="more-horiz" size={26} color={theme.primary} />
+        <MaterialIcons
+          name="more-horiz"
+          size={26}
+          color={expired ? theme.danger : theme.primary}
+        />
       </View>
     </Pressable>
   );
@@ -266,5 +268,9 @@ const getStyles = (theme: typeof Colors.light) =>
     expiredText: {
       color: theme.danger,
       fontWeight: "bold",
+    },
+
+    errorText: {
+      color: "red",
     },
   });

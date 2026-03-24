@@ -2,10 +2,15 @@ import { useSettingsStore } from "@/data-store/use-settings-store";
 import { useOneSignal } from "@/hooks/use-one-signal";
 import { usePermissionMonitor } from "@/hooks/use-permission-monitor";
 import { useShiftWatcher } from "@/hooks/use-shift-watcher";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+  focusManager,
+  QueryClient,
+  QueryClientProvider,
+} from "@tanstack/react-query";
 import { SplashScreen, Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
+import { AppState, Platform } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { GlobalUpdateGate } from "../components/global-update-gate";
 import { SessionProvider, useSession } from "./ctx";
@@ -25,6 +30,18 @@ export default function Root() {
   useShiftWatcher();
   useOneSignal();
   usePermissionMonitor();
+
+  useEffect(() => {
+    if (Platform.OS === "web") return;
+
+    focusManager.setFocused(AppState.currentState === "active");
+    const subscription = AppState.addEventListener("change", (status) => {
+      focusManager.setFocused(status === "active");
+    });
+
+    return () => subscription.remove();
+  }, []);
+
   useEffect(() => {
     console.log("Initializing app...");
     const initializeApp = async () => {

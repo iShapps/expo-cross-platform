@@ -1,10 +1,10 @@
 import { INotification } from "@/data-types/notifications";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { formatDistanceToNow } from "date-fns";
 import { Href, Link } from "expo-router";
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { formatMediumDateTime } from "../utils/date-time";
 
 interface NotificationCardProps {
   notification: INotification;
@@ -45,17 +45,7 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
     }
   };
 
-  const timeAgo = formatDistanceToNow(new Date(notification.created_at), {
-    addSuffix: true,
-  });
-
-  const timeFormatted = new Date(notification.created_at).toLocaleString(
-    undefined,
-    {
-      dateStyle: "medium",
-      timeStyle: "short",
-    },
-  );
+  const timeFormatted = formatMediumDateTime(notification.created_at);
 
   const getHref = (): Href => {
     switch (notification.notification_type) {
