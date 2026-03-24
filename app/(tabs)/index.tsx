@@ -7,8 +7,8 @@ import {
 import { useProfileData } from "@/data-store/use-account-store";
 import { DashboardResponse } from "@/data-types/dashboard";
 import { useLocation } from "@/hooks/use-location";
-import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { useFocusEffect } from "@react-navigation/native";
 import {
   useInfiniteQuery,
   useQuery,
@@ -16,7 +16,7 @@ import {
 } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { router } from "expo-router";
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 
 import { getHCPDashboard } from "@/api-queries/dashboard";
 import { getNotifications } from "@/api-queries/notifcations";
@@ -51,16 +51,29 @@ export default function HomeScreen() {
   useEffect(() => {
     useSettingsStore.getState().hydrate();
   }, []);
-  const { data: dashboard, isLoading: dashboardLoading } =
-    useQuery<DashboardResponse>({
-      queryKey: ["dashboard"],
-      queryFn: () => getHCPDashboard(),
-      gcTime: 1000 * 60 * 60, // 1 hour
-      staleTime: 1000 * 60 * 60 * 24, // 1 day
-      refetchInterval: 30 * 60 * 1000,
-      refetchIntervalInBackground: true,
-      enabled: !!userDetails?.id,
-    });
+  const {
+    data: dashboard,
+    isLoading: dashboardLoading,
+    refetch: refetchDashboard,
+  } = useQuery<DashboardResponse>({
+    queryKey: ["dashboard"],
+    queryFn: () => getHCPDashboard(),
+    gcTime: 1000 * 60 * 60, // 1 hour
+    staleTime: 0, // always stale
+    refetchInterval: 30 * 60 * 1000,
+    refetchIntervalInBackground: true,
+    refetchOnMount: "always",
+    refetchOnReconnect: true,
+    refetchOnWindowFocus: "always",
+    enabled: !!userDetails?.id,
+  });
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!userDetails?.id) return;
+      void refetchDashboard();
+    }, [refetchDashboard, userDetails?.id]),
+  );
 
   // Hydrate React Query cache with Zustand userDetails on load
   useEffect(() => {
@@ -99,6 +112,8 @@ export default function HomeScreen() {
     refetchIntervalInBackground: true,
     gcTime: 1000 * 60 * 60,
     staleTime: 1000 * 60 * 60 * 24,
+    refetchOnMount: true,
+    refetchOnReconnect: true,
   });
 
   const notifications =
@@ -122,12 +137,18 @@ export default function HomeScreen() {
     ? dashboardPayrunLabel
     : "Payrun: --";
 
+  const payrunDisclaimer = weekEnd
+    ? `Only shifts completed before 5:00 PM on ${format(new Date(weekEnd), "dd MMM")} are included in this payrun. Completions after 5:00 PM are processed in the next payrun.`
+    : "Only shifts completed by 5:00 PM on the payrun end date are included in this payrun. Completions after 5:00 PM are processed in the next payrun.";
+
   useEffect(() => {
     requestPermission();
   }, [requestPermission]);
 
   const handlePullToRefresh = async () => {
+    // refetch dashboard data
     await refetch();
+    queryClient.invalidateQueries({ queryKey: ["dashboard"] });
   };
 
   const handleLoadMore = () => {
@@ -151,16 +172,25 @@ export default function HomeScreen() {
             gap: 10,
           }}
         >
-          <View style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+          <View
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 3,
+              flex: 1,
+              marginRight: 5,
+            }}
+          >
             <Text style={styles.headerTitle}>{userDetails?.name}</Text>
-            <View style={{ display: "flex", flexDirection: "row", gap: 5 }}>
-              <FontAwesome6 name="briefcase" size={16} color="#FFC107" />
-              <Text style={styles.headerSubtitle}>
-                {userDetails?.hcp?.hcp_professions[0]?.profession?.name} -{" "}
-                {userDetails?.hcp?.hcp_professions[0]?.category?.name} -{" "}
-                {userDetails?.hcp?.hcp_professions[0]?.level?.name}
-              </Text>
-            </View>
+            <Text
+              style={styles.headerSubtitle}
+              numberOfLines={2}
+              ellipsizeMode="tail"
+            >
+              {userDetails?.hcp?.hcp_professions
+                ?.map((prfession) => prfession?.profession?.name ?? "—")
+                .join(" | ") ?? "—"}
+            </Text>
           </View>
           <Pressable
             onPress={() => router.push("/(main)/notifications")}
@@ -204,7 +234,12 @@ export default function HomeScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => router.push("/(tabs)/schedules")}
+              onPress={() =>
+                router.push({
+                  pathname: "/(tabs)/schedules",
+                  params: { activeTab: "scheduled" },
+                })
+              }
               style={[styles.dashboardCard, theme.dashboardCardUpcoming]}
             >
               <View style={styles.dashboardTopRow}>
@@ -245,6 +280,7 @@ export default function HomeScreen() {
               <Text style={styles.payrunValue}>{payrunLabel}</Text>
               {/* <Text style={styles.payrunLabel}>Current Payrun</Text> */}
             </View>
+            <Text style={styles.payrunDisclaimer}>{payrunDisclaimer}</Text>
           </View>
         )}
 
@@ -362,12 +398,13 @@ const getStyles = (theme: typeof Colors.light) =>
     },
     containerTop: {
       backgroundColor: theme.background,
-      height: "12%",
+      minHeight: "12%",
       width: "100%",
       paddingTop: 55,
+      paddingBottom: 2,
       display: "flex",
       flexDirection: "column",
-      paddingHorizontal: 20,
+      paddingHorizontal: 10,
       gap: 10,
       borderBottomColor: theme.whiteBackground,
       borderBottomWidth: 0.5,
@@ -378,7 +415,7 @@ const getStyles = (theme: typeof Colors.light) =>
       gap: 8,
       width: "100%",
       backgroundColor: theme.background,
-      paddingHorizontal: 15,
+      paddingHorizontal: 10,
       paddingBottom: 20,
       marginBottom: 5,
     },
@@ -386,7 +423,7 @@ const getStyles = (theme: typeof Colors.light) =>
       flex: 1,
       backgroundColor: theme.whiteBackground,
       width: "100%",
-      paddingHorizontal: 15,
+      paddingHorizontal: 10,
       overflow: "hidden",
     },
     mainLandingContent: {
@@ -400,8 +437,11 @@ const getStyles = (theme: typeof Colors.light) =>
       color: theme.white,
     },
     headerSubtitle: {
-      fontSize: 14,
+      fontSize: 12.5,
       color: theme.white,
+      flexWrap: "wrap", // allow wrapping
+      flexShrink: 1, // prevent overflow
+      maxWidth: "96%",
     },
     notificationContainer: {
       backgroundColor: theme.notificationFaint,
@@ -531,6 +571,12 @@ const getStyles = (theme: typeof Colors.light) =>
       fontSize: 14,
       fontWeight: "600",
       color: theme.primaryText,
+    },
+    payrunDisclaimer: {
+      marginTop: 8,
+      fontSize: 12,
+      lineHeight: 18,
+      color: theme.secondaryText,
     },
     notificationsHeader: {
       marginTop: 8,

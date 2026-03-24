@@ -17,7 +17,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   FlatList,
@@ -38,11 +38,12 @@ export default function Schedules() {
   const startDate = useProfileData((s) => s.startDate || undefined);
   const endDate = useProfileData((s) => s.endDate || undefined);
   console.log("Schedules received store dates:", { startDate, endDate });
+  const { activeTab } = useLocalSearchParams() as { activeTab?: string };
   const statusTabs = [
     "Running",
     "Scheduled",
-    "Pending Payment",
-    "Paid",
+    "Pending Approval",
+    "Approved",
     "Cancelled",
     "Transferred",
   ] as const;
@@ -168,6 +169,18 @@ export default function Schedules() {
     [screenWidth, scrollTabIntoView],
   );
 
+  const runningRefetchRef = useRef(runningQuery.refetch);
+  const scheduledRefetchRef = useRef(scheduledQuery.refetch);
+
+  useFocusEffect(
+    useCallback(() => {
+      handleTabPress(1);
+      // refetch only running and scheduled shifts on focus, as those are most likely to change
+      void runningRefetchRef.current();
+      void scheduledRefetchRef.current();
+    }, []),
+  );
+
   const handleContentScrollEnd = useCallback(
     (e: any) => {
       const offsetX = e.nativeEvent.contentOffset.x;
@@ -196,6 +209,7 @@ export default function Schedules() {
       profileStore.setAcceptedShift(scheduledShifts[0]);
     }
   }, [scheduledShifts.length]);
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <TabsHeader
@@ -292,7 +306,7 @@ export default function Schedules() {
                 let fetchNextPage: undefined | (() => Promise<any>) = undefined;
                 let isRefetching = false;
                 switch (status) {
-                  case "Paid":
+                  case "Approved":
                     isLoading = pastQuery.isLoading;
                     data =
                       pastQuery.data?.pages.flatMap(
@@ -362,7 +376,7 @@ export default function Schedules() {
                     fetchNextPage = transferredQuery.fetchNextPage;
                     isRefetching = transferredQuery.isRefetching;
                     break;
-                  case "Pending Payment":
+                  case "Pending Approval":
                     isLoading = completedQuery.isLoading;
                     data =
                       completedQuery.data?.pages.flatMap(

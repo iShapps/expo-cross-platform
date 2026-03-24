@@ -1,3 +1,4 @@
+import { formatMediumDate, isExpired } from "@/utils/date-time";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -174,6 +175,7 @@ const DocumentDetails = () => {
     );
   }
 
+  const expired = isExpired(document.expiry_date);
   return (
     <SafeAreaView
       edges={["top"]}
@@ -190,34 +192,53 @@ const DocumentDetails = () => {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        <View style={[styles.sectionCard, { marginTop: 16 }]}>
+        <View
+          style={[
+            styles.sectionCard,
+            { marginTop: 16 },
+            expired && {
+              borderColor: theme.danger,
+              backgroundColor: theme.danger + "10",
+            },
+          ]}
+        >
           <View style={styles.statusRow}>
             <View
               style={[
                 styles.statusChip,
-                document.document.status === "active"
+                expired
                   ? {
-                      backgroundColor: theme.primary + "22",
-                      borderColor: theme.primary,
-                    }
-                  : {
                       backgroundColor: theme.danger + "22",
                       borderColor: theme.danger,
-                    },
+                    }
+                  : document.document.status === "active"
+                    ? {
+                        backgroundColor: theme.primary + "22",
+                        borderColor: theme.primary,
+                      }
+                    : {
+                        backgroundColor: theme.danger + "22",
+                        borderColor: theme.danger,
+                      },
               ]}
             >
               <Text
                 style={[
                   styles.statusChipText,
                   {
-                    color:
-                      document.document.status === "active"
+                    color: expired
+                      ? theme.danger
+                      : document.document.status === "active"
                         ? theme.primary
                         : theme.danger,
                   },
                 ]}
               >
-                {document.document.status === "active" ? "Active" : "Inactive"}
+                {expired
+                  ? "Expired"
+                  : document.document.status === "active"
+                    ? "Active"
+                    : "Inactive"}
               </Text>
             </View>
           </View>
@@ -233,7 +254,11 @@ const DocumentDetails = () => {
           {document.document.expiry_date_mandatory === "yes" && (
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Expiry Date</Text>
-              <Text style={styles.detailValue}>{document.expiry_date}</Text>
+              <Text
+                style={[styles.detailValue, expired && { color: theme.danger }]}
+              >
+                {formatMediumDate(document.expiry_date)}
+              </Text>
             </View>
           )}
           <View style={styles.detailRow}>
@@ -253,7 +278,15 @@ const DocumentDetails = () => {
             </Text>
           </View>
         </View>
-        <View style={styles.sectionCard}>
+        <View
+          style={[
+            styles.sectionCard,
+            expired && {
+              borderColor: theme.danger,
+              backgroundColor: theme.danger + "10",
+            },
+          ]}
+        >
           <Text style={styles.sectionTitle}>Meta</Text>
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Type</Text>
@@ -267,7 +300,11 @@ const DocumentDetails = () => {
           </View>
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Status</Text>
-            <Text style={styles.detailValue}>{document.document.status}</Text>
+            <Text
+              style={[styles.detailValue, expired && { color: theme.danger }]}
+            >
+              {expired ? "expired" : document.document.status}
+            </Text>
           </View>
         </View>
       </ScrollView>

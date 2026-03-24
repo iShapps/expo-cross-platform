@@ -7,6 +7,7 @@ import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import TabsHeader from "@/components/shared/tabs-header";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useFocusEffect } from "@react-navigation/native";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import React, { useCallback, useRef, useState } from "react";
 import {
@@ -51,8 +52,18 @@ export default function Shifts() {
     refetchInterval: 30 * 60 * 1000, // 30 minutes
     refetchIntervalInBackground: true,
     gcTime: 1000 * 60 * 60,
-    staleTime: 1000 * 60 * 60 * 24,
+    staleTime: 0,
+
+    refetchOnMount: "always",
+    refetchOnReconnect: true,
+    refetchOnWindowFocus: "always",
   });
+
+  useFocusEffect(
+    useCallback(() => {
+      void refetch();
+    }, [refetch]),
+  );
 
   const [activeStatus, setActiveStatus] =
     useState<(typeof STATUS_TABS)[number]>("Available");
