@@ -78,6 +78,24 @@ function RootNavigator() {
           name="(open)"
         />
       </Stack.Protected>
+
+      <Stack.Screen
+        name="review"
+        options={{
+          headerShown: false,
+          presentation: "transparentModal",
+          animation: "fade",
+        }}
+      />
+
+      <Stack.Screen
+        name="date-sheet"
+        options={{
+          headerShown: false,
+          presentation: "transparentModal",
+          animation: "fade",
+        }}
+      />
     </Stack>
   );
 }

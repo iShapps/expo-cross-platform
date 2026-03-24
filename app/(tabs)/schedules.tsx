@@ -15,7 +15,9 @@ import { IShift } from "@/data-types/shifts";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useInfiniteQuery } from "@tanstack/react-query";
+import { useRouter } from "expo-router";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   FlatList,
@@ -31,30 +33,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 // a4cfbbf7-fae5-470b-bb0c-b6bc8f673ade -android app id
 
-const useShiftInfiniteQuery = (
-  key: string,
-  queryFn: (page?: number) => Promise<any>,
-) => {
-  return useInfiniteQuery({
-    queryKey: [key],
-    queryFn: ({ pageParam = 1 }) => queryFn(pageParam),
-    initialPageParam: 1,
-    getNextPageParam: (lastPage) => {
-      const pagination = lastPage?.data?.shifts;
-      if (!pagination) return undefined;
-      if (pagination.current_page < pagination.last_page) {
-        return pagination.current_page + 1;
-      }
-      return undefined;
-    },
-    refetchInterval: 30 * 60 * 1000, // Refetch every 30 minutes.
-    refetchIntervalInBackground: true, //Keeps refetching even if the app is in the background.
-    gcTime: 1000 * 60 * 60, // Collect garbage and remove data from cache after 1 hour of inactivity
-    staleTime: 1000 * 60 * 60 * 24, //Data is considered fresh for 24 hours
-  });
-};
-
 export default function Schedules() {
+  const filterState = useProfileData();
+  const startDate = useProfileData((s) => s.startDate || undefined);
+  const endDate = useProfileData((s) => s.endDate || undefined);
+  console.log("Schedules received store dates:", { startDate, endDate });
   const statusTabs = [
     "Running",
     "Scheduled",
@@ -65,6 +48,7 @@ export default function Schedules() {
   ] as const;
   const [activeStatus, setActiveStatus] =
     useState<(typeof statusTabs)[number]>("Running");
+  const router = useRouter();
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
 
   const contentScrollRef = useRef<ScrollView>(null);
@@ -72,37 +56,81 @@ export default function Schedules() {
   const tabOffsetsRef = useRef<number[]>([]);
   const tabWidthsRef = useRef<number[]>([]);
 
+  const useShiftInfiniteQuery = (
+    key: string,
+    queryFn: (
+      page?: number,
+      startDate?: string,
+      endDate?: string,
+    ) => Promise<any>,
+    startDate?: string,
+    endDate?: string,
+  ) => {
+    return useInfiniteQuery({
+      queryKey: [key, startDate, endDate],
+      queryFn: ({ pageParam = 1 }) => queryFn(pageParam, startDate, endDate),
+      initialPageParam: 1,
+      getNextPageParam: (lastPage) => {
+        const pagination = lastPage?.data?.shifts;
+        if (!pagination) return undefined;
+        if (pagination.current_page < pagination.last_page) {
+          return pagination.current_page + 1;
+        }
+        return undefined;
+      },
+      refetchInterval: 30 * 60 * 1000, // Refetch every 30 minutes.
+      refetchIntervalInBackground: true, //Keeps refetching even if the app is in the background.
+      gcTime: 1000 * 60 * 60, // Collect garbage and remove data from cache after 1 hour of inactivity
+      staleTime: 1000 * 60 * 60 * 24, //Data is considered fresh for 24 hours
+    });
+  };
+
   // upcoming shifts
   const scheduledQuery = useShiftInfiniteQuery(
     "scheduled-shifts",
     postScheduledShifts,
+    startDate,
+    endDate,
   );
 
   // running shifts
   const runningQuery = useShiftInfiniteQuery(
     "running-shifts",
     postRunningShifts,
+    startDate,
+    endDate,
   );
 
   // cancelled shifts
   const cancelledQuery = useShiftInfiniteQuery(
     "cancelled-shifts",
     postCancelledShifts,
+    startDate,
+    endDate,
   );
 
   // transfered shifts
   const transferredQuery = useShiftInfiniteQuery(
     "transferred-shifts",
     postTransferredShifts,
+    startDate,
+    endDate,
   );
 
   // past shifts
-  const pastQuery = useShiftInfiniteQuery("past-shifts", postPastShifts);
+  const pastQuery = useShiftInfiniteQuery(
+    "past-shifts",
+    postPastShifts,
+    startDate,
+    endDate,
+  );
 
   // completed shifts
   const completedQuery = useShiftInfiniteQuery(
     "completed-shifts",
     postCompletedShifts,
+    startDate,
+    endDate,
   );
 
   // paid -- > past
@@ -170,7 +198,25 @@ export default function Schedules() {
   }, [scheduledShifts.length]);
   return (
     <SafeAreaView style={styles.safeArea}>
-      <TabsHeader title="Schedule" />
+      <TabsHeader
+        title="Schedule"
+        right={
+          <Pressable
+            onPress={() =>
+              router.push({
+                pathname: "/date-sheet",
+              })
+            }
+            style={{ paddingRight: 18 }}
+          >
+            <Ionicons
+              name="calendar-outline"
+              size={24}
+              color={theme.whiteText}
+            />
+          </Pressable>
+        }
+      />
       <View style={styles.container}>
         <ScrollView
           ref={tabScrollRef}
@@ -334,6 +380,9 @@ export default function Schedules() {
                     data = [];
                 }
                 const handlePullToRefresh = async () => {
+                  // reset start date and end date
+                  filterState.setStartDate(null);
+                  filterState.setEndDate(null);
                   if (refetchFn) await refetchFn();
                 };
                 const handleLoadMore = () => {

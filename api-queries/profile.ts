@@ -4,6 +4,7 @@ import {
   IJobAvailabilityResponse,
   IPasswordChangeRequest,
   IProfileResponse,
+  IShiftRatingRequest,
   IShiftTransferRequest,
   IShiftTransferResponse,
 } from "@/data-types/profile";
@@ -49,5 +50,28 @@ export async function transferShift(
   >("/shift/transfer", {
     shift_id: request.shift_id,
     transfer_hcp_id: request.transfer_hcp_id,
+  });
+}
+
+export async function rateShift(
+  request: IShiftRatingRequest,
+): Promise<IShiftTransferResponse> {
+  return postResource<
+    {
+      shift_id: number;
+      rating: number;
+      comment?: string;
+      facility_id: number;
+      category_id: number;
+      profession_id: number;
+    },
+    IShiftTransferResponse
+  >("/shift/give-rating", {
+    shift_id: request.shift_id,
+    rating: request.rating,
+    comment: request.comment,
+    facility_id: request.facility_id,
+    category_id: request.category_id,
+    profession_id: request.profession_id,
   });
 }

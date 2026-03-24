@@ -276,3 +276,12 @@ export interface IShiftTransferResponse {
   status: boolean;
   message: string;
 }
+
+export interface IShiftRatingRequest {
+  shift_id: number;
+  rating: number;
+  comment?: string;
+  facility_id: number;
+  category_id: number;
+  profession_id: number;
+}
