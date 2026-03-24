@@ -83,6 +83,16 @@ export const ShiftCardBase: React.FC<ShiftCardProps> = ({ shift, onPress }) => {
           <View style={styles.mainContent}>
             <Text
               style={{
+                fontSize: 12,
+                fontWeight: "bold",
+                // color: theme.primary,
+              }}
+            >
+              {shift?.shift_prefix ?? "-"}
+              {shift?.id ?? "—"}
+            </Text>
+            <Text
+              style={{
                 ...styles.title,
                 fontFamily: Platform.select({
                   android: "Inter_600SemiBold",

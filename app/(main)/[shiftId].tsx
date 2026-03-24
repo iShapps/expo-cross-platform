@@ -17,6 +17,7 @@ import { useCalendarAndReminders } from "@/hooks/use-calendar-and-reminders";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useLiveActivity } from "@/hooks/use-live-activity";
 import { useLocation } from "@/hooks/use-location";
+import { formatMediumDate } from "@/utils/date-time";
 import { shiftToCalendarEvent } from "@/utils/shift-calendar-utils";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import Feather from "@expo/vector-icons/Feather";
@@ -699,9 +700,16 @@ export default function ShiftDetails() {
         <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>Shift Info</Text>
           <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>ID</Text>
+            <Text style={styles.detailValue}>
+              {shift?.shift_prefix ?? "-"}
+              {shift?.id ?? "—"}
+            </Text>
+          </View>
+          <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Date</Text>
             <Text style={styles.detailValue}>
-              {startDate.toLocaleDateString()}
+              {formatMediumDate(startDate)}
             </Text>
           </View>
           <View style={styles.detailRow}>
@@ -734,7 +742,21 @@ export default function ShiftDetails() {
             <Text
               style={{ ...styles.detailValue, textTransform: "capitalize" }}
             >
-              {shift?.status}
+              {shift?.shift_status === "0"
+                ? "Pending"
+                : shift?.shift_status === "1"
+                  ? "Scheduled"
+                  : shift?.shift_status === "2"
+                    ? "Running"
+                    : shift?.shift_status === "3"
+                      ? "Cancelled"
+                      : shift?.shift_status === "4"
+                        ? "Completed"
+                        : shift?.shift_status === "5"
+                          ? "Transferred"
+                          : shift?.shift_status === "6"
+                            ? "Past"
+                            : "-"}
             </Text>
           </View>
         </View>
@@ -783,6 +805,14 @@ export default function ShiftDetails() {
           >
             All amounts are tax inclusive.
           </Text> */}
+        </View>
+
+        <View style={styles.sectionCard}>
+          <Text style={styles.sectionTitle}>NOTES</Text>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}></Text>
+            <Text style={styles.detailValue}>{shift?.notes ?? "—"}</Text>
+          </View>
         </View>
 
         {isSleepover && (
