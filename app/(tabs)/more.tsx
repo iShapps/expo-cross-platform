@@ -140,20 +140,22 @@ export default function More() {
               <Text style={styles.profileEmail}>
                 {userDetails?.email ?? "—"}
               </Text>
-              <View style={styles.profileTagRow}>
-                <Text style={styles.profileTag}>
-                  {userDetails?.hcp?.hcp_professions?.[0]?.profession?.name ??
-                    "—"}
-                </Text>
-                <Text style={styles.profileTagDivider}>•</Text>
-                <Text style={styles.profileTag}>
+              <View style={styles.profileTagCol}>
+                {userDetails?.hcp?.hcp_professions?.map((prfession, index) => (
+                  <Text key={index} style={styles.profileTag}>
+                    • {prfession?.profession?.name ?? "—"}
+                    {/* <Text style={styles.profileTagDivider}>•</Text> */}
+                  </Text>
+                ))}
+
+                {/* <Text style={styles.profileTag}>
                   {userDetails?.hcp?.hcp_professions?.[0]?.level?.name ?? "—"}
                 </Text>
                 <Text style={styles.profileTagDivider}>•</Text>
                 <Text style={styles.profileTag}>
                   {userDetails?.hcp?.hcp_professions?.[0]?.category?.name ??
                     "—"}
-                </Text>
+                </Text> */}
               </View>
             </View>
           </View>
@@ -393,6 +395,13 @@ const getStyles = (theme: typeof Colors.light) =>
       alignItems: "center",
       flexWrap: "wrap",
       gap: 6,
+      marginTop: 6,
+    },
+    profileTagCol: {
+      flexDirection: "column",
+      alignItems: "flex-start",
+      flexWrap: "wrap",
+      gap: 1,
       marginTop: 6,
     },
     profileTag: {

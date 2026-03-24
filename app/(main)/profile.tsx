@@ -4,6 +4,7 @@ import { Colors } from "@/constants/theme";
 import { useConfigSettings } from "@/data-store/config-store";
 import { User } from "@/data-types/auth";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { formatMediumDate } from "@/utils/date-time";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BlurView } from "expo-blur";
 import { Image } from "expo-image";
@@ -138,17 +139,21 @@ export default function ProfileScreen() {
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Date of birth</Text>
             <Text style={styles.detailValue}>
-              {hcp?.date_of_birth ? hcp?.date_of_birth : "—"}
+              {formatMediumDate(hcp?.date_of_birth ? hcp?.date_of_birth : "—")}
             </Text>
           </View>
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Gender</Text>
-            <Text style={styles.detailValue}>{hcp?.gender ?? "—"}</Text>
+            <Text style={styles.detailValue}>
+              {hcp?.gender
+                ? `${hcp?.gender?.charAt(0).toLocaleUpperCase()}${hcp?.gender?.slice(1)}`
+                : "—"}
+            </Text>
           </View>
         </View>
 
         <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Professional</Text>
+          <Text style={styles.sectionTitle}>Professions</Text>
           {professions.length > 0 && (
             <View style={styles.professionList}>
               {professions.map((item: any) => (
@@ -165,7 +170,15 @@ export default function ProfileScreen() {
                       {item?.category?.name ?? "—"}
                     </Text>
                   </View>
-                  <View style={styles.detailRow}>
+                  <View
+                    style={[
+                      styles.detailRow,
+                      {
+                        borderBottomColor: theme.primary,
+                        borderBottomWidth: 2,
+                      },
+                    ]}
+                  >
                     <Text style={styles.detailLabel}>Level</Text>
                     <Text style={styles.detailValue}>
                       {item?.level?.name ?? "—"}
@@ -175,7 +188,7 @@ export default function ProfileScreen() {
               ))}
             </View>
           )}
-          <View style={styles.detailRow}>
+          {/* <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Registration No.</Text>
             <Text style={styles.detailValue}>
               {hcp?.registration_number ?? "—"}
@@ -188,7 +201,7 @@ export default function ProfileScreen() {
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>TFN</Text>
             <Text style={styles.detailValue}>{hcp?.tfn_number ?? "—"}</Text>
-          </View>
+          </View> */}
         </View>
 
         <View style={styles.sectionCard}>
