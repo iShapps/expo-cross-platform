@@ -238,3 +238,14 @@ export interface IAvailableShiftResponse {
     };
   };
 }
+
+export interface IApprovedShiftResponse {
+  status: boolean;
+  message: string;
+  data: {
+    shifts: {
+      approved_shifts: IPaginatedShiftsResponse;
+      completed_shifts: IPaginatedShiftsResponse;
+    };
+  };
+}

@@ -1,3 +1,4 @@
+import { Hcp } from "@/data-types/auth";
 import * as SecureStore from "expo-secure-store";
 
 const TOKEN_KEY = "authToken-ishapps";
@@ -25,4 +26,11 @@ export const removeToken = async (): Promise<void> => {
   } catch (error) {
     console.error("Error removing token:", error);
   }
+};
+
+export const getAvatarImageSource = (hcp: Hcp, imagePath: string) => {
+  if (!hcp?.image) return undefined;
+  return `${imagePath}${encodeURIComponent(
+    `${hcp.hcp_prefix}${hcp.id}`,
+  )}/image/${hcp.image}`;
 };

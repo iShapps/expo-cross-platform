@@ -468,7 +468,7 @@ export default function ForgotPassword() {
                   style={{ alignSelf: "flex-end" }}
                   onPress={() => setShowModal(false)}
                 >
-                  <AntDesign name="close" size={20} color="#70C601" />
+                  <AntDesign name="close" size={20} color={theme.primary} />
                 </TouchableOpacity>
                 <View
                   style={{
@@ -491,7 +491,11 @@ export default function ForgotPassword() {
                       gap: 4,
                     }}
                   >
-                    <MaterialIcons name="verified" size={60} color="#70C601" />
+                    <MaterialIcons
+                      name="verified"
+                      size={60}
+                      color={theme.primary}
+                    />
                   </View>
                 </View>
                 <Text
@@ -536,7 +540,7 @@ export default function ForgotPassword() {
                   <Text>Didn&apos;t get the code?</Text>
                   <Text
                     style={{
-                      color: colorScheme === "dark" ? "#FFD966" : "#70C601",
+                      color: theme.primary,
                       fontSize: 14,
                       fontWeight: "600",
                       textDecorationLine: "underline",

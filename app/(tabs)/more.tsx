@@ -173,7 +173,7 @@ export default function More() {
                 onValueChange={toggleAvailability}
                 disabled={updateAvailabilityMutation.isPending}
                 thumbColor={isAvailable ? "#fff" : "#f4f4f4"}
-                trackColor={{ false: "#E5E7EB", true: "#70C601" }}
+                trackColor={{ false: "#E5E7EB", true: theme.primary }}
               />
             </View>
           </View>
@@ -187,14 +187,14 @@ export default function More() {
               <MaterialCommunityIcons
                 name="account-cog-outline"
                 size={24}
-                color="#70C601"
+                color={theme.primary}
               />
               <Text style={styles.rowText}>Your profile</Text>
             </View>
             <MaterialCommunityIcons
               name="chevron-right"
               size={24}
-              color="#70C601"
+              color={theme.primary}
             />
           </Pressable>
           <Pressable
@@ -205,14 +205,14 @@ export default function More() {
               <MaterialCommunityIcons
                 name="office-building-marker"
                 size={24}
-                color="#70C601"
+                color={theme.primary}
               />
               <Text style={styles.rowText}>Facilities</Text>
             </View>
             <MaterialCommunityIcons
               name="chevron-right"
               size={24}
-              color="#70C601"
+              color={theme.primary}
             />
           </Pressable>
           {/* <Pressable
@@ -223,14 +223,14 @@ export default function More() {
               <Ionicons
                 name="calendar-clear-outline"
                 size={24}
-                color="#70C601"
+                color={theme.primary}
               />
               <Text style={styles.rowText}>Interviews</Text>
             </View>
             <MaterialCommunityIcons
               name="chevron-right"
               size={24}
-              color="#70C601"
+              color={theme.primary}
             />
           </Pressable> */}
           <Pressable
@@ -238,13 +238,13 @@ export default function More() {
             style={styles.profileLinks}
           >
             <View style={styles.profileContainer}>
-              <Feather name="settings" size={24} color="#70C601" />
+              <Feather name="settings" size={24} color={theme.primary} />
               <Text style={styles.rowText}>Settings</Text>
             </View>
             <MaterialCommunityIcons
               name="chevron-right"
               size={24}
-              color="#70C601"
+              color={theme.primary}
             />
           </Pressable>
         </View>

@@ -2,15 +2,15 @@
   "expo": {
     "name": "iShapps",
     "slug": "ishapps",
-    "version": "1.5.0",
+    "version": "2.9.0",
     "orientation": "portrait",
     "icon": "./assets/images/smhealth.png",
     "scheme": "ishapps",
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "buildNumber": "15",
-      "bundleIdentifier": "com.smarthealthcare.ishapps",
+      "buildNumber": "29",
+      "bundleIdentifier": "com.apporio.iShapps",
       "infoPlist": {
         "NSFaceIDUsageDescription": "Allow $(PRODUCT_NAME) to use Face ID for authentication.",
         "ITSAppUsesNonExemptEncryption": false,
@@ -23,15 +23,13 @@
       },
       "entitlements": {
         "aps-environment": "production",
-        "com.apple.security.application-groups": [
-          "group.com.smarthealthcare.ishapps"
-        ]
+        "com.apple.security.application-groups": ["group.com.apporio.iShapps"]
       }
     },
     "android": {
-      "versionCode": 15,
+      "versionCode": 29,
       "adaptiveIcon": {
-        "backgroundColor": "#70C601",
+        "backgroundColor": "#ffffff",
         "foregroundImage": "./assets/images/smhealth.png",
         "backgroundImage": "./assets/images/smhealth.png",
         "monochromeImage": "./assets/images/smhealth.png"
@@ -48,7 +46,7 @@
         "android.permission.READ_CALENDAR",
         "android.permission.WRITE_CALENDAR"
       ],
-      "package": "com.smarthealthcare.ishapps"
+      "package": "com.ishapps.app"
     },
     "web": {
       "output": "static",
@@ -78,7 +76,7 @@
       [
         "voltra",
         {
-          "groupIdentifier": "group.com.smarthealthcare.ishapps",
+          "groupIdentifier": "group.com.apporio.iShapps",
           "enablePushNotifications": true
         }
       ],
@@ -108,11 +106,10 @@
         "expo-splash-screen",
         {
           "image": "./assets/images/smhealth.png",
-          "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#70C601",
+          "backgroundColor": "#ffffff",
           "dark": {
-            "backgroundColor": "#232A2E"
+            "backgroundColor": "#ffffff"
           }
         }
       ],
@@ -160,9 +157,9 @@
       "router": {},
       "eas": {
         "projectId": "17a2649d-0933-4036-b23a-49012513cd96",
-        "oneSignalAppId": "ed69fa44-0c43-4702-bf92-4db53563bf77",
-        "oneSignalAndroidAppId": "ed69fa44-0c43-4702-bf92-4db53563bf77",
-        "oneSignalIosAppId": "ed69fa44-0c43-4702-bf92-4db53563bf77"
+        "oneSignalAppId": "6eccb82b-f125-4deb-acb3-e85ed263de94",
+        "oneSignalAndroidAppId": "6eccb82b-f125-4deb-acb3-e85ed263de94",
+        "oneSignalIosAppId": "6eccb82b-f125-4deb-acb3-e85ed263de94"
       }
     },
     "owner": "ishapps"

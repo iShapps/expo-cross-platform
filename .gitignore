@@ -44,3 +44,6 @@ app-example
 
 # Environment files
 .env
+
+upload_certificate.pem
+upload-keystore.jks
