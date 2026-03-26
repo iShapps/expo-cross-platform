@@ -1,7 +1,7 @@
 import {
-  postApprovedShifts,
   postCancelledShifts,
-  postPendingApprovalShifts,
+  postCompletedShifts,
+  postPastShifts,
   postRunningShifts,
   postScheduledShifts,
   postTransferredShifts,
@@ -18,7 +18,7 @@ import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   FlatList,
   Pressable,
@@ -39,18 +39,23 @@ export default function Schedules() {
   const endDate = useProfileData((s) => s.endDate || undefined);
   console.log("Schedules received store dates:", { startDate, endDate });
   const { activeTab } = useLocalSearchParams() as { activeTab?: string };
-  const statusTabs = [
-    "Running",
-    "Scheduled",
-    "Pending Approval",
-    "Approved",
-    "Cancelled",
-    "Transferred",
-  ] as const;
+  const statusTabs = useMemo(
+    () =>
+      [
+        "Running",
+        "Scheduled",
+        "Pending Approval",
+        "Approved",
+        "Cancelled",
+        "Transferred",
+      ] as const,
+    [],
+  );
   const [activeStatus, setActiveStatus] =
     useState<(typeof statusTabs)[number]>("Running");
   const router = useRouter();
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  const contentPageWidth = screenWidth - 16;
 
   const contentScrollRef = useRef<ScrollView>(null);
   const tabScrollRef = useRef<ScrollView>(null);
@@ -121,7 +126,7 @@ export default function Schedules() {
   // past shifts
   const pastQuery = useShiftInfiniteQuery(
     "past-shifts",
-    postApprovedShifts,
+    postPastShifts,
     startDate,
     endDate,
   );
@@ -129,7 +134,7 @@ export default function Schedules() {
   // completed shifts
   const completedQuery = useShiftInfiniteQuery(
     "completed-shifts",
-    postPendingApprovalShifts,
+    postCompletedShifts,
     startDate,
     endDate,
   );
@@ -159,14 +164,15 @@ export default function Schedules() {
 
   const handleTabPress = useCallback(
     (index: number) => {
+      router.setParams({ activeTab: undefined });
       setActiveStatus(statusTabs[index]);
       scrollTabIntoView(index);
       contentScrollRef.current?.scrollTo({
-        x: index * screenWidth,
+        x: index * contentPageWidth,
         animated: true,
       });
     },
-    [screenWidth, scrollTabIntoView],
+    [contentPageWidth, router, scrollTabIntoView, statusTabs],
   );
 
   const runningRefetchRef = useRef(runningQuery.refetch);
@@ -174,11 +180,25 @@ export default function Schedules() {
 
   useFocusEffect(
     useCallback(() => {
-      handleTabPress(1);
       // refetch only running and scheduled shifts on focus, as those are most likely to change
       void runningRefetchRef.current();
       void scheduledRefetchRef.current();
     }, []),
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      if (activeTab) {
+        console.log("Schedules screen received activeTab param:", activeTab);
+        handleTabPress(1);
+      }
+
+      return () => {
+        if (activeTab) {
+          router.setParams({ activeTab: undefined });
+        }
+      };
+    }, [activeTab, handleTabPress, router]),
   );
 
   const handleContentScrollEnd = useCallback(
@@ -189,7 +209,7 @@ export default function Schedules() {
       setActiveStatus(statusTabs[clampedIndex]);
       scrollTabIntoView(clampedIndex);
     },
-    [screenWidth, scrollTabIntoView],
+    [screenWidth, scrollTabIntoView, statusTabs],
   );
 
   let colorScheme = useColorScheme();
