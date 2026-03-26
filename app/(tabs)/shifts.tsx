@@ -98,6 +98,7 @@ export default function Shifts() {
 
   const styles = getStyles(theme);
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  const contentPageWidth = screenWidth - 20;
 
   const contentScrollRef = useRef<ScrollView>(null);
   const tabScrollRef = useRef<ScrollView>(null);
@@ -110,11 +111,11 @@ export default function Shifts() {
       const width = tabWidthsRef.current[index];
       if (offset == null || width == null) return;
       tabScrollRef.current?.scrollTo({
-        x: offset - screenWidth / 2 + width / 2, // center the active tab
+        x: offset - contentPageWidth / 2 + width / 2, // center the active tab
         animated: true,
       });
     },
-    [screenWidth],
+    [contentPageWidth],
   );
 
   const handleTabPress = useCallback(
@@ -122,22 +123,22 @@ export default function Shifts() {
       setActiveStatus(STATUS_TABS[index]);
       scrollTabIntoView(index);
       contentScrollRef.current?.scrollTo({
-        x: index * screenWidth,
+        x: index * contentPageWidth,
         animated: true,
       });
     },
-    [screenWidth, scrollTabIntoView],
+    [contentPageWidth, scrollTabIntoView],
   );
 
   const handleContentScrollEnd = useCallback(
     (e: any) => {
       const offsetX = e.nativeEvent.contentOffset.x;
-      const index = Math.round(offsetX / screenWidth);
+      const index = Math.round(offsetX / contentPageWidth);
       const clampedIndex = Math.min(Math.max(index, 0), STATUS_TABS.length - 1);
       setActiveStatus(STATUS_TABS[clampedIndex]);
       scrollTabIntoView(clampedIndex);
     },
-    [screenWidth, scrollTabIntoView],
+    [contentPageWidth, scrollTabIntoView],
   );
 
   return (
