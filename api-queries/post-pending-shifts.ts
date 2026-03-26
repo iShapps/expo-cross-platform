@@ -1,5 +1,6 @@
 import { postResource } from "@/api-actions/mutations";
 import {
+  IApprovedShiftResponse,
   IAvailableShiftResponse,
   IShiftActionResponse,
   IShiftLocationParams,
@@ -183,4 +184,42 @@ export async function postShiftLocation(params: IShiftLocationParams) {
     console.error("Failed to send shift location", error);
     throw error;
   }
+}
+
+export async function postPendingApprovalShifts(
+  page = 1,
+): Promise<IShiftResponse> {
+  const response = await postResource<
+    { shift_status: string; page: number },
+    IApprovedShiftResponse
+  >("/shift", {
+    shift_status: "completed",
+    page,
+  });
+
+  return {
+    status: response.status,
+    message: response.message,
+    data: {
+      shifts: response.data.shifts.completed_shifts,
+    },
+  };
+}
+
+export async function postApprovedShifts(page = 1): Promise<IShiftResponse> {
+  const response = await postResource<
+    { shift_status: string; page: number },
+    IApprovedShiftResponse
+  >("/shift", {
+    shift_status: "completed",
+    page,
+  });
+
+  return {
+    status: response.status,
+    message: response.message,
+    data: {
+      shifts: response.data.shifts.approved_shifts,
+    },
+  };
 }

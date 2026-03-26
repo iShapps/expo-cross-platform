@@ -227,7 +227,7 @@ const TransferShift = () => {
         autoComplete="name"
         autoFocus
         clearButtonMode="while-editing"
-        cursorColor="#70C601"
+        cursorColor={theme.primary}
         enterKeyHint="search"
         inlineImageLeft="search_icon"
         inputMode="text"
@@ -293,7 +293,9 @@ const TransferShift = () => {
                     {/* status i.e online and offline  based on available_for_job */}
                     <Text
                       style={{
-                        color: item.available_for_job ? "#70C601" : "#FF0000",
+                        color: item.available_for_job
+                          ? theme.primary
+                          : "#FF0000",
                         fontSize: 12,
                       }}
                     >
@@ -317,7 +319,7 @@ const TransferShift = () => {
                         borderRadius: 11,
                         borderWidth: 2,
                         borderColor:
-                          selectedHcpId === item.id ? "#70C601" : "#ccc",
+                          selectedHcpId === item.id ? theme.primary : "#ccc",
                         alignItems: "center",
                         justifyContent: "center",
                       }}
@@ -328,7 +330,7 @@ const TransferShift = () => {
                             width: 12,
                             height: 12,
                             borderRadius: 6,
-                            backgroundColor: "#70C601",
+                            backgroundColor: theme.primary,
                           }}
                         />
                       )}
