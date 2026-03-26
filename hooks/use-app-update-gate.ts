@@ -61,7 +61,7 @@ export const useAppUpdateGate = () => {
       : configSettings?.configuration?.android_app_link;
   const isUpdateRequired =
     !!requiredAppVersion &&
-    compareVersions(installedAppVersion, requiredAppVersion) !== 0;
+    compareVersions(installedAppVersion, requiredAppVersion) < 0;
 
   const openStore = async () => {
     if (!storeLink) return;

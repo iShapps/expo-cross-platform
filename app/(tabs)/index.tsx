@@ -21,14 +21,17 @@ import { useCallback, useEffect } from "react";
 import { getHCPDashboard } from "@/api-queries/dashboard";
 import { getNotifications } from "@/api-queries/notifcations";
 import { Colors } from "@/constants/theme";
+import { useConfigSettings } from "@/data-store/config-store";
 import { useSettingsStore } from "@/data-store/use-settings-store";
 import { User } from "@/data-types/auth";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useOneSignal } from "@/hooks/use-one-signal";
 import { useShiftWatcher } from "@/hooks/use-shift-watcher";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { getAvatarImageSource } from "@/utils/auth";
+import { FontAwesome6, MaterialCommunityIcons } from "@expo/vector-icons";
 import {
   FlatList,
+  Image,
   Pressable,
   StyleSheet,
   Text,
@@ -45,6 +48,7 @@ export default function HomeScreen() {
   const profileStore = useProfileData();
   const userDetails = profileStore.userDetails;
   const queryClient = useQueryClient();
+  const configSettings = useConfigSettings();
 
   useShiftWatcher();
   useOneSignal();
@@ -138,8 +142,8 @@ export default function HomeScreen() {
     : "Payrun: --";
 
   const payrunDisclaimer = weekEnd
-    ? `Only shifts completed before 5:00 PM on ${format(new Date(weekEnd), "dd MMM")} are included in this payrun. Completions after 5:00 PM are processed in the next payrun.`
-    : "Only shifts completed by 5:00 PM on the payrun end date are included in this payrun. Completions after 5:00 PM are processed in the next payrun.";
+    ? `Only shifts completed by 5:00 PM on ${format(new Date(weekEnd), "dd MMM")} are included.`
+    : "";
 
   useEffect(() => {
     requestPermission();
@@ -175,22 +179,44 @@ export default function HomeScreen() {
           <View
             style={{
               display: "flex",
-              flexDirection: "column",
-              gap: 3,
+              flexDirection: "row",
+              gap: 8,
               flex: 1,
               marginRight: 5,
             }}
           >
-            <Text style={styles.headerTitle}>{userDetails?.name}</Text>
-            <Text
-              style={styles.headerSubtitle}
-              numberOfLines={2}
-              ellipsizeMode="tail"
+            {userDetails && (
+              <Image
+                source={{
+                  uri: getAvatarImageSource(
+                    userDetails.hcp,
+                    configSettings?.configSettings?.image_path?.hcp_path ?? "",
+                  ),
+                }}
+                style={styles.avatarImage}
+              />
+            )}
+            <View
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                flex: 1,
+              }}
             >
-              {userDetails?.hcp?.hcp_professions
-                ?.map((prfession) => prfession?.profession?.name ?? "—")
-                .join(" | ") ?? "—"}
-            </Text>
+              <Text style={styles.headerTitle}>{userDetails?.name}</Text>
+              <View style={{ display: "flex", flexDirection: "row", gap: 5 }}>
+                <FontAwesome6 name="briefcase" size={16} color="#FFC107" />
+                <Text
+                  style={styles.headerSubtitle}
+                  numberOfLines={2}
+                  ellipsizeMode="tail"
+                >
+                  {userDetails?.hcp?.hcp_professions
+                    ?.map((prfession) => prfession?.profession?.name ?? "—")
+                    .join(" | ") ?? "—"}
+                </Text>
+              </View>
+            </View>
           </View>
           <Pressable
             onPress={() => router.push("/(main)/notifications")}
@@ -225,7 +251,7 @@ export default function HomeScreen() {
                   <MaterialIcons
                     name="event-available"
                     size={16}
-                    color="#70C601"
+                    color={theme.primary}
                   />
                 </View>
                 <Text style={styles.dashboardValue}>{availableShifts}</Text>
@@ -275,7 +301,11 @@ export default function HomeScreen() {
           <View style={styles.payrunCard}>
             <View style={styles.payrunHeader}>
               <View style={styles.iconPillPayrun}>
-                <MaterialIcons name="date-range" size={16} color="#70C601" />
+                <MaterialIcons
+                  name="date-range"
+                  size={16}
+                  color={theme.primary}
+                />
               </View>
               <Text style={styles.payrunValue}>{payrunLabel}</Text>
               {/* <Text style={styles.payrunLabel}>Current Payrun</Text> */}
@@ -577,6 +607,7 @@ const getStyles = (theme: typeof Colors.light) =>
       fontSize: 12,
       lineHeight: 18,
       color: theme.secondaryText,
+      fontStyle: "italic",
     },
     notificationsHeader: {
       marginTop: 8,
@@ -610,5 +641,12 @@ const getStyles = (theme: typeof Colors.light) =>
       color: theme.activeText,
       textTransform: "uppercase",
       letterSpacing: 0.4,
+    },
+    avatarImage: {
+      height: 50,
+      width: 50,
+      borderRadius: 50,
+      borderWidth: 1,
+      borderColor: theme.white,
     },
   });
