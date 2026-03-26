@@ -251,7 +251,7 @@ export default function HomeScreen() {
                   <MaterialIcons
                     name="event-available"
                     size={16}
-                    color="#70C601"
+                    color={theme.primary}
                   />
                 </View>
                 <Text style={styles.dashboardValue}>{availableShifts}</Text>
@@ -301,7 +301,11 @@ export default function HomeScreen() {
           <View style={styles.payrunCard}>
             <View style={styles.payrunHeader}>
               <View style={styles.iconPillPayrun}>
-                <MaterialIcons name="date-range" size={16} color="#70C601" />
+                <MaterialIcons
+                  name="date-range"
+                  size={16}
+                  color={theme.primary}
+                />
               </View>
               <Text style={styles.payrunValue}>{payrunLabel}</Text>
               {/* <Text style={styles.payrunLabel}>Current Payrun</Text> */}
