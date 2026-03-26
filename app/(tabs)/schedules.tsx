@@ -1,7 +1,7 @@
 import {
+  postApprovedShifts,
   postCancelledShifts,
-  postCompletedShifts,
-  postPastShifts,
+  postPendingApprovalShifts,
   postRunningShifts,
   postScheduledShifts,
   postTransferredShifts,
@@ -121,7 +121,7 @@ export default function Schedules() {
   // past shifts
   const pastQuery = useShiftInfiniteQuery(
     "past-shifts",
-    postPastShifts,
+    postApprovedShifts,
     startDate,
     endDate,
   );
@@ -129,7 +129,7 @@ export default function Schedules() {
   // completed shifts
   const completedQuery = useShiftInfiniteQuery(
     "completed-shifts",
-    postCompletedShifts,
+    postPendingApprovalShifts,
     startDate,
     endDate,
   );
