@@ -1,10 +1,10 @@
 import {
+  postApprovedShifts,
   postCancelledShifts,
-  postCompletedShifts,
-  postPastShifts,
+  postPendingApprovalShifts,
   postRunningShifts,
   postScheduledShifts,
-  postTransferredShifts,
+  postTransferredShifts
 } from "@/api-queries/post-pending-shifts";
 import { ShiftCardBase } from "@/components/pay-run";
 import TabsHeader from "@/components/shared/tabs-header";
@@ -18,7 +18,13 @@ import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   FlatList,
   Pressable,
@@ -126,7 +132,7 @@ export default function Schedules() {
   // past shifts
   const pastQuery = useShiftInfiniteQuery(
     "past-shifts",
-    postPastShifts,
+    postApprovedShifts,
     startDate,
     endDate,
   );
@@ -134,7 +140,7 @@ export default function Schedules() {
   // completed shifts
   const completedQuery = useShiftInfiniteQuery(
     "completed-shifts",
-    postCompletedShifts,
+    postPendingApprovalShifts,
     startDate,
     endDate,
   );
