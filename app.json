@@ -29,7 +29,7 @@
     "android": {
       "versionCode": 29,
       "adaptiveIcon": {
-        "backgroundColor": "#70C601",
+        "backgroundColor": "#ffffff",
         "foregroundImage": "./assets/images/smhealth.png",
         "backgroundImage": "./assets/images/smhealth.png",
         "monochromeImage": "./assets/images/smhealth.png"
@@ -105,11 +105,11 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/ishapp-splash.png",
+          "image": "./assets/images/smhealth.png",
           "resizeMode": "contain",
-          "backgroundColor": "#70C601",
+          "backgroundColor": "#ffffff",
           "dark": {
-            "backgroundColor": "#232A2E"
+            "backgroundColor": "#ffffff"
           }
         }
       ],
