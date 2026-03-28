@@ -28,6 +28,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSession } from "../ctx";
 
 export default function Login() {
@@ -36,6 +37,7 @@ export default function Login() {
   const styles = getStyles(theme);
 
   const oneSignal = useOneSignal();
+  const insets = useSafeAreaInsets();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -110,7 +112,6 @@ export default function Login() {
       await signIn({
         email,
         password,
-
         // optionals : get device info
         // Device.modelName; // Android: "Pixel 2"; iOS: "iPhone XS Max"; web: "iPhone", null
         // Device.osBuildId; // Android: "PSR1.180720.075"; iOS: "16F203"; web: null
@@ -122,7 +123,6 @@ export default function Login() {
         // Device.deviceName; // "Vivian's iPhone XS"
         // Device.designName; // Android: "kminilte"; iOS: null; web: null
         // Device.brand; // Android: "google", "xiaomi"; iOS: "Apple"; web: null
-
         device_id: subscriptionId ?? "", //to change to oneSignal's sub id for push notifications
         device_name: Device.deviceName ?? Device.modelName ?? "Unknown Device",
         device_type: Device.deviceType?.toString() ?? "Unknown Device", //Device.osName ?? "Unknown Device",
@@ -203,16 +203,21 @@ export default function Login() {
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.container}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 24}
     >
       <ScrollView
-        contentContainerStyle={{ flexGrow: 1 }}
+        contentContainerStyle={{
+          flexGrow: 1,
+          paddingBottom: insets.bottom + 40,
+        }}
         keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        keyboardDismissMode="on-drag"
       >
         <View
           style={{
             backgroundColor: theme.background,
-            height: "50%",
+            height: 350,
             justifyContent: "flex-start",
             alignItems: "center",
           }}
@@ -404,7 +409,10 @@ export default function Login() {
             style={[
               styles.button,
               isLoading && { opacity: 0.6 },
-              { backgroundColor: theme.activeText },
+              {
+                backgroundColor: theme.activeText,
+                marginBottom: insets.bottom > 0 ? 0 : 8,
+              },
             ]}
             onPress={handleLogin}
             disabled={isLoading}
@@ -443,14 +451,14 @@ export default function Login() {
 const getStyles = (theme: typeof Colors.light) =>
   StyleSheet.create({
     container: {
-      height: "100%",
+      flex: 1,
       display: "flex",
       flexDirection: "column",
       backgroundColor: theme.whiteBackground,
     },
     bottomContainer: {
-      flex: 1,
       width: "100%",
+      flexGrow: 1,
       // height: "50%", // Remove fixed height to allow content to grow
       backgroundColor: theme.whiteBackground,
       paddingVertical: 20,
