@@ -65,7 +65,7 @@ export const ShiftCardBase: React.FC<ShiftCardProps> = ({ shift, onPress }) => {
                   }),
                 }}
               >
-                {format(shift?.created_at, "dd")}
+                {format(shift?.start_time, "dd")}
               </Text>
               <Text
                 style={{
@@ -76,7 +76,7 @@ export const ShiftCardBase: React.FC<ShiftCardProps> = ({ shift, onPress }) => {
                   }),
                 }}
               >
-                {format(shift?.created_at, "MMM")}
+                {format(shift?.start_time, "MMM")}
               </Text>
             </View>
           </View>
