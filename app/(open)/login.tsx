@@ -21,6 +21,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -200,235 +201,241 @@ export default function Login() {
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.container}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
     >
-      <View
-        style={{
-          backgroundColor: theme.background,
-          height: "50%",
-          justifyContent: "flex-start",
-          alignItems: "center",
-        }}
+      <ScrollView
+        contentContainerStyle={{ flexGrow: 1 }}
+        keyboardShouldPersistTaps="handled"
       >
-        <Image
-          source={require("@/assets/images/careworker2.jpg")}
-          style={{ width: "100%", height: "100%", opacity: 0.5 }}
-          contentFit="cover"
-        />
-      </View>
-
-      <View style={styles.bottomContainer}>
-        <View style={{ marginBottom: 20, marginTop: 10 }}>
-          <Text
-            style={{
-              fontSize: 28,
-              color: theme.primaryText,
-              fontWeight: "700",
-              marginBottom: 10,
-            }}
-          >
-            Login
-          </Text>
-          <Text
-            style={{
-              fontSize: 14,
-              color: theme.secondaryText,
-            }}
-          >
-            Login to securely access your account and manage your shifts
-            anytime.
-          </Text>
+        <View
+          style={{
+            backgroundColor: theme.background,
+            height: "50%",
+            justifyContent: "flex-start",
+            alignItems: "center",
+          }}
+        >
+          <Image
+            source={require("@/assets/images/careworker2.jpg")}
+            style={{ width: "100%", height: "100%", opacity: 0.5 }}
+            contentFit="cover"
+          />
         </View>
 
-        <View style={styles.inputGroup}>
-          <Text style={email ? styles.labelFilled : styles.label}>
-            Email Address
-          </Text>
-          <View
-            style={
-              password
-                ? styles.passwordInputGroupFilled
-                : styles.passwordInputGroup
-            }
-          >
-            <TextInput
-              value={email}
-              inputMode="email"
-              autoComplete="email"
-              clearButtonMode="while-editing"
-              autoFocus={true}
-              clearTextOnFocus={false}
-              cursorColor={theme.primaryText}
-              enterKeyHint="next"
-              placeholder="johnwilliams@gmail.com"
-              onChangeText={setEmail}
-              placeholderTextColor={theme.secondaryText}
+        <View style={styles.bottomContainer}>
+          <View style={{ marginBottom: 20, marginTop: 10 }}>
+            <Text
               style={{
-                flex: 1,
+                fontSize: 28,
                 color: theme.primaryText,
+                fontWeight: "700",
+                marginBottom: 10,
               }}
-            />
-            {biometricSupported && biometricAllowed && biometricsEnabled && (
-              <Pressable onPress={handleBiometricLogin}>
-                {Platform.OS === "ios" ? (
-                  <View style={styles.iconContainer}>
+            >
+              Login
+            </Text>
+            <Text
+              style={{
+                fontSize: 14,
+                color: theme.secondaryText,
+              }}
+            >
+              Login to securely access your account and manage your shifts
+              anytime.
+            </Text>
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={email ? styles.labelFilled : styles.label}>
+              Email Address
+            </Text>
+            <View
+              style={
+                password
+                  ? styles.passwordInputGroupFilled
+                  : styles.passwordInputGroup
+              }
+            >
+              <TextInput
+                value={email}
+                inputMode="email"
+                autoComplete="email"
+                clearButtonMode="while-editing"
+                autoFocus={true}
+                clearTextOnFocus={false}
+                cursorColor={theme.primaryText}
+                enterKeyHint="next"
+                placeholder="johnwilliams@gmail.com"
+                onChangeText={setEmail}
+                placeholderTextColor={theme.secondaryText}
+                style={{
+                  flex: 1,
+                  color: theme.primaryText,
+                }}
+              />
+              {biometricSupported && biometricAllowed && biometricsEnabled && (
+                <Pressable onPress={handleBiometricLogin}>
+                  {Platform.OS === "ios" ? (
+                    <View style={styles.iconContainer}>
+                      <Ionicons
+                        name="scan-outline"
+                        size={30}
+                        color={theme.secondaryText}
+                      />
+                      <FontAwesome6
+                        name="face-kiss"
+                        size={10}
+                        color={theme.secondaryText}
+                        style={styles.overlayIcon}
+                      />
+                    </View>
+                  ) : (
                     <Ionicons
-                      name="scan-outline"
-                      size={30}
+                      name="finger-print"
+                      size={24}
                       color={theme.secondaryText}
                     />
-                    <FontAwesome6
-                      name="face-kiss"
-                      size={10}
-                      color={theme.secondaryText}
-                      style={styles.overlayIcon}
-                    />
-                  </View>
+                  )}
+                </Pressable>
+              )}
+            </View>
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={password ? styles.labelFilled : styles.label}>
+              Password
+            </Text>
+            <View
+              style={
+                password
+                  ? styles.passwordInputGroupFilled
+                  : styles.passwordInputGroup
+              }
+            >
+              <TextInput
+                value={password}
+                cursorColor={theme.primaryText}
+                keyboardType="default"
+                enterKeyHint="done"
+                clearButtonMode="while-editing"
+                autoComplete="password"
+                clearTextOnFocus={false}
+                onChangeText={setPassword}
+                placeholder="••••••••"
+                placeholderTextColor={theme.secondaryText}
+                secureTextEntry={!showPassword}
+                style={{
+                  flex: 1,
+                  color: theme.primaryText,
+                }}
+              />
+
+              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                {showPassword ? (
+                  <Entypo name="eye" size={20} color={theme.secondaryText} />
                 ) : (
-                  <Ionicons
-                    name="finger-print"
-                    size={24}
+                  <Entypo
+                    name="eye-with-line"
+                    size={20}
                     color={theme.secondaryText}
                   />
                 )}
-              </Pressable>
-            )}
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
-
-        <View style={styles.inputGroup}>
-          <Text style={password ? styles.labelFilled : styles.label}>
-            Password
-          </Text>
-          <View
-            style={
-              password
-                ? styles.passwordInputGroupFilled
-                : styles.passwordInputGroup
-            }
-          >
-            <TextInput
-              value={password}
-              cursorColor={theme.primaryText}
-              keyboardType="default"
-              enterKeyHint="done"
-              clearButtonMode="while-editing"
-              autoComplete="password"
-              clearTextOnFocus={false}
-              onChangeText={setPassword}
-              placeholder="••••••••"
-              placeholderTextColor={theme.secondaryText}
-              secureTextEntry={!showPassword}
-              style={{
-                flex: 1,
-                color: theme.primaryText,
-              }}
-            />
-
-            <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-              {showPassword ? (
-                <Entypo name="eye" size={20} color={theme.secondaryText} />
-              ) : (
-                <Entypo
-                  name="eye-with-line"
-                  size={20}
-                  color={theme.secondaryText}
-                />
-              )}
-            </TouchableOpacity>
+          <View>
+            <Link href="/(open)/forgot-password">
+              <Text
+                style={{
+                  color: theme.activeText,
+                  textAlign: "right",
+                  textDecorationLine: "underline",
+                }}
+              >
+                Forgot Password?
+              </Text>
+            </Link>
           </View>
-        </View>
-        <View>
-          <Link href="/(open)/forgot-password">
-            <Text
+
+          <View style={styles.optionsRow}>
+            <View
               style={{
-                color: theme.activeText,
-                textAlign: "right",
-                textDecorationLine: "underline",
+                flexDirection: "row",
+                alignItems: "center",
               }}
             >
-              Forgot Password?
-            </Text>
-          </Link>
-        </View>
-
-        <View style={styles.optionsRow}>
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-            }}
-          >
-            <Checkbox
-              style={styles.checkbox}
-              value={isTermsChecked}
-              onValueChange={setIsTermsChecked}
-              color={isTermsChecked ? theme.activeText : undefined}
-            />
-            <Text style={[styles.remember, { color: theme.tertiaryText }]}>
-              I agree to the
-              <Link href="https://www.ishapps.com/terms-of-service">
-                <Text
-                  style={{
-                    color: theme.activeText,
-                    textDecorationLine: "underline",
-                  }}
-                >
-                  {" "}
-                  terms and conditions{" "}
-                </Text>
-              </Link>
-              &amp;
-              <Link href="https://www.ishapps.com/privacy-policy">
-                <Text
-                  style={{
-                    color: theme.activeText,
-                    textDecorationLine: "underline",
-                  }}
-                >
-                  {" "}
-                  privacy policy
-                </Text>
-              </Link>
-            </Text>
-          </View>
-        </View>
-        <TouchableOpacity
-          style={[
-            styles.button,
-            isLoading && { opacity: 0.6 },
-            { backgroundColor: theme.activeText },
-          ]}
-          onPress={handleLogin}
-          disabled={isLoading}
-        >
-          {isLoading && (
-            <Animated.View
-              style={{
-                marginRight: 10,
-                transform: [
-                  {
-                    rotate: spinAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: ["0deg", "360deg"],
-                    }),
-                  },
-                ],
-              }}
-            >
-              <AntDesign
-                name="loading-3-quarters"
-                size={20}
-                color={theme.white}
+              <Checkbox
+                style={styles.checkbox}
+                value={isTermsChecked}
+                onValueChange={setIsTermsChecked}
+                color={isTermsChecked ? theme.activeText : undefined}
               />
-            </Animated.View>
-          )}
-          <Text style={[styles.buttonText, { color: theme.white }]}>
-            {isLoading ? "signing you in..." : "Sign in"}
-          </Text>
-        </TouchableOpacity>
-      </View>
+              <Text style={[styles.remember, { color: theme.tertiaryText }]}>
+                I agree to the
+                <Link href="https://www.ishapps.com/terms-of-service">
+                  <Text
+                    style={{
+                      color: theme.activeText,
+                      textDecorationLine: "underline",
+                    }}
+                  >
+                    {" "}
+                    terms and conditions{" "}
+                  </Text>
+                </Link>
+                &amp;
+                <Link href="https://www.ishapps.com/privacy-policy">
+                  <Text
+                    style={{
+                      color: theme.activeText,
+                      textDecorationLine: "underline",
+                    }}
+                  >
+                    {" "}
+                    privacy policy
+                  </Text>
+                </Link>
+              </Text>
+            </View>
+          </View>
+          <TouchableOpacity
+            style={[
+              styles.button,
+              isLoading && { opacity: 0.6 },
+              { backgroundColor: theme.activeText },
+            ]}
+            onPress={handleLogin}
+            disabled={isLoading}
+          >
+            {isLoading && (
+              <Animated.View
+                style={{
+                  marginRight: 10,
+                  transform: [
+                    {
+                      rotate: spinAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: ["0deg", "360deg"],
+                      }),
+                    },
+                  ],
+                }}
+              >
+                <AntDesign
+                  name="loading-3-quarters"
+                  size={20}
+                  color={theme.white}
+                />
+              </Animated.View>
+            )}
+            <Text style={[styles.buttonText, { color: theme.white }]}>
+              {isLoading ? "signing you in..." : "Sign in"}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
@@ -444,7 +451,7 @@ const getStyles = (theme: typeof Colors.light) =>
     bottomContainer: {
       flex: 1,
       width: "100%",
-      height: "50%",
+      // height: "50%", // Remove fixed height to allow content to grow
       backgroundColor: theme.whiteBackground,
       paddingVertical: 20,
       paddingHorizontal: 20,
