@@ -16,14 +16,29 @@
         "ITSAppUsesNonExemptEncryption": false,
         "NSLocationWhenInUseUsageDescription": "Allow $(PRODUCT_NAME) to access your location while using the app to navigate to assigned shift locations and verify arrival when starting or ending a shift.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Allow $(PRODUCT_NAME) to access your location in the background to monitor travel to assigned shift locations and verify presence at the facility when starting or ending a shift.",
-        "UIBackgroundModes": ["location", "remote-notification"],
+        "UIBackgroundModes": [
+          "location",
+          "remote-notification",
+          "location",
+          "remote-notification"
+        ],
         "NSSupportsLiveActivities": true,
         "NSCalendarsUsageDescription": "Allow $(PRODUCT_NAME) to access your calendar to view and manage your scheduled shifts.",
-        "NSRemindersUsageDescription": "Allow $(PRODUCT_NAME) to access your reminders to set shift-related reminders and notifications."
+        "NSRemindersUsageDescription": "Allow $(PRODUCT_NAME) to access your reminders to set shift-related reminders and notifications.",
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLSchemes": [
+              "ishapps"
+            ]
+          }
+        ]
       },
       "entitlements": {
         "aps-environment": "production",
-        "com.apple.security.application-groups": ["group.com.apporio.iShapps"]
+        "com.apple.security.application-groups": [
+          "group.com.apporio.iShapps",
+          "group.com.apporio.iShapps"
+        ]
       }
     },
     "android": {
@@ -44,7 +59,17 @@
         "android.permission.ACCESS_BACKGROUND_LOCATION",
         "android.permission.FOREGROUND_SERVICE",
         "android.permission.READ_CALENDAR",
-        "android.permission.WRITE_CALENDAR"
+        "android.permission.WRITE_CALENDAR",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_BACKGROUND_LOCATION",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.READ_CALENDAR",
+        "android.permission.WRITE_CALENDAR",
+        "android.permission.RECORD_AUDIO"
       ],
       "package": "com.ishapps.app"
     },
@@ -147,7 +172,8 @@
           "calendarPermission": "Allow $(PRODUCT_NAME) to access your calendar to view and manage your scheduled shifts.",
           "remindersPermission": "Allow $(PRODUCT_NAME) to access your reminders to set shift-related reminders and notifications."
         }
-      ]
+      ],
+      "expo-localization"
     ],
     "experiments": {
       "typedRoutes": true,
@@ -162,6 +188,14 @@
         "oneSignalIosAppId": "6eccb82b-f125-4deb-acb3-e85ed263de94"
       }
     },
-    "owner": "ishapps"
+    "owner": "ishapps",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/17a2649d-0933-4036-b23a-49012513cd96",
+      "enabled": true,
+      "fallbackToCacheTimeout": 0
+    }
   }
 }

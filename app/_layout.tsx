@@ -1,5 +1,6 @@
 import { useSettingsStore } from "@/data-store/use-settings-store";
 import { useOneSignal } from "@/hooks/use-one-signal";
+import { useOTAUpdate } from "@/hooks/use-ota-update";
 import { usePermissionMonitor } from "@/hooks/use-permission-monitor";
 import { useShiftWatcher } from "@/hooks/use-shift-watcher";
 import {
@@ -27,6 +28,7 @@ SplashScreen.preventAutoHideAsync();
 const queryClient = new QueryClient();
 
 export default function Root() {
+  useOTAUpdate();
   useShiftWatcher();
   useOneSignal();
   usePermissionMonitor();

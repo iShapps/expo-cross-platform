@@ -224,6 +224,45 @@ export default function NotificationsScreen() {
                       </View>
                     ) : null
                   }
+                  ListEmptyComponent={
+                    !isLoading && !isError && tabNotifications.length === 0 ? (
+                      <View style={styles.emptyState}>
+                        <MaterialCommunityIcons
+                          name="broadcast-off"
+                          size={72}
+                          color={theme.grayBorder}
+                        />
+                        <Text
+                          style={{
+                            fontSize: 20,
+                            fontWeight: "700",
+                            color: theme.primary,
+                            marginBottom: 8,
+                          }}
+                        >
+                          No notifications yet
+                        </Text>
+                        <Text
+                          style={{
+                            fontSize: 15,
+                            color: theme.secondaryText,
+                            textAlign: "center",
+                            maxWidth: 260,
+                          }}
+                        >
+                          You have no{" "}
+                          <Text
+                            style={{
+                              textTransform: "lowercase",
+                            }}
+                          >
+                            {tabTypes[index].toLowerCase()}
+                          </Text>{" "}
+                          notifications at the moment.
+                        </Text>
+                      </View>
+                    ) : null
+                  }
                   contentContainerStyle={styles.listContainer}
                 />
               )}
