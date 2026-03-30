@@ -173,7 +173,15 @@
           "remindersPermission": "Allow $(PRODUCT_NAME) to access your reminders to set shift-related reminders and notifications."
         }
       ],
-      "expo-localization"
+      "expo-localization",
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://sentry.io/",
+          "project": "ishapps",
+          "organization": "truride"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
