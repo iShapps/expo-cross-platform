@@ -1,7 +1,9 @@
 import { useSettingsStore } from "@/data-store/use-settings-store";
 import { useOneSignal } from "@/hooks/use-one-signal";
+import { useOTAUpdate } from "@/hooks/use-ota-update";
 import { usePermissionMonitor } from "@/hooks/use-permission-monitor";
 import { useShiftWatcher } from "@/hooks/use-shift-watcher";
+import * as Sentry from "@sentry/react-native";
 import {
   focusManager,
   QueryClient,
@@ -16,6 +18,27 @@ import { GlobalUpdateGate } from "../components/global-update-gate";
 import { SessionProvider, useSession } from "./ctx";
 import { SplashScreenController } from "./splash";
 
+Sentry.init({
+  dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
+  sendDefaultPii: true,
+  enableLogs: true,
+  debug: true,
+
+  tracesSampleRate: 1.0,
+
+  // Configure Session Replay
+  replaysSessionSampleRate: 1.0,
+  replaysOnErrorSampleRate: 1.0,
+  integrations: [
+    Sentry.mobileReplayIntegration(),
+    Sentry.feedbackIntegration(),
+    Sentry.reactNativeTracingIntegration(),
+  ],
+
+  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+  spotlight: __DEV__,
+});
+
 // onlineManager.setEventListener((setOnline) => {
 //   const eventSubscription = Network.addNetworkStateListener((state) => {
 //     setOnline(!!state.isConnected)
@@ -26,7 +49,8 @@ import { SplashScreenController } from "./splash";
 SplashScreen.preventAutoHideAsync();
 const queryClient = new QueryClient();
 
-export default function Root() {
+export default Sentry.wrap(function Root() {
+  useOTAUpdate();
   useShiftWatcher();
   useOneSignal();
   usePermissionMonitor();
@@ -64,7 +88,7 @@ export default function Root() {
       <StatusBar style="auto" />
     </GestureHandlerRootView>
   );
-}
+});
 
 function RootNavigator() {
   const { session } = useSession();

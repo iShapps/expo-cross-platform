@@ -47,3 +47,4 @@ app-example
 
 upload_certificate.pem
 upload-keystore.jks
+.env.local

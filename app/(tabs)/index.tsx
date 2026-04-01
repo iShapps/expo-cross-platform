@@ -277,7 +277,7 @@ export default function HomeScreen() {
               <Text style={styles.dashboardTitle}>Upcoming</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              onPress={() => router.push("/(tabs)/shifts")}
+              onPress={() => router.push("/(tabs)/schedules")}
               style={[styles.dashboardCard, theme.dashboardCardMy]}
             >
               <View style={styles.dashboardTopRow}>
