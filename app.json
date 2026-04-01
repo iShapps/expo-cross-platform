@@ -27,9 +27,7 @@
         "NSRemindersUsageDescription": "Allow $(PRODUCT_NAME) to access your reminders to set shift-related reminders and notifications.",
         "CFBundleURLTypes": [
           {
-            "CFBundleURLSchemes": [
-              "ishapps"
-            ]
+            "CFBundleURLSchemes": ["ishapps"]
           }
         ]
       },
@@ -174,6 +172,7 @@
         }
       ],
       "expo-localization",
+      "@sentry/react-native",
       [
         "@sentry/react-native/expo",
         {
