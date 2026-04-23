@@ -2,7 +2,7 @@
   "expo": {
     "name": "iShapps",
     "slug": "ishapps",
-    "version": "2.9.1",
+    "version": "2.9.2",
     "orientation": "portrait",
     "icon": "./assets/images/smhealth.png",
     "scheme": "ishapps",
@@ -161,7 +161,17 @@
         {
           "url": "https://sentry.io/",
           "project": "ishapps",
-          "organization": "truride"
+          "organization": "truride",
+          "experimental_android": {
+            "enableAndroidGradlePlugin": true,
+            "autoUploadProguardMapping": true,
+            "includeProguardMapping": true,
+            "dexguardEnabled": true,
+            "uploadNativeSymbols": true,
+            "autoUploadNativeSymbols": true,
+            "includeNativeSources": true,
+            "includeSourceContext": true
+          }
         }
       ]
     ],
