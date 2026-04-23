@@ -16,7 +16,9 @@
     "production": {
       "autoIncrement": true,
       "env": {
-        "APP_ENV": "production"
+        "APP_ENV": "production",
+        "SENTRY_ORG": "truride",
+        "SENTRY_PROJECT": "ishapps"
       },
       "channel": "production"
     }
