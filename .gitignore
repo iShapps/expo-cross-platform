@@ -48,6 +48,8 @@ app-example
 upload_certificate.pem
 upload-keystore.jks
 .env.local
+.env.development
+.env.production
 
 # properties files
 sentry.properties

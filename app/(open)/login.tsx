@@ -379,7 +379,7 @@ export default function Login() {
               />
               <Text style={[styles.remember, { color: theme.tertiaryText }]}>
                 I agree to the
-                <Link href="https://www.ishapps.com/terms-of-service">
+                <Link href="https://smarthealthcaresolutions.com.au/terms-of-use">
                   <Text
                     style={{
                       color: theme.activeText,
@@ -391,7 +391,7 @@ export default function Login() {
                   </Text>
                 </Link>
                 &amp;
-                <Link href="https://www.ishapps.com/privacy-policy">
+                <Link href="https://smarthealthcaresolutions.com.au/privacy-policy">
                   <Text
                     style={{
                       color: theme.activeText,
