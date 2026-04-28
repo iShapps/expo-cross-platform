@@ -162,7 +162,6 @@
         }
       ],
       "expo-localization",
-      "@sentry/react-native",
       [
         "@sentry/react-native/expo",
         {
@@ -181,7 +180,8 @@
           }
         }
       ],
-      "expo-web-browser"
+      "expo-web-browser",
+      "@sentry/react-native"
     ],
     "experiments": {
       "typedRoutes": true,
