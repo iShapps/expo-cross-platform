@@ -22,13 +22,13 @@ Sentry.init({
   dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
   sendDefaultPii: true,
   enableLogs: true,
-  debug: true,
+  debug: __DEV__,
 
-  tracesSampleRate: 1.0,
+  tracesSampleRate: 0.1,
 
   // Configure Session Replay
-  replaysSessionSampleRate: 1.0,
-  replaysOnErrorSampleRate: 1.0,
+  replaysSessionSampleRate: 0.05, // Capture 5% of all sessions for replay
+  replaysOnErrorSampleRate: 1.0, // Capture 100% of sessions with errors for replay
   integrations: [
     Sentry.mobileReplayIntegration(),
     Sentry.feedbackIntegration(),
