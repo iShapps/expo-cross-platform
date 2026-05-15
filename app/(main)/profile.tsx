@@ -35,7 +35,9 @@ export default function ProfileScreen() {
     queryFn: () => queryClient.getQueryData<User>(["profile-details"]) as User,
     enabled: false,
     staleTime: Infinity,
+    gcTime: Infinity,
   });
+
   const hcp = userDetails?.hcp;
   const [optimisticValue, setOptimisticValue] = useState<boolean | null>(null);
   const isAvailable =
