@@ -33,8 +33,8 @@ export default function More() {
   const { data: userDetails } = useQuery<User>({
     queryKey: ["profile-details"],
     queryFn: () => queryClient.getQueryData<User>(["profile-details"]) as User,
-    enabled: false,
     staleTime: Infinity,
+    gcTime: Infinity,
   });
   const hcp = userDetails?.hcp;
   const [optimisticValue, setOptimisticValue] = useState<boolean | null>(null);
