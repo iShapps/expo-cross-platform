@@ -4,7 +4,7 @@ import {
   postPendingApprovalShifts,
   postRunningShifts,
   postScheduledShifts,
-  postTransferredShifts
+  postTransferredShifts,
 } from "@/api-queries/post-pending-shifts";
 import { ShiftCardBase } from "@/components/pay-run";
 import TabsHeader from "@/components/shared/tabs-header";

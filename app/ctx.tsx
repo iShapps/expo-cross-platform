@@ -1,3 +1,4 @@
+import { registerAuthExpiredHandler } from "@/api-actions/error-utils";
 import { useProfileData } from "@/data-store/use-account-store";
 import LoginCredentials, { User } from "@/data-types/auth";
 import { onLoginSuccess } from "@/hooks/use-one-signal";
@@ -140,7 +141,7 @@ export function SessionProvider(props: React.PropsWithChildren) {
     setAuthToken(token);
   };
 
-  const handleSignOut = async () => {
+  const handleSignOut = React.useCallback(async () => {
     try {
       await apiLogout();
       // Logout from OneSignal to stop push notifications
@@ -153,8 +154,16 @@ export function SessionProvider(props: React.PropsWithChildren) {
       setUserJson(null);
       removeToken();
       profileStore.clearDetails();
+      queryClient.clear();
     }
-  };
+  }, [profileStore, queryClient, setSession, setUserJson]);
+
+  useEffect(() => {
+    return registerAuthExpiredHandler(async ({ message }) => {
+      await handleSignOut();
+      Alert.alert("Session Expired", message, [{ text: "OK" }]);
+    });
+  }, [handleSignOut]);
 
   return (
     <AuthContext.Provider

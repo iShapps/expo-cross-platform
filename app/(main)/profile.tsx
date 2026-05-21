@@ -1,3 +1,4 @@
+import { isAuthError } from "@/api-actions/error-utils";
 import { updateAvailability } from "@/api-queries/profile";
 import Header from "@/components/Header";
 import { Colors } from "@/constants/theme";
@@ -72,9 +73,15 @@ export default function ProfileScreen() {
           Alert.alert("Error", response.message);
         }
       },
-      onError: () => {
+      onError: (error) => {
         setOptimisticValue(null);
-        Alert.alert("Error", "An error occurred while updating your status.");
+        if (isAuthError(error)) return;
+        Alert.alert(
+          "Error",
+          error instanceof Error
+            ? error.message
+            : "An error occurred while updating your status.",
+        );
       },
     });
   };

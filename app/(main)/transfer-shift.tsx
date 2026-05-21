@@ -1,3 +1,4 @@
+import { isAuthError } from "@/api-actions/error-utils";
 import { ApiMutationError } from "@/api-actions/mutations";
 import { getAllHcps } from "@/api-queries/hcps";
 import { transferShift } from "@/api-queries/profile";
@@ -148,6 +149,7 @@ const TransferShift = () => {
     },
 
     onError: (error: ApiMutationError) => {
+      if (isAuthError(error)) return;
       const message =
         error?.message || "Shift transfer failed. Please try again.";
       Alert.alert("Error", message);
