@@ -1,3 +1,4 @@
+import { isAuthError } from "@/api-actions/error-utils";
 import {
   postAcceptShift,
   postAcceptShiftTransfer,
@@ -327,6 +328,7 @@ export default function ShiftDetails() {
         queryClient.invalidateQueries({ queryKey: ["notifications"] }),
       ]);
     } catch (error) {
+      if (isAuthError(error)) return;
       showAlert(
         "Error",
         error instanceof Error ? error.message : "Failed to accept shift.",
@@ -380,6 +382,7 @@ export default function ShiftDetails() {
         queryClient.invalidateQueries({ queryKey: ["notifications"] }),
       ]);
     } catch (error) {
+      if (isAuthError(error)) return;
       showAlert(
         "Error",
         error instanceof Error
@@ -454,6 +457,7 @@ export default function ShiftDetails() {
         queryClient.invalidateQueries({ queryKey: ["notifications"] }),
       ]);
     } catch (error) {
+      if (isAuthError(error)) return;
       showAlert(
         "Error",
         error instanceof Error ? error.message : "Failed to start shift.",
@@ -496,6 +500,7 @@ export default function ShiftDetails() {
       //   },
       // });
     } catch (error) {
+      if (isAuthError(error)) return;
       showAlert(
         "Error",
         error instanceof Error ? error.message : "Failed to end shift.",

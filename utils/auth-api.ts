@@ -1,10 +1,10 @@
+import { extractApiErrorMessage } from "@/api-actions/error-utils";
 import { setStorageItemAsync } from "@/app/useStorageState";
 import LoginCredentials, {
   ForgotPasswordErrorResponse,
   ForgotPasswordRequest,
   ForgotPasswordSuccessResponse,
   LoginErrorResponse,
-  LoginResponse,
   LoginSuccessResponse,
   ResetPasswordErrorResponse,
   ResetPasswordRequest,
@@ -83,6 +83,10 @@ export class NetworkError extends Error {
   }
 }
 
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
 // Validation
 const validateEmail = (email: string): boolean => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -137,21 +141,36 @@ export const login = async (
 
     clearTimeout(timeoutId);
 
-    const data: LoginResponse = await response.json();
-
-    if (response.ok && data.status === true) {
-      await TokenStorage.saveToken(data.data.access_token);
-
-      return data as LoginSuccessResponse;
+    const responseText = await response.text();
+    let data: unknown = null;
+    try {
+      data = responseText ? JSON.parse(responseText) : null;
+    } catch (jsonError) {
+      console.error("Login JSON parse error:", jsonError);
+      if (!response.ok) {
+        data = { message: responseText.trim() || "Login failed" };
+      } else {
+        throw new AuthenticationError(
+          "Invalid server response (not JSON)",
+          response.status,
+        );
+      }
     }
 
-    if (!data.status) {
+    if (response.ok && isObject(data) && data.status === true) {
+      const successData = data as unknown as LoginSuccessResponse;
+      await TokenStorage.saveToken(successData.data.access_token);
+
+      return successData;
+    }
+
+    if (!response.ok || (isObject(data) && data.status === false)) {
       const errorData = data as LoginErrorResponse;
       console.log("errorData", errorData);
       throw new AuthenticationError(
-        errorData.message || "Login failed",
+        extractApiErrorMessage(data, "Login failed"),
         response.status,
-        errorData.errors,
+        isObject(data) ? errorData.errors : undefined,
       );
     }
 

@@ -1,3 +1,8 @@
+import {
+  extractApiErrorMessage,
+  isUnauthorizedStatus,
+  notifyAuthExpired,
+} from "@/api-actions/error-utils";
 import { TokenStorage } from "@/utils/auth-api";
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL;
@@ -6,11 +11,13 @@ const API_TIMEOUT = 30000;
 export class ApiMutationError extends Error {
   public statusCode?: number;
   public details?: unknown;
+  public isAuthError: boolean;
   constructor(message: string, statusCode?: number, details?: unknown) {
     super(message);
     this.name = "ApiMutationError";
     this.statusCode = statusCode;
     this.details = details;
+    this.isAuthError = isUnauthorizedStatus(statusCode);
   }
 }
 
@@ -44,14 +51,19 @@ async function authorizedMutation<Req, Res>(
     });
     clearTimeout(timeoutId);
     let data: unknown;
+    const responseText = await response.text();
     try {
-      data = await response.json();
+      data = responseText ? JSON.parse(responseText) : null;
     } catch (jsonError) {
       console.error("JSON parse error:", jsonError);
-      throw new ApiMutationError(
-        "Invalid server response (not JSON)",
-        response.status,
-      );
+      if (!response.ok) {
+        data = { message: responseText.trim() || "Invalid server response" };
+      } else {
+        throw new ApiMutationError(
+          "Invalid server response (not JSON)",
+          response.status,
+        );
+      }
     }
     if (!response.ok) {
       console.error("API error response:", {
@@ -59,28 +71,20 @@ async function authorizedMutation<Req, Res>(
         body: data,
       });
 
-      const apiMessage = isObject(data)
-        ? // body.message
-          (isObject((data as any).body) &&
-            typeof (data as any).body.message === "string" &&
-            (data as any).body.message) ||
-          // body.errors
-          (isObject((data as any).body) &&
-            Array.isArray((data as any).body.errors) &&
-            (data as any).body.errors.length > 0 &&
-            (data as any).body.errors[0]) ||
-          // message at root
-          (typeof (data as any).message === "string" &&
-            (data as any).message) ||
-          // error at root
-          (typeof (data as any).error === "string" && (data as any).error)
-        : undefined;
-
       const finalMessage =
-        apiMessage || `Failed to ${method === "POST" ? "create" : "update"}`;
+        extractApiErrorMessage(
+          data,
+          `Failed to ${method === "POST" ? "create" : "update"}`,
+        ) || "API error";
       console.error("API error finalMessage:", finalMessage);
+      if (isUnauthorizedStatus(response.status)) {
+        await notifyAuthExpired({
+          message: finalMessage,
+          statusCode: response.status,
+        });
+      }
       throw new ApiMutationError(
-        finalMessage || "API error",
+        finalMessage,
         response.status,
         data,
       );
