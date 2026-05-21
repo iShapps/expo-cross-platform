@@ -1,3 +1,8 @@
+import {
+  extractApiErrorMessage,
+  isUnauthorizedStatus,
+  notifyAuthExpired,
+} from "@/api-actions/error-utils";
 import { TokenStorage } from "@/utils/auth-api";
 // TODO: Implement proper typing for shift data and responses
 
@@ -5,12 +10,15 @@ const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 const API_TIMEOUT = 30000;
 
 export class ShiftApiError extends Error {
+  public isAuthError: boolean;
+
   constructor(
     message: string,
     public statusCode?: number,
   ) {
     super(message);
     this.name = "ShiftApiError";
+    this.isAuthError = isUnauthorizedStatus(statusCode);
   }
 }
 
@@ -64,19 +72,29 @@ export async function fetchShifts(): Promise<any[]> {
       method: "GET",
     });
     let data: any;
+    const responseText = await response.text();
     try {
-      data = await response.json();
+      data = responseText ? JSON.parse(responseText) : null;
     } catch (jsonError) {
       console.error("JSON parse error:", jsonError);
-      throw new ShiftApiError(
-        "Invalid server response (not JSON)",
-        response.status,
-      );
+      if (!response.ok) {
+        data = { message: responseText.trim() || "Invalid server response" };
+      } else {
+        throw new ShiftApiError(
+          "Invalid server response (not JSON)",
+          response.status,
+        );
+      }
     }
     if (!response.ok) {
       // Surface API error details if available
-      const apiMessage =
-        data?.message || data?.error || "Failed to fetch shifts";
+      const apiMessage = extractApiErrorMessage(data, "Failed to fetch shifts");
+      if (isUnauthorizedStatus(response.status)) {
+        await notifyAuthExpired({
+          message: apiMessage,
+          statusCode: response.status,
+        });
+      }
       throw new ShiftApiError(apiMessage, response.status);
     }
     if (!data || typeof data !== "object") {
@@ -107,18 +125,28 @@ export async function fetchShiftById(shiftId: string): Promise<any> {
       },
     );
     let data: any;
+    const responseText = await response.text();
     try {
-      data = await response.json();
+      data = responseText ? JSON.parse(responseText) : null;
     } catch (jsonError) {
       console.error("JSON parse error:", jsonError);
-      throw new ShiftApiError(
-        "Invalid server response (not JSON)",
-        response.status,
-      );
+      if (!response.ok) {
+        data = { message: responseText.trim() || "Invalid server response" };
+      } else {
+        throw new ShiftApiError(
+          "Invalid server response (not JSON)",
+          response.status,
+        );
+      }
     }
     if (!response.ok) {
-      const apiMessage =
-        data?.message || data?.error || "Failed to fetch shift";
+      const apiMessage = extractApiErrorMessage(data, "Failed to fetch shift");
+      if (isUnauthorizedStatus(response.status)) {
+        await notifyAuthExpired({
+          message: apiMessage,
+          statusCode: response.status,
+        });
+      }
       throw new ShiftApiError(apiMessage, response.status);
     }
     if (!data || typeof data !== "object") {
@@ -145,18 +173,31 @@ export async function fetchDashboard(): Promise<any> {
       method: "GET",
     });
     let data: any;
+    const responseText = await response.text();
     try {
-      data = await response.json();
+      data = responseText ? JSON.parse(responseText) : null;
     } catch (jsonError) {
       console.error("JSON parse error:", jsonError);
-      throw new ShiftApiError(
-        "Invalid server response (not JSON)",
-        response.status,
-      );
+      if (!response.ok) {
+        data = { message: responseText.trim() || "Invalid server response" };
+      } else {
+        throw new ShiftApiError(
+          "Invalid server response (not JSON)",
+          response.status,
+        );
+      }
     }
     if (!response.ok) {
-      const apiMessage =
-        data?.message || data?.error || "Failed to fetch dashboard";
+      const apiMessage = extractApiErrorMessage(
+        data,
+        "Failed to fetch dashboard data",
+      );
+      if (isUnauthorizedStatus(response.status)) {
+        await notifyAuthExpired({
+          message: apiMessage,
+          statusCode: response.status,
+        });
+      }
       throw new ShiftApiError(apiMessage, response.status);
     }
     if (!data || typeof data !== "object") {

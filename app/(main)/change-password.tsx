@@ -1,3 +1,4 @@
+import { isAuthError } from "@/api-actions/error-utils";
 import { ApiMutationError } from "@/api-actions/mutations";
 import { changePassword } from "@/api-queries/profile";
 import Header from "@/components/Header";
@@ -56,6 +57,7 @@ export default function ChangePasswordScreen() {
     },
 
     onError: (error: ApiMutationError) => {
+      if (isAuthError(error)) return;
       const message =
         error?.message || "Password change failed. Please try again.";
 

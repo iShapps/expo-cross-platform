@@ -1,3 +1,4 @@
+import { isAuthError } from "@/api-actions/error-utils";
 import Feather from "@expo/vector-icons/Feather";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 
@@ -93,9 +94,15 @@ export default function More() {
           Alert.alert("Error", response.message);
         }
       },
-      onError: () => {
+      onError: (error) => {
         setOptimisticValue(null);
-        Alert.alert("Error", "An error occurred while updating your status.");
+        if (isAuthError(error)) return;
+        Alert.alert(
+          "Error",
+          error instanceof Error
+            ? error.message
+            : "An error occurred while updating your status.",
+        );
       },
     });
   };

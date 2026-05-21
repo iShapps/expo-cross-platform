@@ -1,3 +1,4 @@
+import { isAuthError } from "@/api-actions/error-utils";
 import { rateShift } from "@/api-queries/profile";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
@@ -64,8 +65,14 @@ export default function ReviewScreen() {
           Alert.alert("Error", response.message);
         }
       },
-      onError: () => {
-        Alert.alert("Error", "An error occurred while updating your status.");
+      onError: (error) => {
+        if (isAuthError(error)) return;
+        Alert.alert(
+          "Error",
+          error instanceof Error
+            ? error.message
+            : "An error occurred while submitting your review.",
+        );
       },
     });
   };
