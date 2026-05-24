@@ -1,3 +1,5 @@
+import * as Sentry from "@sentry/react-native";
+
 type AuthExpiredPayload = {
   message: string;
   statusCode: number;
@@ -29,6 +31,38 @@ function collectMessages(value: unknown): string[] {
   }
 
   return [];
+}
+
+export function logApiErrorToSentry(
+  error: unknown,
+  context?: Record<string, unknown>,
+) {
+  const message = extractApiErrorMessage(
+    isObject(error) ? error : undefined,
+    "API request failed",
+  );
+
+  Sentry.withScope((scope) => {
+    scope.setTag("type", "api_error");
+
+    if (isObject(error)) {
+      scope.setContext("api_error", {
+        ...error,
+        ...context,
+      });
+    } else {
+      scope.setContext("api_error", {
+        error,
+        ...context,
+      });
+    }
+
+    if (error instanceof Error) {
+      Sentry.captureException(error);
+    } else {
+      Sentry.captureException(new Error(message));
+    }
+  });
 }
 
 export function extractApiErrorMessage(
@@ -89,7 +123,16 @@ export async function notifyAuthExpired(payload: AuthExpiredPayload) {
   if (isHandlingAuthExpired) return;
 
   isHandlingAuthExpired = true;
+
   try {
+    Sentry.withScope((scope) => {
+      scope.setTag("type", "auth_expired");
+      scope.setLevel("warning");
+      scope.setContext("auth_expired", payload);
+
+      Sentry.captureMessage(payload.message || "Authentication expired");
+    });
+
     await authExpiredHandler?.(payload);
   } finally {
     isHandlingAuthExpired = false;

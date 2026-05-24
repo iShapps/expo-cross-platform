@@ -1,6 +1,7 @@
 import {
   extractApiErrorMessage,
   isUnauthorizedStatus,
+  logApiErrorToSentry,
   notifyAuthExpired,
 } from "@/api-actions/error-utils";
 import { TokenStorage } from "@/utils/auth-api";
@@ -83,11 +84,7 @@ async function authorizedMutation<Req, Res>(
           statusCode: response.status,
         });
       }
-      throw new ApiMutationError(
-        finalMessage,
-        response.status,
-        data,
-      );
+      throw new ApiMutationError(finalMessage, response.status, data);
     }
     if (!isObject(data)) {
       throw new ApiMutationError(
@@ -109,6 +106,11 @@ async function authorizedMutation<Req, Res>(
     // ) as Res;
     return data as Res;
   } catch (error) {
+    logApiErrorToSentry(error, {
+      endpoint: url,
+      method,
+    });
+
     clearTimeout(timeoutId);
     if (error instanceof ApiMutationError) throw error;
     if (error instanceof Error && error.name === "AbortError") {
