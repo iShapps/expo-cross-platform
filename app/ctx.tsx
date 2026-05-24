@@ -1,4 +1,7 @@
-import { registerAuthExpiredHandler } from "@/api-actions/error-utils";
+import {
+  logApiErrorToSentry,
+  registerAuthExpiredHandler,
+} from "@/api-actions/error-utils";
 import { useProfileData } from "@/data-store/use-account-store";
 import LoginCredentials, { User } from "@/data-types/auth";
 import { onLoginSuccess } from "@/hooks/use-one-signal";
@@ -104,6 +107,10 @@ export function SessionProvider(props: React.PropsWithChildren) {
 
       Alert.alert("Success", "Login successful!", [{ text: "OK" }]);
     } catch (error) {
+      logApiErrorToSentry(error, {
+        endpoint: "/login",
+        method: "POST",
+      });
       // Handle errors with alerts
       if (error instanceof AuthenticationError) {
         let errorMessage = error.message;
