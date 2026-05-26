@@ -6,10 +6,11 @@ import { updateAvailability } from "@/api-queries/profile";
 import Header from "@/components/Header";
 import { Colors } from "@/constants/theme";
 import { useConfigSettings } from "@/data-store/config-store";
+import { useProfileData } from "@/data-store/use-account-store";
 import { User } from "@/data-types/auth";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { MaterialIcons } from "@expo/vector-icons";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { BlurView } from "expo-blur";
 import { Image } from "expo-image";
 import { router } from "expo-router";
@@ -31,12 +32,8 @@ export default function More() {
   const { signOut } = useSession();
   const configSettings = useConfigSettings();
   const queryClient = useQueryClient();
-  const { data: userDetails } = useQuery<User>({
-    queryKey: ["profile-details"],
-    queryFn: () => queryClient.getQueryData<User>(["profile-details"]) as User,
-    staleTime: Infinity,
-    gcTime: Infinity,
-  });
+  const profileStore = useProfileData();
+  const userDetails = profileStore.userDetails;
   const hcp = userDetails?.hcp;
   const [optimisticValue, setOptimisticValue] = useState<boolean | null>(null);
   const isAvailable =
@@ -79,10 +76,18 @@ export default function More() {
       onSuccess: (response) => {
         setOptimisticValue(null);
         if (response.status) {
+          const nextUserDetails = userDetails
+            ? {
+                ...userDetails,
+                hcp: { ...userDetails.hcp, available_for_job: value ? 1 : 0 },
+              }
+            : null;
+
+          profileStore.setUserDetails(nextUserDetails);
           queryClient.setQueryData<User | undefined>(
             ["profile-details"],
             (old) => {
-              if (!old) return old;
+              if (!old) return nextUserDetails ?? old;
               return {
                 ...old,
                 hcp: { ...old.hcp, available_for_job: value ? 1 : 0 },
