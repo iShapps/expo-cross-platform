@@ -175,7 +175,7 @@ export default function SettingsScreen() {
                   gap: 3,
                 }}
               >
-                {!isChecking && !isSetup && !hcp?.device_id && (
+                {((!isChecking && !isSetup) || !hcp?.device_id) && (
                   <Text style={styles.settingError}>
                     Push notifications are not set up on this device.
                   </Text>
@@ -189,7 +189,7 @@ export default function SettingsScreen() {
                     gap: 10,
                   }}
                 >
-                  {!isChecking && !isSetup && !hcp?.device_id && (
+                  {((!isChecking && !isSetup) || !hcp?.device_id) && (
                     <Pressable
                       onPress={handleRetryNotificationsSetup}
                       disabled={isRetryingNotifications}
