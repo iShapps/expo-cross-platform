@@ -19,6 +19,7 @@ interface SettingsState {
   calendarEnabled: boolean;
   theme: Theme;
   biometricsEnabled: boolean;
+  hasHydrated: boolean;
 
   setLocation: (value: boolean) => void;
   setNotifications: (value: boolean) => void;
@@ -67,6 +68,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   notificationsEnabled: false,
   calendarEnabled: false,
   biometricsEnabled: false,
+  hasHydrated: false,
   theme: "light",
 
   setLocation: async (value) => {
@@ -422,10 +424,12 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
           storedBiometrics !== null
             ? JSON.parse(storedBiometrics) && biometricsAvailable
             : biometricsAvailable,
+        hasHydrated: true,
         theme: (theme as Theme) || "light",
       });
     } catch (err) {
       console.error("Failed to hydrate settings store", err);
+      set({ hasHydrated: true });
     }
   },
 

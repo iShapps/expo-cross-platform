@@ -1,18 +1,25 @@
 import { Colors } from "@/constants/theme";
 import { useSettingsStore } from "@/data-store/use-settings-store";
+import LoginCredentials from "@/data-types/auth";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { useOneSignal, waitForSubscriptionId } from "@/hooks/use-one-signal";
+import {
+  ensureOneSignalSubscriptionId,
+  useOneSignal,
+} from "@/hooks/use-one-signal";
 import {
   authenticateWithBiometrics,
   isBiometricAllowed,
   isBiometricAvailable,
 } from "@/utils/biometrics";
+import {
+  getLoginCredentials,
+  saveLoginCredentials,
+} from "@/utils/secure-login-credentials";
 import { AntDesign, Entypo, FontAwesome6, Ionicons } from "@expo/vector-icons";
 import { Checkbox } from "expo-checkbox";
 import * as Device from "expo-device";
 import { Image } from "expo-image";
 import { Link } from "expo-router";
-import * as SecureStore from "expo-secure-store";
 import { useEffect, useRef, useState } from "react";
 import {
   Alert,
@@ -36,7 +43,7 @@ export default function Login() {
   const theme = Colors[colorScheme];
   const styles = getStyles(theme);
 
-  const oneSignal = useOneSignal();
+  useOneSignal();
   const insets = useSafeAreaInsets();
 
   const [email, setEmail] = useState("");
@@ -84,19 +91,6 @@ export default function Login() {
     })();
   }, []);
 
-  // TODO:encrypt stored credentials for production security(only token)
-  const storeCredentials = async (email: string, password: string) => {
-    await SecureStore.setItemAsync("ishapps_email", email);
-    await SecureStore.setItemAsync("ishapps_password", password);
-  };
-
-  //Retrieve credentials for biometric login
-  const getStoredCredentials = async () => {
-    const storedEmail = await SecureStore.getItemAsync("ishapps_email");
-    const storedPassword = await SecureStore.getItemAsync("ishapps_password");
-    return { email: storedEmail, password: storedPassword };
-  };
-
   const handleLogin = async () => {
     // check if terms are accepted
     if (!isTermsChecked) {
@@ -108,8 +102,9 @@ export default function Login() {
       return;
     }
     try {
-      const subscriptionId = await waitForSubscriptionId();
-      await signIn({
+      const subscriptionId = await ensureOneSignalSubscriptionId();
+
+      const loginPayload: LoginCredentials = {
         email,
         password,
         // optionals : get device info
@@ -123,14 +118,21 @@ export default function Login() {
         // Device.deviceName; // "Vivian's iPhone XS"
         // Device.designName; // Android: "kminilte"; iOS: null; web: null
         // Device.brand; // Android: "google", "xiaomi"; iOS: "Apple"; web: null
-        device_id: subscriptionId ?? "", //to change to oneSignal's sub id for push notifications
         device_name: Device.deviceName ?? Device.modelName ?? "Unknown Device",
         device_type: Device.deviceType?.toString() ?? "Unknown Device", //Device.osName ?? "Unknown Device",
         device_version: Device.osVersion ?? "Unknown Version",
-      });
+        device_id: "",
+      };
+
+      if (subscriptionId) {
+        loginPayload.device_id = subscriptionId;
+      }
+
+      console.log("[loginPayload]", loginPayload);
+      await signIn(loginPayload);
 
       if (biometricSupported && biometricAllowed) {
-        await storeCredentials(email, password);
+        await saveLoginCredentials(email, password);
       }
 
       // Ask for biometric consent after successful login if supported but not yet allowed
@@ -142,7 +144,7 @@ export default function Login() {
             {
               text: "Yes",
               onPress: async () => {
-                await storeCredentials(email, password);
+                await saveLoginCredentials(email, password);
                 Alert.alert(
                   "Biometric login enabled",
                   "You can now use biometrics to sign in.",
@@ -182,7 +184,7 @@ export default function Login() {
         return;
       }
       // Retrieve stored credentials
-      const creds = await getStoredCredentials();
+      const creds = await getLoginCredentials();
       if (!creds.email || !creds.password) {
         Alert.alert(
           "No credentials",
