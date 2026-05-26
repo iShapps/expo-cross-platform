@@ -114,11 +114,9 @@ export const login = async (
     // Validate input
     validateCredentials(credentials);
 
-    console.log("Logging in with credentials:", { credentials });
     // Create abort controller for timeout
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), API_CONFIG.timeout);
-
     const response = await fetch(
       `${API_CONFIG.baseURL}${API_CONFIG.endpoints.login}`,
       {

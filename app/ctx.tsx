@@ -1,7 +1,13 @@
-import { registerAuthExpiredHandler } from "@/api-actions/error-utils";
+import {
+  logApiErrorToSentry,
+  registerAuthExpiredHandler,
+} from "@/api-actions/error-utils";
 import { useProfileData } from "@/data-store/use-account-store";
 import LoginCredentials, { User } from "@/data-types/auth";
-import { onLoginSuccess } from "@/hooks/use-one-signal";
+import {
+  ensureOneSignalSubscriptionId,
+  onLoginSuccess,
+} from "@/hooks/use-one-signal";
 import { removeToken, setToken as setAuthToken } from "@/utils/auth";
 import {
   login as apiLogin,
@@ -9,6 +15,10 @@ import {
   AuthenticationError,
   NetworkError,
 } from "@/utils/auth-api";
+import {
+  getLoginCredentials,
+  saveLoginCredentials,
+} from "@/utils/secure-login-credentials";
 import { useQueryClient } from "@tanstack/react-query";
 import { usePathname, useRouter, useSegments } from "expo-router";
 import React, { useEffect } from "react";
@@ -17,6 +27,7 @@ import { useStorageState } from "./useStorageState";
 
 const AuthContext = React.createContext<{
   signIn: (data: LoginCredentials) => Promise<void>;
+  retryNotificationSetup: () => Promise<boolean>;
   setSess: (data: string) => void;
   signOut: () => void;
   session?: string | null;
@@ -24,6 +35,7 @@ const AuthContext = React.createContext<{
   isLoading: boolean;
 }>({
   signIn: () => Promise.resolve(),
+  retryNotificationSetup: () => Promise.resolve(false),
   setSess: () => null,
   signOut: () => null,
   session: null,
@@ -90,8 +102,9 @@ export function SessionProvider(props: React.PropsWithChildren) {
 
       // Save token and user data
       setSession(result.data.access_token);
-      setAuthToken(result.data.access_token);
+      await setAuthToken(result.data.access_token);
       setUserJson(JSON.stringify(result.data.user));
+      await saveLoginCredentials(credentials.email, credentials.password);
 
       // Update profile store if needed
       profileStore.setToken(result.data.access_token);
@@ -104,6 +117,10 @@ export function SessionProvider(props: React.PropsWithChildren) {
 
       Alert.alert("Success", "Login successful!", [{ text: "OK" }]);
     } catch (error) {
+      logApiErrorToSentry(error, {
+        endpoint: "/login",
+        method: "POST",
+      });
       // Handle errors with alerts
       if (error instanceof AuthenticationError) {
         let errorMessage = error.message;
@@ -141,6 +158,36 @@ export function SessionProvider(props: React.PropsWithChildren) {
     setAuthToken(token);
   };
 
+  const handleRetryNotificationSetup = React.useCallback(async () => {
+    const subscriptionId = await ensureOneSignalSubscriptionId();
+
+    if (!subscriptionId) {
+      return false;
+    }
+
+    const credentials = await getLoginCredentials();
+
+    if (!credentials.email || !credentials.password) {
+      return false;
+    }
+
+    const result = await apiLogin({
+      email: credentials.email,
+      password: credentials.password,
+      device_id: subscriptionId,
+    });
+
+    setSession(result.data.access_token);
+    await setAuthToken(result.data.access_token);
+    setUserJson(JSON.stringify(result.data.user));
+    profileStore.setToken(result.data.access_token);
+    profileStore.setUserDetails(result.data.user);
+    queryClient.setQueryData(["profile-details"], result.data.user);
+    await onLoginSuccess(result.data.user.id.toString());
+
+    return true;
+  }, [profileStore, queryClient, setSession, setUserJson]);
+
   const handleSignOut = React.useCallback(async () => {
     try {
       await apiLogout();
@@ -169,6 +216,7 @@ export function SessionProvider(props: React.PropsWithChildren) {
     <AuthContext.Provider
       value={{
         signIn: handleSignIn,
+        retryNotificationSetup: handleRetryNotificationSetup,
         setSess: handleSetSession,
         signOut: handleSignOut,
         session,
