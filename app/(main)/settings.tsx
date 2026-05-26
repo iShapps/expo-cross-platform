@@ -29,6 +29,7 @@ export default function SettingsScreen() {
   const { retryNotificationSetup, user } = useSession();
   const [isRetryingNotifications, setIsRetryingNotifications] = useState(false);
   const [isTestingNotifications, setIsTestingNotifications] = useState(false);
+  const hcp = user;
 
   // State for toggles
   const {
@@ -174,7 +175,7 @@ export default function SettingsScreen() {
                   gap: 3,
                 }}
               >
-                {!isChecking && !isSetup && (
+                {!isChecking && !isSetup && !hcp?.device_id && (
                   <Text style={styles.settingError}>
                     Push notifications are not set up on this device.
                   </Text>
@@ -188,7 +189,7 @@ export default function SettingsScreen() {
                     gap: 10,
                   }}
                 >
-                  {!isChecking && !isSetup && (
+                  {!isChecking && !isSetup && !hcp?.device_id && (
                     <Pressable
                       onPress={handleRetryNotificationsSetup}
                       disabled={isRetryingNotifications}
