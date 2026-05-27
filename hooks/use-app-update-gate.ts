@@ -42,6 +42,9 @@ export const useAppUpdateGate = () => {
     staleTime: 1000 * 60 * 60 * 24,
     refetchInterval: 1000 * 60 * 60 * 24,
     refetchIntervalInBackground: true,
+    retry: 1,
+    refetchOnReconnect: true,
+    refetchOnWindowFocus: false,
   });
 
   useEffect(() => {

@@ -51,6 +51,8 @@ export default function Login() {
   const [isTermsChecked, setIsTermsChecked] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const { signIn, isLoading } = useSession();
+  const [isSubmittingLogin, setIsSubmittingLogin] = useState(false);
+  const isLoginBusy = isLoading || isSubmittingLogin;
 
   const [biometricSupported, setBiometricSupported] = useState(false);
   const [biometricAllowed, setBiometricAllowed] = useState(false);
@@ -60,9 +62,17 @@ export default function Login() {
   );
 
   const spinAnim = useRef(new Animated.Value(0)).current;
+  const isMountedRef = useRef(true);
+  const loginInFlightRef = useRef(false);
 
   useEffect(() => {
-    if (isLoading) {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (isLoginBusy) {
       Animated.loop(
         Animated.timing(spinAnim, {
           toValue: 1,
@@ -75,7 +85,7 @@ export default function Login() {
       spinAnim.stopAnimation();
       spinAnim.setValue(0);
     }
-  }, [isLoading, spinAnim]);
+  }, [isLoginBusy, spinAnim]);
 
   // Check for biometric support on mount
   useEffect(() => {
@@ -92,6 +102,10 @@ export default function Login() {
   }, []);
 
   const handleLogin = async () => {
+    if (isLoginBusy || loginInFlightRef.current) {
+      return;
+    }
+
     // check if terms are accepted
     if (!isTermsChecked) {
       Alert.alert(
@@ -101,6 +115,10 @@ export default function Login() {
       );
       return;
     }
+
+    loginInFlightRef.current = true;
+    setIsSubmittingLogin(true);
+
     try {
       const subscriptionId = await ensureOneSignalSubscriptionId();
 
@@ -128,8 +146,11 @@ export default function Login() {
         loginPayload.device_id = subscriptionId;
       }
 
-      console.log("[loginPayload]", loginPayload);
       await signIn(loginPayload);
+
+      if (!isMountedRef.current) {
+        return;
+      }
 
       if (biometricSupported && biometricAllowed) {
         await saveLoginCredentials(email, password);
@@ -160,6 +181,11 @@ export default function Login() {
       }
     } catch (error) {
       console.error("Login error:", error);
+    } finally {
+      loginInFlightRef.current = false;
+      if (isMountedRef.current) {
+        setIsSubmittingLogin(false);
+      }
     }
   };
 
@@ -410,16 +436,16 @@ export default function Login() {
           <TouchableOpacity
             style={[
               styles.button,
-              isLoading && { opacity: 0.6 },
+              isLoginBusy && { opacity: 0.6 },
               {
                 backgroundColor: theme.activeText,
                 marginBottom: insets.bottom > 0 ? 0 : 8,
               },
             ]}
             onPress={handleLogin}
-            disabled={isLoading}
+            disabled={isLoginBusy}
           >
-            {isLoading && (
+            {isLoginBusy && (
               <Animated.View
                 style={{
                   marginRight: 10,
@@ -441,7 +467,7 @@ export default function Login() {
               </Animated.View>
             )}
             <Text style={[styles.buttonText, { color: theme.white }]}>
-              {isLoading ? "signing you in..." : "Sign in"}
+              {isLoginBusy ? "signing you in..." : "Sign in"}
             </Text>
           </TouchableOpacity>
         </View>

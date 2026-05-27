@@ -35,11 +35,7 @@ async function authorizedMutation<Req, Res>(
   validateResponse?: (data: unknown) => data is Res,
 ): Promise<Res> {
   const token = await TokenStorage.getToken();
-  const headers: Record<string, string> = {
-    Accept: "application/json",
-    "Content-Type": "application/json",
-    ...customHeaders,
-  };
+  const headers: Record<string, unknown> = { ...customHeaders };
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
   try {

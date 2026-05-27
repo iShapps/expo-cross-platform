@@ -26,10 +26,7 @@ export class ShiftApiError extends Error {
 async function authorizedJson(url: string, endpoint: string): Promise<unknown> {
   const token = await TokenStorage.getToken();
 
-  const headers: Record<string, string> = {
-    Accept: "application/json",
-    "Content-Type": "application/json",
-  };
+  const headers: Record<string, unknown> = {};
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
   try {

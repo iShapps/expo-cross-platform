@@ -9,12 +9,12 @@ export type ApiRequestKind =
   | "server"
   | "unknown";
 
-type ApiRequestOptions = {
+export type ApiRequestOptions = {
   url: string;
   endpoint: string;
   method: "GET" | "POST" | "PUT" | "DELETE";
   body?: unknown;
-  headers?: Record<string, string>;
+  headers?: Record<string, unknown>;
   timeoutMs?: number;
   retryOnAndroidNetworkError?: boolean;
 };
@@ -30,8 +30,36 @@ type NetworkSnapshot = {
   isInternetReachable?: boolean | null;
 };
 
+type FetchAttemptResult = {
+  response: Response;
+  receivedResponse: boolean;
+};
+
+type SerializedBody = {
+  body?: string;
+  bodySize: number;
+};
+
+type FetchAttemptDiagnostics = {
+  receivedResponse: boolean;
+};
+
 const DEFAULT_TIMEOUT_MS = 30000;
-const ANDROID_RETRY_DELAY_MS = 350;
+const ANDROID_RETRY_BASE_DELAY_MS = 350;
+const ANDROID_RETRY_JITTER_MS = 175;
+const MODULE_STARTED_AT = Date.now();
+const COLD_START_WINDOW_MS = 30000;
+const DEDUPE_REQUEST_KEYS = new Set([
+  "POST /login",
+  "POST /refresh-token",
+  "POST /get-common-content",
+]);
+
+const inFlightCriticalRequests = new Map<
+  string,
+  Promise<ApiRequestResult<unknown>>
+>();
+let activeRequestCount = 0;
 
 export class ApiRequestError extends Error {
   constructor(
@@ -60,10 +88,103 @@ class ApiRequestTimeoutError extends Error {
   }
 }
 
+class InvalidApiHeaderError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "InvalidApiHeaderError";
+  }
+}
+
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const createRequestId = () =>
   `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+
+const getBaseRequestKey = (
+  options: Pick<ApiRequestOptions, "method" | "endpoint">,
+) =>
+  `${options.method} ${options.endpoint}`;
+
+const shouldDedupeRequest = (options: ApiRequestOptions) =>
+  DEDUPE_REQUEST_KEYS.has(getBaseRequestKey(options));
+
+const stableStringify = (value: unknown, seen = new WeakSet<object>()): string => {
+  if (value === null || value === undefined) return String(value);
+
+  const valueType = typeof value;
+
+  if (valueType === "string") return JSON.stringify(value);
+  if (valueType === "number" || valueType === "boolean") return String(value);
+  if (valueType === "bigint") return `bigint:${String(value)}`;
+  if (valueType === "function") return "function";
+  if (valueType === "symbol") return "symbol";
+
+  if (Array.isArray(value)) {
+    return `[${value.map((item) => stableStringify(item, seen)).join(",")}]`;
+  }
+
+  if (valueType === "object") {
+    const objectValue = value as Record<string, unknown>;
+
+    if (seen.has(objectValue)) return "[Circular]";
+    seen.add(objectValue);
+
+    const serialized = Object.keys(objectValue)
+      .sort()
+      .map((key) => `${JSON.stringify(key)}:${stableStringify(objectValue[key], seen)}`)
+      .join(",");
+
+    seen.delete(objectValue);
+
+    return `{${serialized}}`;
+  }
+
+  return String(value);
+};
+
+const createShortHash = (value: string): string => {
+  let hash = 2166136261;
+
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+
+  return (hash >>> 0).toString(16).padStart(8, "0");
+};
+
+export const createNonSensitiveFingerprint = (value: unknown): string => {
+  try {
+    const stableValue = stableStringify(value);
+    return `body:${createShortHash(stableValue)}`;
+  } catch {
+    return "body:unavailable";
+  }
+};
+
+export const createDedupeKey = (options: ApiRequestOptions): string => {
+  const baseKey = getBaseRequestKey(options);
+
+  if (options.endpoint === "/login") {
+    return baseKey;
+  }
+
+  const bodyFingerprint =
+    options.body === undefined
+      ? "no-body"
+      : createNonSensitiveFingerprint(options.body);
+
+  return `${baseKey} ${bodyFingerprint}`;
+};
+
+const getBodyFingerprint = (options: ApiRequestOptions): string =>
+  options.endpoint === "/login"
+    ? "body:omitted"
+    : options.body === undefined
+      ? "no-body"
+      : createNonSensitiveFingerprint(options.body);
+
+const isColdStart = () => Date.now() - MODULE_STARTED_AT <= COLD_START_WINDOW_MS;
 
 const getNetworkSnapshot = async (): Promise<NetworkSnapshot> => {
   try {
@@ -94,6 +215,40 @@ const classifyError = (error: unknown): ApiRequestKind => {
     ) {
       return "network";
     }
+  }
+
+  return "unknown";
+};
+
+const getTransportFailureReason = (error: unknown): string => {
+  if (!(error instanceof Error)) return "unknown";
+
+  const message = error.message.toLowerCase();
+  if (error.name === "AbortError") return "abort";
+  if (error instanceof ApiRequestTimeoutError) return "timeout";
+  if (message.includes("dns") || message.includes("host")) return "dns";
+  if (
+    message.includes("ssl") ||
+    message.includes("certificate") ||
+    message.includes("cert")
+  ) {
+    return "ssl";
+  }
+  if (
+    message.includes("socket") ||
+    message.includes("connection reset") ||
+    message.includes("connection closed") ||
+    message.includes("closed")
+  ) {
+    return "socket_closed";
+  }
+  if (
+    error instanceof TypeError ||
+    message.includes("network request failed") ||
+    message.includes("failed to fetch") ||
+    message.includes("load failed")
+  ) {
+    return "generic_network_failure";
   }
 
   return "unknown";
@@ -146,7 +301,7 @@ const readJsonResponse = async (response: Response): Promise<unknown> => {
 };
 
 const addApiBreadcrumb = (
-  status: "start" | "success" | "retry" | "error",
+  status: "start" | "success" | "retry" | "deduped" | "error",
   data: Record<string, unknown>,
 ) => {
   Sentry.addBreadcrumb({
@@ -177,23 +332,191 @@ const captureApiRequestError = (
   });
 };
 
-const executeFetch = async (
+const HEADER_NAME_OVERRIDES: Record<string, string> = {
+  accept: "Accept",
+  authorization: "Authorization",
+  "content-type": "Content-Type",
+};
+
+const isForbiddenHeaderValue = (value: unknown) =>
+  typeof value === "object" ||
+  typeof value === "function" ||
+  typeof value === "symbol";
+
+const normalizeHeaderName = (name: string): string => {
+  const trimmedName = name.trim();
+  if (!trimmedName) {
+    throw new InvalidApiHeaderError("Header name cannot be empty");
+  }
+
+  const lowerName = trimmedName.toLowerCase();
+  const canonicalName =
+    HEADER_NAME_OVERRIDES[lowerName] ??
+    lowerName
+      .split("-")
+      .map((part) => (part ? part[0].toUpperCase() + part.slice(1) : part))
+      .join("-");
+
+  return canonicalName;
+};
+
+const sanitizeHeaderValue = (name: string, value: unknown): string | null => {
+  if (value === undefined || value === null) return null;
+
+  if (isForbiddenHeaderValue(value)) {
+    throw new InvalidApiHeaderError(`Invalid value for header "${name}"`);
+  }
+
+  const stringValue = String(value).trim();
+
+  if (
+    name.toLowerCase() === "authorization" &&
+    (!stringValue ||
+      stringValue === "Bearer" ||
+      stringValue === "Bearer undefined" ||
+      stringValue === "Bearer null")
+  ) {
+    return null;
+  }
+
+  return stringValue;
+};
+
+export const sanitizeHeaders = (
+  headers: Record<string, unknown>,
+): Record<string, string> => {
+  const sanitizedHeaders: Record<string, string> = {};
+  const seenHeaderNames = new Map<string, string>();
+
+  Object.entries(headers).forEach(([rawName, rawValue]) => {
+    const name = normalizeHeaderName(rawName);
+    const lowerName = name.toLowerCase();
+    const value = sanitizeHeaderValue(name, rawValue);
+
+    if (value === null) return;
+
+    const duplicateName = seenHeaderNames.get(lowerName);
+    if (duplicateName) {
+      delete sanitizedHeaders[duplicateName];
+    }
+
+    seenHeaderNames.set(lowerName, name);
+    sanitizedHeaders[name] = value;
+  });
+
+  return sanitizedHeaders;
+};
+
+export const createJsonHeaders = (
+  headers?: Record<string, unknown>,
+  hasJsonBody = false,
+): Record<string, string> => {
+  const sanitizedHeaders = sanitizeHeaders({
+    Accept: "application/json",
+    ...headers,
+  });
+
+  if (hasJsonBody && !sanitizedHeaders["Content-Type"]) {
+    sanitizedHeaders["Content-Type"] = "application/json";
+  }
+
+  if (!hasJsonBody) {
+    delete sanitizedHeaders["Content-Type"];
+  }
+
+  return sanitizedHeaders;
+};
+
+const getHeaderKeys = (
+  headers: Record<string, unknown> | undefined,
+  hasJsonBody: boolean,
+): string[] => {
+  try {
+    return Object.keys(createJsonHeaders(headers, hasJsonBody));
+  } catch {
+    return ["<invalid>"];
+  }
+};
+
+const serializeJsonBody = (
+  body: unknown,
+  requestId: string,
+  allowBody: boolean,
+): SerializedBody => {
+  if (!allowBody) {
+    return { body: undefined, bodySize: 0 };
+  }
+
+  if (body === undefined) {
+    return { body: undefined, bodySize: 0 };
+  }
+
+  try {
+    const serializedBody = JSON.stringify(body);
+    return {
+      body: serializedBody,
+      bodySize: serializedBody?.length ?? 0,
+    };
+  } catch (error) {
+    throw new ApiRequestError(
+      error instanceof Error ? error.message : "Failed to serialize request body",
+      "unknown",
+      {
+        userMessage: "Could not prepare the request. Please try again.",
+        requestId,
+        durationMs: 0,
+        wasAborted: false,
+        wasTimeout: false,
+      },
+    );
+  }
+};
+
+const getRetryDelayMs = (retryAttempt: number): number =>
+  ANDROID_RETRY_BASE_DELAY_MS * 2 ** Math.max(retryAttempt - 1, 0) +
+  Math.floor(Math.random() * ANDROID_RETRY_JITTER_MS);
+
+const getMaxAndroidNetworkRetries = (options: ApiRequestOptions): number => {
+  if (Platform.OS !== "android" || options.retryOnAndroidNetworkError !== true) {
+    return 0;
+  }
+
+  if (options.endpoint === "/login") return 1;
+  if (options.method === "GET") return 2;
+  if (options.endpoint === "/get-common-content") return 2;
+
+  return 1;
+};
+
+const safeFetch = async (
   options: ApiRequestOptions,
   requestId: string,
-): Promise<Response> => {
+  diagnostics: FetchAttemptDiagnostics,
+): Promise<FetchAttemptResult> => {
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
-  const serializedBody =
-    options.body === undefined ? undefined : JSON.stringify(options.body);
+  const allowBody = options.method !== "GET";
+  const serializedBody = serializeJsonBody(options.body, requestId, allowBody);
+  const headers = createJsonHeaders(
+    options.headers,
+    serializedBody.body !== undefined,
+  );
+  const headerKeys = Object.keys(headers);
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  let receivedResponse = false;
 
-  const fetchPromise = fetch(options.url, {
+  const fetchInit: RequestInit = {
     method: options.method,
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-      ...options.headers,
-    },
-    body: serializedBody,
+    headers: { ...headers },
+  };
+
+  if (serializedBody.body !== undefined) {
+    fetchInit.body = serializedBody.body;
+  }
+
+  const fetchPromise = fetch(options.url, fetchInit).then((response) => {
+    receivedResponse = true;
+    diagnostics.receivedResponse = true;
+    return response;
   });
 
   const timeoutPromise = new Promise<Response>((_, reject) => {
@@ -202,17 +525,24 @@ const executeFetch = async (
 
   addApiBreadcrumb("start", {
     requestId,
+    requestKey: createDedupeKey(options),
     endpoint: options.endpoint,
     method: options.method,
     platform: Platform.OS,
+    bodyFingerprint: getBodyFingerprint(options),
     timeoutMs,
     appState: AppState.currentState,
-    hasBody: serializedBody !== undefined,
-    bodySize: serializedBody?.length ?? 0,
+    hasBody: serializedBody.body !== undefined,
+    bodySize: serializedBody.bodySize,
+    headerKeys,
+    requestConcurrencyCount: activeRequestCount,
+    deduplicated: shouldDedupeRequest(options),
+    appColdStart: isColdStart(),
   });
 
   try {
-    return await Promise.race([fetchPromise, timeoutPromise]);
+    const response = await Promise.race([fetchPromise, timeoutPromise]);
+    return { response, receivedResponse };
   } finally {
     if (timeoutId) {
       clearTimeout(timeoutId);
@@ -220,110 +550,192 @@ const executeFetch = async (
   }
 };
 
-export async function apiRequest<T>(
+const runApiRequest = async <T>(
   options: ApiRequestOptions,
-): Promise<ApiRequestResult<T>> {
+): Promise<ApiRequestResult<T>> => {
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const requestId = createRequestId();
   const startedAt = Date.now();
+  const requestKey = createDedupeKey(options);
+  const bodyFingerprint = getBodyFingerprint(options);
   let attempt = 0;
+  let lastReceivedResponse = false;
 
-  while (true) {
-    try {
-      attempt += 1;
-      const response = await executeFetch(options, requestId);
-      const durationMs = Date.now() - startedAt;
-      const data = await readJsonResponse(response);
+  activeRequestCount += 1;
 
-      addApiBreadcrumb("success", {
-        requestId,
-        endpoint: options.endpoint,
-        method: options.method,
-        platform: Platform.OS,
-        durationMs,
-        statusCode: response.status,
-        attempt,
-      });
-
-      if (!response.ok) {
-        throw new ApiRequestError("Server returned an error response", "server", {
-          statusCode: response.status,
-          data,
-          userMessage: "Server returned an error response",
-          requestId,
-          durationMs,
-          wasAborted: false,
-          wasTimeout: false,
-        });
-      }
-
-      return { data: data as T, response };
-    } catch (error) {
-      const durationMs = Date.now() - startedAt;
-      const kind =
-        error instanceof ApiRequestError ? error.kind : classifyError(error);
-      const network = await getNetworkSnapshot();
-      const wasAborted = kind === "abort";
-      const wasTimeout = kind === "timeout";
-      const userMessage =
-        error instanceof ApiRequestError
-          ? error.details.userMessage
-          : getUserMessage(kind, network);
-
-      const context = {
-        requestId,
-        endpoint: options.endpoint,
-        method: options.method,
-        platform: Platform.OS,
-        durationMs,
-        timeoutMs,
-        attempt,
-        errorName: error instanceof Error ? error.name : typeof error,
-        errorMessage: error instanceof Error ? error.message : String(error),
-        wasAborted,
-        wasTimeout,
-        reason: kind,
-        networkType: network.networkType,
-        isConnected: network.isConnected,
-        isInternetReachable: network.isInternetReachable,
-        appState: AppState.currentState,
+  try {
+    while (true) {
+      const hasBody = options.method !== "GET" && options.body !== undefined;
+      const headerKeys = getHeaderKeys(options.headers, hasBody);
+      const diagnostics: FetchAttemptDiagnostics = {
+        receivedResponse: false,
       };
 
-      const shouldRetry =
-        Platform.OS === "android" &&
-        options.retryOnAndroidNetworkError === true &&
-        attempt === 1 &&
-        (kind === "network" || kind === "abort") &&
-        network.isConnected !== false;
+      try {
+        attempt += 1;
+        const fetchResult = await safeFetch(options, requestId, diagnostics);
+        const response = fetchResult.response;
+        lastReceivedResponse = fetchResult.receivedResponse;
+        const durationMs = Date.now() - startedAt;
+        const data = await readJsonResponse(response);
 
-      if (shouldRetry) {
-        addApiBreadcrumb("retry", context);
-        await delay(ANDROID_RETRY_DELAY_MS);
-        continue;
-      }
-
-      addApiBreadcrumb("error", context);
-
-      if (kind !== "server") {
-        captureApiRequestError(error, context);
-      }
-
-      if (error instanceof ApiRequestError) {
-        throw error;
-      }
-
-      throw new ApiRequestError(
-        error instanceof Error ? error.message : userMessage,
-        kind,
-        {
-          userMessage,
+        addApiBreadcrumb("success", {
           requestId,
+          endpoint: options.endpoint,
+          method: options.method,
+          platform: Platform.OS,
           durationMs,
+          statusCode: response.status,
+          attempt,
+          headerKeys,
+          requestConcurrencyCount: activeRequestCount,
+          deduplicated: shouldDedupeRequest(options),
+          bodyFingerprint,
+          requestReceivedResponse: lastReceivedResponse,
+        });
+
+        if (!response.ok) {
+          throw new ApiRequestError("Server returned an error response", "server", {
+            statusCode: response.status,
+            data,
+            userMessage: "Server returned an error response",
+            requestId,
+            durationMs,
+            wasAborted: false,
+            wasTimeout: false,
+          });
+        }
+
+        return { data: data as T, response };
+      } catch (error) {
+        const receivedResponse: boolean =
+          diagnostics.receivedResponse || lastReceivedResponse;
+        lastReceivedResponse = receivedResponse;
+        const durationMs = Date.now() - startedAt;
+        const kind =
+          error instanceof ApiRequestError ? error.kind : classifyError(error);
+        const network = await getNetworkSnapshot();
+        const wasAborted = kind === "abort";
+        const wasTimeout = kind === "timeout";
+        const userMessage =
+          error instanceof ApiRequestError
+            ? error.details.userMessage
+            : getUserMessage(kind, network);
+        const retryAttempt = attempt;
+        const maxRetries = getMaxAndroidNetworkRetries(options);
+        const canRetry =
+          (kind === "network" || kind === "abort") &&
+          retryAttempt <= maxRetries &&
+          network.isConnected !== false;
+        const retryDelayMs = canRetry ? getRetryDelayMs(retryAttempt) : undefined;
+
+        const context = {
+          requestId,
+          requestKey,
+          bodyFingerprint,
+          endpoint: options.endpoint,
+          method: options.method,
+          platform: Platform.OS,
+          durationMs,
+          timeoutMs,
+          attempt,
+          retryAttempt,
+          retryDelayMs,
+          maxRetries,
+          headerKeys,
+          errorName: error instanceof Error ? error.name : typeof error,
+          errorMessage: error instanceof Error ? error.message : String(error),
           wasAborted,
           wasTimeout,
-          network,
-        },
-      );
+          reason: kind,
+          transportFailureReason: getTransportFailureReason(error),
+          networkType: network.networkType,
+          isConnected: network.isConnected,
+          isInternetReachable: network.isInternetReachable,
+          appState: AppState.currentState,
+          appColdStart: isColdStart(),
+          memoryWarning: "unavailable",
+          requestConcurrencyCount: activeRequestCount,
+          deduplicated: shouldDedupeRequest(options),
+          requestReceivedResponse: receivedResponse,
+          failedBeforeResponse: !receivedResponse,
+        };
+
+        if (canRetry && retryDelayMs !== undefined) {
+          addApiBreadcrumb("retry", context);
+          await delay(retryDelayMs);
+          continue;
+        }
+
+        addApiBreadcrumb("error", context);
+
+        if (kind !== "server") {
+          captureApiRequestError(error, context);
+        }
+
+        if (error instanceof ApiRequestError) {
+          throw error;
+        }
+
+        throw new ApiRequestError(
+          error instanceof Error ? error.message : userMessage,
+          kind,
+          {
+            userMessage,
+            requestId,
+            durationMs,
+            wasAborted,
+            wasTimeout,
+            network,
+          },
+        );
+      }
+    }
+  } finally {
+    activeRequestCount = Math.max(0, activeRequestCount - 1);
+  }
+};
+
+export async function apiRequest<T>(
+  options: ApiRequestOptions,
+): Promise<ApiRequestResult<T>> {
+  const requestKey = createDedupeKey(options);
+  const bodyFingerprint = getBodyFingerprint(options);
+
+  if (shouldDedupeRequest(options)) {
+    const existingRequest = inFlightCriticalRequests.get(requestKey);
+
+    if (existingRequest) {
+      addApiBreadcrumb("deduped", {
+        requestId: createRequestId(),
+        requestKey,
+        endpoint: options.endpoint,
+        method: options.method,
+        platform: Platform.OS,
+        bodyFingerprint,
+        requestConcurrencyCount: activeRequestCount,
+        deduplicated: true,
+        appState: AppState.currentState,
+        appColdStart: isColdStart(),
+      });
+
+      return existingRequest as Promise<ApiRequestResult<T>>;
+    }
+
+    const request = runApiRequest<T>(options);
+    inFlightCriticalRequests.set(
+      requestKey,
+      request as Promise<ApiRequestResult<unknown>>,
+    );
+
+    try {
+      return await request;
+    } finally {
+      if (inFlightCriticalRequests.get(requestKey) === request) {
+        inFlightCriticalRequests.delete(requestKey);
+      }
     }
   }
+
+  return runApiRequest<T>(options);
 }
