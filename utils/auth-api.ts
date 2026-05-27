@@ -1,9 +1,5 @@
-import {
-  captureApiNetworkErrorToSentry,
-  extractApiErrorMessage,
-  isFetchNetworkError,
-  isRequestTimeoutError,
-} from "@/api-actions/error-utils";
+import { apiRequest, ApiRequestError } from "@/api-actions/api-client";
+import { extractApiErrorMessage } from "@/api-actions/error-utils";
 import { setStorageItemAsync } from "@/app/useStorageState";
 import LoginCredentials, {
   ForgotPasswordErrorResponse,
@@ -32,14 +28,7 @@ const API_CONFIG = {
   },
 };
 
-const getLoginNetworkErrorContext = () => ({
-  endpoint: API_CONFIG.endpoints.login,
-  baseURL: API_CONFIG.baseURL,
-  hasBaseURL: Boolean(API_CONFIG.baseURL),
-  method: "POST",
-  platform: Platform.OS,
-  timeoutMs: API_CONFIG.timeout,
-});
+let activeLoginRequest: Promise<LoginSuccessResponse> | null = null;
 
 // Secure token storage
 export const TokenStorage = {
@@ -121,102 +110,103 @@ const validateCredentials = (credentials: LoginCredentials): void => {
   }
 };
 
-export const login = async (
+const getApiRequestAuthError = (
+  error: ApiRequestError,
+  fallbackMessage: string,
+): AuthenticationError | NetworkError => {
+  if (error.kind !== "server") {
+    return new NetworkError(error.details.userMessage);
+  }
+
+  const data = error.details.data;
+  const errorData = isObject(data)
+    ? (data as unknown as LoginErrorResponse)
+    : undefined;
+
+  return new AuthenticationError(
+    extractApiErrorMessage(data, fallbackMessage),
+    error.details.statusCode,
+    errorData?.errors,
+  );
+};
+
+const postAuthResource = async <T>(
+  endpoint: string,
+  body: Record<string, unknown>,
+): Promise<T> => {
+  const { data } = await apiRequest<T>({
+    url: `${API_CONFIG.baseURL}${endpoint}`,
+    endpoint,
+    method: "POST",
+    body,
+    timeoutMs: API_CONFIG.timeout,
+    retryOnAndroidNetworkError: true,
+  });
+
+  return data;
+};
+
+const loginInternal = async (
   credentials: LoginCredentials,
 ): Promise<LoginSuccessResponse> => {
   try {
     // Validate input
     validateCredentials(credentials);
 
-    // Create abort controller for timeout
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), API_CONFIG.timeout);
-    const response = await fetch(
-      `${API_CONFIG.baseURL}${API_CONFIG.endpoints.login}`,
+    const data = await postAuthResource<LoginSuccessResponse | LoginErrorResponse>(
+      API_CONFIG.endpoints.login,
       {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({
-          email: credentials.email.trim().toLowerCase(),
-          password: credentials.password,
-          device_id: credentials.device_id,
-          "device-name": credentials.device_name,
-          "device-type": credentials.device_type,
-          "device-version": credentials.device_version,
-        }),
-        signal: controller.signal,
+        email: credentials.email.trim().toLowerCase(),
+        password: credentials.password,
+        device_id: credentials.device_id,
+        "device-name": credentials.device_name,
+        "device-type": credentials.device_type,
+        "device-version": credentials.device_version,
       },
     );
 
-    clearTimeout(timeoutId);
-
-    const responseText = await response.text();
-    let data: unknown = null;
-    try {
-      data = responseText ? JSON.parse(responseText) : null;
-    } catch (jsonError) {
-      console.error("Login JSON parse error:", jsonError);
-      if (!response.ok) {
-        data = { message: responseText.trim() || "Login failed" };
-      } else {
-        throw new AuthenticationError(
-          "Invalid server response (not JSON)",
-          response.status,
-        );
-      }
-    }
-
-    if (response.ok && isObject(data) && data.status === true) {
+    if (isObject(data) && data.status === true) {
       const successData = data as unknown as LoginSuccessResponse;
       await TokenStorage.saveToken(successData.data.access_token);
 
       return successData;
     }
 
-    if (!response.ok || (isObject(data) && data.status === false)) {
+    if (isObject(data) && data.status === false) {
       const errorData = data as LoginErrorResponse;
-      console.log("errorData", errorData);
       throw new AuthenticationError(
         extractApiErrorMessage(data, "Login failed"),
-        response.status,
+        undefined,
         isObject(data) ? errorData.errors : undefined,
       );
     }
 
-    throw new AuthenticationError(
-      "Unexpected response from server",
-      response.status,
-    );
+    throw new AuthenticationError("Unexpected response from server");
   } catch (error) {
     if (error instanceof AuthenticationError) {
       throw error;
     }
 
-    if (isRequestTimeoutError(error)) {
-      captureApiNetworkErrorToSentry(error, {
-        ...getLoginNetworkErrorContext(),
-        reason: "timeout",
-      });
-      throw new NetworkError("Request timeout. Please try again.");
-    }
-
-    if (isFetchNetworkError(error)) {
-      captureApiNetworkErrorToSentry(error, {
-        ...getLoginNetworkErrorContext(),
-        reason: "fetch_network_error",
-      });
-      throw new NetworkError(
-        "Network error. Please check your internet connection.",
-      );
+    if (error instanceof ApiRequestError) {
+      throw getApiRequestAuthError(error, "Login failed");
     }
 
     throw new AuthenticationError(
       "An unexpected error occurred. Please try again.",
     );
   }
+};
+
+export const login = async (
+  credentials: LoginCredentials,
+): Promise<LoginSuccessResponse> => {
+  if (activeLoginRequest) return activeLoginRequest;
+
+  activeLoginRequest = loginInternal(credentials).finally(() => {
+    activeLoginRequest = null;
+  });
+
+  return activeLoginRequest;
 };
 
 // Login with Alert Handling
@@ -332,30 +322,12 @@ export const sendResetCode = async (
   try {
     validateForgotPasswordRequest(request);
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), API_CONFIG.timeout);
-
-    const response = await fetch(
-      `${API_CONFIG.baseURL}${API_CONFIG.endpoints.forgotPassword}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({
-          email: request.email.trim().toLowerCase(),
-        }),
-        signal: controller.signal,
-      },
-    );
-
-    clearTimeout(timeoutId);
-
     const data: ForgotPasswordSuccessResponse | ForgotPasswordErrorResponse =
-      await response.json();
+      await postAuthResource(API_CONFIG.endpoints.forgotPassword, {
+        email: request.email.trim().toLowerCase(),
+      });
 
-    if (response.ok && data.status === true) {
+    if (data.status === true) {
       return data as ForgotPasswordSuccessResponse;
     }
 
@@ -363,28 +335,19 @@ export const sendResetCode = async (
       const errorData = data as ForgotPasswordErrorResponse;
       throw new AuthenticationError(
         errorData.message || "Failed to send reset code",
-        response.status,
+        undefined,
         errorData.errors,
       );
     }
 
-    throw new AuthenticationError(
-      "Unexpected response from server",
-      response.status,
-    );
+    throw new AuthenticationError("Unexpected response from server");
   } catch (error) {
     if (error instanceof AuthenticationError) {
       throw error;
     }
 
-    if (error instanceof TypeError && error.message === "Failed to fetch") {
-      throw new NetworkError(
-        "Network error. Please check your internet connection.",
-      );
-    }
-
-    if (error instanceof Error && error.name === "AbortError") {
-      throw new NetworkError("Request timeout. Please try again.");
+    if (error instanceof ApiRequestError) {
+      throw getApiRequestAuthError(error, "Failed to send reset code");
     }
 
     throw new AuthenticationError(
@@ -399,31 +362,13 @@ export const verifyResetCode = async (
   try {
     validateVerifyOTPRequest(request);
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), API_CONFIG.timeout);
-
-    const response = await fetch(
-      `${API_CONFIG.baseURL}${API_CONFIG.endpoints.verifyOTP}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({
-          email: request.email.trim().toLowerCase(),
-          otp: request.otp.trim(),
-        }),
-        signal: controller.signal,
-      },
-    );
-
-    clearTimeout(timeoutId);
-
     const data: VerifyOTPSuccessResponse | VerifyOTPErrorResponse =
-      await response.json();
+      await postAuthResource(API_CONFIG.endpoints.verifyOTP, {
+        email: request.email.trim().toLowerCase(),
+        otp: request.otp.trim(),
+      });
 
-    if (response.ok && data.status === true) {
+    if (data.status === true) {
       return data as VerifyOTPSuccessResponse;
     }
 
@@ -431,28 +376,19 @@ export const verifyResetCode = async (
       const errorData = data as VerifyOTPErrorResponse;
       throw new AuthenticationError(
         errorData.message || "Invalid verification code",
-        response.status,
+        undefined,
         errorData.errors,
       );
     }
 
-    throw new AuthenticationError(
-      "Unexpected response from server",
-      response.status,
-    );
+    throw new AuthenticationError("Unexpected response from server");
   } catch (error) {
     if (error instanceof AuthenticationError) {
       throw error;
     }
 
-    if (error instanceof TypeError && error.message === "Failed to fetch") {
-      throw new NetworkError(
-        "Network error. Please check your internet connection.",
-      );
-    }
-
-    if (error instanceof Error && error.name === "AbortError") {
-      throw new NetworkError("Request timeout. Please try again.");
+    if (error instanceof ApiRequestError) {
+      throw getApiRequestAuthError(error, "Invalid verification code");
     }
 
     throw new AuthenticationError(
@@ -468,33 +404,15 @@ export const resetPassword = async (
   try {
     validateResetPasswordRequest(request);
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), API_CONFIG.timeout);
-
-    const response = await fetch(
-      `${API_CONFIG.baseURL}${API_CONFIG.endpoints.resetPassword}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({
-          email: request.email.trim().toLowerCase(),
-          otp: request.otp.trim(),
-          password: request.password,
-          password_confirmation: request.password_confirmation,
-        }),
-        signal: controller.signal,
-      },
-    );
-
-    clearTimeout(timeoutId);
-
     const data: ResetPasswordSuccessResponse | ResetPasswordErrorResponse =
-      await response.json();
+      await postAuthResource(API_CONFIG.endpoints.resetPassword, {
+        email: request.email.trim().toLowerCase(),
+        otp: request.otp.trim(),
+        password: request.password,
+        password_confirmation: request.password_confirmation,
+      });
 
-    if (response.ok && data.status === true) {
+    if (data.status === true) {
       return data as ResetPasswordSuccessResponse;
     }
 
@@ -502,28 +420,19 @@ export const resetPassword = async (
       const errorData = data as ResetPasswordErrorResponse;
       throw new AuthenticationError(
         errorData.message || "Failed to reset password",
-        response.status,
+        undefined,
         errorData.errors,
       );
     }
 
-    throw new AuthenticationError(
-      "Unexpected response from server",
-      response.status,
-    );
+    throw new AuthenticationError("Unexpected response from server");
   } catch (error) {
     if (error instanceof AuthenticationError) {
       throw error;
     }
 
-    if (error instanceof TypeError && error.message === "Failed to fetch") {
-      throw new NetworkError(
-        "Network error. Please check your internet connection.",
-      );
-    }
-
-    if (error instanceof Error && error.name === "AbortError") {
-      throw new NetworkError("Request timeout. Please try again.");
+    if (error instanceof ApiRequestError) {
+      throw getApiRequestAuthError(error, "Failed to reset password");
     }
 
     // Generic error
