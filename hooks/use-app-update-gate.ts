@@ -1,10 +1,16 @@
 import { getGeneralAppConfigs } from "@/api-queries/configs";
 import { useConfigSettings } from "@/data-store/config-store";
 import { IConfigResponse } from "@/data-types/config";
+import {
+  decrementAppStateListeners,
+  incrementAppStateListeners,
+  incrementAppStateTransitionCount,
+  setStartupStabilized,
+} from "@/utils/runtime-diagnostics";
 import { useQuery } from "@tanstack/react-query";
 import * as Application from "expo-application";
-import { useEffect } from "react";
-import { Linking, Platform } from "react-native";
+import { useEffect, useState } from "react";
+import { AppState, InteractionManager, Linking, Platform } from "react-native";
 
 const normalizeVersionPart = (value: string) => {
   const parsed = Number.parseInt(value, 10);
@@ -28,6 +34,9 @@ const compareVersions = (currentVersion: string, requiredVersion: string) => {
 };
 
 export const useAppUpdateGate = () => {
+  const [bootstrapReady, setBootstrapReady] = useState(
+    Platform.OS !== "android",
+  );
   const storedConfigSettings = useConfigSettings(
     (state) => state.configSettings,
   );
@@ -35,15 +44,65 @@ export const useAppUpdateGate = () => {
     (state) => state.setConfigSettings,
   );
 
+  useEffect(() => {
+    if (Platform.OS !== "android") {
+      setStartupStabilized(true);
+      return;
+    }
+
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    let appStateSubscription: { remove: () => void } | undefined;
+    let didSetReady = false;
+
+    const setReadyIfActive = () => {
+      if (didSetReady || AppState.currentState !== "active") return;
+      didSetReady = true;
+      setBootstrapReady(true);
+      setStartupStabilized(true);
+      if (appStateSubscription) {
+        appStateSubscription.remove();
+        appStateSubscription = undefined;
+        decrementAppStateListeners();
+      }
+    };
+
+    const interactionTask = InteractionManager.runAfterInteractions(() => {
+      timeoutId = setTimeout(() => {
+        if (AppState.currentState === "active") {
+          setReadyIfActive();
+          return;
+        }
+
+        appStateSubscription = AppState.addEventListener("change", () => {
+          incrementAppStateTransitionCount();
+          setReadyIfActive();
+        });
+        incrementAppStateListeners();
+      }, 800);
+    });
+
+    return () => {
+      interactionTask.cancel();
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+      if (appStateSubscription) {
+        appStateSubscription.remove();
+        decrementAppStateListeners();
+      }
+    };
+  }, []);
+
   const { data: configResponse } = useQuery<IConfigResponse>({
     queryKey: ["config-settings"],
     queryFn: () => getGeneralAppConfigs(),
+    enabled: bootstrapReady && AppState.currentState === "active",
     gcTime: 1000 * 60 * 60,
     staleTime: 1000 * 60 * 60 * 24,
     refetchInterval: 1000 * 60 * 60 * 24,
-    refetchIntervalInBackground: true,
-    retry: 1,
-    refetchOnReconnect: true,
+    refetchIntervalInBackground: false,
+    retry: false,
+    refetchOnReconnect: false,
     refetchOnWindowFocus: false,
   });
 

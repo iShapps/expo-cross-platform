@@ -8,6 +8,7 @@ import {
   ensureOneSignalSubscriptionId,
   onLoginSuccess,
 } from "@/hooks/use-one-signal";
+import { stopBackgroundTracking } from "@/task-services/locationTask";
 import { removeToken, setToken as setAuthToken } from "@/utils/auth";
 import {
   login as apiLogin,
@@ -19,6 +20,10 @@ import {
   getLoginCredentials,
   saveLoginCredentials,
 } from "@/utils/secure-login-credentials";
+import {
+  incrementProviderMount,
+  incrementProviderUnmount,
+} from "@/utils/runtime-diagnostics";
 import { useQueryClient } from "@tanstack/react-query";
 import { usePathname, useRouter, useSegments } from "expo-router";
 import React, { useEffect } from "react";
@@ -94,6 +99,14 @@ export function SessionProvider(props: React.PropsWithChildren) {
   const queryClient = useQueryClient();
 
   const user = userJson ? JSON.parse(userJson) : null;
+
+  useEffect(() => {
+    incrementProviderMount("SessionProvider");
+
+    return () => {
+      incrementProviderUnmount("SessionProvider");
+    };
+  }, []);
 
   const handleSignIn = async (credentials: LoginCredentials) => {
     setAuthLoading(true);
@@ -199,6 +212,7 @@ export function SessionProvider(props: React.PropsWithChildren) {
       console.error("Logout error:", error);
     } finally {
       // clear local data
+      await stopBackgroundTracking();
       setSession(null);
       setUserJson(null);
       removeToken();

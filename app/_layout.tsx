@@ -17,6 +17,14 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { GlobalUpdateGate } from "../components/global-update-gate";
 import { SessionProvider, useSession } from "./ctx";
 import { SplashScreenController } from "./splash";
+import {
+  decrementAppStateListeners,
+  incrementAppStateListeners,
+  incrementAppStateTransitionCount,
+  incrementProviderMount,
+  incrementProviderUnmount,
+  incrementRootRenderCount,
+} from "@/utils/runtime-diagnostics";
 
 const sentryGlobal = globalThis as typeof globalThis & {
   __ISHAPPS_SENTRY_INITIALIZED__?: boolean;
@@ -58,10 +66,7 @@ SplashScreen.preventAutoHideAsync();
 const queryClient = new QueryClient();
 
 export default Sentry.wrap(function Root() {
-  useOTAUpdate();
-  useShiftWatcher();
-  useOneSignal();
-  usePermissionMonitor();
+  incrementRootRenderCount();
 
   useEffect(() => {
     if (Platform.OS === "web") return;
@@ -69,6 +74,7 @@ export default Sentry.wrap(function Root() {
     let focusTimer: ReturnType<typeof setTimeout> | undefined;
     focusManager.setFocused(AppState.currentState === "active");
     const subscription = AppState.addEventListener("change", (status) => {
+      incrementAppStateTransitionCount();
       if (focusTimer) {
         clearTimeout(focusTimer);
       }
@@ -77,12 +83,22 @@ export default Sentry.wrap(function Root() {
         focusManager.setFocused(status === "active");
       }, 300);
     });
+    incrementAppStateListeners();
 
     return () => {
       if (focusTimer) {
         clearTimeout(focusTimer);
       }
       subscription.remove();
+      decrementAppStateListeners();
+    };
+  }, []);
+
+  useEffect(() => {
+    incrementProviderMount("Root");
+
+    return () => {
+      incrementProviderUnmount("Root");
     };
   }, []);
 
@@ -99,6 +115,7 @@ export default Sentry.wrap(function Root() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <QueryClientProvider client={queryClient}>
         <SessionProvider>
+          <AppLifecycleHooks />
           <SplashScreenController>
             <RootNavigator />
             <GlobalUpdateGate />
@@ -109,6 +126,23 @@ export default Sentry.wrap(function Root() {
     </GestureHandlerRootView>
   );
 });
+
+function AppLifecycleHooks() {
+  useOTAUpdate();
+  useShiftWatcher();
+  useOneSignal();
+  usePermissionMonitor();
+
+  useEffect(() => {
+    incrementProviderMount("AppLifecycleHooks");
+
+    return () => {
+      incrementProviderUnmount("AppLifecycleHooks");
+    };
+  }, []);
+
+  return null;
+}
 
 function RootNavigator() {
   const { session } = useSession();

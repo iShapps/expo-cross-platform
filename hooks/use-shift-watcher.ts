@@ -8,6 +8,8 @@ import { useEffect, useRef } from "react";
 
 export const useShiftWatcher = () => {
   const acceptedShift = useProfileData((state) => state.acceptedShift);
+  const userDetails = useProfileData((state) => state.userDetails);
+  const token = useProfileData((state) => state.token);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const trackingStartedRef = useRef(false);
@@ -21,7 +23,7 @@ export const useShiftWatcher = () => {
       timerRef.current = null;
     }
 
-    if (!acceptedShift) {
+    if (!token || !userDetails?.id || !acceptedShift) {
       console.log("[ShiftWatcher] No shift to track");
       if (trackingStartedRef.current) {
         stopBackgroundTracking();
@@ -72,5 +74,5 @@ export const useShiftWatcher = () => {
       }
       // stopBackgroundTracking();
     };
-  }, [acceptedShift]);
+  }, [acceptedShift, token, userDetails?.id]);
 };

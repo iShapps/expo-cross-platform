@@ -1,6 +1,11 @@
 import { useSession } from "@/app/ctx";
 import { useSettingsStore } from "@/data-store/use-settings-store";
 import { AppNotification } from "@/data-types/notifications";
+import {
+  decrementOneSignalListeners,
+  incrementOneSignalListeners,
+  markOneSignalInitialized,
+} from "@/utils/runtime-diagnostics";
 import Constants from "expo-constants";
 import { router } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
@@ -39,6 +44,7 @@ const initializeOneSignal = () => {
 
     OneSignal.initialize(appId);
     oneSignalInitialized = true;
+    markOneSignalInitialized();
     debugLog("OneSignal initialized");
   }
 
@@ -55,6 +61,7 @@ const registerOneSignalListeners = () => {
     "change",
     handlePushSubscriptionChange,
   );
+  incrementOneSignalListeners(3);
 
   return () => {
     OneSignal.Notifications.removeEventListener(
@@ -66,6 +73,7 @@ const registerOneSignalListeners = () => {
       "change",
       handlePushSubscriptionChange,
     );
+    decrementOneSignalListeners(3);
   };
 };
 
@@ -194,14 +202,14 @@ export const useOneSignal = () => {
 
 export const onLoginSuccess = async (userId: string) => {
   try {
-    console.log("Logging into OneSignal with user:", userId);
+    debugLog("Logging into OneSignal with user:", userId);
     await OneSignal.login(userId);
 
     const subscriptionId = await OneSignal.User.pushSubscription.getIdAsync();
 
-    console.log("User logged in to OneSignal");
-    console.log("External ID:", userId);
-    console.log("Subscription ID:", subscriptionId);
+    debugLog("User logged in to OneSignal");
+    debugLog("External ID:", userId);
+    debugLog("Subscription ID:", subscriptionId);
 
     return subscriptionId;
   } catch (error) {
@@ -212,9 +220,9 @@ export const onLoginSuccess = async (userId: string) => {
 
 export const onLogout = async () => {
   try {
-    console.log("Logging out from OneSignal");
+    debugLog("Logging out from OneSignal");
     await OneSignal.logout();
-    console.log("Logged out from OneSignal successfully");
+    debugLog("Logged out from OneSignal successfully");
   } catch (error) {
     console.error("OneSignal logout error:", error);
   }
@@ -274,9 +282,11 @@ export const useOneSignalSubscriptionStatus = () => {
 
     refresh();
     OneSignal.User.pushSubscription.addEventListener("change", listener);
+    incrementOneSignalListeners();
 
     return () => {
       OneSignal.User.pushSubscription.removeEventListener("change", listener);
+      decrementOneSignalListeners();
     };
   }, [refresh]);
 
@@ -304,6 +314,7 @@ export const waitForSubscriptionId = async (
   return new Promise((resolve) => {
     const timeout = setTimeout(() => {
       OneSignal.User.pushSubscription.removeEventListener("change", listener);
+      decrementOneSignalListeners();
       resolve(null);
     }, timeoutMs);
 
@@ -313,11 +324,13 @@ export const waitForSubscriptionId = async (
       if (id) {
         clearTimeout(timeout);
         OneSignal.User.pushSubscription.removeEventListener("change", listener);
+        decrementOneSignalListeners();
         resolve(id);
       }
     };
 
     OneSignal.User.pushSubscription.addEventListener("change", listener);
+    incrementOneSignalListeners();
   });
 };
 

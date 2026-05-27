@@ -1,5 +1,6 @@
 import * as Sentry from "@sentry/react-native";
 import * as Network from "expo-network";
+import { getRuntimeDiagnostics } from "@/utils/runtime-diagnostics";
 import { AppState, Platform } from "react-native";
 
 export type ApiRequestKind =
@@ -568,6 +569,7 @@ const getMaxAndroidNetworkRetries = (options: ApiRequestOptions): number => {
 const safeFetch = async (
   options: ApiRequestOptions,
   requestId: string,
+  attempt: number,
   diagnostics: FetchAttemptDiagnostics,
 ): Promise<FetchAttemptResult> => {
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
@@ -621,6 +623,7 @@ const safeFetch = async (
     requestKey: createDedupeKey(options),
     endpoint: options.endpoint,
     method: options.method,
+    attempt,
     platform: Platform.OS,
     bodyFingerprint: getBodyFingerprint(options),
     timeoutMs,
@@ -629,6 +632,7 @@ const safeFetch = async (
     bodySize: serializedBody.bodySize,
     headerKeys,
     transportMode,
+    ...getRuntimeDiagnostics(),
     requestConcurrencyCount: activeRequestCount,
     dedupeEnabled: shouldDedupeRequest(options),
     deduplicated: false,
@@ -668,7 +672,12 @@ const runApiRequest = async <T>(
 
       try {
         attempt += 1;
-        const fetchResult = await safeFetch(options, requestId, diagnostics);
+        const fetchResult = await safeFetch(
+          options,
+          requestId,
+          attempt,
+          diagnostics,
+        );
         const response = fetchResult.response;
         lastReceivedResponse = fetchResult.receivedResponse;
         const transportMode = fetchResult.transportMode;
@@ -689,6 +698,7 @@ const runApiRequest = async <T>(
           deduplicated: false,
           bodyFingerprint,
           transportMode,
+          ...getRuntimeDiagnostics(),
           requestReceivedResponse: lastReceivedResponse,
         });
 
@@ -754,6 +764,7 @@ const runApiRequest = async <T>(
           appState: AppState.currentState,
           appColdStart: isColdStart(),
           memoryWarning: "unavailable",
+          ...getRuntimeDiagnostics(),
           requestConcurrencyCount: activeRequestCount,
           dedupeEnabled: shouldDedupeRequest(options),
           deduplicated: false,
@@ -817,6 +828,7 @@ export async function apiRequest<T>(
         platform: Platform.OS,
         bodyFingerprint,
         requestConcurrencyCount: activeRequestCount,
+        ...getRuntimeDiagnostics(),
         dedupeEnabled: true,
         deduplicated: true,
         appState: AppState.currentState,
