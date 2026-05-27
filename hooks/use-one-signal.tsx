@@ -12,7 +12,6 @@ import {
 } from "react-native-onesignal";
 
 let oneSignalInitialized = false;
-let oneSignalListenersRegistered = false;
 let activeOneSignalSyncKey: string | null = null;
 let lastOneSignalSyncKey: string | null = null;
 
@@ -43,23 +42,31 @@ const initializeOneSignal = () => {
     debugLog("OneSignal initialized");
   }
 
-  if (!oneSignalListenersRegistered) {
-    OneSignal.Notifications.addEventListener(
+  return true;
+};
+
+const registerOneSignalListeners = () => {
+  OneSignal.Notifications.addEventListener(
+    "foregroundWillDisplay",
+    handleForegroundNotification,
+  );
+  OneSignal.Notifications.addEventListener("click", handleNotificationClick);
+  OneSignal.User.pushSubscription.addEventListener(
+    "change",
+    handlePushSubscriptionChange,
+  );
+
+  return () => {
+    OneSignal.Notifications.removeEventListener(
       "foregroundWillDisplay",
       handleForegroundNotification,
     );
-    OneSignal.Notifications.addEventListener(
-      "click",
-      handleNotificationClick,
-    );
-    OneSignal.User.pushSubscription.addEventListener(
+    OneSignal.Notifications.removeEventListener("click", handleNotificationClick);
+    OneSignal.User.pushSubscription.removeEventListener(
       "change",
       handlePushSubscriptionChange,
     );
-    oneSignalListenersRegistered = true;
-  }
-
-  return true;
+  };
 };
 
 const handleNotificationClick = (event: NotificationClickEvent) => {
@@ -100,7 +107,12 @@ export const useOneSignal = () => {
   const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
-    setInitialized(initializeOneSignal());
+    const didInitialize = initializeOneSignal();
+    setInitialized(didInitialize);
+
+    if (!didInitialize) return;
+
+    return registerOneSignalListeners();
   }, []);
 
   useEffect(() => {
