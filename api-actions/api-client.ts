@@ -591,7 +591,11 @@ const safeFetch = async (
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
   let receivedResponse = false;
 
-  const fetchInit: RequestInit = {
+  const fetchInit: {
+    method: ApiRequestOptions["method"];
+    headers: Record<string, string>;
+    body?: string;
+  } = {
     method: options.method,
     headers: { ...headers },
   };

@@ -46,7 +46,8 @@ async function authorizedMutation<Req, Res>(
       body,
       endpoint,
       timeoutMs: API_TIMEOUT,
-      retryOnAndroidNetworkError: true,
+      retryOnAndroidNetworkError:
+        endpoint !== "/login" && endpoint !== "/logout",
     });
 
     if (!isObject(data)) {

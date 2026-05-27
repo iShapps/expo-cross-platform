@@ -193,7 +193,8 @@ const postAuthResource = async <T>(
     method: "POST",
     body: requestBody,
     timeoutMs: API_CONFIG.timeout,
-    retryOnAndroidNetworkError: !isLoginEndpoint,
+    retryOnAndroidNetworkError:
+      !isLoginEndpoint && endpoint !== "/logout",
   });
 
   return data;
