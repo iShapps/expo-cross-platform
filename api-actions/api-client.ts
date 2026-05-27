@@ -43,6 +43,7 @@ type SerializedBody = {
 
 type FetchAttemptDiagnostics = {
   receivedResponse: boolean;
+  transportMode?: "request_object" | "fetch_init";
 };
 
 const DEFAULT_TIMEOUT_MS = 30000;
@@ -601,6 +602,7 @@ const safeFetch = async (
 
   const canUseRequestObject = typeof Request === "function";
   const transportMode = canUseRequestObject ? "request_object" : "fetch_init";
+  diagnostics.transportMode = transportMode;
   const fetchInput = canUseRequestObject
     ? new Request(options.url, fetchInit)
     : options.url;
@@ -731,7 +733,7 @@ const runApiRequest = async <T>(
           requestId,
           requestKey,
           bodyFingerprint,
-          transportMode: "unknown",
+          transportMode: diagnostics.transportMode ?? "unknown",
           endpoint: options.endpoint,
           method: options.method,
           platform: Platform.OS,
