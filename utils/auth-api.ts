@@ -1,4 +1,9 @@
-import { extractApiErrorMessage } from "@/api-actions/error-utils";
+import {
+  captureApiNetworkErrorToSentry,
+  extractApiErrorMessage,
+  isFetchNetworkError,
+  isRequestTimeoutError,
+} from "@/api-actions/error-utils";
 import { setStorageItemAsync } from "@/app/useStorageState";
 import LoginCredentials, {
   ForgotPasswordErrorResponse,
@@ -26,6 +31,15 @@ const API_CONFIG = {
     resetPassword: "/reset-password",
   },
 };
+
+const getLoginNetworkErrorContext = () => ({
+  endpoint: API_CONFIG.endpoints.login,
+  baseURL: API_CONFIG.baseURL,
+  hasBaseURL: Boolean(API_CONFIG.baseURL),
+  method: "POST",
+  platform: Platform.OS,
+  timeoutMs: API_CONFIG.timeout,
+});
 
 // Secure token storage
 export const TokenStorage = {
@@ -181,14 +195,22 @@ export const login = async (
       throw error;
     }
 
-    if (error instanceof TypeError && error.message === "Failed to fetch") {
+    if (isRequestTimeoutError(error)) {
+      captureApiNetworkErrorToSentry(error, {
+        ...getLoginNetworkErrorContext(),
+        reason: "timeout",
+      });
+      throw new NetworkError("Request timeout. Please try again.");
+    }
+
+    if (isFetchNetworkError(error)) {
+      captureApiNetworkErrorToSentry(error, {
+        ...getLoginNetworkErrorContext(),
+        reason: "fetch_network_error",
+      });
       throw new NetworkError(
         "Network error. Please check your internet connection.",
       );
-    }
-
-    if (error instanceof Error && error.name === "AbortError") {
-      throw new NetworkError("Request timeout. Please try again.");
     }
 
     throw new AuthenticationError(
