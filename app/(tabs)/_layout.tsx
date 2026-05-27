@@ -5,13 +5,10 @@ import {
   TabBarIMaterialIcon,
   TabBarOctIcon,
 } from "@/components/ui/tab-bar-icon";
-import { useSettingsStore } from "@/data-store/use-settings-store";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { useOneSignal } from "@/hooks/use-one-signal";
-import { useShiftWatcher } from "@/hooks/use-shift-watcher";
 import { useIsFetching } from "@tanstack/react-query";
 import { Tabs } from "expo-router";
-import React, { useEffect } from "react";
+import React from "react";
 import { Animated, Easing, Platform, StyleSheet, View } from "react-native";
 
 const FetchingSnakeBar = () => {
@@ -21,12 +18,6 @@ const FetchingSnakeBar = () => {
 
   const translateX = React.useRef(new Animated.Value(0)).current;
   const [barWidth, setBarWidth] = React.useState(0);
-
-  useShiftWatcher();
-  useOneSignal();
-  useEffect(() => {
-    useSettingsStore.getState().hydrate();
-  }, []);
 
   React.useEffect(() => {
     if (!isFetching || barWidth === 0) return;
@@ -48,7 +39,7 @@ const FetchingSnakeBar = () => {
       animation.stop();
       translateX.setValue(0);
     };
-  }, [isFetching, barWidth]);
+  }, [isFetching, barWidth, translateX]);
 
   if (!isFetching) return null;
 

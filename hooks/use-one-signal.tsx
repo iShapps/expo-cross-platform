@@ -13,6 +13,14 @@ import {
 
 let oneSignalInitialized = false;
 let oneSignalListenersRegistered = false;
+let activeOneSignalSyncKey: string | null = null;
+let lastOneSignalSyncKey: string | null = null;
+
+const debugLog = (...args: unknown[]) => {
+  if (__DEV__) {
+    console.log(...args);
+  }
+};
 
 const getOneSignalAppId = () =>
   Constants.expoConfig?.extra?.eas?.oneSignalAppId as string | undefined;
@@ -32,7 +40,7 @@ const initializeOneSignal = () => {
 
     OneSignal.initialize(appId);
     oneSignalInitialized = true;
-    console.log("OneSignal initialized");
+    debugLog("OneSignal initialized");
   }
 
   if (!oneSignalListenersRegistered) {
@@ -55,7 +63,7 @@ const initializeOneSignal = () => {
 };
 
 const handleNotificationClick = (event: NotificationClickEvent) => {
-  console.log("Notification clicked:", event);
+  debugLog("Notification clicked:", event);
   const notification = extractNotification(event);
 
   if (notification?.additionalData) {
@@ -74,13 +82,13 @@ const handleNotificationClick = (event: NotificationClickEvent) => {
 };
 
 const handleForegroundNotification = (event: NotificationWillDisplayEvent) => {
-  console.log("Notification received in foreground:", event);
+  debugLog("Notification received in foreground:", event);
   event.getNotification().display();
 };
 
 const handlePushSubscriptionChange = (event: any) => {
-  console.log("Push Subscription changed:", event);
-  console.log("New Subscription ID:", event.current?.id);
+  debugLog("Push Subscription changed:", event);
+  debugLog("New Subscription ID:", event.current?.id);
 };
 
 export const useOneSignal = () => {
@@ -98,48 +106,73 @@ export const useOneSignal = () => {
   useEffect(() => {
     if (!oneSignalInitialized || !hasHydrated) return;
 
+    const syncKey = `${notificationsEnabled ? "enabled" : "disabled"}:${
+      session?.user?.id ?? "anonymous"
+    }`;
+
+    if (activeOneSignalSyncKey === syncKey || lastOneSignalSyncKey === syncKey) {
+      return;
+    }
+
+    let cancelled = false;
+    activeOneSignalSyncKey = syncKey;
+
     const handleNotificationState = async () => {
-      if (notificationsEnabled) {
-        console.log("Notifications enabled — syncing OneSignal...");
+      try {
+        if (notificationsEnabled) {
+          debugLog("Notifications enabled — syncing OneSignal...");
 
-        const alreadyGranted =
-          await OneSignal.Notifications.getPermissionAsync();
+          const alreadyGranted =
+            await OneSignal.Notifications.getPermissionAsync();
 
-        if (!alreadyGranted) {
-          const canRequest =
-            await OneSignal.Notifications.canRequestPermission();
+          if (!alreadyGranted) {
+            const canRequest =
+              await OneSignal.Notifications.canRequestPermission();
 
-          if (canRequest) {
-            const granted =
-              await OneSignal.Notifications.requestPermission(true);
-            console.log("Permission granted:", granted);
+            if (canRequest) {
+              const granted =
+                await OneSignal.Notifications.requestPermission(true);
+              debugLog("Permission granted:", granted);
 
-            if (!granted) return;
-          } else {
-            console.log(
-              "Cannot request permission — user must enable in device settings",
-            );
-            return;
+              if (!granted) return;
+            } else {
+              debugLog(
+                "Cannot request permission — user must enable in device settings",
+              );
+              return;
+            }
           }
+
+          if (session?.user?.id) {
+            await OneSignal.login(String(session.user.id));
+            debugLog("Logged into OneSignal with user:", session.user.id);
+
+            const subscriptionId =
+              await OneSignal.User.pushSubscription.getIdAsync();
+            debugLog("OneSignal Subscription ID:", subscriptionId);
+          }
+
+          await OneSignal.User.pushSubscription.optIn();
+        } else {
+          debugLog("Notifications disabled — opting out of push...");
+          await OneSignal.User.pushSubscription.optOut();
         }
 
-        if (session?.user?.id) {
-          await OneSignal.login(String(session.user.id));
-          console.log("Logged into OneSignal with user:", session.user.id);
-
-          const subscriptionId =
-            await OneSignal.User.pushSubscription.getIdAsync();
-          console.log("OneSignal Subscription ID:", subscriptionId);
+        if (!cancelled) {
+          lastOneSignalSyncKey = syncKey;
         }
-
-        await OneSignal.User.pushSubscription.optIn();
-      } else {
-        console.log("Notifications disabled — opting out of push...");
-        await OneSignal.User.pushSubscription.optOut();
+      } finally {
+        if (activeOneSignalSyncKey === syncKey) {
+          activeOneSignalSyncKey = null;
+        }
       }
     };
 
-    handleNotificationState();
+    void handleNotificationState();
+
+    return () => {
+      cancelled = true;
+    };
   }, [hasHydrated, notificationsEnabled, session?.user?.id]);
 
   return {

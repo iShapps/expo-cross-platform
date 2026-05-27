@@ -2,10 +2,7 @@ import { Colors } from "@/constants/theme";
 import { useSettingsStore } from "@/data-store/use-settings-store";
 import LoginCredentials from "@/data-types/auth";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import {
-  ensureOneSignalSubscriptionId,
-  useOneSignal,
-} from "@/hooks/use-one-signal";
+import { ensureOneSignalSubscriptionId } from "@/hooks/use-one-signal";
 import {
   authenticateWithBiometrics,
   isBiometricAllowed,
@@ -44,7 +41,6 @@ export default function Login() {
   const theme = Colors[colorScheme];
   const styles = getStyles(theme);
 
-  useOneSignal();
   const insets = useSafeAreaInsets();
 
   const [email, setEmail] = useState("");

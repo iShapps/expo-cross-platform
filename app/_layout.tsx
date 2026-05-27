@@ -18,26 +18,34 @@ import { GlobalUpdateGate } from "../components/global-update-gate";
 import { SessionProvider, useSession } from "./ctx";
 import { SplashScreenController } from "./splash";
 
-Sentry.init({
-  dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
-  sendDefaultPii: true,
-  enableLogs: true,
-  debug: __DEV__,
+const sentryGlobal = globalThis as typeof globalThis & {
+  __ISHAPPS_SENTRY_INITIALIZED__?: boolean;
+};
 
-  tracesSampleRate: 0.1,
+if (!sentryGlobal.__ISHAPPS_SENTRY_INITIALIZED__) {
+  Sentry.init({
+    dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
+    sendDefaultPii: true,
+    enableLogs: true,
+    debug: __DEV__,
 
-  // Configure Session Replay
-  replaysSessionSampleRate: 0.05, // Capture 5% of all sessions for replay
-  replaysOnErrorSampleRate: 1.0, // Capture 100% of sessions with errors for replay
-  integrations: [
-    Sentry.mobileReplayIntegration(),
-    Sentry.feedbackIntegration(),
-    Sentry.reactNativeTracingIntegration(),
-  ],
+    tracesSampleRate: 0.1,
 
-  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
-  spotlight: __DEV__,
-});
+    // Configure Session Replay
+    replaysSessionSampleRate: 0.05, // Capture 5% of all sessions for replay
+    replaysOnErrorSampleRate: 1.0, // Capture 100% of sessions with errors for replay
+    integrations: [
+      Sentry.mobileReplayIntegration(),
+      Sentry.feedbackIntegration(),
+      Sentry.reactNativeTracingIntegration(),
+    ],
+
+    // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+    spotlight: __DEV__,
+  });
+
+  sentryGlobal.__ISHAPPS_SENTRY_INITIALIZED__ = true;
+}
 
 // onlineManager.setEventListener((setOnline) => {
 //   const eventSubscription = Network.addNetworkStateListener((state) => {
@@ -58,12 +66,24 @@ export default Sentry.wrap(function Root() {
   useEffect(() => {
     if (Platform.OS === "web") return;
 
+    let focusTimer: ReturnType<typeof setTimeout> | undefined;
     focusManager.setFocused(AppState.currentState === "active");
     const subscription = AppState.addEventListener("change", (status) => {
-      focusManager.setFocused(status === "active");
+      if (focusTimer) {
+        clearTimeout(focusTimer);
+      }
+
+      focusTimer = setTimeout(() => {
+        focusManager.setFocused(status === "active");
+      }, 300);
     });
 
-    return () => subscription.remove();
+    return () => {
+      if (focusTimer) {
+        clearTimeout(focusTimer);
+      }
+      subscription.remove();
+    };
   }, []);
 
   useEffect(() => {

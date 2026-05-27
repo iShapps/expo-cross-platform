@@ -33,7 +33,7 @@ type NetworkSnapshot = {
 type FetchAttemptResult = {
   response: Response;
   receivedResponse: boolean;
-  transportMode: "request_object" | "fetch_init";
+  transportMode: "fetch_init";
 };
 
 type SerializedBody = {
@@ -43,7 +43,7 @@ type SerializedBody = {
 
 type FetchAttemptDiagnostics = {
   receivedResponse: boolean;
-  transportMode?: "request_object" | "fetch_init";
+  transportMode?: "fetch_init";
 };
 
 const DEFAULT_TIMEOUT_MS = 30000;
@@ -600,15 +600,9 @@ const safeFetch = async (
     fetchInit.body = serializedBody.body;
   }
 
-  const canUseRequestObject = typeof Request === "function";
-  const transportMode = canUseRequestObject ? "request_object" : "fetch_init";
+  const transportMode = "fetch_init";
   diagnostics.transportMode = transportMode;
-  const fetchInput = canUseRequestObject
-    ? new Request(options.url, fetchInit)
-    : options.url;
-  const fetchPromise = (
-    canUseRequestObject ? fetch(fetchInput) : fetch(fetchInput, fetchInit)
-  ).then((response) => {
+  const fetchPromise = fetch(options.url, fetchInit).then((response) => {
     receivedResponse = true;
     diagnostics.receivedResponse = true;
     return response;
