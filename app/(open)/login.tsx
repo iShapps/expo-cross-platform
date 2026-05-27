@@ -16,6 +16,7 @@ import {
   saveLoginCredentials,
 } from "@/utils/secure-login-credentials";
 import { AntDesign, Entypo, FontAwesome6, Ionicons } from "@expo/vector-icons";
+import * as Sentry from "@sentry/react-native";
 import { Checkbox } from "expo-checkbox";
 import * as Device from "expo-device";
 import { Image } from "expo-image";
@@ -103,16 +104,64 @@ export default function Login() {
 
   const handleLogin = async () => {
     if (isLoginBusy || loginInFlightRef.current) {
+      Sentry.addBreadcrumb({
+        category: "auth.login",
+        level: "info",
+        message: "loginSubmitIgnored",
+        data: {
+          reason: "already_submitting",
+        },
+      });
       return;
     }
 
     // check if terms are accepted
     if (!isTermsChecked) {
+      Sentry.addBreadcrumb({
+        category: "auth.login",
+        level: "warning",
+        message: "loginValidationFailed",
+        data: {
+          reason: "terms_not_accepted",
+          hasEmail: email.trim().length > 0,
+          hasPassword: password.trim().length > 0,
+        },
+      });
       Alert.alert(
         "Terms Required",
         "You must agree to the terms and privacy policy.",
         [{ text: "OK" }],
       );
+      return;
+    }
+
+    if (!email.trim()) {
+      Sentry.addBreadcrumb({
+        category: "auth.login",
+        level: "warning",
+        message: "loginValidationFailed",
+        data: {
+          reason: "missing_email",
+          hasEmail: false,
+          hasPassword: password.trim().length > 0,
+        },
+      });
+      Alert.alert("Login Failed", "Email is required", [{ text: "OK" }]);
+      return;
+    }
+
+    if (!password.trim()) {
+      Sentry.addBreadcrumb({
+        category: "auth.login",
+        level: "warning",
+        message: "loginValidationFailed",
+        data: {
+          reason: "missing_password",
+          hasEmail: true,
+          hasPassword: false,
+        },
+      });
+      Alert.alert("Login Failed", "Password is required", [{ text: "OK" }]);
       return;
     }
 

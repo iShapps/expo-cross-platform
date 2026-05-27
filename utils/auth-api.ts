@@ -14,6 +14,7 @@ import LoginCredentials, {
   VerifyOTPRequest,
   VerifyOTPSuccessResponse,
 } from "@/data-types/auth";
+import * as Sentry from "@sentry/react-native";
 import { Alert, Platform } from "react-native";
 
 // Configuration
@@ -27,8 +28,6 @@ const API_CONFIG = {
     resetPassword: "/reset-password",
   },
 };
-
-let activeLoginRequest: Promise<LoginSuccessResponse> | null = null;
 
 // Secure token storage
 export const TokenStorage = {
@@ -90,6 +89,34 @@ function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+const addLoginBreadcrumb = (
+  message: string,
+  data: Record<string, unknown> = {},
+) => {
+  Sentry.addBreadcrumb({
+    category: "auth.login",
+    level: message.includes("Failed") ? "warning" : "info",
+    message,
+    data,
+  });
+};
+
+const getLoginBodyDiagnostics = (body: Record<string, unknown>) => {
+  const serializedBody = JSON.stringify(body);
+
+  return {
+    bodySize: serializedBody.length,
+    hasEmail: typeof body.email === "string" && body.email.trim().length > 0,
+    hasPassword:
+      typeof body.password === "string" && body.password.trim().length > 0,
+    hasDeviceId:
+      typeof body.device_id === "string" && body.device_id.trim().length > 0,
+    hasDeviceName: typeof body["device-name"] === "string",
+    hasDeviceType: typeof body["device-type"] === "string",
+    hasDeviceVersion: typeof body["device-version"] === "string",
+  };
+};
+
 // Validation
 const validateEmail = (email: string): boolean => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -98,14 +125,33 @@ const validateEmail = (email: string): boolean => {
 
 const validateCredentials = (credentials: LoginCredentials): void => {
   if (!credentials.email || !credentials.email.trim()) {
+    addLoginBreadcrumb("loginValidationFailed", {
+      hasEmail: false,
+      hasPassword:
+        typeof credentials.password === "string" &&
+        credentials.password.trim().length > 0,
+      reason: "missing_email",
+    });
     throw new AuthenticationError("Email is required");
   }
 
   if (!validateEmail(credentials.email)) {
+    addLoginBreadcrumb("loginValidationFailed", {
+      hasEmail: true,
+      hasPassword:
+        typeof credentials.password === "string" &&
+        credentials.password.trim().length > 0,
+      reason: "invalid_email",
+    });
     throw new AuthenticationError("Please enter a valid email address");
   }
 
   if (!credentials.password || !credentials.password.trim()) {
+    addLoginBreadcrumb("loginValidationFailed", {
+      hasEmail: true,
+      hasPassword: false,
+      reason: "missing_password",
+    });
     throw new AuthenticationError("Password is required");
   }
 };
@@ -134,13 +180,20 @@ const postAuthResource = async <T>(
   endpoint: string,
   body: Record<string, unknown>,
 ): Promise<T> => {
+  const isLoginEndpoint = endpoint === API_CONFIG.endpoints.login;
+  const requestBody = isLoginEndpoint ? Object.freeze({ ...body }) : body;
+
+  if (isLoginEndpoint) {
+    addLoginBreadcrumb("loginRequestStarted", getLoginBodyDiagnostics(requestBody));
+  }
+
   const { data } = await apiRequest<T>({
     url: `${API_CONFIG.baseURL}${endpoint}`,
     endpoint,
     method: "POST",
-    body,
+    body: requestBody,
     timeoutMs: API_CONFIG.timeout,
-    retryOnAndroidNetworkError: true,
+    retryOnAndroidNetworkError: !isLoginEndpoint,
   });
 
   return data;
@@ -150,30 +203,48 @@ const loginInternal = async (
   credentials: LoginCredentials,
 ): Promise<LoginSuccessResponse> => {
   try {
+    addLoginBreadcrumb("loginSubmitStarted", {
+      hasEmail:
+        typeof credentials.email === "string" &&
+        credentials.email.trim().length > 0,
+      hasPassword:
+        typeof credentials.password === "string" &&
+        credentials.password.trim().length > 0,
+      hasDeviceId:
+        typeof credentials.device_id === "string" &&
+        credentials.device_id.trim().length > 0,
+    });
+
     // Validate input
     validateCredentials(credentials);
 
+    const loginBody = Object.freeze({
+      email: credentials.email.trim().toLowerCase(),
+      password: credentials.password,
+      device_id: credentials.device_id,
+      "device-name": credentials.device_name,
+      "device-type": credentials.device_type,
+      "device-version": credentials.device_version,
+    });
+
     const data = await postAuthResource<LoginSuccessResponse | LoginErrorResponse>(
       API_CONFIG.endpoints.login,
-      {
-        email: credentials.email.trim().toLowerCase(),
-        password: credentials.password,
-        device_id: credentials.device_id,
-        "device-name": credentials.device_name,
-        "device-type": credentials.device_type,
-        "device-version": credentials.device_version,
-      },
+      loginBody,
     );
 
     if (isObject(data) && data.status === true) {
       const successData = data as unknown as LoginSuccessResponse;
       await TokenStorage.saveToken(successData.data.access_token);
+      addLoginBreadcrumb("loginRequestSucceeded");
 
       return successData;
     }
 
     if (isObject(data) && data.status === false) {
       const errorData = data as LoginErrorResponse;
+      addLoginBreadcrumb("loginRequestFailed", {
+        reason: "auth_rejected",
+      });
       throw new AuthenticationError(
         extractApiErrorMessage(data, "Login failed"),
         undefined,
@@ -188,8 +259,18 @@ const loginInternal = async (
     }
 
     if (error instanceof ApiRequestError) {
+      addLoginBreadcrumb("loginRequestFailed", {
+        reason: error.kind,
+        statusCode: error.details.statusCode,
+        wasTimeout: error.details.wasTimeout,
+        wasAborted: error.details.wasAborted,
+      });
       throw getApiRequestAuthError(error, "Login failed");
     }
+
+    addLoginBreadcrumb("loginRequestFailed", {
+      reason: "unknown",
+    });
 
     throw new AuthenticationError(
       "An unexpected error occurred. Please try again.",
@@ -200,13 +281,7 @@ const loginInternal = async (
 export const login = async (
   credentials: LoginCredentials,
 ): Promise<LoginSuccessResponse> => {
-  if (activeLoginRequest) return activeLoginRequest;
-
-  activeLoginRequest = loginInternal(credentials).finally(() => {
-    activeLoginRequest = null;
-  });
-
-  return activeLoginRequest;
+  return loginInternal({ ...credentials });
 };
 
 // Login with Alert Handling

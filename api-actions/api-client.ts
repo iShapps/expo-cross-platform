@@ -33,6 +33,7 @@ type NetworkSnapshot = {
 type FetchAttemptResult = {
   response: Response;
   receivedResponse: boolean;
+  transportMode: "request_object" | "fetch_init";
 };
 
 type SerializedBody = {
@@ -50,7 +51,6 @@ const ANDROID_RETRY_JITTER_MS = 175;
 const MODULE_STARTED_AT = Date.now();
 const COLD_START_WINDOW_MS = 30000;
 const DEDUPE_REQUEST_KEYS = new Set([
-  "POST /login",
   "POST /refresh-token",
   "POST /get-common-content",
 ]);
@@ -74,6 +74,7 @@ export class ApiRequestError extends Error {
       wasAborted: boolean;
       wasTimeout: boolean;
       network?: NetworkSnapshot;
+      isValidationError?: boolean;
     },
   ) {
     super(message);
@@ -185,6 +186,48 @@ const getBodyFingerprint = (options: ApiRequestOptions): string =>
       : createNonSensitiveFingerprint(options.body);
 
 const isColdStart = () => Date.now() - MODULE_STARTED_AT <= COLD_START_WINDOW_MS;
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+const validateLoginBody = (body: unknown, requestId: string): void => {
+  if (!isRecord(body)) {
+    throw new ApiRequestError("Login payload is missing", "unknown", {
+      userMessage: "Email and password are required.",
+      requestId,
+      durationMs: 0,
+      wasAborted: false,
+      wasTimeout: false,
+      isValidationError: true,
+    });
+  }
+
+  const email = body.email;
+  const password = body.password;
+
+  if (typeof email !== "string" || !email.trim()) {
+    throw new ApiRequestError("Login email is missing", "unknown", {
+      userMessage: "Email is required",
+      requestId,
+      durationMs: 0,
+      wasAborted: false,
+      wasTimeout: false,
+      isValidationError: true,
+    });
+  }
+
+  if (typeof password !== "string" || !password.trim()) {
+    throw new ApiRequestError("Login password is missing", "unknown", {
+      userMessage: "Password is required",
+      requestId,
+      durationMs: 0,
+      wasAborted: false,
+      wasTimeout: false,
+      isValidationError: true,
+    });
+  }
+};
 
 const getNetworkSnapshot = async (): Promise<NetworkSnapshot> => {
   try {
@@ -481,7 +524,7 @@ const getMaxAndroidNetworkRetries = (options: ApiRequestOptions): number => {
     return 0;
   }
 
-  if (options.endpoint === "/login") return 1;
+  if (options.endpoint === "/login") return 0;
   if (options.method === "GET") return 2;
   if (options.endpoint === "/get-common-content") return 2;
 
@@ -495,6 +538,10 @@ const safeFetch = async (
 ): Promise<FetchAttemptResult> => {
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const allowBody = options.method !== "GET";
+  if (options.endpoint === "/login") {
+    validateLoginBody(options.body, requestId);
+  }
+
   const serializedBody = serializeJsonBody(options.body, requestId, allowBody);
   const headers = createJsonHeaders(
     options.headers,
@@ -513,7 +560,14 @@ const safeFetch = async (
     fetchInit.body = serializedBody.body;
   }
 
-  const fetchPromise = fetch(options.url, fetchInit).then((response) => {
+  const canUseRequestObject = typeof Request === "function";
+  const transportMode = canUseRequestObject ? "request_object" : "fetch_init";
+  const fetchInput = canUseRequestObject
+    ? new Request(options.url, fetchInit)
+    : options.url;
+  const fetchPromise = (
+    canUseRequestObject ? fetch(fetchInput) : fetch(fetchInput, fetchInit)
+  ).then((response) => {
     receivedResponse = true;
     diagnostics.receivedResponse = true;
     return response;
@@ -535,14 +589,16 @@ const safeFetch = async (
     hasBody: serializedBody.body !== undefined,
     bodySize: serializedBody.bodySize,
     headerKeys,
+    transportMode,
     requestConcurrencyCount: activeRequestCount,
-    deduplicated: shouldDedupeRequest(options),
+    dedupeEnabled: shouldDedupeRequest(options),
+    deduplicated: false,
     appColdStart: isColdStart(),
   });
 
   try {
     const response = await Promise.race([fetchPromise, timeoutPromise]);
-    return { response, receivedResponse };
+    return { response, receivedResponse, transportMode };
   } finally {
     if (timeoutId) {
       clearTimeout(timeoutId);
@@ -576,6 +632,7 @@ const runApiRequest = async <T>(
         const fetchResult = await safeFetch(options, requestId, diagnostics);
         const response = fetchResult.response;
         lastReceivedResponse = fetchResult.receivedResponse;
+        const transportMode = fetchResult.transportMode;
         const durationMs = Date.now() - startedAt;
         const data = await readJsonResponse(response);
 
@@ -589,8 +646,10 @@ const runApiRequest = async <T>(
           attempt,
           headerKeys,
           requestConcurrencyCount: activeRequestCount,
-          deduplicated: shouldDedupeRequest(options),
+          dedupeEnabled: shouldDedupeRequest(options),
+          deduplicated: false,
           bodyFingerprint,
+          transportMode,
           requestReceivedResponse: lastReceivedResponse,
         });
 
@@ -633,6 +692,7 @@ const runApiRequest = async <T>(
           requestId,
           requestKey,
           bodyFingerprint,
+          transportMode: "unknown",
           endpoint: options.endpoint,
           method: options.method,
           platform: Platform.OS,
@@ -656,7 +716,8 @@ const runApiRequest = async <T>(
           appColdStart: isColdStart(),
           memoryWarning: "unavailable",
           requestConcurrencyCount: activeRequestCount,
-          deduplicated: shouldDedupeRequest(options),
+          dedupeEnabled: shouldDedupeRequest(options),
+          deduplicated: false,
           requestReceivedResponse: receivedResponse,
           failedBeforeResponse: !receivedResponse,
         };
@@ -669,7 +730,10 @@ const runApiRequest = async <T>(
 
         addApiBreadcrumb("error", context);
 
-        if (kind !== "server") {
+        if (
+          kind !== "server" &&
+          !(error instanceof ApiRequestError && error.details.isValidationError)
+        ) {
           captureApiRequestError(error, context);
         }
 
@@ -714,6 +778,7 @@ export async function apiRequest<T>(
         platform: Platform.OS,
         bodyFingerprint,
         requestConcurrencyCount: activeRequestCount,
+        dedupeEnabled: true,
         deduplicated: true,
         appState: AppState.currentState,
         appColdStart: isColdStart(),
