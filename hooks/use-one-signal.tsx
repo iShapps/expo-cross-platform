@@ -40,10 +40,7 @@ const initializeOneSignal = () => {
       "foregroundWillDisplay",
       handleForegroundNotification,
     );
-    OneSignal.Notifications.addEventListener(
-      "click",
-      handleNotificationClick,
-    );
+    OneSignal.Notifications.addEventListener("click", handleNotificationClick);
     OneSignal.User.pushSubscription.addEventListener(
       "change",
       handlePushSubscriptionChange,
@@ -65,6 +62,9 @@ const handleNotificationClick = (event: NotificationClickEvent) => {
         break;
       case "documents":
         router.navigate("/documents");
+        break;
+      case "test":
+        router.navigate("/notification-test");
         break;
       default:
         router.navigate("/notifications");
