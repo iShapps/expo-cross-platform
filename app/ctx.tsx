@@ -136,7 +136,9 @@ export function SessionProvider(props: React.PropsWithChildren) {
           { text: "OK" },
           {
             text: "Retry",
-            onPress: () => handleSignIn(credentials),
+            onPress: () => {
+              void handleSignIn(credentials).catch(() => undefined);
+            },
           },
         ]);
       } else {

@@ -1,5 +1,8 @@
 import {
+  captureApiNetworkErrorToSentry,
   extractApiErrorMessage,
+  isFetchNetworkError,
+  isRequestTimeoutError,
   isUnauthorizedStatus,
   logApiErrorToSentry,
   notifyAuthExpired,
@@ -106,16 +109,41 @@ async function authorizedMutation<Req, Res>(
     // ) as Res;
     return data as Res;
   } catch (error) {
+    clearTimeout(timeoutId);
+
+    if (error instanceof ApiMutationError) throw error;
+
+    if (isRequestTimeoutError(error)) {
+      captureApiNetworkErrorToSentry(error, {
+        endpoint: url,
+        baseURL: API_BASE_URL,
+        hasBaseURL: Boolean(API_BASE_URL),
+        method,
+        reason: "timeout",
+        timeoutMs: API_TIMEOUT,
+      });
+      throw new ApiMutationError("Request timeout. Please try again.");
+    }
+
+    if (isFetchNetworkError(error)) {
+      captureApiNetworkErrorToSentry(error, {
+        endpoint: url,
+        baseURL: API_BASE_URL,
+        hasBaseURL: Boolean(API_BASE_URL),
+        method,
+        reason: "fetch_network_error",
+        timeoutMs: API_TIMEOUT,
+      });
+      throw new ApiMutationError(
+        "Network error. Please check your internet connection.",
+      );
+    }
+
     logApiErrorToSentry(error, {
       endpoint: url,
       method,
     });
 
-    clearTimeout(timeoutId);
-    if (error instanceof ApiMutationError) throw error;
-    if (error instanceof Error && error.name === "AbortError") {
-      throw new ApiMutationError("Request timeout. Please try again.");
-    }
     throw new ApiMutationError(
       error instanceof Error
         ? error.message
