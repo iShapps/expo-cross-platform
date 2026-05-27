@@ -107,7 +107,7 @@ export default function Login() {
       Sentry.addBreadcrumb({
         category: "auth.login",
         level: "info",
-        message: "loginSubmitIgnored",
+        message: "login.submit_ignored",
         data: {
           reason: "already_submitting",
         },
@@ -120,7 +120,7 @@ export default function Login() {
       Sentry.addBreadcrumb({
         category: "auth.login",
         level: "warning",
-        message: "loginValidationFailed",
+        message: "login.validation_failed",
         data: {
           reason: "terms_not_accepted",
           hasEmail: email.trim().length > 0,
@@ -139,7 +139,7 @@ export default function Login() {
       Sentry.addBreadcrumb({
         category: "auth.login",
         level: "warning",
-        message: "loginValidationFailed",
+        message: "login.validation_failed",
         data: {
           reason: "missing_email",
           hasEmail: false,
@@ -154,7 +154,7 @@ export default function Login() {
       Sentry.addBreadcrumb({
         category: "auth.login",
         level: "warning",
-        message: "loginValidationFailed",
+        message: "login.validation_failed",
         data: {
           reason: "missing_password",
           hasEmail: true,

@@ -95,7 +95,7 @@ const addLoginBreadcrumb = (
 ) => {
   Sentry.addBreadcrumb({
     category: "auth.login",
-    level: message.includes("Failed") ? "warning" : "info",
+    level: message.includes("failed") ? "warning" : "info",
     message,
     data,
   });
@@ -125,7 +125,7 @@ const validateEmail = (email: string): boolean => {
 
 const validateCredentials = (credentials: LoginCredentials): void => {
   if (!credentials.email || !credentials.email.trim()) {
-    addLoginBreadcrumb("loginValidationFailed", {
+    addLoginBreadcrumb("login.validation_failed", {
       hasEmail: false,
       hasPassword:
         typeof credentials.password === "string" &&
@@ -136,7 +136,7 @@ const validateCredentials = (credentials: LoginCredentials): void => {
   }
 
   if (!validateEmail(credentials.email)) {
-    addLoginBreadcrumb("loginValidationFailed", {
+    addLoginBreadcrumb("login.validation_failed", {
       hasEmail: true,
       hasPassword:
         typeof credentials.password === "string" &&
@@ -147,7 +147,7 @@ const validateCredentials = (credentials: LoginCredentials): void => {
   }
 
   if (!credentials.password || !credentials.password.trim()) {
-    addLoginBreadcrumb("loginValidationFailed", {
+    addLoginBreadcrumb("login.validation_failed", {
       hasEmail: true,
       hasPassword: false,
       reason: "missing_password",
@@ -184,7 +184,7 @@ const postAuthResource = async <T>(
   const requestBody = isLoginEndpoint ? Object.freeze({ ...body }) : body;
 
   if (isLoginEndpoint) {
-    addLoginBreadcrumb("loginRequestStarted", getLoginBodyDiagnostics(requestBody));
+    addLoginBreadcrumb("login.request_started", getLoginBodyDiagnostics(requestBody));
   }
 
   const { data } = await apiRequest<T>({
@@ -203,7 +203,7 @@ const loginInternal = async (
   credentials: LoginCredentials,
 ): Promise<LoginSuccessResponse> => {
   try {
-    addLoginBreadcrumb("loginSubmitStarted", {
+    addLoginBreadcrumb("login.submit_started", {
       hasEmail:
         typeof credentials.email === "string" &&
         credentials.email.trim().length > 0,
@@ -235,14 +235,14 @@ const loginInternal = async (
     if (isObject(data) && data.status === true) {
       const successData = data as unknown as LoginSuccessResponse;
       await TokenStorage.saveToken(successData.data.access_token);
-      addLoginBreadcrumb("loginRequestSucceeded");
+      addLoginBreadcrumb("login.request_success");
 
       return successData;
     }
 
     if (isObject(data) && data.status === false) {
       const errorData = data as LoginErrorResponse;
-      addLoginBreadcrumb("loginRequestFailed", {
+      addLoginBreadcrumb("login.request_failed", {
         reason: "auth_rejected",
       });
       throw new AuthenticationError(
@@ -259,7 +259,7 @@ const loginInternal = async (
     }
 
     if (error instanceof ApiRequestError) {
-      addLoginBreadcrumb("loginRequestFailed", {
+      addLoginBreadcrumb("login.request_failed", {
         reason: error.kind,
         statusCode: error.details.statusCode,
         wasTimeout: error.details.wasTimeout,
@@ -268,7 +268,7 @@ const loginInternal = async (
       throw getApiRequestAuthError(error, "Login failed");
     }
 
-    addLoginBreadcrumb("loginRequestFailed", {
+    addLoginBreadcrumb("login.request_failed", {
       reason: "unknown",
     });
 

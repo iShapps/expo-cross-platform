@@ -515,6 +515,39 @@ const serializeJsonBody = (
   }
 };
 
+const cloneJsonBodyForRequest = (
+  body: unknown,
+  requestId: string,
+  allowBody: boolean,
+): unknown => {
+  if (!allowBody || body === undefined) {
+    return undefined;
+  }
+
+  try {
+    const serializedBody = JSON.stringify(body);
+
+    if (serializedBody === undefined) {
+      return undefined;
+    }
+
+    return JSON.parse(serializedBody);
+  } catch (error) {
+    throw new ApiRequestError(
+      error instanceof Error ? error.message : "Failed to prepare request body",
+      "unknown",
+      {
+        userMessage: "Could not prepare the request. Please try again.",
+        requestId,
+        durationMs: 0,
+        wasAborted: false,
+        wasTimeout: false,
+        isValidationError: true,
+      },
+    );
+  }
+};
+
 const getRetryDelayMs = (retryAttempt: number): number =>
   ANDROID_RETRY_BASE_DELAY_MS * 2 ** Math.max(retryAttempt - 1, 0) +
   Math.floor(Math.random() * ANDROID_RETRY_JITTER_MS);
@@ -538,11 +571,17 @@ const safeFetch = async (
 ): Promise<FetchAttemptResult> => {
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const allowBody = options.method !== "GET";
+  const requestBody = cloneJsonBodyForRequest(
+    options.body,
+    requestId,
+    allowBody,
+  );
+
   if (options.endpoint === "/login") {
-    validateLoginBody(options.body, requestId);
+    validateLoginBody(requestBody, requestId);
   }
 
-  const serializedBody = serializeJsonBody(options.body, requestId, allowBody);
+  const serializedBody = serializeJsonBody(requestBody, requestId, allowBody);
   const headers = createJsonHeaders(
     options.headers,
     serializedBody.body !== undefined,
