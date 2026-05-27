@@ -1,6 +1,6 @@
+import { getRuntimeDiagnostics } from "@/utils/runtime-diagnostics";
 import * as Sentry from "@sentry/react-native";
 import * as Network from "expo-network";
-import { getRuntimeDiagnostics } from "@/utils/runtime-diagnostics";
 import { AppState, Platform } from "react-native";
 
 export type ApiRequestKind =
@@ -105,13 +105,15 @@ const createRequestId = () =>
 
 const getBaseRequestKey = (
   options: Pick<ApiRequestOptions, "method" | "endpoint">,
-) =>
-  `${options.method} ${options.endpoint}`;
+) => `${options.method} ${options.endpoint}`;
 
 const shouldDedupeRequest = (options: ApiRequestOptions) =>
   DEDUPE_REQUEST_KEYS.has(getBaseRequestKey(options));
 
-const stableStringify = (value: unknown, seen = new WeakSet<object>()): string => {
+const stableStringify = (
+  value: unknown,
+  seen = new WeakSet<object>(),
+): string => {
   if (value === null || value === undefined) return String(value);
 
   const valueType = typeof value;
@@ -134,7 +136,10 @@ const stableStringify = (value: unknown, seen = new WeakSet<object>()): string =
 
     const serialized = Object.keys(objectValue)
       .sort()
-      .map((key) => `${JSON.stringify(key)}:${stableStringify(objectValue[key], seen)}`)
+      .map(
+        (key) =>
+          `${JSON.stringify(key)}:${stableStringify(objectValue[key], seen)}`,
+      )
       .join(",");
 
     seen.delete(objectValue);
@@ -187,7 +192,8 @@ const getBodyFingerprint = (options: ApiRequestOptions): string =>
       ? "no-body"
       : createNonSensitiveFingerprint(options.body);
 
-const isColdStart = () => Date.now() - MODULE_STARTED_AT <= COLD_START_WINDOW_MS;
+const isColdStart = () =>
+  Date.now() - MODULE_STARTED_AT <= COLD_START_WINDOW_MS;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -504,7 +510,9 @@ const serializeJsonBody = (
     };
   } catch (error) {
     throw new ApiRequestError(
-      error instanceof Error ? error.message : "Failed to serialize request body",
+      error instanceof Error
+        ? error.message
+        : "Failed to serialize request body",
       "unknown",
       {
         userMessage: "Could not prepare the request. Please try again.",
@@ -555,7 +563,10 @@ const getRetryDelayMs = (retryAttempt: number): number =>
   Math.floor(Math.random() * ANDROID_RETRY_JITTER_MS);
 
 const getMaxAndroidNetworkRetries = (options: ApiRequestOptions): number => {
-  if (Platform.OS !== "android" || options.retryOnAndroidNetworkError !== true) {
+  if (
+    Platform.OS !== "android" ||
+    options.retryOnAndroidNetworkError !== true
+  ) {
     return 0;
   }
 
@@ -615,7 +626,10 @@ const safeFetch = async (
   });
 
   const timeoutPromise = new Promise<Response>((_, reject) => {
-    timeoutId = setTimeout(() => reject(new ApiRequestTimeoutError()), timeoutMs);
+    timeoutId = setTimeout(
+      () => reject(new ApiRequestTimeoutError()),
+      timeoutMs,
+    );
   });
 
   addApiBreadcrumb("start", {
@@ -703,15 +717,19 @@ const runApiRequest = async <T>(
         });
 
         if (!response.ok) {
-          throw new ApiRequestError("Server returned an error response", "server", {
-            statusCode: response.status,
-            data,
-            userMessage: "Server returned an error response",
-            requestId,
-            durationMs,
-            wasAborted: false,
-            wasTimeout: false,
-          });
+          throw new ApiRequestError(
+            "Server returned an error response",
+            "server",
+            {
+              statusCode: response.status,
+              data,
+              userMessage: "Server returned an error response",
+              requestId,
+              durationMs,
+              wasAborted: false,
+              wasTimeout: false,
+            },
+          );
         }
 
         return { data: data as T, response };
@@ -735,7 +753,9 @@ const runApiRequest = async <T>(
           (kind === "network" || kind === "abort") &&
           retryAttempt <= maxRetries &&
           network.isConnected !== false;
-        const retryDelayMs = canRetry ? getRetryDelayMs(retryAttempt) : undefined;
+        const retryDelayMs = canRetry
+          ? getRetryDelayMs(retryAttempt)
+          : undefined;
 
         const context = {
           requestId,
