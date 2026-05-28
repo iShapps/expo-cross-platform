@@ -1,4 +1,8 @@
-export type NotificationType = "documents" | "statement-details" | "shifts";
+export type NotificationType =
+  | "documents"
+  | "statement-details"
+  | "shifts"
+  | "test";
 
 export interface INotification {
   id: number;

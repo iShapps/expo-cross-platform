@@ -14,6 +14,30 @@ function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+export function isRequestTimeoutError(error: unknown): boolean {
+  return error instanceof Error && error.name === "AbortError";
+}
+
+export function isFetchNetworkError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+
+  const message = error.message.toLowerCase();
+
+  return (
+    error.name === "NetworkError" ||
+    (error instanceof TypeError &&
+      (message.includes("network request failed") ||
+        message.includes("failed to fetch") ||
+        message.includes("load failed"))) ||
+    message.includes("network error") ||
+    message.includes("internet connection")
+  );
+}
+
+export function isTransientNetworkError(error: unknown): boolean {
+  return isRequestTimeoutError(error) || isFetchNetworkError(error);
+}
+
 function collectMessages(value: unknown): string[] {
   if (!value) return [];
 
@@ -37,6 +61,17 @@ export function logApiErrorToSentry(
   error: unknown,
   context?: Record<string, unknown>,
 ) {
+  if (isTransientNetworkError(error)) {
+    Sentry.addBreadcrumb({
+      category: "api.network",
+      level: "warning",
+      message:
+        error instanceof Error ? error.message : "Transient API network error",
+      data: context,
+    });
+    return;
+  }
+
   const message = extractApiErrorMessage(
     isObject(error) ? error : undefined,
     "API request failed",

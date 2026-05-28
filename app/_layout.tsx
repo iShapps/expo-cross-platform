@@ -14,6 +14,7 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { AppState, Platform } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GlobalUpdateGate } from "../components/global-update-gate";
 import { SessionProvider, useSession } from "./ctx";
 import { SplashScreenController } from "./splash";
@@ -77,14 +78,16 @@ export default Sentry.wrap(function Root() {
   }, []);
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <QueryClientProvider client={queryClient}>
-        <SessionProvider>
-          <SplashScreenController>
-            <RootNavigator />
-            <GlobalUpdateGate />
-          </SplashScreenController>
-        </SessionProvider>
-      </QueryClientProvider>
+      <SafeAreaProvider>
+        <QueryClientProvider client={queryClient}>
+          <SessionProvider>
+            <SplashScreenController>
+              <RootNavigator />
+              <GlobalUpdateGate />
+            </SplashScreenController>
+          </SessionProvider>
+        </QueryClientProvider>
+      </SafeAreaProvider>
       <StatusBar style="auto" />
     </GestureHandlerRootView>
   );
