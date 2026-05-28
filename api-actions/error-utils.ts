@@ -100,6 +100,35 @@ export function logApiErrorToSentry(
   });
 }
 
+export function captureApiNetworkErrorToSentry(
+  error: unknown,
+  context?: Record<string, unknown>,
+) {
+  const message =
+    error instanceof Error ? error.message : "API network request failed";
+
+  Sentry.withScope((scope) => {
+    scope.setTag("type", "api_network_error");
+    scope.setLevel("warning");
+
+    if (context?.endpoint) {
+      scope.setTag("endpoint", String(context.endpoint));
+    }
+
+    scope.setContext("api_network_error", {
+      errorName: error instanceof Error ? error.name : typeof error,
+      errorMessage: message,
+      ...context,
+    });
+
+    if (error instanceof Error) {
+      Sentry.captureException(error);
+    } else {
+      Sentry.captureException(new Error(message));
+    }
+  });
+}
+
 export function extractApiErrorMessage(
   data: unknown,
   fallbackMessage: string,

@@ -1,3 +1,4 @@
+import { apiRequest, ApiRequestError } from "@/api-actions/api-client";
 import {
   extractApiErrorMessage,
   isUnauthorizedStatus,
@@ -22,45 +23,46 @@ export class ShiftApiError extends Error {
   }
 }
 
-async function authorizedFetch(
-  url: string,
-  options: RequestInit = {},
-): Promise<Response> {
+async function authorizedJson(url: string, endpoint: string): Promise<unknown> {
   const token = await TokenStorage.getToken();
 
-  const baseHeaders: Record<string, string> = {
-    Accept: "application/json",
-    "Content-Type": "application/json",
-  };
-  const customHeaders =
-    options.headers &&
-    typeof options.headers === "object" &&
-    !(options.headers instanceof Headers)
-      ? (options.headers as Record<string, string>)
-      : {};
-  if (token) baseHeaders["Authorization"] = `Bearer ${token}`;
-  const headers: Record<string, string> = { ...baseHeaders, ...customHeaders };
+  const headers: Record<string, unknown> = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT);
   try {
-    const response = await fetch(url, {
-      ...options,
+    const { data } = await apiRequest<unknown>({
+      url,
+      endpoint,
       headers,
-      signal: controller.signal,
+      method: "GET",
+      timeoutMs: API_TIMEOUT,
+      retryOnAndroidNetworkError: true,
     });
-    clearTimeout(timeoutId);
-    return response;
+
+    return data;
   } catch (error) {
-    clearTimeout(timeoutId);
-    if (error instanceof Error && error.name === "AbortError") {
-      throw new ShiftApiError("Request timeout. Please try again.");
+    if (error instanceof ApiRequestError) {
+      if (error.kind === "server") {
+        const apiMessage = extractApiErrorMessage(
+          error.details.data,
+          "Request failed",
+        );
+        if (isUnauthorizedStatus(error.details.statusCode)) {
+          await notifyAuthExpired({
+            message: apiMessage,
+            statusCode: error.details.statusCode ?? 0,
+          });
+        }
+        throw new ShiftApiError(apiMessage, error.details.statusCode);
+      }
+
+      throw new ShiftApiError(error.details.userMessage);
     }
-    console.error("Network error:", error);
+
     throw new ShiftApiError(
       error instanceof Error
         ? error.message
-        : "Network error. Please check your internet connection.",
+        : "An unexpected error occurred. Please try again.",
     );
   }
 }
@@ -68,42 +70,11 @@ async function authorizedFetch(
 // Fetch all shifts
 export async function fetchShifts(): Promise<any[]> {
   try {
-    const response = await authorizedFetch(`${API_BASE_URL}/shifts`, {
-      method: "GET",
-    });
-    let data: any;
-    const responseText = await response.text();
-    try {
-      data = responseText ? JSON.parse(responseText) : null;
-    } catch (jsonError) {
-      console.error("JSON parse error:", jsonError);
-      if (!response.ok) {
-        data = { message: responseText.trim() || "Invalid server response" };
-      } else {
-        throw new ShiftApiError(
-          "Invalid server response (not JSON)",
-          response.status,
-        );
-      }
-    }
-    if (!response.ok) {
-      // Surface API error details if available
-      const apiMessage = extractApiErrorMessage(data, "Failed to fetch shifts");
-      if (isUnauthorizedStatus(response.status)) {
-        await notifyAuthExpired({
-          message: apiMessage,
-          statusCode: response.status,
-        });
-      }
-      throw new ShiftApiError(apiMessage, response.status);
-    }
+    const data = await authorizedJson(`${API_BASE_URL}/shifts`, "/shifts");
     if (!data || typeof data !== "object") {
-      throw new ShiftApiError(
-        "Malformed response from server",
-        response.status,
-      );
+      throw new ShiftApiError("Malformed response from server");
     }
-    return data.data || [];
+    return "data" in data && Array.isArray(data.data) ? data.data : [];
   } catch (error) {
     if (error instanceof ShiftApiError) throw error;
     console.error("fetchShifts error:", error);
@@ -118,44 +89,14 @@ export async function fetchShifts(): Promise<any[]> {
 // Fetch a single shift by ID
 export async function fetchShiftById(shiftId: string): Promise<any> {
   try {
-    const response = await authorizedFetch(
+    const data = await authorizedJson(
       `${API_BASE_URL}/shifts/${shiftId}`,
-      {
-        method: "GET",
-      },
+      "/shifts/:shiftId",
     );
-    let data: any;
-    const responseText = await response.text();
-    try {
-      data = responseText ? JSON.parse(responseText) : null;
-    } catch (jsonError) {
-      console.error("JSON parse error:", jsonError);
-      if (!response.ok) {
-        data = { message: responseText.trim() || "Invalid server response" };
-      } else {
-        throw new ShiftApiError(
-          "Invalid server response (not JSON)",
-          response.status,
-        );
-      }
-    }
-    if (!response.ok) {
-      const apiMessage = extractApiErrorMessage(data, "Failed to fetch shift");
-      if (isUnauthorizedStatus(response.status)) {
-        await notifyAuthExpired({
-          message: apiMessage,
-          statusCode: response.status,
-        });
-      }
-      throw new ShiftApiError(apiMessage, response.status);
-    }
     if (!data || typeof data !== "object") {
-      throw new ShiftApiError(
-        "Malformed response from server",
-        response.status,
-      );
+      throw new ShiftApiError("Malformed response from server");
     }
-    return data.data;
+    return "data" in data ? data.data : undefined;
   } catch (error) {
     if (error instanceof ShiftApiError) throw error;
     console.error("fetchShiftById error:", error);
@@ -169,42 +110,12 @@ export async function fetchShiftById(shiftId: string): Promise<any> {
 
 export async function fetchDashboard(): Promise<any> {
   try {
-    const response = await authorizedFetch(`${API_BASE_URL}/hcp/dashboard`, {
-      method: "GET",
-    });
-    let data: any;
-    const responseText = await response.text();
-    try {
-      data = responseText ? JSON.parse(responseText) : null;
-    } catch (jsonError) {
-      console.error("JSON parse error:", jsonError);
-      if (!response.ok) {
-        data = { message: responseText.trim() || "Invalid server response" };
-      } else {
-        throw new ShiftApiError(
-          "Invalid server response (not JSON)",
-          response.status,
-        );
-      }
-    }
-    if (!response.ok) {
-      const apiMessage = extractApiErrorMessage(
-        data,
-        "Failed to fetch dashboard data",
-      );
-      if (isUnauthorizedStatus(response.status)) {
-        await notifyAuthExpired({
-          message: apiMessage,
-          statusCode: response.status,
-        });
-      }
-      throw new ShiftApiError(apiMessage, response.status);
-    }
+    const data = await authorizedJson(
+      `${API_BASE_URL}/hcp/dashboard`,
+      "/hcp/dashboard",
+    );
     if (!data || typeof data !== "object") {
-      throw new ShiftApiError(
-        "Malformed response from server",
-        response.status,
-      );
+      throw new ShiftApiError("Malformed response from server");
     }
     return data;
   } catch (error) {

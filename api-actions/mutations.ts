@@ -1,9 +1,7 @@
+import { apiRequest, ApiRequestError } from "@/api-actions/api-client";
 import {
   extractApiErrorMessage,
-  isFetchNetworkError,
-  isRequestTimeoutError,
   isUnauthorizedStatus,
-  logApiErrorToSentry,
   notifyAuthExpired,
 } from "@/api-actions/error-utils";
 import { TokenStorage } from "@/utils/auth-api";
@@ -30,64 +28,28 @@ function isObject(val: unknown): val is Record<string, unknown> {
 
 async function authorizedMutation<Req, Res>(
   url: string,
+  endpoint: string,
   method: "POST" | "PUT",
   body: Req,
   customHeaders: Record<string, string> = {},
   validateResponse?: (data: unknown) => data is Res,
 ): Promise<Res> {
   const token = await TokenStorage.getToken();
-  const headers: Record<string, string> = {
-    Accept: "application/json",
-    "Content-Type": "application/json",
-    ...customHeaders,
-  };
+  const headers: Record<string, unknown> = { ...customHeaders };
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT);
   try {
-    const response = await fetch(url, {
+    const { data, response } = await apiRequest<unknown>({
+      url,
       method,
       headers,
-      body: JSON.stringify(body),
-      signal: controller.signal,
+      body,
+      endpoint,
+      timeoutMs: API_TIMEOUT,
+      retryOnAndroidNetworkError:
+        endpoint !== "/login" && endpoint !== "/logout",
     });
-    clearTimeout(timeoutId);
-    let data: unknown;
-    const responseText = await response.text();
-    try {
-      data = responseText ? JSON.parse(responseText) : null;
-    } catch (jsonError) {
-      console.error("JSON parse error:", jsonError);
-      if (!response.ok) {
-        data = { message: responseText.trim() || "Invalid server response" };
-      } else {
-        throw new ApiMutationError(
-          "Invalid server response (not JSON)",
-          response.status,
-        );
-      }
-    }
-    if (!response.ok) {
-      console.error("API error response:", {
-        status: response.status,
-        body: data,
-      });
 
-      const finalMessage =
-        extractApiErrorMessage(
-          data,
-          `Failed to ${method === "POST" ? "create" : "update"}`,
-        ) || "API error";
-      console.error("API error finalMessage:", finalMessage);
-      if (isUnauthorizedStatus(response.status)) {
-        await notifyAuthExpired({
-          message: finalMessage,
-          statusCode: response.status,
-        });
-      }
-      throw new ApiMutationError(finalMessage, response.status, data);
-    }
     if (!isObject(data)) {
       throw new ApiMutationError(
         "Malformed response from server",
@@ -108,41 +70,36 @@ async function authorizedMutation<Req, Res>(
     // ) as Res;
     return data as Res;
   } catch (error) {
-    clearTimeout(timeoutId);
+    if (error instanceof ApiMutationError) throw error;
 
-    if (error instanceof ApiMutationError) {
-      logApiErrorToSentry(error, {
-        endpoint: url,
-        method,
-        statusCode: error.statusCode,
-      });
-      throw error;
+    if (error instanceof ApiRequestError) {
+      const data = error.details.data;
+      const statusCode = error.details.statusCode;
+
+      if (error.kind === "server") {
+        const finalMessage =
+          extractApiErrorMessage(
+            data,
+            `Failed to ${method === "POST" ? "create" : "update"}`,
+          ) || "API error";
+
+        if (isUnauthorizedStatus(statusCode)) {
+          await notifyAuthExpired({
+            message: finalMessage,
+            statusCode: statusCode ?? 0,
+          });
+        }
+
+        throw new ApiMutationError(finalMessage, statusCode, data);
+      }
+
+      throw new ApiMutationError(error.details.userMessage);
     }
 
-    if (isRequestTimeoutError(error)) {
-      logApiErrorToSentry(error, {
-        endpoint: url,
-        method,
-      });
-      throw new ApiMutationError("Request timeout. Please try again.");
-    }
-
-    if (isFetchNetworkError(error)) {
-      logApiErrorToSentry(error, {
-        endpoint: url,
-        method,
-      });
-      throw new ApiMutationError(
-        "Network error. Please check your internet connection.",
-      );
-    }
-
-    logApiErrorToSentry(error, {
-      endpoint: url,
-      method,
-    });
     throw new ApiMutationError(
-      "An unexpected error occurred. Please try again.",
+      error instanceof Error
+        ? error.message
+        : "An unexpected error occurred. Please try again.",
     );
   }
 }
@@ -152,9 +109,9 @@ export async function postResource<Req, Res>(
   payload: Req,
   validateResponse?: (data: unknown) => data is Res,
 ): Promise<Res> {
-  console.log("POST", `${API_BASE_URL}${endpoint}`, payload);
   return authorizedMutation<Req, Res>(
     `${API_BASE_URL}${endpoint}`,
+    endpoint,
     "POST",
     payload,
     {},
@@ -169,6 +126,7 @@ export async function putResource<Req, Res>(
 ): Promise<Res> {
   return authorizedMutation<Req, Res>(
     `${API_BASE_URL}${endpoint}`,
+    endpoint,
     "PUT",
     payload,
     {},
