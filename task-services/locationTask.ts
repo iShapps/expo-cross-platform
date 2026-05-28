@@ -24,7 +24,15 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
   if (!acceptedShift) return;
 
   const shiftStartTime = new Date(acceptedShift.start_time).getTime();
+  const shiftEndTime = new Date(acceptedShift.end_time).getTime();
   const now = Date.now();
+
+  if (now > shiftEndTime) {
+    await stopBackgroundTracking();
+    useProfileData.getState().setAcceptedShift(null);
+    console.log("[LocationTask] Shift ended — background tracking stopped");
+    return;
+  }
 
   // only send location if shift starts within 1 hour
   if (shiftStartTime - now > ONE_HOUR_MS) return;
@@ -77,8 +85,8 @@ export const startBackgroundTracking = async (): Promise<boolean> => {
 
   const alreadyRunning = await isTrackingActive();
   if (alreadyRunning) {
-    await Location.stopLocationUpdatesAsync(LOCATION_TASK_NAME);
-    console.log("[LocationTask] Stopped existing tracking before restart");
+    console.log("[LocationTask] Background tracking already active");
+    return true;
   }
 
   await Location.startLocationUpdatesAsync(LOCATION_TASK_NAME, {

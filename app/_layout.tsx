@@ -3,6 +3,14 @@ import { useOneSignal } from "@/hooks/use-one-signal";
 import { useOTAUpdate } from "@/hooks/use-ota-update";
 import { usePermissionMonitor } from "@/hooks/use-permission-monitor";
 import { useShiftWatcher } from "@/hooks/use-shift-watcher";
+import {
+  decrementAppStateListeners,
+  incrementAppStateListeners,
+  incrementAppStateTransitionCount,
+  incrementProviderMount,
+  incrementProviderUnmount,
+  incrementRootRenderCount,
+} from "@/utils/runtime-diagnostics";
 import * as Sentry from "@sentry/react-native";
 import {
   focusManager,
@@ -14,31 +22,38 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { AppState, Platform } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GlobalUpdateGate } from "../components/global-update-gate";
 import { SessionProvider, useSession } from "./ctx";
 import { SplashScreenController } from "./splash";
 
-Sentry.init({
-  dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
-  sendDefaultPii: true,
-  enableLogs: true,
-  debug: __DEV__,
+const sentryGlobal = globalThis as typeof globalThis & {
+  __ISHAPPS_SENTRY_INITIALIZED__?: boolean;
+};
 
-  tracesSampleRate: 0.1,
+if (!sentryGlobal.__ISHAPPS_SENTRY_INITIALIZED__) {
+  Sentry.init({
+    dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
+    sendDefaultPii: true,
+    enableLogs: true,
+    debug: __DEV__,
 
-  // Configure Session Replay
-  replaysSessionSampleRate: 0.05, // Capture 5% of all sessions for replay
-  replaysOnErrorSampleRate: 1.0, // Capture 100% of sessions with errors for replay
-  integrations: [
-    Sentry.mobileReplayIntegration(),
-    Sentry.feedbackIntegration(),
-    Sentry.reactNativeTracingIntegration(),
-  ],
+    tracesSampleRate: 0.1,
 
-  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
-  spotlight: __DEV__,
-});
+    // Configure Session Replay
+    replaysSessionSampleRate: 0.05, // Capture 5% of all sessions for replay
+    replaysOnErrorSampleRate: 1.0, // Capture 100% of sessions with errors for replay
+    integrations: [
+      Sentry.mobileReplayIntegration(),
+      Sentry.feedbackIntegration(),
+      Sentry.reactNativeTracingIntegration(),
+    ],
+
+    // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+    spotlight: __DEV__,
+  });
+
+  sentryGlobal.__ISHAPPS_SENTRY_INITIALIZED__ = true;
+}
 
 // onlineManager.setEventListener((setOnline) => {
 //   const eventSubscription = Network.addNetworkStateListener((state) => {
@@ -51,20 +66,40 @@ SplashScreen.preventAutoHideAsync();
 const queryClient = new QueryClient();
 
 export default Sentry.wrap(function Root() {
-  useOTAUpdate();
-  useShiftWatcher();
-  useOneSignal();
-  usePermissionMonitor();
+  incrementRootRenderCount();
 
   useEffect(() => {
     if (Platform.OS === "web") return;
 
+    let focusTimer: ReturnType<typeof setTimeout> | undefined;
     focusManager.setFocused(AppState.currentState === "active");
     const subscription = AppState.addEventListener("change", (status) => {
-      focusManager.setFocused(status === "active");
-    });
+      incrementAppStateTransitionCount();
+      if (focusTimer) {
+        clearTimeout(focusTimer);
+      }
 
-    return () => subscription.remove();
+      focusTimer = setTimeout(() => {
+        focusManager.setFocused(status === "active");
+      }, 300);
+    });
+    incrementAppStateListeners();
+
+    return () => {
+      if (focusTimer) {
+        clearTimeout(focusTimer);
+      }
+      subscription.remove();
+      decrementAppStateListeners();
+    };
+  }, []);
+
+  useEffect(() => {
+    incrementProviderMount("Root");
+
+    return () => {
+      incrementProviderUnmount("Root");
+    };
   }, []);
 
   useEffect(() => {
@@ -78,20 +113,36 @@ export default Sentry.wrap(function Root() {
   }, []);
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
-        <QueryClientProvider client={queryClient}>
-          <SessionProvider>
-            <SplashScreenController>
-              <RootNavigator />
-              <GlobalUpdateGate />
-            </SplashScreenController>
-          </SessionProvider>
-        </QueryClientProvider>
-      </SafeAreaProvider>
+      <QueryClientProvider client={queryClient}>
+        <SessionProvider>
+          <AppLifecycleHooks />
+          <SplashScreenController>
+            <RootNavigator />
+            <GlobalUpdateGate />
+          </SplashScreenController>
+        </SessionProvider>
+      </QueryClientProvider>
       <StatusBar style="auto" />
     </GestureHandlerRootView>
   );
 });
+
+function AppLifecycleHooks() {
+  useOTAUpdate();
+  useShiftWatcher();
+  useOneSignal();
+  usePermissionMonitor();
+
+  useEffect(() => {
+    incrementProviderMount("AppLifecycleHooks");
+
+    return () => {
+      incrementProviderUnmount("AppLifecycleHooks");
+    };
+  }, []);
+
+  return null;
+}
 
 function RootNavigator() {
   const { session } = useSession();

@@ -22,11 +22,8 @@ import { getHCPDashboard } from "@/api-queries/dashboard";
 import { getNotifications } from "@/api-queries/notifcations";
 import { Colors } from "@/constants/theme";
 import { useConfigSettings } from "@/data-store/config-store";
-import { useSettingsStore } from "@/data-store/use-settings-store";
 import { User } from "@/data-types/auth";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { useOneSignal } from "@/hooks/use-one-signal";
-import { useShiftWatcher } from "@/hooks/use-shift-watcher";
 import { getAvatarImageSource } from "@/utils/auth";
 import { FontAwesome6, MaterialCommunityIcons } from "@expo/vector-icons";
 import {
@@ -50,11 +47,6 @@ export default function HomeScreen() {
   const queryClient = useQueryClient();
   const configSettings = useConfigSettings();
 
-  useShiftWatcher();
-  useOneSignal();
-  useEffect(() => {
-    useSettingsStore.getState().hydrate();
-  }, []);
   const {
     data: dashboard,
     isLoading: dashboardLoading,
