@@ -1,4 +1,8 @@
-import { extractApiErrorMessage } from "@/api-actions/error-utils";
+import {
+  extractApiErrorMessage,
+  isFetchNetworkError,
+  isRequestTimeoutError,
+} from "@/api-actions/error-utils";
 import { setStorageItemAsync } from "@/app/useStorageState";
 import LoginCredentials, {
   ForgotPasswordErrorResponse,
@@ -77,6 +81,8 @@ export class AuthenticationError extends Error {
 }
 
 export class NetworkError extends Error {
+  public isNetworkError = true;
+
   constructor(message: string) {
     super(message);
     this.name = "NetworkError";
@@ -181,13 +187,13 @@ export const login = async (
       throw error;
     }
 
-    if (error instanceof TypeError && error.message === "Failed to fetch") {
+    if (isFetchNetworkError(error)) {
       throw new NetworkError(
         "Network error. Please check your internet connection.",
       );
     }
 
-    if (error instanceof Error && error.name === "AbortError") {
+    if (isRequestTimeoutError(error)) {
       throw new NetworkError("Request timeout. Please try again.");
     }
 
@@ -355,13 +361,13 @@ export const sendResetCode = async (
       throw error;
     }
 
-    if (error instanceof TypeError && error.message === "Failed to fetch") {
+    if (isFetchNetworkError(error)) {
       throw new NetworkError(
         "Network error. Please check your internet connection.",
       );
     }
 
-    if (error instanceof Error && error.name === "AbortError") {
+    if (isRequestTimeoutError(error)) {
       throw new NetworkError("Request timeout. Please try again.");
     }
 
@@ -423,13 +429,13 @@ export const verifyResetCode = async (
       throw error;
     }
 
-    if (error instanceof TypeError && error.message === "Failed to fetch") {
+    if (isFetchNetworkError(error)) {
       throw new NetworkError(
         "Network error. Please check your internet connection.",
       );
     }
 
-    if (error instanceof Error && error.name === "AbortError") {
+    if (isRequestTimeoutError(error)) {
       throw new NetworkError("Request timeout. Please try again.");
     }
 
@@ -494,13 +500,13 @@ export const resetPassword = async (
       throw error;
     }
 
-    if (error instanceof TypeError && error.message === "Failed to fetch") {
+    if (isFetchNetworkError(error)) {
       throw new NetworkError(
         "Network error. Please check your internet connection.",
       );
     }
 
-    if (error instanceof Error && error.name === "AbortError") {
+    if (isRequestTimeoutError(error)) {
       throw new NetworkError("Request timeout. Please try again.");
     }
 
