@@ -191,9 +191,13 @@ export default function Login() {
         loginPayload.device_id = subscriptionId;
       }
 
-      await signIn(loginPayload);
+      const signInResult = await signIn(loginPayload);
 
       if (!isMountedRef.current) {
+        return;
+      }
+
+      if (signInResult === "onboarding") {
         return;
       }
 

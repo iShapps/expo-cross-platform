@@ -35,6 +35,17 @@ export interface LoginSuccessResponse {
   };
 }
 
+export interface HcpOnboardingLoginResponse {
+  status: true;
+  message: string;
+  data: {
+    id: number;
+    hcp_prefix: string;
+    full_name: string;
+    status: string;
+  };
+}
+
 export interface LoginErrorResponse {
   status: false;
   message: string;
@@ -44,7 +55,10 @@ export interface LoginErrorResponse {
   };
 }
 
-export type LoginResponse = LoginSuccessResponse | LoginErrorResponse;
+export type LoginResponse =
+  | LoginSuccessResponse
+  | HcpOnboardingLoginResponse
+  | LoginErrorResponse;
 
 // Forgot Password Response Types
 export interface ForgotPasswordSuccessResponse {

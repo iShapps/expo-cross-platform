@@ -31,7 +31,7 @@ import { Alert } from "react-native";
 import { useStorageState } from "./useStorageState";
 
 const AuthContext = React.createContext<{
-  signIn: (data: LoginCredentials) => Promise<void>;
+  signIn: (data: LoginCredentials) => Promise<"authenticated" | "onboarding">;
   retryNotificationSetup: () => Promise<boolean>;
   setSess: (data: string) => void;
   signOut: () => void;
@@ -39,7 +39,7 @@ const AuthContext = React.createContext<{
   user?: User | null;
   isLoading: boolean;
 }>({
-  signIn: () => Promise.resolve(),
+  signIn: () => Promise.resolve("authenticated"),
   retryNotificationSetup: () => Promise.resolve(false),
   setSess: () => null,
   signOut: () => null,
@@ -60,30 +60,48 @@ export function useSession() {
   return value;
 }
 
-export function useProtectedRoute(user: any) {
+const getOnboardingRouteParams = (user?: User | null) => {
+  const hcp = user?.hcp;
+  const registrationScreen = hcp?.app_registration_screen;
+
+  if (!hcp?.id || !registrationScreen || registrationScreen === "0") {
+    return null;
+  }
+
+  return {
+    hcpId: String(hcp.id),
+    screen: registrationScreen,
+  };
+};
+
+export function useProtectedRoute(session: string | null | undefined, user: User | null) {
   const segments = useSegments();
   const router = useRouter();
-  console.log("user", user);
 
-  const currentRoute = usePathname() === "/(open)/index";
+  const pathname = usePathname();
+  const currentRoute = pathname === "/(open)/index";
   useEffect(() => {
     const inAuthGroup = segments[0] === "(open)";
+    const inOnboarding = segments[0] === "onboarding";
+    const onboardingParams = getOnboardingRouteParams(user);
 
-    console.log("inAuthGroup", inAuthGroup);
-
-    if (
-      // If the user is not signed in and the initial segment is not anything in the auth group.
-      !user &&
-      !inAuthGroup &&
-      currentRoute
-    ) {
+    if (!session && !inAuthGroup && currentRoute) {
       // Redirect to the sign-in page.
       router.replace("/(open)/login");
-    } else if ((user && inAuthGroup) || (user && currentRoute)) {
+    } else if (session && onboardingParams && !inOnboarding) {
+      router.replace({
+        pathname: "/onboarding",
+        params: onboardingParams,
+      });
+    } else if (
+      session &&
+      !onboardingParams &&
+      ((inAuthGroup && !inOnboarding) || currentRoute)
+    ) {
       // Redirect to the home page.
       router.replace("/(tabs)");
     }
-  }, [user, segments]);
+  }, [currentRoute, router, segments, session, user]);
 }
 
 export function SessionProvider(props: React.PropsWithChildren) {
@@ -93,12 +111,14 @@ export function SessionProvider(props: React.PropsWithChildren) {
     useStorageState("user_data");
 
   const [authLoading, setAuthLoading] = React.useState(false);
+  const router = useRouter();
 
-  useProtectedRoute(session);
   const profileStore = useProfileData();
   const queryClient = useQueryClient();
 
-  const user = userJson ? JSON.parse(userJson) : null;
+  const user = userJson ? (JSON.parse(userJson) as User) : null;
+
+  useProtectedRoute(session, user);
 
   useEffect(() => {
     incrementProviderMount("SessionProvider");
@@ -112,6 +132,14 @@ export function SessionProvider(props: React.PropsWithChildren) {
     setAuthLoading(true);
     try {
       const result = await apiLogin(credentials);
+
+      if (!("access_token" in result.data)) {
+        router.replace({
+          pathname: "/onboarding",
+          params: { hcpId: String(result.data.id) },
+        });
+        return "onboarding";
+      }
 
       // Save token and user data
       setSession(result.data.access_token);
@@ -128,7 +156,17 @@ export function SessionProvider(props: React.PropsWithChildren) {
       // Login to OneSignal for push notifications
       await onLoginSuccess(result.data.user.id.toString());
 
+      const onboardingParams = getOnboardingRouteParams(result.data.user);
+      if (onboardingParams) {
+        router.replace({
+          pathname: "/onboarding",
+          params: onboardingParams,
+        });
+        return "onboarding";
+      }
+
       Alert.alert("Success", "Login successful!", [{ text: "OK" }]);
+      return "authenticated";
     } catch (error) {
       logApiErrorToSentry(error, {
         endpoint: "/login",
@@ -192,6 +230,14 @@ export function SessionProvider(props: React.PropsWithChildren) {
       device_id: subscriptionId,
     });
 
+    if (!("access_token" in result.data)) {
+      router.replace({
+        pathname: "/onboarding",
+        params: { hcpId: String(result.data.id) },
+      });
+      return false;
+    }
+
     setSession(result.data.access_token);
     await setAuthToken(result.data.access_token);
     setUserJson(JSON.stringify(result.data.user));
@@ -200,8 +246,17 @@ export function SessionProvider(props: React.PropsWithChildren) {
     queryClient.setQueryData(["profile-details"], result.data.user);
     await onLoginSuccess(result.data.user.id.toString());
 
+    const onboardingParams = getOnboardingRouteParams(result.data.user);
+    if (onboardingParams) {
+      router.replace({
+        pathname: "/onboarding",
+        params: onboardingParams,
+      });
+      return false;
+    }
+
     return true;
-  }, [profileStore, queryClient, setSession, setUserJson]);
+  }, [profileStore, queryClient, router, setSession, setUserJson]);
 
   const handleSignOut = React.useCallback(async () => {
     try {

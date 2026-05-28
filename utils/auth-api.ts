@@ -5,7 +5,9 @@ import LoginCredentials, {
   ForgotPasswordErrorResponse,
   ForgotPasswordRequest,
   ForgotPasswordSuccessResponse,
+  HcpOnboardingLoginResponse,
   LoginErrorResponse,
+  LoginResponse,
   LoginSuccessResponse,
   ResetPasswordErrorResponse,
   ResetPasswordRequest,
@@ -158,6 +160,25 @@ const validateCredentials = (credentials: LoginCredentials): void => {
   }
 };
 
+const hasAccessToken = (data: unknown): data is LoginSuccessResponse => {
+  if (!isObject(data) || !isObject(data.data)) return false;
+
+  return (
+    typeof data.data.access_token === "string" &&
+    data.data.access_token.trim().length > 0
+  );
+};
+
+const isHcpOnboardingLoginResponse = (
+  data: unknown,
+): data is HcpOnboardingLoginResponse => {
+  if (!isObject(data) || data.status !== true || !isObject(data.data)) {
+    return false;
+  }
+
+  return typeof data.data.id === "number" && !("access_token" in data.data);
+};
+
 const getApiRequestAuthError = (
   error: ApiRequestError,
   fallbackMessage: string,
@@ -206,7 +227,7 @@ const postAuthResource = async <T>(
 
 const loginInternal = async (
   credentials: LoginCredentials,
-): Promise<LoginSuccessResponse> => {
+): Promise<LoginSuccessResponse | HcpOnboardingLoginResponse> => {
   try {
     addLoginBreadcrumb("login.submit_started", {
       hasEmail:
@@ -232,16 +253,25 @@ const loginInternal = async (
       "device-version": credentials.device_version,
     });
 
-    const data = await postAuthResource<
-      LoginSuccessResponse | LoginErrorResponse
-    >(API_CONFIG.endpoints.login, loginBody);
+    const data = await postAuthResource<LoginResponse>(
+      API_CONFIG.endpoints.login,
+      loginBody,
+    );
 
-    if (isObject(data) && data.status === true) {
-      const successData = data as unknown as LoginSuccessResponse;
-      await TokenStorage.saveToken(successData.data.access_token);
+    if (hasAccessToken(data)) {
+      await TokenStorage.saveToken(data.data.access_token);
       addLoginBreadcrumb("login.request_success");
 
-      return successData;
+      return data;
+    }
+
+    if (isHcpOnboardingLoginResponse(data)) {
+      addLoginBreadcrumb("login.onboarding_required", {
+        hcpId: data.data.id,
+        status: data.data.status,
+      });
+
+      return data;
     }
 
     if (isObject(data) && data.status === false) {
@@ -284,18 +314,20 @@ const loginInternal = async (
 
 export const login = async (
   credentials: LoginCredentials,
-): Promise<LoginSuccessResponse> => {
+): Promise<LoginSuccessResponse | HcpOnboardingLoginResponse> => {
   return loginInternal({ ...credentials });
 };
 
 // Login with Alert Handling
 export const loginWithAlerts = async (
   credentials: LoginCredentials,
-): Promise<LoginSuccessResponse | null> => {
+): Promise<LoginSuccessResponse | HcpOnboardingLoginResponse | null> => {
   try {
     const result = await login(credentials);
 
-    Alert.alert("Success", "Login successful!", [{ text: "OK" }]);
+    if ("access_token" in result.data) {
+      Alert.alert("Success", "Login successful!", [{ text: "OK" }]);
+    }
 
     return result;
   } catch (error) {
