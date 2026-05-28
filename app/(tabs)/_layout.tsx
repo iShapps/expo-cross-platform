@@ -10,6 +10,7 @@ import { useIsFetching } from "@tanstack/react-query";
 import { Tabs } from "expo-router";
 import React from "react";
 import { Animated, Easing, Platform, StyleSheet, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const FetchingSnakeBar = () => {
   const isFetching = useIsFetching({
@@ -63,6 +64,7 @@ const FetchingSnakeBar = () => {
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const insets = useSafeAreaInsets();
   const lightTabBar = {
     activeTint: "#70C601",
     inactiveTint: "#71797E",
@@ -79,6 +81,9 @@ export default function TabLayout() {
       bar: {
         backgroundColor: "#F8FFF0",
         position: "absolute",
+        height: 60,
+        paddingBottom: 8,
+        paddingTop: 8,
         justifyContent: "center",
         alignItems: "center",
         borderTopColor: "#D3D3D3",
@@ -111,6 +116,11 @@ export default function TabLayout() {
     }),
   };
   const tabBarTheme = colorScheme === "dark" ? darkTabBar : lightTabBar;
+  const androidTabBarStyle = {
+    ...tabBarTheme.androidBar.bar,
+    height: 60 + insets.bottom,
+    paddingBottom: Math.max(insets.bottom, 8),
+  };
 
   return (
     <Tabs
@@ -121,7 +131,7 @@ export default function TabLayout() {
         tabBarStyle:
           Platform.OS === "ios"
             ? tabBarTheme.iosBar.bar
-            : tabBarTheme.androidBar.bar,
+            : androidTabBarStyle,
         tabBarBackground: () => <FetchingSnakeBar />,
         headerShown: false,
         tabBarButton: HapticTab,

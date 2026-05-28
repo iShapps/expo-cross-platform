@@ -79,6 +79,8 @@ export class AuthenticationError extends Error {
 }
 
 export class NetworkError extends Error {
+  public isNetworkError = true;
+
   constructor(message: string) {
     super(message);
     this.name = "NetworkError";
@@ -184,7 +186,10 @@ const postAuthResource = async <T>(
   const requestBody = isLoginEndpoint ? Object.freeze({ ...body }) : body;
 
   if (isLoginEndpoint) {
-    addLoginBreadcrumb("login.request_started", getLoginBodyDiagnostics(requestBody));
+    addLoginBreadcrumb(
+      "login.request_started",
+      getLoginBodyDiagnostics(requestBody),
+    );
   }
 
   const { data } = await apiRequest<T>({
@@ -193,8 +198,7 @@ const postAuthResource = async <T>(
     method: "POST",
     body: requestBody,
     timeoutMs: API_CONFIG.timeout,
-    retryOnAndroidNetworkError:
-      !isLoginEndpoint && endpoint !== "/logout",
+    retryOnAndroidNetworkError: !isLoginEndpoint && endpoint !== "/logout",
   });
 
   return data;
@@ -228,10 +232,9 @@ const loginInternal = async (
       "device-version": credentials.device_version,
     });
 
-    const data = await postAuthResource<LoginSuccessResponse | LoginErrorResponse>(
-      API_CONFIG.endpoints.login,
-      loginBody,
-    );
+    const data = await postAuthResource<
+      LoginSuccessResponse | LoginErrorResponse
+    >(API_CONFIG.endpoints.login, loginBody);
 
     if (isObject(data) && data.status === true) {
       const successData = data as unknown as LoginSuccessResponse;

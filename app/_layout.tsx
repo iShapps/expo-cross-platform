@@ -3,6 +3,14 @@ import { useOneSignal } from "@/hooks/use-one-signal";
 import { useOTAUpdate } from "@/hooks/use-ota-update";
 import { usePermissionMonitor } from "@/hooks/use-permission-monitor";
 import { useShiftWatcher } from "@/hooks/use-shift-watcher";
+import {
+  decrementAppStateListeners,
+  incrementAppStateListeners,
+  incrementAppStateTransitionCount,
+  incrementProviderMount,
+  incrementProviderUnmount,
+  incrementRootRenderCount,
+} from "@/utils/runtime-diagnostics";
 import * as Sentry from "@sentry/react-native";
 import {
   focusManager,
@@ -17,14 +25,6 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { GlobalUpdateGate } from "../components/global-update-gate";
 import { SessionProvider, useSession } from "./ctx";
 import { SplashScreenController } from "./splash";
-import {
-  decrementAppStateListeners,
-  incrementAppStateListeners,
-  incrementAppStateTransitionCount,
-  incrementProviderMount,
-  incrementProviderUnmount,
-  incrementRootRenderCount,
-} from "@/utils/runtime-diagnostics";
 
 const sentryGlobal = globalThis as typeof globalThis & {
   __ISHAPPS_SENTRY_INITIALIZED__?: boolean;

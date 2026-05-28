@@ -68,7 +68,10 @@ const registerOneSignalListeners = () => {
       "foregroundWillDisplay",
       handleForegroundNotification,
     );
-    OneSignal.Notifications.removeEventListener("click", handleNotificationClick);
+    OneSignal.Notifications.removeEventListener(
+      "click",
+      handleNotificationClick,
+    );
     OneSignal.User.pushSubscription.removeEventListener(
       "change",
       handlePushSubscriptionChange,
@@ -88,6 +91,9 @@ const handleNotificationClick = (event: NotificationClickEvent) => {
         break;
       case "documents":
         router.navigate("/documents");
+        break;
+      case "test":
+        router.navigate("/notification-test");
         break;
       default:
         router.navigate("/notifications");
@@ -130,7 +136,10 @@ export const useOneSignal = () => {
       session?.user?.id ?? "anonymous"
     }`;
 
-    if (activeOneSignalSyncKey === syncKey || lastOneSignalSyncKey === syncKey) {
+    if (
+      activeOneSignalSyncKey === syncKey ||
+      lastOneSignalSyncKey === syncKey
+    ) {
       return;
     }
 
