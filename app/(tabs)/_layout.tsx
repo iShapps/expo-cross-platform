@@ -80,7 +80,7 @@ export default function TabLayout() {
     androidBar: StyleSheet.create({
       bar: {
         backgroundColor: "#F8FFF0",
-        position: "absolute",
+        position: undefined,
         height: 60,
         paddingBottom: 8,
         paddingTop: 8,
@@ -105,7 +105,7 @@ export default function TabLayout() {
     androidBar: StyleSheet.create({
       bar: {
         backgroundColor: "#232A2E",
-        position: "absolute",
+        position: undefined,
         height: 60,
         paddingBottom: 8,
         paddingTop: 8,
@@ -119,6 +119,7 @@ export default function TabLayout() {
   const androidTabBarStyle = {
     ...tabBarTheme.androidBar.bar,
     height: 60 + insets.bottom,
+    position: undefined,
     paddingBottom: Math.max(insets.bottom, 8),
   };
 
@@ -129,9 +130,7 @@ export default function TabLayout() {
         tabBarActiveTintColor: tabBarTheme.activeTint,
         tabBarInactiveTintColor: tabBarTheme.inactiveTint,
         tabBarStyle:
-          Platform.OS === "ios"
-            ? tabBarTheme.iosBar.bar
-            : androidTabBarStyle,
+          Platform.OS === "ios" ? tabBarTheme.iosBar.bar : androidTabBarStyle,
         tabBarBackground: () => <FetchingSnakeBar />,
         headerShown: false,
         tabBarButton: HapticTab,
@@ -187,35 +186,6 @@ export default function TabLayout() {
 }
 
 const styles = StyleSheet.create({
-  iosTabBar: {
-    backgroundColor: "#F8FFF0",
-    // marginHorizontal:15,
-    // marginVertical:15,
-    position: "absolute",
-    // paddingHorizontal:5,
-    // paddingVertical:18,
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    alignContent: "center",
-    borderTopColor: "#D3D3D3",
-  },
-  androidTabBar: {
-    backgroundColor: "#F8FFF0",
-    // marginHorizontal:15,
-    // marginVertical:15,
-    position: "absolute",
-    // paddingHorizontal:5,
-    // paddingVertical:18,
-    height: 60,
-    paddingBottom: 8,
-    paddingTop: 8,
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    alignContent: "center",
-    borderTopColor: "#D3D3D3",
-  },
   fetchingBarWrap: {
     position: "absolute",
     top: 0,
