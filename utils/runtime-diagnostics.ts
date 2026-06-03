@@ -1,3 +1,5 @@
+import { setTransitionCount } from "./wait-for-stable-app-state";
+
 const rootMountId = `${Date.now().toString(36)}-${Math.random()
   .toString(36)
   .slice(2, 8)}`;
@@ -48,6 +50,8 @@ export const decrementAppStateListeners = () => {
 
 export const incrementAppStateTransitionCount = () => {
   appStateTransitionCount += 1;
+  // Notify stability tracker that a transition just happened
+  setTransitionCount(appStateTransitionCount);
 };
 
 export const markBootstrapStarted = () => {

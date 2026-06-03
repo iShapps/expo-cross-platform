@@ -3,6 +3,7 @@ import { useOneSignal } from "@/hooks/use-one-signal";
 import { useOTAUpdate } from "@/hooks/use-ota-update";
 import { usePermissionMonitor } from "@/hooks/use-permission-monitor";
 import { useShiftWatcher } from "@/hooks/use-shift-watcher";
+import { debug } from "@/utils/logger";
 import {
   decrementAppStateListeners,
   incrementAppStateListeners,
@@ -103,11 +104,10 @@ export default Sentry.wrap(function Root() {
   }, []);
 
   useEffect(() => {
-    console.log("Initializing app...");
+    debug("Initializing app...");
     const initializeApp = async () => {
       const store = useSettingsStore.getState();
       await store.hydrate();
-      await store.requestAllPermissionsOnLaunch();
     };
     initializeApp();
   }, []);
