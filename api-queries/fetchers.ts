@@ -5,6 +5,7 @@ import {
   notifyAuthExpired,
 } from "@/api-actions/error-utils";
 import { TokenStorage } from "@/utils/auth-api";
+import { error } from "@/utils/logger";
 // TODO: Implement proper typing for shift data and responses
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL;
@@ -75,12 +76,12 @@ export async function fetchShifts(): Promise<any[]> {
       throw new ShiftApiError("Malformed response from server");
     }
     return "data" in data && Array.isArray(data.data) ? data.data : [];
-  } catch (error) {
-    if (error instanceof ShiftApiError) throw error;
-    console.error("fetchShifts error:", error);
+  } catch (err) {
+    if (err instanceof ShiftApiError) throw err;
+    error("fetchShifts error:", err);
     throw new ShiftApiError(
-      error instanceof Error
-        ? error.message
+      err instanceof Error
+        ? err.message
         : "An unexpected error occurred fetching shifts.",
     );
   }
@@ -97,12 +98,12 @@ export async function fetchShiftById(shiftId: string): Promise<any> {
       throw new ShiftApiError("Malformed response from server");
     }
     return "data" in data ? data.data : undefined;
-  } catch (error) {
-    if (error instanceof ShiftApiError) throw error;
-    console.error("fetchShiftById error:", error);
+  } catch (err) {
+    if (err instanceof ShiftApiError) throw err;
+    error("fetchShiftById error:", err);
     throw new ShiftApiError(
-      error instanceof Error
-        ? error.message
+      err instanceof Error
+        ? err.message
         : "An unexpected error occurred fetching the shift.",
     );
   }
@@ -118,12 +119,12 @@ export async function fetchDashboard(): Promise<any> {
       throw new ShiftApiError("Malformed response from server");
     }
     return data;
-  } catch (error) {
-    if (error instanceof ShiftApiError) throw error;
-    console.error("fetchDashboard error:", error);
+  } catch (err) {
+    if (err instanceof ShiftApiError) throw err;
+    error("fetchDashboard error:", err);
     throw new ShiftApiError(
-      error instanceof Error
-        ? error.message
+      err instanceof Error
+        ? err.message
         : "An unexpected error occurred fetching dashboard.",
     );
   }

@@ -16,14 +16,15 @@ import {
   AuthenticationError,
   NetworkError,
 } from "@/utils/auth-api";
-import {
-  getLoginCredentials,
-  saveLoginCredentials,
-} from "@/utils/secure-login-credentials";
+import { debug, error } from "@/utils/logger";
 import {
   incrementProviderMount,
   incrementProviderUnmount,
 } from "@/utils/runtime-diagnostics";
+import {
+  getLoginCredentials,
+  saveLoginCredentials,
+} from "@/utils/secure-login-credentials";
 import { useQueryClient } from "@tanstack/react-query";
 import { usePathname, useRouter, useSegments } from "expo-router";
 import React, { useEffect } from "react";
@@ -74,9 +75,13 @@ const getOnboardingRouteParams = (user?: User | null) => {
   };
 };
 
-export function useProtectedRoute(session: string | null | undefined, user: User | null) {
+export function useProtectedRoute(
+  session: string | null | undefined,
+  user: User | null,
+) {
   const segments = useSegments();
   const router = useRouter();
+  debug("session", session);
 
   const pathname = usePathname();
   const currentRoute = pathname === "/(open)/index";
@@ -167,23 +172,25 @@ export function SessionProvider(props: React.PropsWithChildren) {
 
       Alert.alert("Success", "Login successful!", [{ text: "OK" }]);
       return "authenticated";
-    } catch (error) {
-      logApiErrorToSentry(error, {
+    } catch (err) {
+      logApiErrorToSentry(err, {
         endpoint: "/login",
         method: "POST",
       });
       // Handle errors with alerts
-      if (error instanceof AuthenticationError) {
-        let errorMessage = error.message;
+      if (err instanceof AuthenticationError) {
+        let errorMessage = err.message as string;
 
-        if (error.errors) {
-          const errorMessages = Object.values(error.errors).flat().join("\n");
-          errorMessage = errorMessages || error.message;
+        if ((err as any).errors) {
+          const errorMessages = Object.values((err as any).errors)
+            .flat()
+            .join("\n");
+          errorMessage = errorMessages || err.message;
         }
 
         Alert.alert("Login Failed", errorMessage, [{ text: "OK" }]);
-      } else if (error instanceof NetworkError) {
-        Alert.alert("Connection Error", error.message, [
+      } else if (err instanceof NetworkError) {
+        Alert.alert("Connection Error", (err as any).message, [
           { text: "OK" },
           {
             text: "Retry",
@@ -199,14 +206,14 @@ export function SessionProvider(props: React.PropsWithChildren) {
           [{ text: "OK" }],
         );
       }
-      throw error;
+      throw err;
     } finally {
       setAuthLoading(false);
     }
   };
 
   const handleSetSession = (token: string) => {
-    console.log("called");
+    debug("set session called");
     setSession(token);
     setAuthToken(token);
   };
@@ -263,8 +270,8 @@ export function SessionProvider(props: React.PropsWithChildren) {
       await apiLogout();
       // Logout from OneSignal to stop push notifications
       // await onLogout();
-    } catch (error) {
-      console.error("Logout error:", error);
+    } catch (err) {
+      error("Logout error:", err);
     } finally {
       // clear local data
       await stopBackgroundTracking();

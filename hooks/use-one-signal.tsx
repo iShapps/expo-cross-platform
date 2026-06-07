@@ -1,11 +1,13 @@
 import { useSession } from "@/app/ctx";
 import { useSettingsStore } from "@/data-store/use-settings-store";
 import { AppNotification } from "@/data-types/notifications";
+import { debug, error, warn } from "@/utils/logger";
 import {
   decrementOneSignalListeners,
   incrementOneSignalListeners,
   markOneSignalInitialized,
 } from "@/utils/runtime-diagnostics";
+import { waitForStableAppState } from "@/utils/wait-for-stable-app-state";
 import Constants from "expo-constants";
 import { router } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
@@ -20,12 +22,6 @@ let oneSignalInitialized = false;
 let activeOneSignalSyncKey: string | null = null;
 let lastOneSignalSyncKey: string | null = null;
 
-const debugLog = (...args: unknown[]) => {
-  if (__DEV__) {
-    console.log(...args);
-  }
-};
-
 const getOneSignalAppId = () =>
   Constants.expoConfig?.extra?.eas?.oneSignalAppId as string | undefined;
 
@@ -33,7 +29,7 @@ const initializeOneSignal = () => {
   const appId = getOneSignalAppId();
 
   if (!appId) {
-    console.warn("OneSignal App ID is missing in app.json extra config");
+    warn("OneSignal App ID is missing in app.json extra config");
     return false;
   }
 
@@ -45,10 +41,43 @@ const initializeOneSignal = () => {
     OneSignal.initialize(appId);
     oneSignalInitialized = true;
     markOneSignalInitialized();
-    debugLog("OneSignal initialized");
+    debug("OneSignal initialized");
   }
 
   return true;
+};
+
+const handleNotificationClick = (event: NotificationClickEvent) => {
+  debug("Notification clicked:", event);
+  const notification = extractNotification(event);
+
+  if (notification?.additionalData) {
+    switch (notification.additionalData.notification_type) {
+      case "shifts":
+        router.navigate(`/${notification.additionalData.shift_id.toString()}`);
+        break;
+      case "documents":
+        router.navigate("/documents");
+        break;
+      case "test":
+        router.navigate("/notification-test");
+        break;
+      default:
+        router.navigate("/notifications");
+        break;
+    }
+  }
+};
+
+const handleForegroundNotification = (event: NotificationWillDisplayEvent) => {
+  debug("Notification received in foreground:", event);
+  // display notification immediately
+  event.getNotification().display();
+};
+
+const handlePushSubscriptionChange = (event: any) => {
+  debug("Push Subscription changed:", event);
+  debug("New Subscription ID:", event?.current?.id ?? null);
 };
 
 const registerOneSignalListeners = () => {
@@ -78,38 +107,6 @@ const registerOneSignalListeners = () => {
     );
     decrementOneSignalListeners(3);
   };
-};
-
-const handleNotificationClick = (event: NotificationClickEvent) => {
-  debugLog("Notification clicked:", event);
-  const notification = extractNotification(event);
-
-  if (notification?.additionalData) {
-    switch (notification.additionalData.notification_type) {
-      case "shifts":
-        router.navigate(`/${notification.additionalData.shift_id.toString()}`);
-        break;
-      case "documents":
-        router.navigate("/documents");
-        break;
-      case "test":
-        router.navigate("/notification-test");
-        break;
-      default:
-        router.navigate("/notifications");
-        break;
-    }
-  }
-};
-
-const handleForegroundNotification = (event: NotificationWillDisplayEvent) => {
-  debugLog("Notification received in foreground:", event);
-  event.getNotification().display();
-};
-
-const handlePushSubscriptionChange = (event: any) => {
-  debugLog("Push Subscription changed:", event);
-  debugLog("New Subscription ID:", event.current?.id);
 };
 
 export const useOneSignal = () => {
@@ -149,23 +146,25 @@ export const useOneSignal = () => {
     const handleNotificationState = async () => {
       try {
         if (notificationsEnabled) {
-          debugLog("Notifications enabled — syncing OneSignal...");
+          debug("Notifications enabled — syncing OneSignal...");
 
           const alreadyGranted =
             await OneSignal.Notifications.getPermissionAsync();
 
           if (!alreadyGranted) {
+            await waitForStableAppState(2000);
+
             const canRequest =
               await OneSignal.Notifications.canRequestPermission();
 
             if (canRequest) {
               const granted =
                 await OneSignal.Notifications.requestPermission(true);
-              debugLog("Permission granted:", granted);
+              debug("Permission granted:", granted);
 
               if (!granted) return;
             } else {
-              debugLog(
+              debug(
                 "Cannot request permission — user must enable in device settings",
               );
               return;
@@ -174,16 +173,16 @@ export const useOneSignal = () => {
 
           if (session?.user?.id) {
             await OneSignal.login(String(session.user.id));
-            debugLog("Logged into OneSignal with user:", session.user.id);
+            debug("Logged into OneSignal with user:", session.user.id);
 
             const subscriptionId =
               await OneSignal.User.pushSubscription.getIdAsync();
-            debugLog("OneSignal Subscription ID:", subscriptionId);
+            debug("OneSignal Subscription ID:", subscriptionId);
           }
 
           await OneSignal.User.pushSubscription.optIn();
         } else {
-          debugLog("Notifications disabled — opting out of push...");
+          debug("Notifications disabled — opting out of push...");
           await OneSignal.User.pushSubscription.optOut();
         }
 
@@ -211,29 +210,29 @@ export const useOneSignal = () => {
 
 export const onLoginSuccess = async (userId: string) => {
   try {
-    debugLog("Logging into OneSignal with user:", userId);
+    debug("Logging into OneSignal with user:", userId);
     await OneSignal.login(userId);
 
     const subscriptionId = await OneSignal.User.pushSubscription.getIdAsync();
 
-    debugLog("User logged in to OneSignal");
-    debugLog("External ID:", userId);
-    debugLog("Subscription ID:", subscriptionId);
+    debug("User logged in to OneSignal");
+    debug("External ID:", userId);
+    debug("Subscription ID:", subscriptionId);
 
     return subscriptionId;
-  } catch (error) {
-    console.error("OneSignal login error:", error);
-    throw error;
+  } catch (err) {
+    error("OneSignal login error:", err);
+    throw err;
   }
 };
 
 export const onLogout = async () => {
   try {
-    debugLog("Logging out from OneSignal");
+    debug("Logging out from OneSignal");
     await OneSignal.logout();
-    debugLog("Logged out from OneSignal successfully");
-  } catch (error) {
-    console.error("OneSignal logout error:", error);
+    debug("Logged out from OneSignal successfully");
+  } catch (err) {
+    error("OneSignal logout error:", err);
   }
 };
 
@@ -241,8 +240,8 @@ export const getSubscriptionId = async (): Promise<string | null> => {
   try {
     const subscriptionId = await OneSignal.User.pushSubscription.getIdAsync();
     return subscriptionId;
-  } catch (error) {
-    console.error("Error getting subscription ID:", error);
+  } catch (err) {
+    error("Error getting subscription ID:", err);
     return null;
   }
 };
@@ -256,8 +255,8 @@ export const getNotificationPermissionStatus = async () => {
       hasPermission,
       canRequest,
     };
-  } catch (error) {
-    console.error("Error checking notification permission:", error);
+  } catch (err) {
+    error("Error checking notification permission:", err);
     return {
       hasPermission: false,
       canRequest: false,
@@ -276,8 +275,8 @@ export const useOneSignalSubscriptionStatus = () => {
     try {
       const id = await OneSignal.User.pushSubscription.getIdAsync();
       setSubscriptionId(id);
-    } catch (error) {
-      console.error("Error checking OneSignal subscription ID:", error);
+    } catch (err) {
+      error("Error checking OneSignal subscription ID:", err);
       setSubscriptionId(null);
     } finally {
       setIsChecking(false);
