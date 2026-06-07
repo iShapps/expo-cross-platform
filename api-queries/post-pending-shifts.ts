@@ -6,6 +6,7 @@ import {
   IShiftLocationParams,
   IShiftResponse,
 } from "@/data-types/shifts";
+import { error } from "@/utils/logger";
 
 // 0: pending
 // 1: scheduled
@@ -180,9 +181,9 @@ export async function postShiftLocation(params: IShiftLocationParams) {
       "/shift/shift-tracking",
       params,
     );
-  } catch (error) {
-    console.error("Failed to send shift location", error);
-    throw error;
+  } catch (err) {
+    error("Failed to send shift location", err);
+    throw err;
   }
 }
 
