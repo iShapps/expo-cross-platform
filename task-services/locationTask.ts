@@ -1,5 +1,6 @@
 import { postShiftLocation } from "@/api-queries/post-pending-shifts";
 import { useProfileData } from "@/data-store/use-account-store";
+import { debug, error as debugError, warn } from "@/utils/logger";
 import * as Location from "expo-location";
 import * as TaskManager from "expo-task-manager";
 
@@ -9,7 +10,7 @@ const ONE_HOUR_MS = 60 * 60 * 1000;
 // Background Task
 TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
   if (error) {
-    console.error("Background location task error:", error);
+    debugError("Background location task error:", error);
     return;
   }
   if (!data) return;
@@ -30,18 +31,18 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
   if (now > shiftEndTime) {
     await stopBackgroundTracking();
     useProfileData.getState().setAcceptedShift(null);
-    console.log("[LocationTask] Shift ended — background tracking stopped");
+    debug("[LocationTask] Shift ended — background tracking stopped");
     return;
   }
 
   // only send location if shift starts within 1 hour
   if (shiftStartTime - now > ONE_HOUR_MS) return;
-  console.log(
+  debug(
     `[LocationTask] Shift starts in ${Math.round((shiftStartTime - now) / 60_000)} min — sending location update`,
   );
 
   try {
-    console.log(
+    debug(
       `[LocationTask] Got location: ${location.coords.latitude}, ${location.coords.longitude}`,
     );
     await postShiftLocation({
@@ -50,11 +51,11 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
       latitude: location.coords.latitude,
       longitude: location.coords.longitude,
     });
-    console.log(
+    debug(
       `[LocationTask] Sent: ${location.coords.latitude}, ${location.coords.longitude}`,
     );
   } catch (err) {
-    console.error("[LocationTask] Failed to send location:", err);
+    debugError("[LocationTask] Failed to send location:", err);
   }
 });
 
@@ -68,24 +69,24 @@ const isTrackingActive = async (): Promise<boolean> => {
 
 // Start Background Tracking
 export const startBackgroundTracking = async (): Promise<boolean> => {
-  console.log("[LocationTask] Attempting to start background tracking...");
+  debug("[LocationTask] Attempting to start background tracking...");
   const { status: foregroundStatus } =
     await Location.requestForegroundPermissionsAsync();
   if (foregroundStatus !== "granted") {
-    console.warn("[LocationTask] Foreground permission denied");
+    warn("[LocationTask] Foreground permission denied");
     return false;
   }
 
   const { status: backgroundStatus } =
     await Location.requestBackgroundPermissionsAsync();
   if (backgroundStatus !== "granted") {
-    console.warn("[LocationTask] Background permission denied");
+    warn("[LocationTask] Background permission denied");
     return false;
   }
 
   const alreadyRunning = await isTrackingActive();
   if (alreadyRunning) {
-    console.log("[LocationTask] Background tracking already active");
+    debug("[LocationTask] Background tracking already active");
     return true;
   }
 
@@ -104,7 +105,7 @@ export const startBackgroundTracking = async (): Promise<boolean> => {
     },
   });
 
-  console.log("[LocationTask] Background tracking started");
+  debug("[LocationTask] Background tracking started");
   return true;
 };
 
@@ -113,7 +114,7 @@ export const stopBackgroundTracking = async (): Promise<void> => {
   const running = await isTrackingActive();
   if (running) {
     await Location.stopLocationUpdatesAsync(LOCATION_TASK_NAME);
-    console.log("[LocationTask] Background tracking stopped");
+    debug("[LocationTask] Background tracking stopped");
   }
 };
 

@@ -7,10 +7,11 @@ import {
   incrementAppStateTransitionCount,
   setStartupStabilized,
 } from "@/utils/runtime-diagnostics";
+import { waitForStableAppState } from "@/utils/wait-for-stable-app-state";
 import { useQuery } from "@tanstack/react-query";
 import * as Application from "expo-application";
 import { useEffect, useState } from "react";
-import { AppState, InteractionManager, Linking, Platform } from "react-native";
+import { AppState, Linking, Platform } from "react-native";
 
 const normalizeVersionPart = (value: string) => {
   const parsed = Number.parseInt(value, 10);
@@ -54,7 +55,13 @@ export const useAppUpdateGate = () => {
     let appStateSubscription: { remove: () => void } | undefined;
     let didSetReady = false;
 
-    const setReadyIfActive = () => {
+    const setReadyIfActive = async () => {
+      if (didSetReady || AppState.currentState !== "active") return;
+
+      // Wait for app state to truly stabilize on Android
+      // This detects and waits for pause/resume transitions to complete
+      await waitForStableAppState(1200);
+
       if (didSetReady || AppState.currentState !== "active") return;
       didSetReady = true;
       setBootstrapReady(true);
@@ -66,23 +73,22 @@ export const useAppUpdateGate = () => {
       }
     };
 
-    const interactionTask = InteractionManager.runAfterInteractions(() => {
-      timeoutId = setTimeout(() => {
-        if (AppState.currentState === "active") {
-          setReadyIfActive();
-          return;
-        }
+    // Use setTimeout instead of deprecated InteractionManager.runAfterInteractions
+    // The 3000ms delay provides sufficient time for interactions to settle
+    timeoutId = setTimeout(() => {
+      if (AppState.currentState === "active") {
+        void setReadyIfActive();
+        return;
+      }
 
-        appStateSubscription = AppState.addEventListener("change", () => {
-          incrementAppStateTransitionCount();
-          setReadyIfActive();
-        });
-        incrementAppStateListeners();
-      }, 800);
-    });
+      appStateSubscription = AppState.addEventListener("change", () => {
+        incrementAppStateTransitionCount();
+        void setReadyIfActive();
+      });
+      incrementAppStateListeners();
+    }, 3000);
 
     return () => {
-      interactionTask.cancel();
       if (timeoutId) {
         clearTimeout(timeoutId);
       }
