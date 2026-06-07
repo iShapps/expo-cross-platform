@@ -14,6 +14,7 @@ import LoginCredentials, {
   VerifyOTPRequest,
   VerifyOTPSuccessResponse,
 } from "@/data-types/auth";
+import { error } from "@/utils/logger";
 import * as Sentry from "@sentry/react-native";
 import { Alert, Platform } from "react-native";
 
@@ -34,8 +35,8 @@ export const TokenStorage = {
   async saveToken(token: string): Promise<void> {
     try {
       await setStorageItemAsync("access_token", token);
-    } catch (error) {
-      console.error("Error saving token:", error);
+    } catch (err) {
+      error("Error saving token:", err);
       throw new Error("Failed to save authentication details");
     }
   },
@@ -52,8 +53,8 @@ export const TokenStorage = {
       } else {
         return await SecureStore.getItemAsync("access_token");
       }
-    } catch (error) {
-      console.error("Error retrieving token:", error);
+    } catch (err) {
+      error("Error retrieving token:", err);
       return null;
     }
   },
@@ -61,8 +62,8 @@ export const TokenStorage = {
   async removeToken(): Promise<void> {
     try {
       await setStorageItemAsync("access_token", null);
-    } catch (error) {
-      console.error("Error removing token:", error);
+    } catch (err) {
+      error("Error removing token:", err);
     }
   },
 };
@@ -257,19 +258,19 @@ const loginInternal = async (
     }
 
     throw new AuthenticationError("Unexpected response from server");
-  } catch (error) {
-    if (error instanceof AuthenticationError) {
-      throw error;
+  } catch (err) {
+    if (err instanceof AuthenticationError) {
+      throw err;
     }
 
-    if (error instanceof ApiRequestError) {
+    if (err instanceof ApiRequestError) {
       addLoginBreadcrumb("login.request_failed", {
-        reason: error.kind,
-        statusCode: error.details.statusCode,
-        wasTimeout: error.details.wasTimeout,
-        wasAborted: error.details.wasAborted,
+        reason: err.kind,
+        statusCode: err.details.statusCode,
+        wasTimeout: err.details.wasTimeout,
+        wasAborted: err.details.wasAborted,
       });
-      throw getApiRequestAuthError(error, "Login failed");
+      throw getApiRequestAuthError(err, "Login failed");
     }
 
     addLoginBreadcrumb("login.request_failed", {
@@ -420,13 +421,13 @@ export const sendResetCode = async (
     }
 
     throw new AuthenticationError("Unexpected response from server");
-  } catch (error) {
-    if (error instanceof AuthenticationError) {
-      throw error;
+  } catch (err) {
+    if (err instanceof AuthenticationError) {
+      throw err;
     }
 
-    if (error instanceof ApiRequestError) {
-      throw getApiRequestAuthError(error, "Failed to send reset code");
+    if (err instanceof ApiRequestError) {
+      throw getApiRequestAuthError(err, "Failed to send reset code");
     }
 
     throw new AuthenticationError(
@@ -461,13 +462,13 @@ export const verifyResetCode = async (
     }
 
     throw new AuthenticationError("Unexpected response from server");
-  } catch (error) {
-    if (error instanceof AuthenticationError) {
-      throw error;
+  } catch (err) {
+    if (err instanceof AuthenticationError) {
+      throw err;
     }
 
-    if (error instanceof ApiRequestError) {
-      throw getApiRequestAuthError(error, "Invalid verification code");
+    if (err instanceof ApiRequestError) {
+      throw getApiRequestAuthError(err, "Invalid verification code");
     }
 
     throw new AuthenticationError(
@@ -505,13 +506,13 @@ export const resetPassword = async (
     }
 
     throw new AuthenticationError("Unexpected response from server");
-  } catch (error) {
-    if (error instanceof AuthenticationError) {
-      throw error;
+  } catch (err) {
+    if (err instanceof AuthenticationError) {
+      throw err;
     }
 
-    if (error instanceof ApiRequestError) {
-      throw getApiRequestAuthError(error, "Failed to reset password");
+    if (err instanceof ApiRequestError) {
+      throw getApiRequestAuthError(err, "Failed to reset password");
     }
 
     // Generic error

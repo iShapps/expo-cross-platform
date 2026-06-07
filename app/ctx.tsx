@@ -16,14 +16,15 @@ import {
   AuthenticationError,
   NetworkError,
 } from "@/utils/auth-api";
-import {
-  getLoginCredentials,
-  saveLoginCredentials,
-} from "@/utils/secure-login-credentials";
+import { debug, error } from "@/utils/logger";
 import {
   incrementProviderMount,
   incrementProviderUnmount,
 } from "@/utils/runtime-diagnostics";
+import {
+  getLoginCredentials,
+  saveLoginCredentials,
+} from "@/utils/secure-login-credentials";
 import { useQueryClient } from "@tanstack/react-query";
 import { usePathname, useRouter, useSegments } from "expo-router";
 import React, { useEffect } from "react";
@@ -60,30 +61,30 @@ export function useSession() {
   return value;
 }
 
-export function useProtectedRoute(user: any) {
+export function useProtectedRoute(session?: string | null) {
   const segments = useSegments();
   const router = useRouter();
-  console.log("user", user);
+  debug("session", session);
 
   const currentRoute = usePathname() === "/(open)/index";
   useEffect(() => {
     const inAuthGroup = segments[0] === "(open)";
 
-    console.log("inAuthGroup", inAuthGroup);
+    debug("inAuthGroup", inAuthGroup);
 
     if (
-      // If the user is not signed in and the initial segment is not anything in the auth group.
-      !user &&
+      // If the session is not present and the initial segment is not anything in the auth group.
+      !session &&
       !inAuthGroup &&
       currentRoute
     ) {
       // Redirect to the sign-in page.
       router.replace("/(open)/login");
-    } else if ((user && inAuthGroup) || (user && currentRoute)) {
+    } else if ((session && inAuthGroup) || (session && currentRoute)) {
       // Redirect to the home page.
       router.replace("/(tabs)");
     }
-  }, [user, segments]);
+  }, [session, segments, router, currentRoute]);
 }
 
 export function SessionProvider(props: React.PropsWithChildren) {
@@ -129,23 +130,25 @@ export function SessionProvider(props: React.PropsWithChildren) {
       await onLoginSuccess(result.data.user.id.toString());
 
       Alert.alert("Success", "Login successful!", [{ text: "OK" }]);
-    } catch (error) {
-      logApiErrorToSentry(error, {
+    } catch (err) {
+      logApiErrorToSentry(err, {
         endpoint: "/login",
         method: "POST",
       });
       // Handle errors with alerts
-      if (error instanceof AuthenticationError) {
-        let errorMessage = error.message;
+      if (err instanceof AuthenticationError) {
+        let errorMessage = err.message as string;
 
-        if (error.errors) {
-          const errorMessages = Object.values(error.errors).flat().join("\n");
-          errorMessage = errorMessages || error.message;
+        if ((err as any).errors) {
+          const errorMessages = Object.values((err as any).errors)
+            .flat()
+            .join("\n");
+          errorMessage = errorMessages || err.message;
         }
 
         Alert.alert("Login Failed", errorMessage, [{ text: "OK" }]);
-      } else if (error instanceof NetworkError) {
-        Alert.alert("Connection Error", error.message, [
+      } else if (err instanceof NetworkError) {
+        Alert.alert("Connection Error", (err as any).message, [
           { text: "OK" },
           {
             text: "Retry",
@@ -161,14 +164,14 @@ export function SessionProvider(props: React.PropsWithChildren) {
           [{ text: "OK" }],
         );
       }
-      throw error;
+      throw err;
     } finally {
       setAuthLoading(false);
     }
   };
 
   const handleSetSession = (token: string) => {
-    console.log("called");
+    debug("set session called");
     setSession(token);
     setAuthToken(token);
   };
@@ -208,8 +211,8 @@ export function SessionProvider(props: React.PropsWithChildren) {
       await apiLogout();
       // Logout from OneSignal to stop push notifications
       // await onLogout();
-    } catch (error) {
-      console.error("Logout error:", error);
+    } catch (err) {
+      error("Logout error:", err);
     } finally {
       // clear local data
       await stopBackgroundTracking();
