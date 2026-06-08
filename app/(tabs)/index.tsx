@@ -24,6 +24,7 @@ import { Colors } from "@/constants/theme";
 import { useConfigSettings } from "@/data-store/config-store";
 import { User } from "@/data-types/auth";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useOneSignalSubscriptionStatus } from "@/hooks/use-one-signal";
 import { getAvatarImageSource } from "@/utils/auth";
 import { FontAwesome6, MaterialCommunityIcons } from "@expo/vector-icons";
 import {
@@ -35,9 +36,12 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSession } from "../ctx";
 
 export default function HomeScreen() {
   // const { expoPushToken, notification } = usePushNotifications();
+  const { retryNotificationSetup } = useSession();
+  const { isChecking, isSetup, refresh } = useOneSignalSubscriptionStatus();
   const { requestPermission } = useLocation();
   const colorScheme = useColorScheme() || "light";
   const theme = Colors[colorScheme];
@@ -63,6 +67,40 @@ export default function HomeScreen() {
     refetchOnWindowFocus: "always",
     enabled: !!userDetails?.id,
   });
+
+  const handleRetryNotificationsSetup = async () => {
+    try {
+      const didSetup = await retryNotificationSetup();
+      await refresh();
+
+      if (!didSetup) {
+        // Alert.alert(
+        //   "Notifications Setup Failed",
+        //   "We couldn't register this device for push notifications. Please allow notifications and try again.",
+        //   [{ text: "OK" }],
+        // );
+      }
+    } catch (error) {
+      console.error("Failed to retry notification setup:", error);
+      // Alert.alert(
+      //   "Notifications Setup Failed",
+      //   "We couldn't register this device for push notifications. Please try again.",
+      //   [{ text: "OK" }],
+      // );
+    } finally {
+    }
+  };
+
+  useEffect(() => {
+    if (isChecking) return;
+
+    const needsSetup = !isSetup;
+    const needsDeviceId = !userDetails?.device_id;
+
+    if (needsSetup || needsDeviceId) {
+      handleRetryNotificationsSetup();
+    }
+  }, [isChecking, isSetup, userDetails?.device_id]);
 
   useFocusEffect(
     useCallback(() => {

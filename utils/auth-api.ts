@@ -286,6 +286,7 @@ const loginInternal = async (
 export const login = async (
   credentials: LoginCredentials,
 ): Promise<LoginSuccessResponse> => {
+  console.log("logged in with", credentials);
   return loginInternal({ ...credentials });
 };
 
