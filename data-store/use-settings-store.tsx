@@ -115,6 +115,18 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   setNotifications: async (value) => {
     try {
       if (value) {
+        const alreadyGranted =
+          await OneSignal.Notifications.getPermissionAsync();
+
+        if (alreadyGranted) {
+          console.log(
+            "Notification permission already granted, skipping request",
+          );
+          OneSignal.User.pushSubscription.optIn();
+          set({ notificationsEnabled: true });
+          await AsyncStorage.setItem("notifications", JSON.stringify(true));
+          return;
+        }
         const permission =
           await OneSignal.Notifications.requestPermission(true);
 
