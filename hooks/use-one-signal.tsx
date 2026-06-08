@@ -267,6 +267,7 @@ export const getNotificationPermissionStatus = async () => {
 export const useOneSignalSubscriptionStatus = () => {
   const [subscriptionId, setSubscriptionId] = useState<string | null>(null);
   const [isChecking, setIsChecking] = useState(true);
+  const setNotifications = useSettingsStore((state) => state.setNotifications);
 
   const refresh = useCallback(async () => {
     setIsChecking(true);
@@ -275,17 +276,44 @@ export const useOneSignalSubscriptionStatus = () => {
     try {
       const id = await OneSignal.User.pushSubscription.getIdAsync();
       setSubscriptionId(id);
+
+      // Sync settings store when subscription is active
+      if (id) {
+        const hasPermission =
+          await OneSignal.Notifications.getPermissionAsync();
+        if (hasPermission) {
+          // Only update if not already enabled to avoid loops
+          const currentEnabled =
+            useSettingsStore.getState().notificationsEnabled;
+          if (!currentEnabled) {
+            debug("Auto-enabling notifications in settings store");
+            await setNotifications(true);
+          }
+        }
+      }
     } catch (err) {
       error("Error checking OneSignal subscription ID:", err);
       setSubscriptionId(null);
     } finally {
       setIsChecking(false);
     }
-  }, []);
+  }, [setNotifications]);
 
   useEffect(() => {
     const listener = (event: any) => {
-      setSubscriptionId(event.current?.id ?? null);
+      const newId = event.current?.id ?? null;
+      setSubscriptionId(newId);
+
+      // Sync on push subscription change events too
+      if (newId) {
+        const currentEnabled = useSettingsStore.getState().notificationsEnabled;
+        if (!currentEnabled) {
+          debug(
+            "Push subscription acquired — enabling notifications in settings",
+          );
+          setNotifications(true);
+        }
+      }
     };
 
     refresh();
@@ -296,7 +324,7 @@ export const useOneSignalSubscriptionStatus = () => {
       OneSignal.User.pushSubscription.removeEventListener("change", listener);
       decrementOneSignalListeners();
     };
-  }, [refresh]);
+  }, [refresh, setNotifications]);
 
   return {
     isChecking,

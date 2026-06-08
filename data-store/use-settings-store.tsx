@@ -444,17 +444,17 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       }
 
       // Request notifications permission
-      try {
-        const notificationPermission =
-          await OneSignal.Notifications.requestPermission(true);
-        if (notificationPermission) {
-          await OneSignal.User.pushSubscription.optIn();
-          set({ notificationsEnabled: true });
-          await AsyncStorage.setItem("notifications", JSON.stringify(true));
-        }
-      } catch (error) {
-        console.error("Failed to request notification permission:", error);
-      }
+      // try {
+      //   const notificationPermission =
+      //     await OneSignal.Notifications.requestPermission(true);
+      //   if (notificationPermission) {
+      //     await OneSignal.User.pushSubscription.optIn();
+      //     set({ notificationsEnabled: true });
+      //     await AsyncStorage.setItem("notifications", JSON.stringify(true));
+      //   }
+      // } catch (error) {
+      //   console.error("Failed to request notification permission:", error);
+      // }
 
       // Request calendar permission
       if (Platform.OS === "ios") {
