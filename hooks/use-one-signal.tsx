@@ -275,7 +275,7 @@ export const useOneSignalSubscriptionStatus = () => {
   const [subscriptionId, setSubscriptionId] = useState<string | null>(null);
   const [isChecking, setIsChecking] = useState(true);
   const setNotifications = useSettingsStore((state) => state.setNotifications);
-  const hasSyncedSettings = useRef(false); // NEW: prevent multiple settings updates
+  const hasSyncedSettings = useRef(false); // prevent multiple settings updates
 
   const refresh = useCallback(async () => {
     setIsChecking(true);
