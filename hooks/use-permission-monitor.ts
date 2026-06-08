@@ -4,14 +4,26 @@ import {
   incrementAppStateListeners,
   incrementAppStateTransitionCount,
 } from "@/utils/runtime-diagnostics";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { AppState, AppStateStatus } from "react-native";
 
 export const usePermissionMonitor = () => {
   const checkPermissions = useSettingsStore((state) => state.checkPermissions);
+  const requestAllPermissionsOnLaunch = useSettingsStore(
+    (state) => state.requestAllPermissionsOnLaunch,
+  );
+  const hasRequestedOnLaunch = useRef(false);
 
+  // Initial launch request
   useEffect(() => {
-    // Check permissions when app loads in foreground
+    if (!hasRequestedOnLaunch.current) {
+      hasRequestedOnLaunch.current = true;
+      requestAllPermissionsOnLaunch();
+    }
+  }, [requestAllPermissionsOnLaunch]);
+
+  // Foreground checks
+  useEffect(() => {
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
       incrementAppStateTransitionCount();
       if (nextAppState === "active") {
@@ -24,7 +36,6 @@ export const usePermissionMonitor = () => {
       handleAppStateChange,
     );
     incrementAppStateListeners();
-
     checkPermissions();
 
     return () => {
