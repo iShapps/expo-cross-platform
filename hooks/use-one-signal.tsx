@@ -10,7 +10,7 @@ import {
 import { waitForStableAppState } from "@/utils/wait-for-stable-app-state";
 import Constants from "expo-constants";
 import { router } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   LogLevel,
   NotificationClickEvent,
@@ -21,6 +21,7 @@ import {
 let oneSignalInitialized = false;
 let activeOneSignalSyncKey: string | null = null;
 let lastOneSignalSyncKey: string | null = null;
+let hasRequestedPermissionThisSession = false; // prevent double requests
 
 const getOneSignalAppId = () =>
   Constants.expoConfig?.extra?.eas?.oneSignalAppId as string | undefined;
@@ -71,7 +72,6 @@ const handleNotificationClick = (event: NotificationClickEvent) => {
 
 const handleForegroundNotification = (event: NotificationWillDisplayEvent) => {
   debug("Notification received in foreground:", event);
-  // display notification immediately
   event.getNotification().display();
 };
 
@@ -152,12 +152,19 @@ export const useOneSignal = () => {
             await OneSignal.Notifications.getPermissionAsync();
 
           if (!alreadyGranted) {
+            // NEW: Check if we already requested this session
+            if (hasRequestedPermissionThisSession) {
+              debug("Permission already requested this session, skipping");
+              return;
+            }
+
             await waitForStableAppState(2000);
 
             const canRequest =
               await OneSignal.Notifications.canRequestPermission();
 
             if (canRequest) {
+              hasRequestedPermissionThisSession = true; // NEW: Mark as requested
               const granted =
                 await OneSignal.Notifications.requestPermission(true);
               debug("Permission granted:", granted);
@@ -267,6 +274,8 @@ export const getNotificationPermissionStatus = async () => {
 export const useOneSignalSubscriptionStatus = () => {
   const [subscriptionId, setSubscriptionId] = useState<string | null>(null);
   const [isChecking, setIsChecking] = useState(true);
+  const setNotifications = useSettingsStore((state) => state.setNotifications);
+  const hasSyncedSettings = useRef(false); // prevent multiple settings updates
 
   const refresh = useCallback(async () => {
     setIsChecking(true);
@@ -275,17 +284,51 @@ export const useOneSignalSubscriptionStatus = () => {
     try {
       const id = await OneSignal.User.pushSubscription.getIdAsync();
       setSubscriptionId(id);
+
+      // Sync settings store when subscription is active — only once
+      if (id && !hasSyncedSettings.current) {
+        const hasPermission =
+          await OneSignal.Notifications.getPermissionAsync();
+        if (hasPermission) {
+          const currentEnabled =
+            useSettingsStore.getState().notificationsEnabled;
+          if (!currentEnabled) {
+            debug("Auto-enabling notifications in settings store");
+            await setNotifications(true);
+            hasSyncedSettings.current = true; // NEW
+          }
+        }
+      }
     } catch (err) {
       error("Error checking OneSignal subscription ID:", err);
       setSubscriptionId(null);
     } finally {
       setIsChecking(false);
     }
-  }, []);
+  }, [setNotifications]);
 
   useEffect(() => {
     const listener = (event: any) => {
-      setSubscriptionId(event.current?.id ?? null);
+      const newId = event.current?.id ?? null;
+      setSubscriptionId(newId);
+
+      // Sync on push subscription change — only once
+      if (newId && !hasSyncedSettings.current) {
+        const currentEnabled = useSettingsStore.getState().notificationsEnabled;
+        if (!currentEnabled) {
+          debug(
+            "Push subscription acquired — enabling notifications in settings",
+          );
+          (async () => {
+            try {
+              setNotifications(true);
+              hasSyncedSettings.current = true;
+            } catch (err) {
+              error("Failed to auto-enable notifications:", err);
+            }
+          })();
+        }
+      }
     };
 
     refresh();
@@ -296,7 +339,7 @@ export const useOneSignalSubscriptionStatus = () => {
       OneSignal.User.pushSubscription.removeEventListener("change", listener);
       decrementOneSignalListeners();
     };
-  }, [refresh]);
+  }, [refresh, setNotifications]);
 
   return {
     isChecking,
@@ -351,15 +394,22 @@ export const ensureOneSignalSubscriptionId = async (
   let hasPermission = alreadyGranted;
 
   if (!hasPermission) {
+    // NEW: Check session flag
+    if (hasRequestedPermissionThisSession) {
+      debug("Already requested permission this session, skipping");
+      return null;
+    }
+
     const canRequest = await OneSignal.Notifications.canRequestPermission();
     if (!canRequest) return null;
 
+    hasRequestedPermissionThisSession = true; // NEW
     hasPermission = await OneSignal.Notifications.requestPermission(true);
   }
 
   if (!hasPermission) return null;
 
-  await OneSignal.User.pushSubscription.optIn();
+  OneSignal.User.pushSubscription.optIn();
 
   return waitForSubscriptionId(timeoutMs);
 };

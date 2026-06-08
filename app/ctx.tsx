@@ -7,6 +7,7 @@ import LoginCredentials, { User } from "@/data-types/auth";
 import {
   ensureOneSignalSubscriptionId,
   onLoginSuccess,
+  onLogout,
 } from "@/hooks/use-one-signal";
 import { stopBackgroundTracking } from "@/task-services/locationTask";
 import { removeToken, setToken as setAuthToken } from "@/utils/auth";
@@ -269,7 +270,7 @@ export function SessionProvider(props: React.PropsWithChildren) {
     try {
       await apiLogout();
       // Logout from OneSignal to stop push notifications
-      // await onLogout();
+      await onLogout();
     } catch (err) {
       error("Logout error:", err);
     } finally {

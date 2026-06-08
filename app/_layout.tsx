@@ -20,7 +20,7 @@ import {
 } from "@tanstack/react-query";
 import { SplashScreen, Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { AppState, Platform } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { GlobalUpdateGate } from "../components/global-update-gate";
@@ -37,49 +37,35 @@ if (!sentryGlobal.__ISHAPPS_SENTRY_INITIALIZED__) {
     sendDefaultPii: true,
     enableLogs: true,
     debug: __DEV__,
-
     tracesSampleRate: 0.1,
-
-    // Configure Session Replay
-    replaysSessionSampleRate: 0.05, // Capture 5% of all sessions for replay
-    replaysOnErrorSampleRate: 1.0, // Capture 100% of sessions with errors for replay
+    replaysSessionSampleRate: 0.05,
+    replaysOnErrorSampleRate: 1.0,
     integrations: [
       Sentry.mobileReplayIntegration(),
       Sentry.feedbackIntegration(),
       Sentry.reactNativeTracingIntegration(),
     ],
-
-    // uncomment the line below to enable Spotlight (https://spotlightjs.com)
     spotlight: __DEV__,
   });
-
   sentryGlobal.__ISHAPPS_SENTRY_INITIALIZED__ = true;
 }
-
-// onlineManager.setEventListener((setOnline) => {
-//   const eventSubscription = Network.addNetworkStateListener((state) => {
-//     setOnline(!!state.isConnected)
-//   })
-//   return eventSubscription.remove
-// })
 
 SplashScreen.preventAutoHideAsync();
 const queryClient = new QueryClient();
 
 export default Sentry.wrap(function Root() {
   incrementRootRenderCount();
+  const [isHydrated, setIsHydrated] = useState(false);
 
   useEffect(() => {
     if (Platform.OS === "web") return;
 
     let focusTimer: ReturnType<typeof setTimeout> | undefined;
     focusManager.setFocused(AppState.currentState === "active");
+
     const subscription = AppState.addEventListener("change", (status) => {
       incrementAppStateTransitionCount();
-      if (focusTimer) {
-        clearTimeout(focusTimer);
-      }
-
+      if (focusTimer) clearTimeout(focusTimer);
       focusTimer = setTimeout(() => {
         focusManager.setFocused(status === "active");
       }, 300);
@@ -87,9 +73,7 @@ export default Sentry.wrap(function Root() {
     incrementAppStateListeners();
 
     return () => {
-      if (focusTimer) {
-        clearTimeout(focusTimer);
-      }
+      if (focusTimer) clearTimeout(focusTimer);
       subscription.remove();
       decrementAppStateListeners();
     };
@@ -97,25 +81,35 @@ export default Sentry.wrap(function Root() {
 
   useEffect(() => {
     incrementProviderMount("Root");
-
-    return () => {
-      incrementProviderUnmount("Root");
-    };
+    return () => incrementProviderUnmount("Root");
   }, []);
 
+  // Single hydration source of truth
   useEffect(() => {
-    debug("Initializing app...");
+    let cancelled = false;
+
     const initializeApp = async () => {
+      debug("Initializing app...");
       const store = useSettingsStore.getState();
       await store.hydrate();
+
+      if (!cancelled) {
+        setIsHydrated(true);
+      }
     };
+
     initializeApp();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <QueryClientProvider client={queryClient}>
         <SessionProvider>
-          <AppLifecycleHooks />
+          {isHydrated && <AppLifecycleHooks />}
           <SplashScreenController>
             <RootNavigator />
             <GlobalUpdateGate />
@@ -135,10 +129,7 @@ function AppLifecycleHooks() {
 
   useEffect(() => {
     incrementProviderMount("AppLifecycleHooks");
-
-    return () => {
-      incrementProviderUnmount("AppLifecycleHooks");
-    };
+    return () => incrementProviderUnmount("AppLifecycleHooks");
   }, []);
 
   return null;
@@ -150,28 +141,13 @@ function RootNavigator() {
   return (
     <Stack>
       <Stack.Protected guard={!!session}>
-        <Stack.Screen
-          options={{
-            headerShown: false,
-          }}
-          name="(tabs)"
-        />
+        <Stack.Screen options={{ headerShown: false }} name="(tabs)" />
       </Stack.Protected>
       <Stack.Protected guard={!!session}>
-        <Stack.Screen
-          options={{
-            headerShown: false,
-          }}
-          name="(main)"
-        />
+        <Stack.Screen options={{ headerShown: false }} name="(main)" />
       </Stack.Protected>
       <Stack.Protected guard={!session}>
-        <Stack.Screen
-          options={{
-            headerShown: false,
-          }}
-          name="(open)"
-        />
+        <Stack.Screen options={{ headerShown: false }} name="(open)" />
       </Stack.Protected>
 
       <Stack.Screen
@@ -189,7 +165,6 @@ function RootNavigator() {
           animation: "fade",
         }}
       />
-
       <Stack.Screen
         name="date-sheet"
         options={{
