@@ -38,6 +38,7 @@ import {
   View,
 } from "react-native";
 import ConfettiCannon from "react-native-confetti-cannon";
+import GooglePlacesTextInput from "react-native-google-places-textinput";
 import {
   SafeAreaView,
   useSafeAreaInsets,
@@ -106,8 +107,6 @@ const steps: {
     icon: "shield-checkmark-outline",
   },
 ];
-
-type PlaceSuggestion = { place_id: string; description: string };
 
 const genderOptions = ["Male", "Female", "Other"];
 
@@ -796,8 +795,6 @@ export default function OnboardingScreen() {
               <Text style={styles.kicker}>Self onboarding</Text>
               <Text style={styles.title}>Complete your registration</Text>
             </View>
-            {/* <View style={styles.progressPill}>
-            </View> */}
             <Text style={styles.progressPillText}>{completion}%</Text>
           </View>
           <View style={styles.progressTrack}>
@@ -808,63 +805,6 @@ export default function OnboardingScreen() {
               ]}
             />
           </View>
-          {/* <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.stepper}
-          >
-            {steps.map((step, index) => {
-              const isActive = step.id === activeStep;
-              const isComplete = step.id < activeStep;
-
-              return (
-                <Pressable
-                  key={step.id}
-                  onPress={() => setActiveStep(step.id)}
-                  style={[
-                    styles.stepPill,
-                    isActive && styles.stepPillActive,
-                    isComplete && styles.stepPillComplete,
-                  ]}
-                >
-                  <View
-                    style={[
-                      styles.stepIcon,
-                      isActive && styles.stepIconActive,
-                      isComplete && styles.stepIconComplete,
-                    ]}
-                  >
-                    <Ionicons
-                      name={isComplete ? "checkmark" : step.icon}
-                      size={16}
-                      color={
-                        isActive || isComplete ? theme.white : theme.primary
-                      }
-                    />
-                  </View>
-                  <View style={styles.stepTextBlock}>
-                    <Text
-                      style={[
-                        styles.stepEyebrow,
-                        isActive && styles.stepEyebrowActive,
-                      ]}
-                    >
-                      Step {index + 1}
-                    </Text>
-                    <Text
-                      numberOfLines={1}
-                      style={[
-                        styles.stepTitle,
-                        isActive && styles.stepTitleActive,
-                      ]}
-                    >
-                      {step.title}
-                    </Text>
-                  </View>
-                </Pressable>
-              );
-            })}
-          </ScrollView> */}
         </View>
 
         <ScrollView
@@ -897,18 +837,6 @@ export default function OnboardingScreen() {
               </Text>
             </View>
           )}
-
-          {/* {hcpError && (
-            <View style={styles.errorBox}>
-              <Ionicons
-                name="alert-circle-outline"
-                size={18}
-                color={theme.danger}
-              />
-              <Text style={styles.errorText}>{hcpError}</Text>
-            </View>
-          )} */}
-
           {activeStep === 1 && (
             <View style={styles.formSection}>
               <TwoColumn>
@@ -1383,116 +1311,101 @@ function AddressAutocomplete({
   styles: ReturnType<typeof getStyles>;
   theme: typeof Colors.light;
 }) {
-  const [query, setQuery] = useState(value);
-  const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const PLACES_KEY = process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY;
-
-  const searchPlaces = async (text: string) => {
-    if (!text.trim() || !PLACES_KEY) return;
-    setIsSearching(true);
-    try {
-      const url = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(text)}&types=address&components=country:au&key=${PLACES_KEY}`;
-      const res = await fetch(url);
-      const json = (await res.json()) as {
-        predictions?: { place_id: string; description: string }[];
-      };
-      setSuggestions(json.predictions ?? []);
-    } catch {
-      // ignore network errors silently
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
-  const selectPlace = async (suggestion: PlaceSuggestion) => {
-    setQuery(suggestion.description);
-    setSuggestions([]);
-    if (!PLACES_KEY) return;
-
-    try {
-      const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${suggestion.place_id}&fields=geometry,address_components,formatted_address&key=${PLACES_KEY}`;
-      const res = await fetch(url);
-      const json = (await res.json()) as {
-        result?: {
-          formatted_address?: string;
-          geometry?: { location: { lat: number; lng: number } };
-          address_components?: { long_name: string; types: string[] }[];
-        };
-      };
-      const result = json.result;
-      if (!result) return;
-
-      const components = result.address_components ?? [];
-      const get = (type: string) =>
-        components.find((c) => c.types.includes(type))?.long_name ?? "";
-
-      onSelect({
-        address: result.formatted_address ?? suggestion.description,
-        latitude: String(result.geometry?.location.lat ?? ""),
-        longitude: String(result.geometry?.location.lng ?? ""),
-        city: get("locality") || get("administrative_area_level_2"),
-        suburb: get("sublocality_level_1") || get("sublocality"),
-        postCode: get("postal_code"),
-      });
-    } catch {
-      onSelect({
-        address: suggestion.description,
-        latitude: "",
-        longitude: "",
-        city: "",
-        suburb: "",
-        postCode: "",
-      });
-    }
-  };
-
-  const handleChange = (text: string) => {
-    setQuery(text);
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => void searchPlaces(text), 400);
-  };
+  const PLACES_KEY = process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY ?? "";
 
   return (
     <View style={styles.field}>
       <Text style={styles.fieldLabel}>Address</Text>
-      <View style={styles.inputShell}>
-        <TextInput
-          value={query}
-          onChangeText={handleChange}
-          placeholder="Start typing your address..."
-          placeholderTextColor={theme.secondaryText}
-          style={styles.input}
-          cursorColor={theme.primary}
-        />
-        {isSearching && (
-          <ActivityIndicator
-            size="small"
-            color={theme.primary}
-            style={{ marginRight: 8 }}
-          />
-        )}
-      </View>
-      {suggestions.length > 0 && (
-        <View style={styles.suggestionList}>
-          {suggestions.map((s) => (
-            <Pressable
-              key={s.place_id}
-              onPress={() => void selectPlace(s)}
-              style={styles.suggestionItem}
-            >
-              <Ionicons
-                name="location-outline"
-                size={14}
-                color={theme.secondaryText}
-                style={{ marginRight: 6 }}
-              />
-              <Text style={styles.suggestionText}>{s.description}</Text>
-            </Pressable>
-          ))}
-        </View>
-      )}
+      <GooglePlacesTextInput
+        apiKey={PLACES_KEY}
+        fetchDetails={true}
+        detailsFields={["formattedAddress", "location", "addressComponents"]}
+        onPlaceSelect={(place) => {
+          const details = place.details as {
+            formattedAddress?: string;
+            location?: { latitude: number; longitude: number };
+            addressComponents?: {
+              longText: string;
+              types: string[];
+            }[];
+          } | null;
+          const get = (type: string) =>
+            details?.addressComponents?.find((c) => c.types.includes(type))
+              ?.longText ?? "";
+          onSelect({
+            address: details?.formattedAddress ?? "",
+            latitude: details?.location
+              ? String(details.location.latitude)
+              : "",
+            longitude: details?.location
+              ? String(details.location.longitude)
+              : "",
+            city: get("locality") || get("administrative_area_level_2"),
+            suburb: get("sublocality_level_1") || get("sublocality"),
+            postCode: get("postal_code"),
+          });
+        }}
+        includedRegionCodes={["AU"]}
+        nestedScrollEnabled={true}
+        hideOnKeyboardDismiss={true}
+        debounceDelay={400}
+        value={value}
+        placeHolderText="Start typing your address..."
+        minCharsToFetch={2}
+        autoCapitalize="words"
+        autoCorrect={false}
+        keyboardType="default"
+        returnKeyType="search"
+        textContentType="streetAddressLine1"
+        style={{
+          container: {
+            width: "100%",
+          },
+          inputContainer: {
+            minHeight: 42,
+            borderWidth: 1,
+            borderColor: theme.greyBorder,
+            borderRadius: 5,
+            backgroundColor: theme.whiteBackground,
+            paddingHorizontal: 10,
+          },
+          input: {
+            color: theme.primaryText,
+            fontSize: 15,
+          },
+          suggestionsContainer: {
+            backgroundColor: theme.whiteBackground,
+            borderWidth: 1,
+            borderColor: theme.greyBorder,
+            borderRadius: 5,
+            marginTop: 4,
+            maxHeight: 250,
+            overflow: "hidden",
+          },
+          suggestionItem: {
+            paddingHorizontal: 12,
+            paddingVertical: 10,
+            borderBottomWidth: 1,
+            borderBottomColor: theme.greyBorder,
+          },
+          suggestionText: {
+            main: {
+              fontSize: 14,
+              color: theme.primaryText,
+            },
+            secondary: {
+              fontSize: 12,
+              color: theme.secondaryText,
+            },
+          },
+          loadingIndicator: {
+            color: theme.secondaryText,
+          },
+          placeholder: {
+            color: theme.secondaryText,
+          },
+        }}
+      />
     </View>
   );
 }
