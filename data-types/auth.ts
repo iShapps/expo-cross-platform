@@ -193,6 +193,65 @@ export interface Hcp {
   hcp_professions: HcpProfession[];
 }
 
+export interface GeneralDocument {
+  id: number;
+  document_prefix: string;
+  name: string;
+  required_for: string;
+  mandatory_status: "yes" | "no";
+  expiry_date_mandatory: "yes" | "no";
+  profession_id: number | null;
+  doc_type: string;
+  status: string;
+  created_by: number | null;
+  updated_by: number | null;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+}
+
+export interface MissingDocument {
+  id: number;
+  document_id: number;
+  profession_id: number;
+  created_by: number | null;
+  updated_by: number | null;
+  created_at: string;
+  updated_at: string;
+  document: GeneralDocument;
+  profession: {
+    id: number;
+    name: string;
+  };
+}
+
+export interface RegistrationStatusResponse {
+  status: true;
+  data: {
+    hcp_status: string;
+    registration_screen: string;
+    steps: {
+      account_created: boolean;
+      personal_details_complete: boolean;
+      profession_selected: boolean;
+      documents_uploaded: boolean;
+      registration_complete: boolean;
+    };
+    documents: {
+      total_required: number;
+      total_uploaded: number;
+      total_approved: number;
+      total_pending: number;
+      total_expired: number;
+      is_compliant: boolean;
+    };
+    missing_documents: {
+      general: GeneralDocument[];
+      profession: MissingDocument[];
+    };
+  };
+}
+
 export interface HcpProfession {
   id: number;
   hcp_id: number;

@@ -3,7 +3,7 @@ import {
   registerAuthExpiredHandler,
 } from "@/api-actions/error-utils";
 import { useProfileData } from "@/data-store/use-account-store";
-import LoginCredentials, { User } from "@/data-types/auth";
+import LoginCredentials, { Hcp, User } from "@/data-types/auth";
 import {
   ensureOneSignalSubscriptionId,
   onLoginSuccess,
@@ -15,6 +15,8 @@ import {
   login as apiLogin,
   logout as apiLogout,
   AuthenticationError,
+  computeOnboardingStep,
+  getRegistrationStatus,
   NetworkError,
 } from "@/utils/auth-api";
 import { debug, error } from "@/utils/logger";
@@ -36,7 +38,8 @@ const AuthContext = React.createContext<{
   signIn: (data: LoginCredentials) => Promise<"authenticated" | "onboarding">;
   retryNotificationSetup: () => Promise<boolean>;
   setSess: (data: string) => void;
-  signOut: () => void;
+  signOut: () => Promise<void>;
+  updateHcp: (patch: Partial<Hcp>) => void;
   session?: string | null;
   user?: User | null;
   isLoading: boolean;
@@ -44,7 +47,8 @@ const AuthContext = React.createContext<{
   signIn: () => Promise.resolve("authenticated"),
   retryNotificationSetup: () => Promise.resolve(false),
   setSess: () => null,
-  signOut: () => null,
+  signOut: () => Promise.resolve(),
+  updateHcp: () => null,
   session: null,
   user: null,
   isLoading: false,
@@ -162,13 +166,44 @@ export function SessionProvider(props: React.PropsWithChildren) {
       // Login to OneSignal for push notifications
       await onLoginSuccess(result.data.user.id.toString());
 
-      const onboardingParams = getOnboardingRouteParams(result.data.user);
-      if (onboardingParams) {
+      try {
+        const regStatus = await getRegistrationStatus(result.data.access_token);
+
+        console.log("[REGSTATUS]", regStatus);
+        if (regStatus.data.registration_screen === "0") {
+          Alert.alert("Success", "Login successful!", [{ text: "OK" }]);
+          return "authenticated";
+        }
+
+        const onboardingStep = computeOnboardingStep(regStatus.data.steps);
+
+        // Persist the computed step so the next cold open routes correctly.
+        const updatedUser: User = {
+          ...result.data.user,
+          hcp: {
+            ...result.data.user.hcp,
+            app_registration_screen: String(onboardingStep),
+          },
+        };
+        setUserJson(JSON.stringify(updatedUser));
+        profileStore.setUserDetails(updatedUser);
+        queryClient.setQueryData(["profile-details"], updatedUser);
+
         router.replace({
           pathname: "/onboarding",
-          params: onboardingParams,
+          params: {
+            hcpId: String(result.data.user.hcp.id),
+            screen: String(onboardingStep),
+          },
         });
         return "onboarding";
+      } catch {
+        // Fall back to local user data if the status check fails
+        const onboardingParams = getOnboardingRouteParams(result.data.user);
+        if (onboardingParams) {
+          router.replace({ pathname: "/onboarding", params: onboardingParams });
+          return "onboarding";
+        }
       }
 
       Alert.alert("Success", "Login successful!", [{ text: "OK" }]);
@@ -284,6 +319,21 @@ export function SessionProvider(props: React.PropsWithChildren) {
     }
   }, [profileStore, queryClient, setSession, setUserJson]);
 
+  const handleUpdateHcp = React.useCallback(
+    (patch: Partial<Hcp>) => {
+      const currentUser = user;
+      if (!currentUser) return;
+      const updatedUser: User = {
+        ...currentUser,
+        hcp: { ...currentUser.hcp, ...patch },
+      };
+      setUserJson(JSON.stringify(updatedUser));
+      profileStore.setUserDetails(updatedUser);
+      queryClient.setQueryData(["profile-details"], updatedUser);
+    },
+    [user, setUserJson, profileStore, queryClient],
+  );
+
   useEffect(() => {
     return registerAuthExpiredHandler(async ({ message }) => {
       await handleSignOut();
@@ -298,6 +348,7 @@ export function SessionProvider(props: React.PropsWithChildren) {
         retryNotificationSetup: handleRetryNotificationSetup,
         setSess: handleSetSession,
         signOut: handleSignOut,
+        updateHcp: handleUpdateHcp,
         session,
         user,
         isLoading: isHydrating || isHydratingUser || authLoading,

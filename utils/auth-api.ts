@@ -9,6 +9,7 @@ import LoginCredentials, {
   LoginErrorResponse,
   LoginResponse,
   LoginSuccessResponse,
+  RegistrationStatusResponse,
   ResetPasswordErrorResponse,
   ResetPasswordRequest,
   ResetPasswordSuccessResponse,
@@ -375,6 +376,41 @@ export const isAuthenticated = async (): Promise<boolean> => {
   const token = await TokenStorage.getToken();
   return token !== null;
 };
+
+export const getRegistrationStatus = async (
+  token: string,
+): Promise<RegistrationStatusResponse> => {
+  const { data } = await apiRequest<RegistrationStatusResponse>({
+    url: `${API_CONFIG.baseURL}/v2/registration/status`,
+    endpoint: "/v2/registration/status",
+    method: "GET",
+    headers: { Authorization: `Bearer ${token}` },
+    timeoutMs: API_CONFIG.timeout,
+  });
+  console.log("REG_STATUS_DATA", data);
+  return data;
+};
+
+export function computeOnboardingStep(
+  steps: RegistrationStatusResponse["data"]["steps"],
+): 1 | 2 | 3 | 4 | 5 {
+  // Personal details spans steps 1 and 2; always start at 1 when incomplete.
+  if (steps.account_created && !steps.personal_details_complete) return 1;
+  if (steps.personal_details_complete && !steps.profession_selected) return 3;
+  if (steps.profession_selected && !steps.documents_uploaded) return 4;
+  if (steps.documents_uploaded && !steps.registration_complete) return 5;
+  return 1;
+}
+
+export function resolveOnboardingStep(
+  data: RegistrationStatusResponse["data"],
+): 1 | 2 | 3 | 4 | 5 {
+  const step = computeOnboardingStep(data.steps);
+  if (step === 4 && data.missing_documents.profession.length === 0) {
+    return 5;
+  }
+  return step;
+}
 
 const validateForgotPasswordRequest = (
   request: ForgotPasswordRequest,
