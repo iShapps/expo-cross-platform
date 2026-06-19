@@ -1,17 +1,31 @@
 import {
+  City,
   getOnboardingHcp,
-  OnboardingHcpDetails,
+  getStates,
+  State,
+  submitPersonalDetails,
+  submitProfessionalDetails,
+  uploadDocument,
 } from "@/api-queries/onboarding";
 import { Colors } from "@/constants/theme";
+import { RegistrationStatusResponse } from "@/data-types/auth";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import {
+  getRegistrationStatus,
+  resolveOnboardingStep,
+  TokenStorage,
+} from "@/utils/auth-api";
 import { pickDocument } from "@/utils/file-pickers";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import * as FileSystem from "expo-file-system";
 import { Image } from "expo-image";
-import { useLocalSearchParams } from "expo-router";
-import React, { useEffect, useMemo, useState } from "react";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
+  Linking,
   Modal,
   Platform,
   Pressable,
@@ -20,8 +34,10 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from "react-native";
+import ConfettiCannon from "react-native-confetti-cannon";
 import {
   SafeAreaView,
   useSafeAreaInsets,
@@ -29,7 +45,7 @@ import {
 import { WebView } from "react-native-webview";
 import { useSession } from "./ctx";
 
-type OnboardingStepId = 1 | 2 | 3 | 4;
+type OnboardingStepId = 1 | 2 | 3 | 4 | 5;
 
 type UploadedFile = {
   name: string;
@@ -73,84 +89,27 @@ const steps: {
   },
   {
     id: 3,
-    title: "Professional documents",
+    title: "Professional details",
     eyebrow: "Credentials",
-    icon: "document-text-outline",
+    icon: "briefcase-outline",
   },
   {
     id: 4,
+    title: "Professional documents",
+    eyebrow: "Documents",
+    icon: "document-text-outline",
+  },
+  {
+    id: 5,
     title: "Mandatory documents",
     eyebrow: "Compliance",
     icon: "shield-checkmark-outline",
   },
 ];
 
-const professionDocumentRequirements: DocumentRequirement[] = [
-  {
-    id: "nursing-registration",
-    name: "Nursing Registration",
-    mandatory: true,
-    requiresExpiry: true,
-  },
-  {
-    id: "qualification",
-    name: "Qualification Certificate",
-    mandatory: true,
-    requiresExpiry: false,
-  },
-  {
-    id: "specialist-training",
-    name: "Specialist Training",
-    mandatory: false,
-    requiresExpiry: true,
-  },
-];
+type PlaceSuggestion = { place_id: string; description: string };
 
-const mandatoryDocumentRequirements: DocumentRequirement[] = [
-  {
-    id: "police-check",
-    name: "Police Check",
-    mandatory: true,
-    requiresExpiry: true,
-  },
-  {
-    id: "working-with-children",
-    name: "Working With Children Check",
-    mandatory: true,
-    requiresExpiry: true,
-  },
-  {
-    id: "identity-document",
-    name: "Identity Document",
-    mandatory: true,
-    requiresExpiry: false,
-  },
-  {
-    id: "covid-vaccination",
-    name: "Vaccination Evidence",
-    mandatory: false,
-    requiresExpiry: false,
-  },
-];
-
-const genderOptions = ["Female", "Male", "Non-binary"];
-const stateOptions = [
-  "Australian Capital Territory",
-  "New South Wales",
-  "Northern Territory",
-  "Queensland",
-  "South Australia",
-  "Tasmania",
-  "Victoria",
-  "Western Australia",
-];
-
-function normalizeOnboardingStep(step: number): OnboardingStepId {
-  if (step === 2) return 2;
-  if (step === 3 || step === 4) return step;
-
-  return 1;
-}
+const genderOptions = ["Male", "Female", "Other"];
 
 function parseIsoDate(value: string) {
   const trimmed = value.trim();
@@ -285,25 +244,20 @@ export default function OnboardingScreen() {
   const styles = getStyles(theme);
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ hcpId?: string; screen?: string }>();
-  const { user } = useSession();
+  const { user, updateHcp, signOut } = useSession();
+  const router = useRouter();
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const routeHcpId = Number(params.hcpId ?? user?.hcp?.id);
   const hcpId = Number.isFinite(routeHcpId) ? routeHcpId : null;
-  const [hcpDetails, setHcpDetails] = useState<OnboardingHcpDetails | null>(
-    null,
-  );
   const [isLoadingHcp, setIsLoadingHcp] = useState(false);
-  const [hcpError, setHcpError] = useState<string | null>(null);
+  // Registration status API is the sole source of truth for step + documents.
+  // Keep isCheckingStatus=true until that API resolves so no stale step flashes.
+  const [isCheckingStatus, setIsCheckingStatus] = useState(true);
+  const [registrationStatus, setRegistrationStatus] = useState<
+    RegistrationStatusResponse["data"] | null
+  >(null);
 
-  const backendStep = Number(
-    hcpDetails?.app_registration_screen ??
-      user?.hcp?.app_registration_screen ??
-      params.screen ??
-      "1",
-  );
-  const initialStep = normalizeOnboardingStep(backendStep);
-
-  const [activeStep, setActiveStep] = useState<OnboardingStepId>(initialStep);
-  const [showPassword, setShowPassword] = useState(false);
+  const [activeStep, setActiveStep] = useState<OnboardingStepId>(1);
   const [personalDetails, setPersonalDetails] = useState({
     firstName: user?.hcp?.first_name ?? "",
     lastName: user?.hcp?.last_name ?? "",
@@ -311,18 +265,54 @@ export default function OnboardingScreen() {
     contactNumber: user?.hcp?.contact_number ?? "",
     dateOfBirth: user?.hcp?.date_of_birth ?? "",
     gender: user?.hcp?.gender ?? "",
-    state: user?.hcp?.state_id ? String(user.hcp.state_id) : "",
+    stateName: "",
+    stateId: user?.hcp?.state_id ?? (null as number | null),
+    cityId: null as number | null,
     address: user?.hcp?.address ?? "",
+    latitude: user?.hcp?.latitude ?? "",
+    longitude: user?.hcp?.longitude ?? "",
     city: user?.hcp?.city_name ?? "",
     suburb: user?.hcp?.suburb_name ?? "",
     postCode: user?.hcp?.post_code ?? "",
     nextOfKin: user?.hcp?.next_of_kin ?? "",
-    registrationNumber: user?.hcp?.registration_number ?? "",
-    tfnNumber: user?.hcp?.tfn_number ?? "",
-    cv: undefined as UploadedFile | undefined,
     aboutMe: user?.hcp?.about_me ?? "",
-    password: "",
+    maximumDistance: user?.hcp?.maximum_distance
+      ? String(user.hcp.maximum_distance)
+      : "",
+    acceptLowerLevelJob: (user?.hcp?.accept_lower_level_job ?? 0) === 1,
   });
+  const [professionalDetails, setProfessionalDetails] = useState({
+    tfnNumber: user?.hcp?.tfn_number ?? "",
+    registrationNumber: user?.hcp?.registration_number ?? "",
+    abn_number: user?.hcp?.abn_number ?? "",
+    cv: undefined as UploadedFile | undefined,
+  });
+  const [states, setStates] = useState<State[]>([]);
+  const [isLoadingStates, setIsLoadingStates] = useState(false);
+  const [statesError, setStatesError] = useState<string | null>(null);
+  const [cities, setCities] = useState<City[]>([]);
+  const [isSubmittingStep, setIsSubmittingStep] = useState(false);
+
+  const professionDocumentRequirements = useMemo<DocumentRequirement[]>(() => {
+    if (!registrationStatus) return [];
+    return registrationStatus.missing_documents.profession.map((item) => ({
+      id: String(item.document.id),
+      name: item.document.name,
+      mandatory: item.document.mandatory_status === "yes",
+      requiresExpiry: item.document.expiry_date_mandatory === "yes",
+    }));
+  }, [registrationStatus]);
+
+  const mandatoryDocumentRequirements = useMemo<DocumentRequirement[]>(() => {
+    if (!registrationStatus) return [];
+    return registrationStatus.missing_documents.general.map((doc) => ({
+      id: String(doc.id),
+      name: doc.name,
+      mandatory: doc.mandatory_status === "yes",
+      requiresExpiry: doc.expiry_date_mandatory === "yes",
+    }));
+  }, [registrationStatus]);
+
   const [professionalDocuments, setProfessionalDocuments] =
     useState<DocumentUploadState>({});
   const [mandatoryDocuments, setMandatoryDocuments] =
@@ -333,6 +323,7 @@ export default function OnboardingScreen() {
     onRemove: () => void;
   } | null>(null);
   const [dateErrors, setDateErrors] = useState<Record<string, string>>({});
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const activeIndex = steps.findIndex((step) => step.id === activeStep);
   const activeStepMeta = steps[activeIndex] ?? steps[0];
@@ -341,22 +332,75 @@ export default function OnboardingScreen() {
     return Math.round((completed / steps.length) * 100);
   }, [activeIndex]);
 
+  // Keep a stable ref to updateHcp so Effect 1 can call the latest version
+  // without listing it as a dependency (which would restart the effect on every user-store write and cause an infinite loop).
+  const updateHcpRef = useRef(updateHcp);
+  useEffect(() => {
+    updateHcpRef.current = updateHcp;
+  }, [updateHcp]);
+
+  // Single source of truth for "fetch status -> update local state".
+  // Every call site goes through here so setRegistrationStatus is never skipped.
+  // Returns the fresh data so callers can derive the next step from it.
+  const refreshStatus = React.useCallback(async () => {
+    const token = await TokenStorage.getToken();
+    if (!token) return null;
+    const status = await getRegistrationStatus(token).catch(() => null);
+    if (!status) return null;
+    setRegistrationStatus(status.data);
+    updateHcpRef.current({
+      app_registration_screen: String(resolveOnboardingStep(status.data)),
+    });
+    return status.data;
+  }, []);
+
+  // Effect 1: Registration status is sole source of truth for the current step.
+  // Runs exactly once on mount. Independent of the HCP data fetch so a failure in either does not block the other.
+  useEffect(() => {
+    let cancelled = false;
+
+    TokenStorage.getToken()
+      .then((token) => {
+        if (cancelled || !token) return null;
+        return getRegistrationStatus(token);
+      })
+      .then((statusResponse) => {
+        if (cancelled || !statusResponse) return;
+        // Registration fully done — leave onboarding and go to the main app.
+        if (statusResponse.data.steps.registration_complete) {
+          updateHcpRef.current({ app_registration_screen: "0" });
+          router.replace("/(tabs)");
+          return;
+        }
+        setRegistrationStatus(statusResponse.data);
+        const step = resolveOnboardingStep(statusResponse.data);
+        setActiveStep(step);
+        updateHcpRef.current({ app_registration_screen: String(step) });
+      })
+      .catch(() => {
+        // Network failure
+      })
+      .finally(() => {
+        if (!cancelled) setIsCheckingStatus(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
+
+  // Effect 2: HCP data -> used only to prefill form fields.
   useEffect(() => {
     if (!hcpId) return;
 
     let cancelled = false;
     setIsLoadingHcp(true);
-    setHcpError(null);
 
     getOnboardingHcp(hcpId)
       .then((response) => {
         if (cancelled) return;
 
         const details = response.data;
-        setHcpDetails(details);
-
-        const nextStep = Number(details.app_registration_screen ?? "1");
-        setActiveStep(normalizeOnboardingStep(nextStep));
 
         setPersonalDetails((current) => ({
           ...current,
@@ -366,25 +410,24 @@ export default function OnboardingScreen() {
           contactNumber: details.contact_number ?? "",
           dateOfBirth: details.date_of_birth ?? "",
           gender: details.gender ?? "",
-          state: details.state?.name ?? "",
+          stateName: details.state?.name ?? "",
+          stateId: details.state?.id ?? null,
           address: details.address ?? "",
           city: details.city_name ?? "",
           suburb: details.suburb_name ?? "",
           postCode: details.post_code ?? "",
           nextOfKin: details.next_of_kin ?? "",
-          registrationNumber: details.registration_number ?? "",
-          tfnNumber: details.tfn_number ?? "",
           aboutMe: details.about_me ?? "",
         }));
+        setProfessionalDetails((current) => ({
+          ...current,
+          tfnNumber: details.tfn_number ?? "",
+          registrationNumber: details.registration_number ?? "",
+          abn_number: details.abn_number ?? "",
+        }));
       })
-      .catch((error: unknown) => {
-        if (cancelled) return;
-
-        setHcpError(
-          error instanceof Error
-            ? error.message
-            : "Could not load onboarding details.",
-        );
+      .catch(() => {
+        // Prefill fails silently — user fills manually
       })
       .finally(() => {
         if (!cancelled) setIsLoadingHcp(false);
@@ -394,6 +437,19 @@ export default function OnboardingScreen() {
       cancelled = true;
     };
   }, [hcpId]);
+
+  useEffect(() => {
+    setIsLoadingStates(true);
+    setStatesError(null);
+    getStates()
+      .then((res) => setStates(res.data.states))
+      .catch((err: unknown) =>
+        setStatesError(
+          err instanceof Error ? err.message : "Could not load states.",
+        ),
+      )
+      .finally(() => setIsLoadingStates(false));
+  }, []);
 
   const setPersonalValue = (
     key: keyof typeof personalDetails,
@@ -425,12 +481,15 @@ export default function OnboardingScreen() {
   const handlePickCv = async () => {
     const file = await pickDocument();
     if (!file) return;
-    setPersonalValue("cv", {
-      name: file.name,
-      uri: file.uri,
-      mimeType: file.mimeType,
-      size: file.size,
-    });
+    setProfessionalDetails((curr) => ({
+      ...curr,
+      cv: {
+        name: file.name,
+        uri: file.uri,
+        mimeType: file.mimeType,
+        size: file.size,
+      },
+    }));
   };
 
   const handlePickDocument = async (
@@ -512,7 +571,7 @@ export default function OnboardingScreen() {
     setPreview(null);
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     const nextDateErrors: Record<string, string> = {};
 
     if (activeStep === 1) {
@@ -526,14 +585,14 @@ export default function OnboardingScreen() {
       }
     }
 
-    if (activeStep === 3 || activeStep === 4) {
-      const collection = activeStep === 3 ? "professional" : "mandatory";
+    if (activeStep === 4 || activeStep === 5) {
+      const collection = activeStep === 4 ? "professional" : "mandatory";
       const requirements =
-        activeStep === 3
+        activeStep === 4
           ? professionDocumentRequirements
           : mandatoryDocumentRequirements;
       const values =
-        activeStep === 3 ? professionalDocuments : mandatoryDocuments;
+        activeStep === 4 ? professionalDocuments : mandatoryDocuments;
 
       requirements.forEach((requirement) => {
         const expiry = values[requirement.id]?.expiry ?? "";
@@ -555,17 +614,166 @@ export default function OnboardingScreen() {
       return;
     }
 
+    if (activeStep === 2) {
+      if (!personalDetails.stateId) {
+        Alert.alert("Missing field", "Please select a state.");
+        return;
+      }
+
+      setIsSubmittingStep(true);
+
+      const personalPayload = {
+        first_name: personalDetails.firstName,
+        last_name: personalDetails.lastName,
+        gender: personalDetails.gender.toLowerCase(),
+        country: 1,
+        state: personalDetails.stateId,
+        address: "123 Test Street, Sydney NSW 2000",
+        latitude: "-33.8688",
+        longitude: "151.2093",
+        contact_number: personalDetails.contactNumber,
+        date_of_birth: personalDetails.dateOfBirth,
+        city: personalDetails.city,
+        suburb: personalDetails.suburb,
+        post_code: personalDetails.postCode,
+        about_me: personalDetails.aboutMe,
+        maximum_distance: Number(personalDetails.maximumDistance) || 0,
+        accept_lower_level_job: (personalDetails.acceptLowerLevelJob
+          ? 1
+          : 0) as 0 | 1,
+      };
+      console.log(
+        "[ONB] Step 2 personal details payload:",
+        JSON.stringify(personalPayload, null, 2),
+      );
+
+      try {
+        const personalResult = await submitPersonalDetails(personalPayload);
+        updateHcp(personalResult.data);
+        await refreshStatus();
+        setActiveStep(3);
+      } catch (err) {
+        console.log("[ONB_ERROR]", err);
+        Alert.alert(
+          "Error",
+          err instanceof Error
+            ? err.message
+            : "Failed to save personal details.",
+        );
+      } finally {
+        setIsSubmittingStep(false);
+      }
+      return;
+    }
+
+    if (activeStep === 3) {
+      setIsSubmittingStep(true);
+
+      const professionalPayload = {
+        tfn_number: professionalDetails.tfnNumber,
+        abn_number: professionalDetails.abn_number,
+        registration_number: professionalDetails.registrationNumber,
+        cv: professionalDetails.cv
+          ? {
+              name: professionalDetails.cv.name,
+              uri: professionalDetails.cv.uri,
+              mimeType: professionalDetails.cv.mimeType,
+            }
+          : undefined,
+      };
+      console.log(
+        "[ONB] Step 3 professional details payload:",
+        JSON.stringify(professionalPayload, null, 2),
+      );
+
+      try {
+        const profResult = await submitProfessionalDetails(professionalPayload);
+        updateHcp(profResult.data);
+        const freshData = await refreshStatus();
+        setActiveStep(freshData ? resolveOnboardingStep(freshData) : 4);
+      } catch (err) {
+        Alert.alert(
+          "Error",
+          err instanceof Error
+            ? err.message
+            : "Failed to save professional details.",
+        );
+      } finally {
+        setIsSubmittingStep(false);
+      }
+      return;
+    }
+
+    if (activeStep === 4 || activeStep === 5) {
+      const requirements =
+        activeStep === 4
+          ? professionDocumentRequirements
+          : mandatoryDocumentRequirements;
+      const values =
+        activeStep === 4 ? professionalDocuments : mandatoryDocuments;
+
+      const missing = requirements.filter(
+        (r) => r.mandatory && !values[r.id]?.file,
+      );
+      if (missing.length > 0) {
+        Alert.alert(
+          "Missing documents",
+          `Please upload: ${missing.map((r) => r.name).join(", ")}`,
+        );
+        return;
+      }
+
+      const toUpload = requirements.filter((r) => values[r.id]?.file);
+
+      const docPayloads = toUpload.map((r) => ({
+        document_id: Number(r.id),
+        document_name: r.name,
+        file: values[r.id]!.file!.name,
+        expiry_date: r.requiresExpiry ? values[r.id]?.expiry : undefined,
+      }));
+      console.log(
+        `[ONB] Step ${activeStep} document upload payloads:`,
+        JSON.stringify(docPayloads, null, 2),
+      );
+
+      setIsSubmittingStep(true);
+
+      try {
+        await Promise.all(
+          toUpload.map((requirement) =>
+            uploadDocument({
+              document_id: Number(requirement.id),
+              file: values[requirement.id]!.file!,
+              expiry_date: requirement.requiresExpiry
+                ? values[requirement.id]?.expiry
+                : undefined,
+            }),
+          ),
+        );
+
+        await refreshStatus();
+        const nextStep = steps[activeIndex + 1];
+        if (nextStep) {
+          setActiveStep(nextStep.id);
+        } else {
+          setShowSuccess(true);
+        }
+      } catch (err) {
+        Alert.alert(
+          "Error",
+          err instanceof Error ? err.message : "Failed to upload documents.",
+        );
+      } finally {
+        setIsSubmittingStep(false);
+      }
+      return;
+    }
+
     const nextStep = steps[activeIndex + 1];
 
     if (nextStep) {
       setActiveStep(nextStep.id);
-      return;
     }
-
-    Alert.alert(
-      "Ready for API integration",
-      "The onboarding UI is complete. The next pass can connect these values to the backend endpoints.",
-    );
   };
 
   const handleBack = () => {
@@ -765,23 +973,6 @@ export default function OnboardingScreen() {
                 styles={styles}
               />
               <Field
-                label="Password"
-                value={personalDetails.password}
-                onChangeText={(value) => setPersonalValue("password", value)}
-                secureTextEntry={!showPassword}
-                rightAccessory={
-                  <Pressable onPress={() => setShowPassword((value) => !value)}>
-                    <Ionicons
-                      name={showPassword ? "eye-off-outline" : "eye-outline"}
-                      size={20}
-                      color={theme.secondaryText}
-                    />
-                  </Pressable>
-                }
-                styles={styles}
-                theme={theme}
-              />
-              <Field
                 label="About Me"
                 value={personalDetails.aboutMe}
                 onChangeText={(value) => setPersonalValue("aboutMe", value)}
@@ -789,42 +980,119 @@ export default function OnboardingScreen() {
                 styles={styles}
                 theme={theme}
               />
+              <Field
+                label="Maximum Distance (km)"
+                value={personalDetails.maximumDistance}
+                onChangeText={(value) =>
+                  setPersonalValue("maximumDistance", value)
+                }
+                keyboardType="number-pad"
+                placeholder="e.g. 50"
+                styles={styles}
+                theme={theme}
+              />
+              <OptionGrid
+                label="Accept Lower Level Job"
+                options={["Yes", "No"]}
+                value={personalDetails.acceptLowerLevelJob ? "Yes" : "No"}
+                onChange={(value) =>
+                  setPersonalDetails((curr) => ({
+                    ...curr,
+                    acceptLowerLevelJob: value === "Yes",
+                  }))
+                }
+                variant="radio"
+                styles={styles}
+              />
             </View>
           )}
 
           {activeStep === 2 && (
             <View style={styles.formSection}>
+              {isLoadingStates && (
+                <View style={styles.noticeBox}>
+                  <Ionicons name="sync" size={18} color={theme.primary} />
+                  <Text style={styles.noticeText}>Loading states...</Text>
+                </View>
+              )}
+              {statesError && (
+                <View style={styles.errorBox}>
+                  <Ionicons
+                    name="alert-circle-outline"
+                    size={18}
+                    color={theme.danger}
+                  />
+                  <Text style={styles.errorText}>{statesError}</Text>
+                </View>
+              )}
               <DropdownField
                 label="Select State"
-                options={stateOptions}
-                value={personalDetails.state}
-                onChange={(value) => setPersonalValue("state", value)}
+                options={states}
+                value={personalDetails.stateName}
+                onChange={(id, name) => {
+                  const selected = states.find((s) => s.id === id);
+                  setCities(selected?.cities ?? []);
+                  setPersonalDetails((curr) => ({
+                    ...curr,
+                    stateId: id,
+                    stateName: name,
+                    city: "",
+                    cityId: null,
+                  }));
+                }}
+                styles={styles}
+                theme={theme}
+              />
+              <DropdownField
+                label="Select City"
+                options={cities}
+                value={personalDetails.city}
+                placeholder={
+                  personalDetails.stateId
+                    ? "No cities available"
+                    : "Select a state first"
+                }
+                disabled={cities.length === 0}
+                onChange={(id, name) =>
+                  setPersonalDetails((curr) => ({
+                    ...curr,
+                    cityId: id,
+                    city: name,
+                  }))
+                }
+                styles={styles}
+                theme={theme}
+              />
+              <AddressAutocomplete
+                value={personalDetails.address}
+                onSelect={({
+                  address,
+                  latitude,
+                  longitude,
+                  city,
+                  suburb,
+                  postCode,
+                }) =>
+                  setPersonalDetails((curr) => ({
+                    ...curr,
+                    address,
+                    latitude,
+                    longitude,
+                    city: city || curr.city,
+                    suburb: suburb || curr.suburb,
+                    postCode: postCode || curr.postCode,
+                  }))
+                }
                 styles={styles}
                 theme={theme}
               />
               <Field
-                label="Address"
-                value={personalDetails.address}
-                onChangeText={(value) => setPersonalValue("address", value)}
+                label="Suburb"
+                value={personalDetails.suburb}
+                onChangeText={(value) => setPersonalValue("suburb", value)}
                 styles={styles}
                 theme={theme}
               />
-              <TwoColumn>
-                <Field
-                  label="City"
-                  value={personalDetails.city}
-                  onChangeText={(value) => setPersonalValue("city", value)}
-                  styles={styles}
-                  theme={theme}
-                />
-                <Field
-                  label="Suburb"
-                  value={personalDetails.suburb}
-                  onChangeText={(value) => setPersonalValue("suburb", value)}
-                  styles={styles}
-                  theme={theme}
-                />
-              </TwoColumn>
               <TwoColumn>
                 <Field
                   label="Post Code"
@@ -842,36 +1110,57 @@ export default function OnboardingScreen() {
                   theme={theme}
                 />
               </TwoColumn>
-              <TwoColumn>
-                <Field
-                  label="Registration Number"
-                  value={personalDetails.registrationNumber}
-                  onChangeText={(value) =>
-                    setPersonalValue("registrationNumber", value)
-                  }
-                  styles={styles}
-                  theme={theme}
-                />
-                <Field
-                  label="TFN Number"
-                  value={personalDetails.tfnNumber}
-                  onChangeText={(value) => setPersonalValue("tfnNumber", value)}
-                  styles={styles}
-                  theme={theme}
-                />
-              </TwoColumn>
+            </View>
+          )}
+
+          {activeStep === 3 && (
+            <View style={styles.formSection}>
+              <Field
+                label="TFN Number"
+                value={professionalDetails.tfnNumber}
+                onChangeText={(v) =>
+                  setProfessionalDetails((c) => ({ ...c, tfnNumber: v }))
+                }
+                keyboardType="number-pad"
+                styles={styles}
+                theme={theme}
+              />
+              <Field
+                label="Registration Number"
+                value={professionalDetails.registrationNumber}
+                onChangeText={(v) =>
+                  setProfessionalDetails((c) => ({
+                    ...c,
+                    registrationNumber: v,
+                  }))
+                }
+                styles={styles}
+                theme={theme}
+              />
+              <Field
+                label="ABN Number"
+                value={professionalDetails.abn_number}
+                onChangeText={(v) =>
+                  setProfessionalDetails((c) => ({
+                    ...c,
+                    abn_number: v,
+                  }))
+                }
+                styles={styles}
+                theme={theme}
+              />
               <UploadBox
                 label="CV"
-                file={personalDetails.cv}
+                file={professionalDetails.cv}
                 mandatory={false}
                 onPick={handlePickCv}
                 onPreview={() => {
-                  if (!personalDetails.cv) return;
+                  if (!professionalDetails.cv) return;
                   setPreview({
                     title: "CV",
-                    file: personalDetails.cv,
+                    file: professionalDetails.cv,
                     onRemove: () => {
-                      setPersonalValue("cv", undefined);
+                      setProfessionalDetails((c) => ({ ...c, cv: undefined }));
                       setPreview(null);
                     },
                   });
@@ -882,7 +1171,7 @@ export default function OnboardingScreen() {
             </View>
           )}
 
-          {activeStep === 3 && (
+          {activeStep === 4 && (
             <DocumentRequirementList
               collection="professional"
               requirements={professionDocumentRequirements}
@@ -902,7 +1191,7 @@ export default function OnboardingScreen() {
             />
           )}
 
-          {activeStep === 4 && (
+          {activeStep === 5 && (
             <DocumentRequirementList
               collection="mandatory"
               requirements={mandatoryDocumentRequirements}
@@ -949,15 +1238,28 @@ export default function OnboardingScreen() {
               <Text style={styles.secondaryButtonText}>Back</Text>
             </TouchableOpacity>
           )}
-          <TouchableOpacity style={styles.primaryButton} onPress={handleNext}>
-            <Text style={styles.primaryButtonText}>
-              {activeStep === 4 ? "Submit" : "Next"}
-            </Text>
-            <MaterialCommunityIcons
-              name="arrow-right-thin"
-              size={24}
-              color={theme.white}
-            />
+          <TouchableOpacity
+            style={[
+              styles.primaryButton,
+              (isSubmittingStep || isCheckingStatus) && { opacity: 0.7 },
+            ]}
+            onPress={() => void handleNext()}
+            disabled={isSubmittingStep || isCheckingStatus}
+          >
+            {isSubmittingStep || isCheckingStatus ? (
+              <ActivityIndicator size="small" color={theme.white} />
+            ) : (
+              <>
+                <Text style={styles.primaryButtonText}>
+                  {activeStep === 5 ? "Submit" : "Next"}
+                </Text>
+                <MaterialCommunityIcons
+                  name="arrow-right-thin"
+                  size={24}
+                  color={theme.white}
+                />
+              </>
+            )}
           </TouchableOpacity>
         </View>
 
@@ -968,6 +1270,39 @@ export default function OnboardingScreen() {
           theme={theme}
         />
       </KeyboardAvoidingView>
+
+      <Modal visible={showSuccess} transparent animationType="fade">
+        <View style={styles.successOverlay}>
+          <ConfettiCannon
+            count={200}
+            origin={{ x: screenWidth / 2, y: -20 }}
+            autoStart
+            fadeOut
+            fallSpeed={3000}
+            explosionSpeed={350}
+            colors={["#70C601", "#FFD700", "#FF6B6B", "#4ECDC4", "#45B7D1"]}
+          />
+          <View style={styles.successCard}>
+            <Text style={styles.successEmoji}>🎉</Text>
+            <Text style={styles.successTitle}>Welcome to iShapps!</Text>
+            <Text style={styles.successBody}>
+              Your registration is complete. Your account is pending approval —
+              you will be notified once it has been reviewed.
+            </Text>
+            <TouchableOpacity
+              style={[styles.primaryButton, { marginTop: 8 }]}
+              onPress={() => {
+                void signOut().then(() => {
+                  router.replace("/(open)/login");
+                });
+              }}
+            >
+              <Text style={styles.primaryButtonText}>Get started</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={{ height: screenHeight * 0.1 }} />
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -1030,18 +1365,154 @@ function Field({
   );
 }
 
+function AddressAutocomplete({
+  value,
+  onSelect,
+  styles,
+  theme,
+}: {
+  value: string;
+  onSelect: (result: {
+    address: string;
+    latitude: string;
+    longitude: string;
+    city: string;
+    suburb: string;
+    postCode: string;
+  }) => void;
+  styles: ReturnType<typeof getStyles>;
+  theme: typeof Colors.light;
+}) {
+  const [query, setQuery] = useState(value);
+  const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const PLACES_KEY = process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY;
+
+  const searchPlaces = async (text: string) => {
+    if (!text.trim() || !PLACES_KEY) return;
+    setIsSearching(true);
+    try {
+      const url = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(text)}&types=address&components=country:au&key=${PLACES_KEY}`;
+      const res = await fetch(url);
+      const json = (await res.json()) as {
+        predictions?: { place_id: string; description: string }[];
+      };
+      setSuggestions(json.predictions ?? []);
+    } catch {
+      // ignore network errors silently
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const selectPlace = async (suggestion: PlaceSuggestion) => {
+    setQuery(suggestion.description);
+    setSuggestions([]);
+    if (!PLACES_KEY) return;
+
+    try {
+      const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${suggestion.place_id}&fields=geometry,address_components,formatted_address&key=${PLACES_KEY}`;
+      const res = await fetch(url);
+      const json = (await res.json()) as {
+        result?: {
+          formatted_address?: string;
+          geometry?: { location: { lat: number; lng: number } };
+          address_components?: { long_name: string; types: string[] }[];
+        };
+      };
+      const result = json.result;
+      if (!result) return;
+
+      const components = result.address_components ?? [];
+      const get = (type: string) =>
+        components.find((c) => c.types.includes(type))?.long_name ?? "";
+
+      onSelect({
+        address: result.formatted_address ?? suggestion.description,
+        latitude: String(result.geometry?.location.lat ?? ""),
+        longitude: String(result.geometry?.location.lng ?? ""),
+        city: get("locality") || get("administrative_area_level_2"),
+        suburb: get("sublocality_level_1") || get("sublocality"),
+        postCode: get("postal_code"),
+      });
+    } catch {
+      onSelect({
+        address: suggestion.description,
+        latitude: "",
+        longitude: "",
+        city: "",
+        suburb: "",
+        postCode: "",
+      });
+    }
+  };
+
+  const handleChange = (text: string) => {
+    setQuery(text);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => void searchPlaces(text), 400);
+  };
+
+  return (
+    <View style={styles.field}>
+      <Text style={styles.fieldLabel}>Address</Text>
+      <View style={styles.inputShell}>
+        <TextInput
+          value={query}
+          onChangeText={handleChange}
+          placeholder="Start typing your address..."
+          placeholderTextColor={theme.secondaryText}
+          style={styles.input}
+          cursorColor={theme.primary}
+        />
+        {isSearching && (
+          <ActivityIndicator
+            size="small"
+            color={theme.primary}
+            style={{ marginRight: 8 }}
+          />
+        )}
+      </View>
+      {suggestions.length > 0 && (
+        <View style={styles.suggestionList}>
+          {suggestions.map((s) => (
+            <Pressable
+              key={s.place_id}
+              onPress={() => void selectPlace(s)}
+              style={styles.suggestionItem}
+            >
+              <Ionicons
+                name="location-outline"
+                size={14}
+                color={theme.secondaryText}
+                style={{ marginRight: 6 }}
+              />
+              <Text style={styles.suggestionText}>{s.description}</Text>
+            </Pressable>
+          ))}
+        </View>
+      )}
+    </View>
+  );
+}
+
 function DropdownField({
   label,
   options,
   value,
   onChange,
+  placeholder,
+  disabled,
   styles,
   theme,
 }: {
   label: string;
-  options: string[];
+  options: { id: number; name: string }[];
   value: string;
-  onChange: (value: string) => void;
+  onChange: (id: number, name: string) => void;
+  placeholder?: string;
+  disabled?: boolean;
   styles: ReturnType<typeof getStyles>;
   theme: typeof Colors.light;
 }) {
@@ -1051,8 +1522,8 @@ function DropdownField({
     <View style={styles.field}>
       <Text style={styles.fieldLabel}>{label}</Text>
       <Pressable
-        onPress={() => setVisible(true)}
-        style={styles.dropdownTrigger}
+        onPress={() => !disabled && setVisible(true)}
+        style={[styles.dropdownTrigger, disabled && { opacity: 0.5 }]}
       >
         <Text
           style={[
@@ -1060,7 +1531,7 @@ function DropdownField({
             !value && { color: theme.secondaryText },
           ]}
         >
-          {value || "Select state"}
+          {value || placeholder || `Select ${label.toLowerCase()}`}
         </Text>
         <Ionicons name="chevron-down" size={18} color={theme.secondaryText} />
       </Pressable>
@@ -1077,13 +1548,13 @@ function DropdownField({
           <View style={styles.dropdownSheet}>
             <Text style={styles.dropdownTitle}>{label}</Text>
             {options.map((option) => {
-              const selected = option === value;
+              const selected = option.name === value;
 
               return (
                 <Pressable
-                  key={option}
+                  key={option.id}
                   onPress={() => {
-                    onChange(option);
+                    onChange(option.id, option.name);
                     setVisible(false);
                   }}
                   style={[
@@ -1097,7 +1568,7 @@ function DropdownField({
                       selected && styles.dropdownOptionTextActive,
                     ]}
                   >
-                    {option}
+                    {option.name}
                   </Text>
                   {selected && (
                     <Ionicons
@@ -1346,6 +1817,24 @@ function DocumentPreviewModal({
   theme: typeof Colors.light;
 }) {
   const isImage = preview?.file.mimeType?.startsWith("image/");
+  const [resolvedUri, setResolvedUri] = useState<string | null>(null);
+  const [uriLoading, setUriLoading] = useState(false);
+
+  useEffect(() => {
+    if (!preview || isImage) {
+      setResolvedUri(null);
+      return;
+    }
+    if (Platform.OS === "android") {
+      setUriLoading(true);
+      FileSystem.getContentUriAsync(preview.file.uri)
+        .then((uri) => setResolvedUri(uri))
+        .catch(() => setResolvedUri(preview.file.uri))
+        .finally(() => setUriLoading(false));
+    } else {
+      setResolvedUri(preview.file.uri);
+    }
+  }, [preview?.file.uri, isImage]);
 
   return (
     <Modal
@@ -1375,11 +1864,43 @@ function DocumentPreviewModal({
                 style={styles.previewImage}
                 contentFit="contain"
               />
-            ) : preview?.file.uri ? (
+            ) : uriLoading ? (
+              <ActivityIndicator size="large" color={theme.primary} />
+            ) : Platform.OS === "ios" && resolvedUri ? (
               <WebView
-                source={{ uri: preview.file.uri }}
+                source={{ uri: resolvedUri }}
                 style={styles.webView}
+                allowFileAccess
+                allowFileAccessFromFileURLs
+                allowUniversalAccessFromFileURLs
+                originWhitelist={["*", "file://*"]}
+                startInLoadingState
+                renderLoading={() => (
+                  <ActivityIndicator
+                    size="large"
+                    color={theme.primary}
+                    style={StyleSheet.absoluteFillObject}
+                  />
+                )}
               />
+            ) : resolvedUri ? (
+              <View style={styles.previewOpenFallback}>
+                <Ionicons
+                  name="document-text-outline"
+                  size={56}
+                  color={theme.secondaryText}
+                />
+                <Text style={styles.previewFallback} numberOfLines={2}>
+                  {preview?.file.name}
+                </Text>
+                <TouchableOpacity
+                  style={styles.openInViewerButton}
+                  onPress={() => Linking.openURL(resolvedUri).catch(() => null)}
+                >
+                  <Ionicons name="open-outline" size={16} color={theme.white} />
+                  <Text style={styles.openInViewerText}>Open in viewer</Text>
+                </TouchableOpacity>
+              </View>
             ) : (
               <Text style={styles.previewFallback}>No preview available</Text>
             )}
@@ -1414,6 +1935,46 @@ const getStyles = (theme: typeof Colors.light) =>
     safeArea: {
       flex: 1,
       backgroundColor: theme.safeAreaBg,
+    },
+    successOverlay: {
+      flex: 1,
+      backgroundColor: "rgba(0,0,0,0.6)",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: 24,
+    },
+    successCard: {
+      backgroundColor: theme.whiteBackground,
+      borderRadius: 20,
+      padding: 32,
+      alignItems: "center",
+      width: "100%",
+      gap: 12,
+    },
+    successEmoji: {
+      fontSize: 56,
+    },
+    successTitle: {
+      fontSize: 24,
+      fontWeight: "700",
+      color: theme.primaryText,
+      textAlign: "center",
+    },
+    successBody: {
+      fontSize: 14,
+      color: theme.secondaryText,
+      textAlign: "center",
+      lineHeight: 22,
+    },
+    statusCheckLoader: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 16,
+    },
+    statusCheckLoaderText: {
+      color: theme.secondaryText,
+      fontSize: 14,
     },
     keyboardAvoidingView: {
       flex: 1,
@@ -2007,6 +2568,31 @@ const getStyles = (theme: typeof Colors.light) =>
     previewFallback: {
       color: theme.secondaryText,
       fontWeight: "700",
+      textAlign: "center",
+      marginTop: 8,
+      paddingHorizontal: 16,
+    },
+    previewOpenFallback: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 12,
+      padding: 16,
+    },
+    openInViewerButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      backgroundColor: theme.primary,
+      paddingHorizontal: 20,
+      paddingVertical: 10,
+      borderRadius: 8,
+      marginTop: 4,
+    },
+    openInViewerText: {
+      color: theme.white,
+      fontWeight: "700",
+      fontSize: 14,
     },
     previewActions: {
       flexDirection: "row",
@@ -2040,5 +2626,26 @@ const getStyles = (theme: typeof Colors.light) =>
       color: theme.white,
       fontSize: 14,
       fontWeight: "800",
+    },
+    suggestionList: {
+      borderWidth: 1,
+      borderColor: theme.greyBorder,
+      borderRadius: 8,
+      marginTop: 4,
+      backgroundColor: theme.whiteBackground,
+      overflow: "hidden",
+    },
+    suggestionItem: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.greyBorder,
+    },
+    suggestionText: {
+      flex: 1,
+      fontSize: 14,
+      color: theme.primaryText,
     },
   });
