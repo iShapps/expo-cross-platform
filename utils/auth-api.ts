@@ -5,8 +5,11 @@ import LoginCredentials, {
   ForgotPasswordErrorResponse,
   ForgotPasswordRequest,
   ForgotPasswordSuccessResponse,
+  HcpOnboardingLoginResponse,
   LoginErrorResponse,
+  LoginResponse,
   LoginSuccessResponse,
+  RegistrationStatusResponse,
   ResetPasswordErrorResponse,
   ResetPasswordRequest,
   ResetPasswordSuccessResponse,
@@ -159,6 +162,25 @@ const validateCredentials = (credentials: LoginCredentials): void => {
   }
 };
 
+const hasAccessToken = (data: unknown): data is LoginSuccessResponse => {
+  if (!isObject(data) || !isObject(data.data)) return false;
+
+  return (
+    typeof data.data.access_token === "string" &&
+    data.data.access_token.trim().length > 0
+  );
+};
+
+const isHcpOnboardingLoginResponse = (
+  data: unknown,
+): data is HcpOnboardingLoginResponse => {
+  if (!isObject(data) || data.status !== true || !isObject(data.data)) {
+    return false;
+  }
+
+  return typeof data.data.id === "number" && !("access_token" in data.data);
+};
+
 const getApiRequestAuthError = (
   error: ApiRequestError,
   fallbackMessage: string,
@@ -207,7 +229,7 @@ const postAuthResource = async <T>(
 
 const loginInternal = async (
   credentials: LoginCredentials,
-): Promise<LoginSuccessResponse> => {
+): Promise<LoginSuccessResponse | HcpOnboardingLoginResponse> => {
   try {
     addLoginBreadcrumb("login.submit_started", {
       hasEmail:
@@ -233,16 +255,25 @@ const loginInternal = async (
       "device-version": credentials.device_version,
     });
 
-    const data = await postAuthResource<
-      LoginSuccessResponse | LoginErrorResponse
-    >(API_CONFIG.endpoints.login, loginBody);
+    const data = await postAuthResource<LoginResponse>(
+      API_CONFIG.endpoints.login,
+      loginBody,
+    );
 
-    if (isObject(data) && data.status === true) {
-      const successData = data as unknown as LoginSuccessResponse;
-      await TokenStorage.saveToken(successData.data.access_token);
+    if (hasAccessToken(data)) {
+      await TokenStorage.saveToken(data.data.access_token);
       addLoginBreadcrumb("login.request_success");
 
-      return successData;
+      return data;
+    }
+
+    if (isHcpOnboardingLoginResponse(data)) {
+      addLoginBreadcrumb("login.onboarding_required", {
+        hcpId: data.data.id,
+        status: data.data.status,
+      });
+
+      return data;
     }
 
     if (isObject(data) && data.status === false) {
@@ -285,19 +316,20 @@ const loginInternal = async (
 
 export const login = async (
   credentials: LoginCredentials,
-): Promise<LoginSuccessResponse> => {
-  console.log("logged in with", credentials);
+): Promise<LoginSuccessResponse | HcpOnboardingLoginResponse> => {
   return loginInternal({ ...credentials });
 };
 
 // Login with Alert Handling
 export const loginWithAlerts = async (
   credentials: LoginCredentials,
-): Promise<LoginSuccessResponse | null> => {
+): Promise<LoginSuccessResponse | HcpOnboardingLoginResponse | null> => {
   try {
     const result = await login(credentials);
 
-    Alert.alert("Success", "Login successful!", [{ text: "OK" }]);
+    if ("access_token" in result.data) {
+      Alert.alert("Success", "Login successful!", [{ text: "OK" }]);
+    }
 
     return result;
   } catch (error) {
@@ -344,6 +376,41 @@ export const isAuthenticated = async (): Promise<boolean> => {
   const token = await TokenStorage.getToken();
   return token !== null;
 };
+
+export const getRegistrationStatus = async (
+  token: string,
+): Promise<RegistrationStatusResponse> => {
+  const { data } = await apiRequest<RegistrationStatusResponse>({
+    url: `${API_CONFIG.baseURL}/v2/registration/status`,
+    endpoint: "/v2/registration/status",
+    method: "GET",
+    headers: { Authorization: `Bearer ${token}` },
+    timeoutMs: API_CONFIG.timeout,
+  });
+  console.log("REG_STATUS_DATA", data);
+  return data;
+};
+
+export function computeOnboardingStep(
+  steps: RegistrationStatusResponse["data"]["steps"],
+): 1 | 2 | 3 | 4 | 5 {
+  // Personal details spans steps 1 and 2; always start at 1 when incomplete.
+  if (steps.account_created && !steps.personal_details_complete) return 1;
+  if (steps.personal_details_complete && !steps.profession_selected) return 3;
+  if (steps.profession_selected && !steps.documents_uploaded) return 4;
+  if (steps.documents_uploaded && !steps.registration_complete) return 5;
+  return 1;
+}
+
+export function resolveOnboardingStep(
+  data: RegistrationStatusResponse["data"],
+): 1 | 2 | 3 | 4 | 5 {
+  const step = computeOnboardingStep(data.steps);
+  if (step === 4 && data.missing_documents.profession.length === 0) {
+    return 5;
+  }
+  return step;
+}
 
 const validateForgotPasswordRequest = (
   request: ForgotPasswordRequest,

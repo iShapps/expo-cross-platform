@@ -13,7 +13,7 @@ export type ApiRequestKind =
 export type ApiRequestOptions = {
   url: string;
   endpoint: string;
-  method: "GET" | "POST" | "PUT" | "DELETE";
+  method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   body?: unknown;
   headers?: Record<string, unknown>;
   timeoutMs?: number;

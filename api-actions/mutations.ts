@@ -29,7 +29,7 @@ function isObject(val: unknown): val is Record<string, unknown> {
 async function authorizedMutation<Req, Res>(
   url: string,
   endpoint: string,
-  method: "POST" | "PUT",
+  method: "POST" | "PUT" | "PATCH",
   body: Req,
   customHeaders: Record<string, string> = {},
   validateResponse?: (data: unknown) => data is Res,
@@ -128,6 +128,21 @@ export async function putResource<Req, Res>(
     `${API_BASE_URL}${endpoint}`,
     endpoint,
     "PUT",
+    payload,
+    {},
+    validateResponse,
+  );
+}
+
+export async function patchResource<Req, Res>(
+  endpoint: string,
+  payload: Req,
+  validateResponse?: (data: unknown) => data is Res,
+): Promise<Res> {
+  return authorizedMutation<Req, Res>(
+    `${API_BASE_URL}${endpoint}`,
+    endpoint,
+    "PATCH",
     payload,
     {},
     validateResponse,
