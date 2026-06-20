@@ -151,6 +151,13 @@ function RootNavigator() {
       </Stack.Protected>
 
       <Stack.Screen
+        name="onboarding"
+        options={{
+          headerShown: false,
+        }}
+      />
+
+      <Stack.Screen
         name="review"
         options={{
           headerShown: false,

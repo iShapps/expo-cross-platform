@@ -3,7 +3,7 @@ import {
   registerAuthExpiredHandler,
 } from "@/api-actions/error-utils";
 import { useProfileData } from "@/data-store/use-account-store";
-import LoginCredentials, { User } from "@/data-types/auth";
+import LoginCredentials, { Hcp, User } from "@/data-types/auth";
 import {
   ensureOneSignalSubscriptionId,
   onLoginSuccess,
@@ -15,6 +15,8 @@ import {
   login as apiLogin,
   logout as apiLogout,
   AuthenticationError,
+  computeOnboardingStep,
+  getRegistrationStatus,
   NetworkError,
 } from "@/utils/auth-api";
 import { debug, error } from "@/utils/logger";
@@ -33,18 +35,20 @@ import { Alert } from "react-native";
 import { useStorageState } from "./useStorageState";
 
 const AuthContext = React.createContext<{
-  signIn: (data: LoginCredentials) => Promise<void>;
+  signIn: (data: LoginCredentials) => Promise<"authenticated" | "onboarding">;
   retryNotificationSetup: () => Promise<boolean>;
   setSess: (data: string) => void;
-  signOut: () => void;
+  signOut: () => Promise<void>;
+  updateHcp: (patch: Partial<Hcp>) => void;
   session?: string | null;
   user?: User | null;
   isLoading: boolean;
 }>({
-  signIn: () => Promise.resolve(),
+  signIn: () => Promise.resolve("authenticated"),
   retryNotificationSetup: () => Promise.resolve(false),
   setSess: () => null,
-  signOut: () => null,
+  signOut: () => Promise.resolve(),
+  updateHcp: () => null,
   session: null,
   user: null,
   isLoading: false,
@@ -62,30 +66,52 @@ export function useSession() {
   return value;
 }
 
-export function useProtectedRoute(session?: string | null) {
+const getOnboardingRouteParams = (user?: User | null) => {
+  const hcp = user?.hcp;
+  const registrationScreen = hcp?.app_registration_screen;
+
+  if (!hcp?.id || !registrationScreen || registrationScreen === "0") {
+    return null;
+  }
+
+  return {
+    hcpId: String(hcp.id),
+    screen: registrationScreen,
+  };
+};
+
+export function useProtectedRoute(
+  session: string | null | undefined,
+  user: User | null,
+) {
   const segments = useSegments();
   const router = useRouter();
   debug("session", session);
 
-  const currentRoute = usePathname() === "/(open)/index";
+  const pathname = usePathname();
+  const currentRoute = pathname === "/(open)/index";
   useEffect(() => {
     const inAuthGroup = segments[0] === "(open)";
+    const inOnboarding = segments[0] === "onboarding";
+    const onboardingParams = getOnboardingRouteParams(user);
 
-    debug("inAuthGroup", inAuthGroup);
-
-    if (
-      // If the session is not present and the initial segment is not anything in the auth group.
-      !session &&
-      !inAuthGroup &&
-      currentRoute
-    ) {
+    if (!session && !inAuthGroup && currentRoute) {
       // Redirect to the sign-in page.
       router.replace("/(open)/login");
-    } else if ((session && inAuthGroup) || (session && currentRoute)) {
+    } else if (session && onboardingParams && !inOnboarding) {
+      router.replace({
+        pathname: "/onboarding",
+        params: onboardingParams,
+      });
+    } else if (
+      session &&
+      !onboardingParams &&
+      ((inAuthGroup && !inOnboarding) || currentRoute)
+    ) {
       // Redirect to the home page.
       router.replace("/(tabs)");
     }
-  }, [session, segments, router, currentRoute]);
+  }, [currentRoute, router, segments, session, user]);
 }
 
 export function SessionProvider(props: React.PropsWithChildren) {
@@ -95,12 +121,14 @@ export function SessionProvider(props: React.PropsWithChildren) {
     useStorageState("user_data");
 
   const [authLoading, setAuthLoading] = React.useState(false);
+  const router = useRouter();
 
-  useProtectedRoute(session);
   const profileStore = useProfileData();
   const queryClient = useQueryClient();
 
-  const user = userJson ? JSON.parse(userJson) : null;
+  const user = userJson ? (JSON.parse(userJson) as User) : null;
+
+  useProtectedRoute(session, user);
 
   useEffect(() => {
     incrementProviderMount("SessionProvider");
@@ -114,6 +142,14 @@ export function SessionProvider(props: React.PropsWithChildren) {
     setAuthLoading(true);
     try {
       const result = await apiLogin(credentials);
+
+      if (!("access_token" in result.data)) {
+        router.replace({
+          pathname: "/onboarding",
+          params: { hcpId: String(result.data.id) },
+        });
+        return "onboarding";
+      }
 
       // Save token and user data
       setSession(result.data.access_token);
@@ -130,7 +166,48 @@ export function SessionProvider(props: React.PropsWithChildren) {
       // Login to OneSignal for push notifications
       await onLoginSuccess(result.data.user.id.toString());
 
+      try {
+        const regStatus = await getRegistrationStatus(result.data.access_token);
+
+        console.log("[REGSTATUS]", regStatus);
+        if (regStatus.data.registration_screen === "0") {
+          Alert.alert("Success", "Login successful!", [{ text: "OK" }]);
+          return "authenticated";
+        }
+
+        const onboardingStep = computeOnboardingStep(regStatus.data.steps);
+
+        // Persist the computed step so the next cold open routes correctly.
+        const updatedUser: User = {
+          ...result.data.user,
+          hcp: {
+            ...result.data.user.hcp,
+            app_registration_screen: String(onboardingStep),
+          },
+        };
+        setUserJson(JSON.stringify(updatedUser));
+        profileStore.setUserDetails(updatedUser);
+        queryClient.setQueryData(["profile-details"], updatedUser);
+
+        router.replace({
+          pathname: "/onboarding",
+          params: {
+            hcpId: String(result.data.user.hcp.id),
+            screen: String(onboardingStep),
+          },
+        });
+        return "onboarding";
+      } catch {
+        // Fall back to local user data if the status check fails
+        const onboardingParams = getOnboardingRouteParams(result.data.user);
+        if (onboardingParams) {
+          router.replace({ pathname: "/onboarding", params: onboardingParams });
+          return "onboarding";
+        }
+      }
+
       Alert.alert("Success", "Login successful!", [{ text: "OK" }]);
+      return "authenticated";
     } catch (err) {
       logApiErrorToSentry(err, {
         endpoint: "/login",
@@ -196,6 +273,14 @@ export function SessionProvider(props: React.PropsWithChildren) {
       device_id: subscriptionId,
     });
 
+    if (!("access_token" in result.data)) {
+      router.replace({
+        pathname: "/onboarding",
+        params: { hcpId: String(result.data.id) },
+      });
+      return false;
+    }
+
     setSession(result.data.access_token);
     await setAuthToken(result.data.access_token);
     setUserJson(JSON.stringify(result.data.user));
@@ -204,8 +289,17 @@ export function SessionProvider(props: React.PropsWithChildren) {
     queryClient.setQueryData(["profile-details"], result.data.user);
     await onLoginSuccess(result.data.user.id.toString());
 
+    const onboardingParams = getOnboardingRouteParams(result.data.user);
+    if (onboardingParams) {
+      router.replace({
+        pathname: "/onboarding",
+        params: onboardingParams,
+      });
+      return false;
+    }
+
     return true;
-  }, [profileStore, queryClient, setSession, setUserJson]);
+  }, [profileStore, queryClient, router, setSession, setUserJson]);
 
   const handleSignOut = React.useCallback(async () => {
     try {
@@ -225,6 +319,21 @@ export function SessionProvider(props: React.PropsWithChildren) {
     }
   }, [profileStore, queryClient, setSession, setUserJson]);
 
+  const handleUpdateHcp = React.useCallback(
+    (patch: Partial<Hcp>) => {
+      const currentUser = user;
+      if (!currentUser) return;
+      const updatedUser: User = {
+        ...currentUser,
+        hcp: { ...currentUser.hcp, ...patch },
+      };
+      setUserJson(JSON.stringify(updatedUser));
+      profileStore.setUserDetails(updatedUser);
+      queryClient.setQueryData(["profile-details"], updatedUser);
+    },
+    [user, setUserJson, profileStore, queryClient],
+  );
+
   useEffect(() => {
     return registerAuthExpiredHandler(async ({ message }) => {
       await handleSignOut();
@@ -239,6 +348,7 @@ export function SessionProvider(props: React.PropsWithChildren) {
         retryNotificationSetup: handleRetryNotificationSetup,
         setSess: handleSetSession,
         signOut: handleSignOut,
+        updateHcp: handleUpdateHcp,
         session,
         user,
         isLoading: isHydrating || isHydratingUser || authLoading,
