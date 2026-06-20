@@ -625,7 +625,7 @@ export default function OnboardingScreen() {
         first_name: personalDetails.firstName,
         last_name: personalDetails.lastName,
         gender: personalDetails.gender.toLowerCase(),
-        country: 1,
+        country: 13,
         state: personalDetails.stateId,
         address: "123 Test Street, Sydney NSW 2000",
         latitude: "-33.8688",
@@ -1329,6 +1329,9 @@ function AddressAutocomplete({
               types: string[];
             }[];
           } | null;
+
+          console.log("[PLACE_DETAILS]", details);
+          console.log(JSON.stringify(details?.addressComponents, null, 2));
           const get = (type: string) =>
             details?.addressComponents?.find((c) => c.types.includes(type))
               ?.longText ?? "";
@@ -1340,8 +1343,13 @@ function AddressAutocomplete({
             longitude: details?.location
               ? String(details.location.longitude)
               : "",
+            suburb:
+              get("sublocality_level_1") ||
+              get("sublocality") ||
+              get("neighborhood") ||
+              get("locality"),
+
             city: get("locality") || get("administrative_area_level_2"),
-            suburb: get("sublocality_level_1") || get("sublocality"),
             postCode: get("postal_code"),
           });
         }}
@@ -1371,7 +1379,7 @@ function AddressAutocomplete({
           },
           input: {
             color: theme.primaryText,
-            fontSize: 15,
+            fontSize: 12,
           },
           suggestionsContainer: {
             backgroundColor: theme.whiteBackground,
