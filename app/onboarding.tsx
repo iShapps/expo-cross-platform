@@ -7,6 +7,7 @@ import {
   submitProfessionalDetails,
   uploadDocument,
 } from "@/api-queries/onboarding";
+import { DocumentPreviewModal } from "@/components/document-preview-modal";
 import { Colors } from "@/constants/theme";
 import { RegistrationStatusResponse } from "@/data-types/auth";
 import { useColorScheme } from "@/hooks/use-color-scheme";
@@ -17,15 +18,15 @@ import {
 } from "@/utils/auth-api";
 import { pickDocument } from "@/utils/file-pickers";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import * as FileSystem from "expo-file-system";
-import { Image } from "expo-image";
+
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Animated,
+  Easing,
   KeyboardAvoidingView,
-  Linking,
   Modal,
   Platform,
   Pressable,
@@ -43,7 +44,6 @@ import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
-import { WebView } from "react-native-webview";
 import { useSession } from "./ctx";
 
 type OnboardingStepId = 1 | 2 | 3 | 4 | 5;
@@ -78,7 +78,7 @@ const steps: {
 }[] = [
   {
     id: 1,
-    title: "Basic details",
+    title: "Personal details",
     eyebrow: "Profile",
     icon: "person-outline",
   },
@@ -625,7 +625,7 @@ export default function OnboardingScreen() {
         first_name: personalDetails.firstName,
         last_name: personalDetails.lastName,
         gender: personalDetails.gender.toLowerCase(),
-        country: 13,
+        country: 1,
         state: personalDetails.stateId,
         address: "123 Test Street, Sydney NSW 2000",
         latitude: "-33.8688",
@@ -829,14 +829,6 @@ export default function OnboardingScreen() {
             </View>
           </View>
 
-          {isLoadingHcp && (
-            <View style={styles.noticeBox}>
-              <Ionicons name="sync" size={18} color={theme.primary} />
-              <Text style={styles.noticeText}>
-                Loading your registration...
-              </Text>
-            </View>
-          )}
           {activeStep === 1 && (
             <View style={styles.formSection}>
               <TwoColumn>
@@ -1044,7 +1036,7 @@ export default function OnboardingScreen() {
           {activeStep === 3 && (
             <View style={styles.formSection}>
               <Field
-                label="TFN Number"
+                label="Tax File Number"
                 value={professionalDetails.tfnNumber}
                 onChangeText={(v) =>
                   setProfessionalDetails((c) => ({ ...c, tfnNumber: v }))
@@ -1054,7 +1046,7 @@ export default function OnboardingScreen() {
                 theme={theme}
               />
               <Field
-                label="Registration Number"
+                label="Passport Number"
                 value={professionalDetails.registrationNumber}
                 onChangeText={(v) =>
                   setProfessionalDetails((c) => ({
@@ -1065,7 +1057,7 @@ export default function OnboardingScreen() {
                 styles={styles}
                 theme={theme}
               />
-              <Field
+              {/* <Field
                 label="ABN Number"
                 value={professionalDetails.abn_number}
                 onChangeText={(v) =>
@@ -1076,7 +1068,7 @@ export default function OnboardingScreen() {
                 }
                 styles={styles}
                 theme={theme}
-              />
+              /> */}
               <UploadBox
                 label="CV"
                 file={professionalDetails.cv}
@@ -1192,10 +1184,23 @@ export default function OnboardingScreen() {
         </View>
 
         <DocumentPreviewModal
-          preview={preview}
+          visible={!!preview}
+          title={preview?.title ?? "Preview"}
+          file={preview?.file ?? null}
           onClose={() => setPreview(null)}
-          styles={styles}
-          theme={theme}
+          actions={
+            preview
+              ? [
+                  {
+                    key: "remove",
+                    label: "Remove",
+                    icon: "trash-outline",
+                    variant: "danger",
+                    onPress: preview.onRemove,
+                  },
+                ]
+              : []
+          }
         />
       </KeyboardAvoidingView>
 
@@ -1231,7 +1236,121 @@ export default function OnboardingScreen() {
           <View style={{ height: screenHeight * 0.1 }} />
         </View>
       </Modal>
+
+      <SnakeBorderLoader visible={isLoadingHcp} />
     </SafeAreaView>
+  );
+}
+
+function SnakeBorderLoader({ visible }: { visible: boolean }) {
+  const { width, height } = useWindowDimensions();
+  const progress = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (!visible) {
+      progress.setValue(0);
+      return;
+    }
+    const anim = Animated.loop(
+      Animated.timing(progress, {
+        toValue: 5,
+        duration: 2500,
+        easing: Easing.linear,
+        useNativeDriver: false,
+      }),
+    );
+    anim.start();
+    return () => anim.stop();
+  }, [visible, progress]);
+
+  if (!visible) return null;
+
+  const T = 3;
+  const COLOR = "#70C601";
+
+  // Left side: bottom to top (progress 0–1 grow, 1–2 shrink)
+  const leftTop = progress.interpolate({
+    inputRange: [0, 1, 2, 5],
+    outputRange: [height, 0, 0, 0],
+  });
+  const leftHeight = progress.interpolate({
+    inputRange: [0, 1, 2, 5],
+    outputRange: [0, height, 0, 0],
+  });
+
+  // Top side: left to right (progress 1–2 grow, 2–3 shrink)
+  const topLeft = progress.interpolate({
+    inputRange: [0, 1, 2, 3, 5],
+    outputRange: [0, 0, 0, width, width],
+  });
+  const topWidth = progress.interpolate({
+    inputRange: [0, 1, 2, 3, 5],
+    outputRange: [0, 0, width, 0, 0],
+  });
+
+  // Right side: top to bottom (progress 2–3 grow, 3–4 shrink)
+  const rightTop = progress.interpolate({
+    inputRange: [0, 2, 3, 4, 5],
+    outputRange: [0, 0, 0, height, height],
+  });
+  const rightHeight = progress.interpolate({
+    inputRange: [0, 2, 3, 4, 5],
+    outputRange: [0, 0, height, 0, 0],
+  });
+
+  // Bottom side: right to left (progress 3–4 grow, 4–5 shrink)
+  const bottomRight = progress.interpolate({
+    inputRange: [0, 3, 4, 5],
+    outputRange: [0, 0, 0, width],
+  });
+  const bottomWidth = progress.interpolate({
+    inputRange: [0, 3, 4, 5],
+    outputRange: [0, 0, width, 0],
+  });
+
+  return (
+    <View style={StyleSheet.absoluteFill} pointerEvents="none">
+      <Animated.View
+        style={{
+          position: "absolute",
+          left: 0,
+          top: leftTop,
+          width: T,
+          height: leftHeight,
+          backgroundColor: COLOR,
+        }}
+      />
+      <Animated.View
+        style={{
+          position: "absolute",
+          top: 0,
+          left: topLeft,
+          height: T,
+          width: topWidth,
+          backgroundColor: COLOR,
+        }}
+      />
+      <Animated.View
+        style={{
+          position: "absolute",
+          right: 0,
+          top: rightTop,
+          width: T,
+          height: rightHeight,
+          backgroundColor: COLOR,
+        }}
+      />
+      <Animated.View
+        style={{
+          position: "absolute",
+          bottom: 0,
+          right: bottomRight,
+          height: T,
+          width: bottomWidth,
+          backgroundColor: COLOR,
+        }}
+      />
+    </View>
   );
 }
 
@@ -1311,7 +1430,9 @@ function AddressAutocomplete({
   styles: ReturnType<typeof getStyles>;
   theme: typeof Colors.light;
 }) {
-  const PLACES_KEY = process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY ?? "";
+  const PLACES_KEY =
+    process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY ??
+    "AIzaSyCo1TDkkMMkqguKpLYzOrL9GM4GUjlUA_s";
 
   return (
     <View style={styles.field}>
@@ -1719,128 +1840,6 @@ function UploadBox({
         </TouchableOpacity>
       </Pressable>
     </View>
-  );
-}
-
-function DocumentPreviewModal({
-  preview,
-  onClose,
-  styles,
-  theme,
-}: {
-  preview: {
-    title: string;
-    file: UploadedFile;
-    onRemove: () => void;
-  } | null;
-  onClose: () => void;
-  styles: ReturnType<typeof getStyles>;
-  theme: typeof Colors.light;
-}) {
-  const isImage = preview?.file.mimeType?.startsWith("image/");
-  const [resolvedUri, setResolvedUri] = useState<string | null>(null);
-  const [uriLoading, setUriLoading] = useState(false);
-
-  useEffect(() => {
-    if (!preview || isImage) {
-      setResolvedUri(null);
-      return;
-    }
-    if (Platform.OS === "android") {
-      setUriLoading(true);
-      FileSystem.getContentUriAsync(preview.file.uri)
-        .then((uri) => setResolvedUri(uri))
-        .catch(() => setResolvedUri(preview.file.uri))
-        .finally(() => setUriLoading(false));
-    } else {
-      setResolvedUri(preview.file.uri);
-    }
-  }, [preview?.file.uri, isImage]);
-
-  return (
-    <Modal
-      animationType="slide"
-      transparent
-      visible={!!preview}
-      onRequestClose={onClose}
-    >
-      <View style={styles.modalBackdrop}>
-        <View style={styles.previewSheet}>
-          <View style={styles.previewHandle} />
-          <View style={styles.previewHeader}>
-            <View>
-              <Text style={styles.previewTitle}>{preview?.title}</Text>
-              <Text style={styles.previewFileName} numberOfLines={1}>
-                {preview?.file.name}
-              </Text>
-            </View>
-            <TouchableOpacity onPress={onClose} style={styles.iconButton}>
-              <Ionicons name="close" size={20} color={theme.primaryText} />
-            </TouchableOpacity>
-          </View>
-          <View style={styles.previewFrame}>
-            {preview?.file.uri && isImage ? (
-              <Image
-                source={{ uri: preview.file.uri }}
-                style={styles.previewImage}
-                contentFit="contain"
-              />
-            ) : uriLoading ? (
-              <ActivityIndicator size="large" color={theme.primary} />
-            ) : Platform.OS === "ios" && resolvedUri ? (
-              <WebView
-                source={{ uri: resolvedUri }}
-                style={styles.webView}
-                allowFileAccess
-                allowFileAccessFromFileURLs
-                allowUniversalAccessFromFileURLs
-                originWhitelist={["*", "file://*"]}
-                startInLoadingState
-                renderLoading={() => (
-                  <ActivityIndicator
-                    size="large"
-                    color={theme.primary}
-                    style={StyleSheet.absoluteFillObject}
-                  />
-                )}
-              />
-            ) : resolvedUri ? (
-              <View style={styles.previewOpenFallback}>
-                <Ionicons
-                  name="document-text-outline"
-                  size={56}
-                  color={theme.secondaryText}
-                />
-                <Text style={styles.previewFallback} numberOfLines={2}>
-                  {preview?.file.name}
-                </Text>
-                <TouchableOpacity
-                  style={styles.openInViewerButton}
-                  onPress={() => Linking.openURL(resolvedUri).catch(() => null)}
-                >
-                  <Ionicons name="open-outline" size={16} color={theme.white} />
-                  <Text style={styles.openInViewerText}>Open in viewer</Text>
-                </TouchableOpacity>
-              </View>
-            ) : (
-              <Text style={styles.previewFallback}>No preview available</Text>
-            )}
-          </View>
-          <View style={styles.previewActions}>
-            <TouchableOpacity
-              onPress={preview?.onRemove}
-              style={styles.removeButton}
-            >
-              <Ionicons name="trash-outline" size={18} color={theme.danger} />
-              <Text style={styles.removeButtonText}>Remove</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={onClose} style={styles.doneButton}>
-              <Text style={styles.doneButtonText}>Done</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-    </Modal>
   );
 }
 
@@ -2421,132 +2420,6 @@ const getStyles = (theme: typeof Colors.light) =>
     },
     hidden: {
       opacity: 0,
-    },
-    modalBackdrop: {
-      flex: 1,
-      backgroundColor: "rgba(0,0,0,0.42)",
-      justifyContent: "flex-end",
-    },
-    previewSheet: {
-      maxHeight: "86%",
-      borderTopLeftRadius: 22,
-      borderTopRightRadius: 22,
-      backgroundColor: theme.whiteBackground,
-      padding: 16,
-      gap: 14,
-    },
-    previewHandle: {
-      alignSelf: "center",
-      width: 44,
-      height: 5,
-      borderRadius: 3,
-      backgroundColor: theme.grayBorder,
-    },
-    previewHeader: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      gap: 8,
-    },
-    previewTitle: {
-      color: theme.primaryText,
-      fontSize: 18,
-      fontWeight: "800",
-    },
-    previewFileName: {
-      color: theme.secondaryText,
-      fontSize: 12,
-      marginTop: 3,
-      maxWidth: 260,
-    },
-    iconButton: {
-      width: 40,
-      height: 40,
-      borderRadius: 8,
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: theme.heroBg,
-    },
-    previewFrame: {
-      height: 390,
-      borderRadius: 8,
-      borderWidth: 1,
-      borderColor: theme.greyBorder,
-      overflow: "hidden",
-      backgroundColor: theme.heroBg,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    previewImage: {
-      width: "100%",
-      height: "100%",
-    },
-    webView: {
-      width: "100%",
-      height: "100%",
-      backgroundColor: theme.whiteBackground,
-    },
-    previewFallback: {
-      color: theme.secondaryText,
-      fontWeight: "700",
-      textAlign: "center",
-      marginTop: 8,
-      paddingHorizontal: 16,
-    },
-    previewOpenFallback: {
-      flex: 1,
-      alignItems: "center",
-      justifyContent: "center",
-      gap: 12,
-      padding: 16,
-    },
-    openInViewerButton: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 6,
-      backgroundColor: theme.primary,
-      paddingHorizontal: 20,
-      paddingVertical: 10,
-      borderRadius: 8,
-      marginTop: 4,
-    },
-    openInViewerText: {
-      color: theme.white,
-      fontWeight: "700",
-      fontSize: 14,
-    },
-    previewActions: {
-      flexDirection: "row",
-      gap: 12,
-    },
-    removeButton: {
-      minHeight: 48,
-      minWidth: 124,
-      borderRadius: 8,
-      borderWidth: 1,
-      borderColor: theme.danger,
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
-      gap: 8,
-    },
-    removeButtonText: {
-      color: theme.danger,
-      fontSize: 14,
-      fontWeight: "800",
-    },
-    doneButton: {
-      flex: 1,
-      minHeight: 48,
-      borderRadius: 8,
-      backgroundColor: theme.primary,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    doneButtonText: {
-      color: theme.white,
-      fontSize: 14,
-      fontWeight: "800",
     },
     suggestionList: {
       borderWidth: 1,

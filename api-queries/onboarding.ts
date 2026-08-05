@@ -7,12 +7,11 @@ import {
 import { Hcp } from "@/data-types/auth";
 import { TokenStorage } from "@/utils/auth-api";
 
-const API_BASE_URL =
-  process.env.EXPO_PUBLIC_API_URL ?? "https://admin.ishapps.com/shapp-dev/api";
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 const API_TIMEOUT = 30000;
 
 const getApiUrl = (endpoint: string) =>
-  `${API_BASE_URL.replace(/\/$/, "")}${endpoint}`;
+  `${API_BASE_URL!.replace(/\/$/, "")}${endpoint}`;
 
 export type ProfessionDocument = {
   id: number;
