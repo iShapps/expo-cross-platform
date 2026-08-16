@@ -2,6 +2,7 @@ import {
   City,
   getOnboardingHcp,
   getStates,
+  OnboardingQueryError,
   State,
   submitPersonalDetails,
   submitProfessionalDetails,
@@ -738,17 +739,42 @@ export default function OnboardingScreen() {
       setIsSubmittingStep(true);
 
       try {
-        await Promise.all(
-          toUpload.map((requirement) =>
-            uploadDocument({
+        // Uploaded one at a time rather than in parallel — firing several
+        // multipart uploads at once is more likely to trip a server-side
+        // concurrency/resource limit than a single upload is.
+        for (const requirement of toUpload) {
+          console.log(
+            `[ONB] Uploading document_id=${requirement.id} (${requirement.name})…`,
+          );
+          try {
+            await uploadDocument({
               document_id: Number(requirement.id),
               file: values[requirement.id]!.file!,
               expiry_date: requirement.requiresExpiry
                 ? values[requirement.id]?.expiry
                 : undefined,
-            }),
-          ),
-        );
+            });
+            console.log(
+              `[ONB] Uploaded document_id=${requirement.id} (${requirement.name}) OK`,
+            );
+          } catch (uploadErr) {
+            console.log(
+              `[ONB] FAILED document_id=${requirement.id} (${requirement.name}):`,
+              uploadErr instanceof OnboardingQueryError
+                ? JSON.stringify(
+                    {
+                      message: uploadErr.message,
+                      statusCode: uploadErr.statusCode,
+                      details: uploadErr.details,
+                    },
+                    null,
+                    2,
+                  )
+                : uploadErr,
+            );
+            throw uploadErr;
+          }
+        }
 
         await refreshStatus();
         const nextStep = steps[activeIndex + 1];

@@ -18,12 +18,13 @@ import {
   QueryClient,
   QueryClientProvider,
 } from "@tanstack/react-query";
-import { SplashScreen, Stack } from "expo-router";
+import { SplashScreen, Stack, usePathname } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import { AppState, Platform } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { GlobalUpdateGate } from "../components/global-update-gate";
+import { SupportFab } from "../components/support-fab";
 import { SessionProvider, useSession } from "./ctx";
 import { SplashScreenController } from "./splash";
 
@@ -137,42 +138,53 @@ function AppLifecycleHooks() {
 
 function RootNavigator() {
   const { session } = useSession();
+  const pathname = usePathname();
 
   return (
-    <Stack>
-      <Stack.Protected guard={!!session}>
-        <Stack.Screen options={{ headerShown: false }} name="(tabs)" />
-      </Stack.Protected>
-      <Stack.Protected guard={!!session}>
-        <Stack.Screen options={{ headerShown: false }} name="(main)" />
-      </Stack.Protected>
-      <Stack.Protected guard={!session}>
-        <Stack.Screen options={{ headerShown: false }} name="(open)" />
-      </Stack.Protected>
+    <>
+      <Stack>
+        <Stack.Protected guard={!!session}>
+          <Stack.Screen options={{ headerShown: false }} name="(tabs)" />
+        </Stack.Protected>
+        <Stack.Protected guard={!!session}>
+          <Stack.Screen options={{ headerShown: false }} name="(main)" />
+        </Stack.Protected>
+        <Stack.Protected guard={!session}>
+          <Stack.Screen options={{ headerShown: false }} name="(open)" />
+        </Stack.Protected>
 
-      <Stack.Screen
-        name="onboarding"
-        options={{
-          headerShown: false,
-        }}
-      />
+        <Stack.Screen
+          name="onboarding"
+          options={{
+            headerShown: false,
+          }}
+        />
 
-      <Stack.Screen
-        name="review"
-        options={{
-          headerShown: false,
-          presentation: "transparentModal",
-          animation: "fade",
-        }}
-      />
-      <Stack.Screen
-        name="date-sheet"
-        options={{
-          headerShown: false,
-          presentation: "transparentModal",
-          animation: "fade",
-        }}
-      />
-    </Stack>
+        <Stack.Screen
+          name="review"
+          options={{
+            headerShown: false,
+            presentation: "transparentModal",
+            animation: "fade",
+          }}
+        />
+        <Stack.Screen
+          name="date-sheet"
+          options={{
+            headerShown: false,
+            presentation: "transparentModal",
+            animation: "fade",
+          }}
+        />
+        <Stack.Screen
+          name="support-chat"
+          options={{
+            headerShown: false,
+            presentation: "modal",
+          }}
+        />
+      </Stack>
+      {!!session && pathname !== "/support-chat" && <SupportFab />}
+    </>
   );
 }
