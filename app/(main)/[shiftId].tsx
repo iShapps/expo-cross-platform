@@ -211,7 +211,9 @@ export default function ShiftDetails() {
     queryFn: () => postShiftDetails(shiftId as string),
     refetchInterval: 30 * 60 * 1000, // 30 minutes
     gcTime: 1000 * 60 * 60,
-    staleTime: 1000 * 60 * 60 * 24,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: "always",
     refetchIntervalInBackground: true,
     enabled: !!shiftId,
   });
