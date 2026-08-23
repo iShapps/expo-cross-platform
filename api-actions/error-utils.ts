@@ -136,17 +136,17 @@ export function extractApiErrorMessage(
   if (!isObject(data)) return fallbackMessage;
 
   const candidates = [
+    data.errors,
+    isObject(data.body) ? data.body.errors : undefined,
+    isObject(data.data) ? data.data.errors : undefined,
     data.message,
     data.error,
     data.detail,
     data.title,
     isObject(data.body) ? data.body.message : undefined,
     isObject(data.body) ? data.body.error : undefined,
-    isObject(data.body) ? data.body.errors : undefined,
     isObject(data.data) ? data.data.message : undefined,
     isObject(data.data) ? data.data.error : undefined,
-    isObject(data.data) ? data.data.errors : undefined,
-    data.errors,
   ];
 
   for (const candidate of candidates) {
