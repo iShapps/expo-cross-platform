@@ -9,7 +9,7 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "buildNumber": "29",
+      "buildNumber": "32",
       "bundleIdentifier": "com.apporio.iShapps",
       "infoPlist": {
         "NSFaceIDUsageDescription": "Allow $(PRODUCT_NAME) to use Face ID for authentication.",
@@ -32,7 +32,7 @@
       }
     },
     "android": {
-      "versionCode": 29,
+      "versionCode": 32,
       "adaptiveIcon": {
         "backgroundColor": "#ffffff",
         "foregroundImage": "./assets/images/smhealth.png",
@@ -74,8 +74,8 @@
             "useFrameworks": "static"
           },
           "android": {
-            "compileSdkVersion": 35,
-            "targetSdkVersion": 35,
+            "compileSdkVersion": 36,
+            "targetSdkVersion": 36,
             "minSdkVersion": 24
           }
         }
