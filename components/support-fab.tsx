@@ -6,6 +6,8 @@ import React from "react";
 import { StyleSheet, TouchableOpacity } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+const SUPPORT_CHAT_ENABLED = false;
+
 export function SupportFab() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -14,9 +16,11 @@ export function SupportFab() {
   if (!colorScheme) colorScheme = "light";
   const theme = Colors[colorScheme];
 
+  if (!SUPPORT_CHAT_ENABLED) return null;
+
   return (
     <TouchableOpacity
-      onPress={() => router.push("/support-chat" as never)}
+      onPress={() => router.navigate("/support-chat" as never)}
       activeOpacity={0.85}
       style={[
         styles.fab,

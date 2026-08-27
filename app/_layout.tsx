@@ -25,7 +25,7 @@ import { AppState, Platform } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { GlobalUpdateGate } from "../components/global-update-gate";
 import { SupportFab } from "../components/support-fab";
-import { SessionProvider, useSession } from "./ctx";
+import { getOnboardingRouteParams, SessionProvider, useSession } from "./ctx";
 import { SplashScreenController } from "./splash";
 
 const sentryGlobal = globalThis as typeof globalThis & {
@@ -137,19 +137,26 @@ function AppLifecycleHooks() {
 }
 
 function RootNavigator() {
-  const { session } = useSession();
+  const { session, user, isLoading } = useSession();
   const pathname = usePathname();
+  // Registration status/user data hasn't settled yet (hydrating or a login
+  // is actively resolving)
+  const needsOnboarding = !!getOnboardingRouteParams(user);
+  const canEnterMainApp = !!session && !isLoading && !needsOnboarding;
+  // A login is actively resolving (setSession fires before the registration
+  // status check finishes, while isLoading/authLoading is still true)
+  const canEnterAuthGroup = !session || isLoading;
 
   return (
     <>
       <Stack>
-        <Stack.Protected guard={!!session}>
+        <Stack.Protected guard={canEnterMainApp}>
           <Stack.Screen options={{ headerShown: false }} name="(tabs)" />
         </Stack.Protected>
-        <Stack.Protected guard={!!session}>
+        <Stack.Protected guard={canEnterMainApp}>
           <Stack.Screen options={{ headerShown: false }} name="(main)" />
         </Stack.Protected>
-        <Stack.Protected guard={!session}>
+        <Stack.Protected guard={canEnterAuthGroup}>
           <Stack.Screen options={{ headerShown: false }} name="(open)" />
         </Stack.Protected>
 

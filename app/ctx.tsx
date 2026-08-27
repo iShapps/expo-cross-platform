@@ -66,23 +66,30 @@ export function useSession() {
   return value;
 }
 
-const getOnboardingRouteParams = (user?: User | null) => {
+export const getOnboardingRouteParams = (user?: User | null) => {
   const hcp = user?.hcp;
-  const registrationScreen = hcp?.app_registration_screen;
+  if (!hcp?.id) {
+    return null;
+  }
 
-  if (!hcp?.id || !registrationScreen || registrationScreen === "0") {
+  // "0" means registration is fully complete — skip onboarding. Anything
+  // else, including null/unset (never started), still needs onboarding —
+  // default to step 1 rather than treating "never started" as "complete".
+  const registrationScreen = hcp.app_registration_screen;
+  if (registrationScreen === "0") {
     return null;
   }
 
   return {
     hcpId: String(hcp.id),
-    screen: registrationScreen,
+    screen: registrationScreen || "1",
   };
 };
 
 export function useProtectedRoute(
   session: string | null | undefined,
   user: User | null,
+  authLoading: boolean,
 ) {
   const segments = useSegments();
   const router = useRouter();
@@ -91,14 +98,17 @@ export function useProtectedRoute(
   const pathname = usePathname();
   const currentRoute = pathname === "/(open)/index";
   useEffect(() => {
+    if (authLoading) return;
+
     const inAuthGroup = segments[0] === "(open)";
     const inOnboarding = segments[0] === "onboarding";
+    const inSupportChat = segments[0] === "support-chat";
     const onboardingParams = getOnboardingRouteParams(user);
 
     if (!session && !inAuthGroup && currentRoute) {
       // Redirect to the sign-in page.
       router.replace("/(open)/login");
-    } else if (session && onboardingParams && !inOnboarding) {
+    } else if (session && onboardingParams && !inOnboarding && !inSupportChat) {
       router.replace({
         pathname: "/onboarding",
         params: onboardingParams,
@@ -111,7 +121,7 @@ export function useProtectedRoute(
       // Redirect to the home page.
       router.replace("/(tabs)");
     }
-  }, [currentRoute, router, segments, session, user]);
+  }, [authLoading, currentRoute, router, segments, session, user]);
 }
 
 export function SessionProvider(props: React.PropsWithChildren) {
@@ -128,7 +138,7 @@ export function SessionProvider(props: React.PropsWithChildren) {
 
   const user = userJson ? (JSON.parse(userJson) as User) : null;
 
-  useProtectedRoute(session, user);
+  useProtectedRoute(session, user, authLoading);
 
   useEffect(() => {
     incrementProviderMount("SessionProvider");
@@ -171,6 +181,14 @@ export function SessionProvider(props: React.PropsWithChildren) {
 
         console.log("[REGSTATUS]", regStatus);
         if (regStatus.data.registration_screen === "0") {
+          const completedUser: User = {
+            ...result.data.user,
+            hcp: { ...result.data.user.hcp, app_registration_screen: "0" },
+          };
+          setUserJson(JSON.stringify(completedUser));
+          profileStore.setUserDetails(completedUser);
+          queryClient.setQueryData(["profile-details"], completedUser);
+
           Alert.alert("Success", "Login successful!", [{ text: "OK" }]);
           return "authenticated";
         }
@@ -189,19 +207,11 @@ export function SessionProvider(props: React.PropsWithChildren) {
         profileStore.setUserDetails(updatedUser);
         queryClient.setQueryData(["profile-details"], updatedUser);
 
-        router.replace({
-          pathname: "/onboarding",
-          params: {
-            hcpId: String(result.data.user.hcp.id),
-            screen: String(onboardingStep),
-          },
-        });
         return "onboarding";
       } catch {
-        // Fall back to local user data if the status check fails
-        const onboardingParams = getOnboardingRouteParams(result.data.user);
-        if (onboardingParams) {
-          router.replace({ pathname: "/onboarding", params: onboardingParams });
+        // Fall back to local user data if the status check fails — no
+        // explicit redirect needed here either, for the same reason.
+        if (getOnboardingRouteParams(result.data.user)) {
           return "onboarding";
         }
       }

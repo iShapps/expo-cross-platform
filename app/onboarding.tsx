@@ -49,12 +49,19 @@ import { useSession } from "./ctx";
 
 type OnboardingStepId = 1 | 2 | 3 | 4 | 5;
 
+function parseOnboardingStep(value?: string): OnboardingStepId {
+  const parsed = Number(value);
+  return parsed >= 1 && parsed <= 5 ? (parsed as OnboardingStepId) : 1;
+}
+
 type UploadedFile = {
   name: string;
   uri: string;
   mimeType?: string;
   size?: number;
 };
+
+let cachedCv: UploadedFile | undefined;
 
 type DocumentRequirement = {
   id: string;
@@ -257,8 +264,7 @@ export default function OnboardingScreen() {
     RegistrationStatusResponse["data"] | null
   >(null);
 
-  const [activeStep, setActiveStep] = useState<OnboardingStepId>(1);
-  const [personalDetails, setPersonalDetails] = useState({
+  const buildPersonalDetails = () => ({
     firstName: user?.hcp?.first_name ?? "",
     lastName: user?.hcp?.last_name ?? "",
     email: user?.email ?? "",
@@ -281,12 +287,20 @@ export default function OnboardingScreen() {
       : "",
     acceptLowerLevelJob: (user?.hcp?.accept_lower_level_job ?? 0) === 1,
   });
-  const [professionalDetails, setProfessionalDetails] = useState({
+  const buildProfessionalDetails = (cv: UploadedFile | undefined) => ({
     tfnNumber: user?.hcp?.tfn_number ?? "",
     registrationNumber: user?.hcp?.registration_number ?? "",
     abn_number: user?.hcp?.abn_number ?? "",
-    cv: undefined as UploadedFile | undefined,
+    cv,
   });
+
+  const [activeStep, setActiveStep] = useState<OnboardingStepId>(() =>
+    parseOnboardingStep(params.screen),
+  );
+  const [personalDetails, setPersonalDetails] = useState(buildPersonalDetails);
+  const [professionalDetails, setProfessionalDetails] = useState(() =>
+    buildProfessionalDetails(cachedCv),
+  );
   const [states, setStates] = useState<State[]>([]);
   const [isLoadingStates, setIsLoadingStates] = useState(false);
   const [statesError, setStatesError] = useState<string | null>(null);
@@ -324,6 +338,23 @@ export default function OnboardingScreen() {
   } | null>(null);
   const [dateErrors, setDateErrors] = useState<Record<string, string>>({});
   const [showSuccess, setShowSuccess] = useState(false);
+
+  const previousHcpIdRef = useRef(hcpId);
+  useEffect(() => {
+    if (previousHcpIdRef.current === hcpId) return;
+    previousHcpIdRef.current = hcpId;
+
+    cachedCv = undefined;
+    setActiveStep(parseOnboardingStep(params.screen));
+    setPersonalDetails(buildPersonalDetails());
+    setProfessionalDetails(buildProfessionalDetails(undefined));
+    setProfessionalDocuments({});
+    setMandatoryDocuments({});
+    setDateErrors({});
+    setRegistrationStatus(null);
+    setIsCheckingStatus(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hcpId]);
 
   const activeIndex = steps.findIndex((step) => step.id === activeStep);
   const activeStepMeta = steps[activeIndex] ?? steps[0];
@@ -404,26 +435,27 @@ export default function OnboardingScreen() {
 
         setPersonalDetails((current) => ({
           ...current,
-          firstName: details.first_name ?? "",
-          lastName: details.last_name ?? "",
-          email: details.email ?? "",
-          contactNumber: details.contact_number ?? "",
-          dateOfBirth: details.date_of_birth ?? "",
-          gender: details.gender ?? "",
-          stateName: details.state?.name ?? "",
-          stateId: details.state?.id ?? null,
-          address: details.address ?? "",
-          city: details.city_name ?? "",
-          suburb: details.suburb_name ?? "",
-          postCode: details.post_code ?? "",
-          nextOfKin: details.next_of_kin ?? "",
-          aboutMe: details.about_me ?? "",
+          firstName: current.firstName || details.first_name || "",
+          lastName: current.lastName || details.last_name || "",
+          email: current.email || details.email || "",
+          contactNumber: current.contactNumber || details.contact_number || "",
+          dateOfBirth: current.dateOfBirth || details.date_of_birth || "",
+          gender: current.gender || details.gender || "",
+          stateName: current.stateName || details.state?.name || "",
+          stateId: current.stateId ?? details.state?.id ?? null,
+          address: current.address || details.address || "",
+          city: current.city || details.city_name || "",
+          suburb: current.suburb || details.suburb_name || "",
+          postCode: current.postCode || details.post_code || "",
+          nextOfKin: current.nextOfKin || details.next_of_kin || "",
+          aboutMe: current.aboutMe || details.about_me || "",
         }));
         setProfessionalDetails((current) => ({
           ...current,
-          tfnNumber: details.tfn_number ?? "",
-          registrationNumber: details.registration_number ?? "",
-          abn_number: details.abn_number ?? "",
+          tfnNumber: current.tfnNumber || details.tfn_number || "",
+          registrationNumber:
+            current.registrationNumber || details.registration_number || "",
+          abn_number: current.abn_number || details.abn_number || "",
         }));
       })
       .catch(() => {
@@ -481,15 +513,14 @@ export default function OnboardingScreen() {
   const handlePickCv = async () => {
     const file = await pickDocument();
     if (!file) return;
-    setProfessionalDetails((curr) => ({
-      ...curr,
-      cv: {
-        name: file.name,
-        uri: file.uri,
-        mimeType: file.mimeType,
-        size: file.size,
-      },
-    }));
+    const picked: UploadedFile = {
+      name: file.name,
+      uri: file.uri,
+      mimeType: file.mimeType,
+      size: file.size,
+    };
+    cachedCv = picked;
+    setProfessionalDetails((curr) => ({ ...curr, cv: picked }));
   };
 
   const handlePickDocument = async (
@@ -689,6 +720,7 @@ export default function OnboardingScreen() {
       try {
         const profResult = await submitProfessionalDetails(professionalPayload);
         updateHcp(profResult.data);
+        cachedCv = undefined;
         const freshData = await refreshStatus();
         setActiveStep(freshData ? resolveOnboardingStep(freshData) : 4);
       } catch (err) {
@@ -913,7 +945,10 @@ export default function OnboardingScreen() {
               <OptionGrid
                 label="Gender"
                 options={genderOptions}
-                value={personalDetails.gender}
+                value={
+                  personalDetails.gender.slice(0, 1).toUpperCase() +
+                  personalDetails.gender.slice(1).toLowerCase()
+                }
                 onChange={(value) => setPersonalValue("gender", value)}
                 variant="radio"
                 styles={styles}
@@ -1106,6 +1141,7 @@ export default function OnboardingScreen() {
                     title: "CV",
                     file: professionalDetails.cv,
                     onRemove: () => {
+                      cachedCv = undefined;
                       setProfessionalDetails((c) => ({ ...c, cv: undefined }));
                       setPreview(null);
                     },
