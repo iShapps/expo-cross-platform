@@ -406,7 +406,7 @@ export function resolveOnboardingStep(
   data: RegistrationStatusResponse["data"],
 ): 1 | 2 | 3 | 4 | 5 {
   const step = computeOnboardingStep(data.steps);
-  if (step === 4 && data.missing_documents.profession.length === 0) {
+  if (step === 4 && data.missing_documents.general.length === 0) {
     return 5;
   }
   return step;

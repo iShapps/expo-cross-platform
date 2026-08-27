@@ -20,6 +20,7 @@ import {
 } from "@/utils/auth-api";
 import { pickDocument } from "@/utils/file-pickers";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useMemo, useRef, useState } from "react";
@@ -105,15 +106,15 @@ const steps: {
   },
   {
     id: 4,
-    title: "Professional documents",
-    eyebrow: "Documents",
-    icon: "document-text-outline",
-  },
-  {
-    id: 5,
     title: "Mandatory documents",
     eyebrow: "Compliance",
     icon: "shield-checkmark-outline",
+  },
+  {
+    id: 5,
+    title: "Professional documents",
+    eyebrow: "Documents",
+    icon: "document-text-outline",
   },
 ];
 
@@ -548,6 +549,13 @@ export default function OnboardingScreen() {
         },
       },
     }));
+    setDateErrors((current) => {
+      const key = `${collection}:${requirement.id}:file`;
+      if (!(key in current)) return current;
+      const next = { ...current };
+      delete next[key];
+      return next;
+    });
   };
 
   const setDocumentExpiry = (
@@ -569,7 +577,7 @@ export default function OnboardingScreen() {
     }));
     setDateErrors((current) => {
       const next = { ...current };
-      const key = `${collection}:${requirement.id}`;
+      const key = `${collection}:${requirement.id}:expiry`;
       const error = getPartialDateError(expiry, {
         label: `${requirement.name} expiry`,
         allowPast: false,
@@ -617,26 +625,50 @@ export default function OnboardingScreen() {
       }
     }
 
+    if (activeStep === 3) {
+      const tfn = professionalDetails.tfnNumber.trim();
+      if (tfn && tfn.length !== 9) {
+        nextDateErrors.tfnNumber = "Tax File Number must be 9 digits.";
+      }
+    }
+
     if (activeStep === 4 || activeStep === 5) {
-      const collection = activeStep === 4 ? "professional" : "mandatory";
+      const collection = activeStep === 4 ? "mandatory" : "professional";
       const requirements =
         activeStep === 4
-          ? professionDocumentRequirements
-          : mandatoryDocumentRequirements;
+          ? mandatoryDocumentRequirements
+          : professionDocumentRequirements;
       const values =
-        activeStep === 4 ? professionalDocuments : mandatoryDocuments;
+        activeStep === 4 ? mandatoryDocuments : professionalDocuments;
 
       requirements.forEach((requirement) => {
+        const hasFile = !!values[requirement.id]?.file;
+
+        if (requirement.mandatory && !hasFile) {
+          nextDateErrors[`${collection}:${requirement.id}:file`] =
+            `${requirement.name} is required.`;
+        }
+
+        if (!requirement.requiresExpiry) return;
+
         const expiry = values[requirement.id]?.expiry ?? "";
-        const expiryError = requirement.requiresExpiry
-          ? getDateError(expiry, {
-              label: `${requirement.name} expiry`,
-              allowPast: false,
-            })
-          : null;
+
+        if (!expiry.trim()) {
+          if (hasFile || requirement.mandatory) {
+            nextDateErrors[`${collection}:${requirement.id}:expiry`] =
+              `${requirement.name} expiry is required.`;
+          }
+          return;
+        }
+
+        const expiryError = getDateError(expiry, {
+          label: `${requirement.name} expiry`,
+          allowPast: false,
+        });
 
         if (expiryError) {
-          nextDateErrors[`${collection}:${requirement.id}`] = expiryError;
+          nextDateErrors[`${collection}:${requirement.id}:expiry`] =
+            expiryError;
         }
       });
     }
@@ -742,21 +774,10 @@ export default function OnboardingScreen() {
     if (activeStep === 4 || activeStep === 5) {
       const requirements =
         activeStep === 4
-          ? professionDocumentRequirements
-          : mandatoryDocumentRequirements;
+          ? mandatoryDocumentRequirements
+          : professionDocumentRequirements;
       const values =
-        activeStep === 4 ? professionalDocuments : mandatoryDocuments;
-
-      const missing = requirements.filter(
-        (r) => r.mandatory && !values[r.id]?.file,
-      );
-      if (missing.length > 0) {
-        Alert.alert(
-          "Missing documents",
-          `Please upload: ${missing.map((r) => r.name).join(", ")}`,
-        );
-        return;
-      }
+        activeStep === 4 ? mandatoryDocuments : professionalDocuments;
 
       const toUpload = requirements.filter((r) => values[r.id]?.file);
 
@@ -914,6 +935,7 @@ export default function OnboardingScreen() {
                 value={personalDetails.email}
                 onChangeText={(value) => setPersonalValue("email", value)}
                 keyboardType="email-address"
+                editable={false}
                 styles={styles}
                 theme={theme}
               />
@@ -964,30 +986,6 @@ export default function OnboardingScreen() {
                 multiline
                 styles={styles}
                 theme={theme}
-              />
-              <Field
-                label="Maximum Distance (km)"
-                value={personalDetails.maximumDistance}
-                onChangeText={(value) =>
-                  setPersonalValue("maximumDistance", value)
-                }
-                keyboardType="number-pad"
-                placeholder="e.g. 50"
-                styles={styles}
-                theme={theme}
-              />
-              <OptionGrid
-                label="Accept Lower Level Job"
-                options={["Yes", "No"]}
-                value={personalDetails.acceptLowerLevelJob ? "Yes" : "No"}
-                onChange={(value) =>
-                  setPersonalDetails((curr) => ({
-                    ...curr,
-                    acceptLowerLevelJob: value === "Yes",
-                  }))
-                }
-                variant="radio"
-                styles={styles}
               />
             </View>
           )}
@@ -1078,23 +1076,14 @@ export default function OnboardingScreen() {
                 styles={styles}
                 theme={theme}
               />
-              <TwoColumn>
-                <Field
-                  label="Post Code"
-                  value={personalDetails.postCode}
-                  onChangeText={(value) => setPersonalValue("postCode", value)}
-                  keyboardType="number-pad"
-                  styles={styles}
-                  theme={theme}
-                />
-                <Field
-                  label="Next Of Kin"
-                  value={personalDetails.nextOfKin}
-                  onChangeText={(value) => setPersonalValue("nextOfKin", value)}
-                  styles={styles}
-                  theme={theme}
-                />
-              </TwoColumn>
+              <Field
+                label="Post Code"
+                value={personalDetails.postCode}
+                onChangeText={(value) => setPersonalValue("postCode", value)}
+                keyboardType="number-pad"
+                styles={styles}
+                theme={theme}
+              />
             </View>
           )}
 
@@ -1104,9 +1093,14 @@ export default function OnboardingScreen() {
                 label="Tax File Number"
                 value={professionalDetails.tfnNumber}
                 onChangeText={(v) =>
-                  setProfessionalDetails((c) => ({ ...c, tfnNumber: v }))
+                  setProfessionalDetails((c) => ({
+                    ...c,
+                    tfnNumber: v.replace(/\D/g, "").slice(0, 9),
+                  }))
                 }
                 keyboardType="number-pad"
+                maxLength={9}
+                error={dateErrors.tfnNumber}
                 styles={styles}
                 theme={theme}
               />
@@ -1159,26 +1153,6 @@ export default function OnboardingScreen() {
 
           {activeStep === 4 && (
             <DocumentRequirementList
-              collection="professional"
-              requirements={professionDocumentRequirements}
-              values={professionalDocuments}
-              dateErrors={dateErrors}
-              onPick={handlePickDocument}
-              onExpiryChange={setDocumentExpiry}
-              onPreview={(requirement, file) =>
-                setPreview({
-                  title: requirement.name,
-                  file,
-                  onRemove: () => removeDocument(requirement, "professional"),
-                })
-              }
-              styles={styles}
-              theme={theme}
-            />
-          )}
-
-          {activeStep === 5 && (
-            <DocumentRequirementList
               collection="mandatory"
               requirements={mandatoryDocumentRequirements}
               values={mandatoryDocuments}
@@ -1190,6 +1164,26 @@ export default function OnboardingScreen() {
                   title: requirement.name,
                   file,
                   onRemove: () => removeDocument(requirement, "mandatory"),
+                })
+              }
+              styles={styles}
+              theme={theme}
+            />
+          )}
+
+          {activeStep === 5 && (
+            <DocumentRequirementList
+              collection="professional"
+              requirements={professionDocumentRequirements}
+              values={professionalDocuments}
+              dateErrors={dateErrors}
+              onPick={handlePickDocument}
+              onExpiryChange={setDocumentExpiry}
+              onPreview={(requirement, file) =>
+                setPreview({
+                  title: requirement.name,
+                  file,
+                  onRemove: () => removeDocument(requirement, "professional"),
                 })
               }
               styles={styles}
@@ -1212,9 +1206,18 @@ export default function OnboardingScreen() {
               ))}
             </View>
           ) : (
-            <TouchableOpacity
-              style={styles.secondaryButton}
-              onPress={handleBack}
+            <Pressable
+              style={({ pressed }) => [
+                styles.secondaryButton,
+                Platform.OS === "ios" && pressed && { opacity: 0.6 },
+              ]}
+              android_ripple={{ color: theme.heroBorder }}
+              onPress={() => {
+                if (Platform.OS === "ios") {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }
+                handleBack();
+              }}
             >
               <MaterialCommunityIcons
                 name="arrow-left-thin"
@@ -1222,14 +1225,23 @@ export default function OnboardingScreen() {
                 color={theme.primary}
               />
               <Text style={styles.secondaryButtonText}>Back</Text>
-            </TouchableOpacity>
+            </Pressable>
           )}
-          <TouchableOpacity
-            style={[
+          <Pressable
+            style={({ pressed }) => [
               styles.primaryButton,
               (isSubmittingStep || isCheckingStatus) && { opacity: 0.7 },
+              Platform.OS === "ios" &&
+                pressed &&
+                !(isSubmittingStep || isCheckingStatus) && { opacity: 0.85 },
             ]}
-            onPress={() => void handleNext()}
+            android_ripple={{ color: "rgba(255,255,255,0.25)" }}
+            onPress={() => {
+              if (Platform.OS === "ios") {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              }
+              void handleNext();
+            }}
             disabled={isSubmittingStep || isCheckingStatus}
           >
             {isSubmittingStep || isCheckingStatus ? (
@@ -1246,7 +1258,7 @@ export default function OnboardingScreen() {
                 />
               </>
             )}
-          </TouchableOpacity>
+          </Pressable>
         </View>
 
         <DocumentPreviewModal
@@ -1434,6 +1446,9 @@ function Field({
   multiline,
   rightAccessory,
   error,
+  editable,
+  maxLength,
+  required,
   styles,
   theme,
 }: {
@@ -1446,17 +1461,24 @@ function Field({
   multiline?: boolean;
   rightAccessory?: React.ReactNode;
   error?: string;
+  editable?: boolean;
+  maxLength?: number;
+  required?: boolean;
   styles: ReturnType<typeof getStyles>;
   theme: typeof Colors.light;
 }) {
   return (
     <View style={styles.field}>
-      <Text style={styles.fieldLabel}>{label}</Text>
+      <Text style={styles.fieldLabel}>
+        {label}
+        {required && <Text style={styles.requiredAsterisk}> *</Text>}
+      </Text>
       <View
         style={[
           styles.inputShell,
           multiline && styles.textAreaShell,
           error && styles.inputShellError,
+          editable === false && { opacity: 0.6 },
         ]}
       >
         <TextInput
@@ -1467,6 +1489,8 @@ function Field({
           keyboardType={keyboardType}
           secureTextEntry={secureTextEntry}
           multiline={multiline}
+          editable={editable}
+          maxLength={maxLength}
           textAlignVertical={multiline ? "top" : "center"}
           style={[styles.input, multiline && styles.textArea]}
           cursorColor={theme.primary}
@@ -1820,6 +1844,7 @@ function DocumentRequirementList({
               onPreview={() => {
                 if (value?.file) onPreview(requirement, value.file);
               }}
+              error={dateErrors[`${collection}:${requirement.id}:file`]}
               styles={styles}
               theme={theme}
             />
@@ -1836,11 +1861,8 @@ function DocumentRequirementList({
                 }
                 placeholder="YYYY-MM-DD"
                 keyboardType="number-pad"
-                error={
-                  values[requirement.id]?.expiry
-                    ? dateErrors[`${collection}:${requirement.id}`]
-                    : undefined
-                }
+                error={dateErrors[`${collection}:${requirement.id}:expiry`]}
+                required
                 styles={styles}
                 theme={theme}
               />
@@ -1858,6 +1880,7 @@ function UploadBox({
   mandatory,
   onPick,
   onPreview,
+  error,
   styles,
   theme,
 }: {
@@ -1866,18 +1889,23 @@ function UploadBox({
   mandatory: boolean;
   onPick: () => void;
   onPreview: () => void;
+  error?: string;
   styles: ReturnType<typeof getStyles>;
   theme: typeof Colors.light;
 }) {
   return (
     <View style={styles.field}>
-      <View style={styles.uploadLabelRow}>
-        <Text style={styles.fieldLabel}>{label}</Text>
-        {mandatory && <Text style={styles.requiredText}>Required</Text>}
-      </View>
+      <Text style={styles.fieldLabel}>
+        {label}
+        {mandatory && <Text style={styles.requiredAsterisk}> *</Text>}
+      </Text>
       <Pressable
         onPress={file ? onPreview : onPick}
-        style={[styles.uploadBox, file && styles.uploadBoxFilled]}
+        style={[
+          styles.uploadBox,
+          file && styles.uploadBoxFilled,
+          error && styles.uploadBoxError,
+        ]}
       >
         <View style={styles.uploadIcon}>
           <Ionicons
@@ -1905,6 +1933,7 @@ function UploadBox({
           />
         </TouchableOpacity>
       </Pressable>
+      {error && <Text style={styles.fieldError}>{error}</Text>}
     </View>
   );
 }
@@ -2193,6 +2222,10 @@ const getStyles = (theme: typeof Colors.light) =>
       fontSize: 12,
       fontWeight: "700",
     },
+    requiredAsterisk: {
+      color: theme.danger,
+      fontWeight: "700",
+    },
     textAreaShell: {
       minHeight: 116,
       paddingVertical: 12,
@@ -2324,17 +2357,6 @@ const getStyles = (theme: typeof Colors.light) =>
     optionChipTextActive: {
       color: theme.primary,
     },
-    uploadLabelRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      gap: 12,
-    },
-    requiredText: {
-      color: theme.danger,
-      fontSize: 12,
-      fontWeight: "600",
-    },
     uploadBox: {
       minHeight: 76,
       borderRadius: 5,
@@ -2351,6 +2373,9 @@ const getStyles = (theme: typeof Colors.light) =>
       borderStyle: "solid",
       borderColor: theme.primary,
       backgroundColor: theme.heroBg,
+    },
+    uploadBoxError: {
+      borderColor: theme.danger,
     },
     uploadIcon: {
       width: 44,
@@ -2452,25 +2477,28 @@ const getStyles = (theme: typeof Colors.light) =>
     },
     primaryButton: {
       borderRadius: 50,
-      height: 35,
-      paddingHorizontal: 20,
-      paddingVertical: 4,
+      // 44pt is Apple HIG's minimum tappable target; 48dp is Material's.
+      height: Platform.OS === "ios" ? 44 : 48,
+      minWidth: Platform.OS === "ios" ? undefined : 64,
+      paddingHorizontal: 24,
       alignItems: "center",
       justifyContent: "center",
       flexDirection: "row",
       gap: 8,
       backgroundColor: theme.primary,
+      overflow: "hidden",
+      ...(Platform.OS === "android" ? { elevation: 2 } : null),
     },
     primaryButtonText: {
       color: theme.white,
       fontSize: 15,
-      fontWeight: "700",
+      fontWeight: Platform.OS === "ios" ? "600" : "700",
     },
     secondaryButton: {
       borderRadius: 50,
-      height: 35,
-      paddingHorizontal: 20,
-      paddingVertical: 4,
+      height: Platform.OS === "ios" ? 44 : 48,
+      minWidth: Platform.OS === "ios" ? undefined : 64,
+      paddingHorizontal: 24,
       alignItems: "center",
       justifyContent: "center",
       flexDirection: "row",
@@ -2478,11 +2506,12 @@ const getStyles = (theme: typeof Colors.light) =>
       backgroundColor: theme.heroBg,
       borderWidth: 1,
       borderColor: theme.heroBorder,
+      overflow: "hidden",
     },
     secondaryButtonText: {
       color: theme.primary,
       fontSize: 15,
-      fontWeight: "700",
+      fontWeight: Platform.OS === "ios" ? "600" : "700",
     },
     hidden: {
       opacity: 0,

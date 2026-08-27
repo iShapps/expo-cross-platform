@@ -259,6 +259,20 @@ export default function HomeScreen() {
             )}
           </Pressable>
         </View>
+
+        {userDetails?.hcp?.status === "pending-approval" && (
+          <View style={styles.pendingApprovalBanner}>
+            <MaterialCommunityIcons
+              name="clock-alert-outline"
+              size={18}
+              color={theme.white}
+            />
+            <Text style={styles.pendingApprovalText}>
+              Your account is pending approval. You&apos;ll be notified once
+              it has been reviewed.
+            </Text>
+          </View>
+        )}
       </View>
 
       {/* CONTENT */}
@@ -468,6 +482,25 @@ const getStyles = (theme: typeof Colors.light) =>
       gap: 10,
       borderBottomColor: theme.whiteBackground,
       borderBottomWidth: 0.5,
+    },
+    pendingApprovalBanner: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      width: "100%",
+      backgroundColor: "rgba(255,140,26,0.35)",
+      borderWidth: 1,
+      borderColor: "rgba(255,140,26,0.6)",
+      borderRadius: 8,
+      marginTop: 10,
+      paddingVertical: 8,
+      paddingHorizontal: 10,
+    },
+    pendingApprovalText: {
+      flex: 1,
+      fontSize: 12.5,
+      lineHeight: 17,
+      color: theme.white,
     },
     dashboardContainer: {
       display: "flex",
