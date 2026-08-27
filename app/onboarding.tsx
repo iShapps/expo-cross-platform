@@ -1,3 +1,4 @@
+import { logApiErrorToSentry } from "@/api-actions/error-utils";
 import {
   City,
   getOnboardingHcp,
@@ -685,6 +686,7 @@ export default function OnboardingScreen() {
         setActiveStep(3);
       } catch (err) {
         console.log("[ONB_ERROR]", err);
+        logApiErrorToSentry(err, { endpoint: "/v2/registration/personal-details", method: "PATCH" });
         Alert.alert(
           "Error",
           err instanceof Error
@@ -724,6 +726,7 @@ export default function OnboardingScreen() {
         const freshData = await refreshStatus();
         setActiveStep(freshData ? resolveOnboardingStep(freshData) : 4);
       } catch (err) {
+        logApiErrorToSentry(err, { endpoint: "/v2/registration/professional-details", method: "PATCH" });
         Alert.alert(
           "Error",
           err instanceof Error
@@ -816,6 +819,7 @@ export default function OnboardingScreen() {
           setShowSuccess(true);
         }
       } catch (err) {
+        logApiErrorToSentry(err, { endpoint: "/v2/registration/documents", method: "POST" });
         Alert.alert(
           "Error",
           err instanceof Error ? err.message : "Failed to upload documents.",
