@@ -1,4 +1,4 @@
-import { Colors } from "@/constants/theme";
+import { Colors, Radii } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import React from "react";
 import { StyleSheet, View } from "react-native";
@@ -24,7 +24,7 @@ const getStyles = (theme: typeof Colors.light) =>
   StyleSheet.create({
     payrunCard: {
       marginTop: 12,
-      borderRadius: 5,
+      borderRadius: Radii.md,
       padding: 12,
       borderWidth: 1,
       borderColor: theme.greyBorder,
@@ -44,13 +44,13 @@ const getStyles = (theme: typeof Colors.light) =>
     iconPillPayrun: {
       width: 28,
       height: 28,
-      borderRadius: 999,
+      borderRadius: Radii.full,
       backgroundColor: theme.greyBorder,
     },
     labelSkeleton: {
       height: 16,
       width: 120,
-      borderRadius: 4,
+      borderRadius: Radii.xs,
       backgroundColor: theme.greyBorder,
       flexGrow: 1,
       marginLeft: 8,
@@ -58,7 +58,7 @@ const getStyles = (theme: typeof Colors.light) =>
     valueSkeleton: {
       height: 18,
       width: 100,
-      borderRadius: 4,
+      borderRadius: Radii.xs,
       backgroundColor: theme.greyBorder,
       marginTop: 8,
     },

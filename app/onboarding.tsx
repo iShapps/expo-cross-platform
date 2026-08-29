@@ -10,7 +10,7 @@ import {
   uploadDocument,
 } from "@/api-queries/onboarding";
 import { DocumentPreviewModal } from "@/components/document-preview-modal";
-import { Colors } from "@/constants/theme";
+import { Colors, Radii } from "@/constants/theme";
 import { RegistrationStatusResponse } from "@/data-types/auth";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import {
@@ -48,6 +48,14 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import { useSession } from "./ctx";
+
+const TEXT_SAFE_PRIMARY = "#3D7A00";
+const TEXT_SAFE_DANGER = "#C93C2E";
+
+const SURFACE_TINT = "#F2F9E9";
+const SURFACE_TINT_DEEP = "#E6F3D4";
+const ACCENT_BORDER = "#CFE8A8";
+const UPLOAD_BOX_BG = "#F5F5F5";
 
 type OnboardingStepId = 1 | 2 | 3 | 4 | 5;
 
@@ -117,6 +125,11 @@ const steps: {
     icon: "document-text-outline",
   },
 ];
+
+const PROFESSIONAL_DETAILS_STEP_ENABLED = false;
+const visibleSteps = PROFESSIONAL_DETAILS_STEP_ENABLED
+  ? steps
+  : steps.filter((step) => step.id !== 3);
 
 const genderOptions = ["Male", "Female", "Other"];
 
@@ -311,6 +324,10 @@ export default function OnboardingScreen() {
 
   const professionDocumentRequirements = useMemo<DocumentRequirement[]>(() => {
     if (!registrationStatus) return [];
+    console.log(
+      "[ONB] missing_documents.profession:",
+      JSON.stringify(registrationStatus.missing_documents.profession, null, 2),
+    );
     return registrationStatus.missing_documents.profession.map((item) => ({
       id: String(item.document.id),
       name: item.document.name,
@@ -321,6 +338,10 @@ export default function OnboardingScreen() {
 
   const mandatoryDocumentRequirements = useMemo<DocumentRequirement[]>(() => {
     if (!registrationStatus) return [];
+    console.log(
+      "[ONB] missing_documents.general:",
+      JSON.stringify(registrationStatus.missing_documents.general, null, 2),
+    );
     return registrationStatus.missing_documents.general.map((doc) => ({
       id: String(doc.id),
       name: doc.name,
@@ -358,23 +379,38 @@ export default function OnboardingScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hcpId]);
 
-  const activeIndex = steps.findIndex((step) => step.id === activeStep);
-  const activeStepMeta = steps[activeIndex] ?? steps[0];
-  const completion = useMemo(() => {
-    const completed = Math.max(activeIndex, 0);
-    return Math.round((completed / steps.length) * 100);
-  }, [activeIndex]);
+  const activeIndex = visibleSteps.findIndex((step) => step.id === activeStep);
+  const activeStepMeta = visibleSteps[activeIndex] ?? visibleSteps[0];
+
+  // Fades/slides the step content in on every step change, forward or back.
+  const stepAnim = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    stepAnim.setValue(0);
+    Animated.timing(stepAnim, {
+      toValue: 1,
+      duration: 260,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+  }, [activeStep, stepAnim]);
+  const stepAnimStyle = {
+    opacity: stepAnim,
+    transform: [
+      {
+        translateY: stepAnim.interpolate({
+          inputRange: [0, 1],
+          outputRange: [14, 0],
+        }),
+      },
+    ],
+  };
 
   // Keep a stable ref to updateHcp so Effect 1 can call the latest version
-  // without listing it as a dependency (which would restart the effect on every user-store write and cause an infinite loop).
   const updateHcpRef = useRef(updateHcp);
   useEffect(() => {
     updateHcpRef.current = updateHcp;
   }, [updateHcp]);
 
-  // Single source of truth for "fetch status -> update local state".
-  // Every call site goes through here so setRegistrationStatus is never skipped.
-  // Returns the fresh data so callers can derive the next step from it.
   const refreshStatus = React.useCallback(async () => {
     const token = await TokenStorage.getToken();
     if (!token) return null;
@@ -387,8 +423,6 @@ export default function OnboardingScreen() {
     return status.data;
   }, []);
 
-  // Effect 1: Registration status is sole source of truth for the current step.
-  // Runs exactly once on mount. Independent of the HCP data fetch so a failure in either does not block the other.
   useEffect(() => {
     let cancelled = false;
 
@@ -714,11 +748,14 @@ export default function OnboardingScreen() {
       try {
         const personalResult = await submitPersonalDetails(personalPayload);
         updateHcp(personalResult.data);
-        await refreshStatus();
-        setActiveStep(3);
+        const freshData = await refreshStatus();
+        setActiveStep(freshData ? resolveOnboardingStep(freshData) : 4);
       } catch (err) {
         console.log("[ONB_ERROR]", err);
-        logApiErrorToSentry(err, { endpoint: "/v2/registration/personal-details", method: "PATCH" });
+        logApiErrorToSentry(err, {
+          endpoint: "/v2/registration/personal-details",
+          method: "PATCH",
+        });
         Alert.alert(
           "Error",
           err instanceof Error
@@ -758,7 +795,10 @@ export default function OnboardingScreen() {
         const freshData = await refreshStatus();
         setActiveStep(freshData ? resolveOnboardingStep(freshData) : 4);
       } catch (err) {
-        logApiErrorToSentry(err, { endpoint: "/v2/registration/professional-details", method: "PATCH" });
+        logApiErrorToSentry(err, {
+          endpoint: "/v2/registration/professional-details",
+          method: "PATCH",
+        });
         Alert.alert(
           "Error",
           err instanceof Error
@@ -795,9 +835,6 @@ export default function OnboardingScreen() {
       setIsSubmittingStep(true);
 
       try {
-        // Uploaded one at a time rather than in parallel — firing several
-        // multipart uploads at once is more likely to trip a server-side
-        // concurrency/resource limit than a single upload is.
         for (const requirement of toUpload) {
           console.log(
             `[ONB] Uploading document_id=${requirement.id} (${requirement.name})…`,
@@ -833,14 +870,17 @@ export default function OnboardingScreen() {
         }
 
         await refreshStatus();
-        const nextStep = steps[activeIndex + 1];
+        const nextStep = visibleSteps[activeIndex + 1];
         if (nextStep) {
           setActiveStep(nextStep.id);
         } else {
           setShowSuccess(true);
         }
       } catch (err) {
-        logApiErrorToSentry(err, { endpoint: "/v2/registration/documents", method: "POST" });
+        logApiErrorToSentry(err, {
+          endpoint: "/v2/registration/documents",
+          method: "POST",
+        });
         Alert.alert(
           "Error",
           err instanceof Error ? err.message : "Failed to upload documents.",
@@ -851,7 +891,7 @@ export default function OnboardingScreen() {
       return;
     }
 
-    const nextStep = steps[activeIndex + 1];
+    const nextStep = visibleSteps[activeIndex + 1];
 
     if (nextStep) {
       setActiveStep(nextStep.id);
@@ -859,7 +899,7 @@ export default function OnboardingScreen() {
   };
 
   const handleBack = () => {
-    const previousStep = steps[activeIndex - 1];
+    const previousStep = visibleSteps[activeIndex - 1];
 
     if (previousStep) {
       setActiveStep(previousStep.id);
@@ -878,15 +918,21 @@ export default function OnboardingScreen() {
               <Text style={styles.kicker}>Self onboarding</Text>
               <Text style={styles.title}>Complete your registration</Text>
             </View>
-            <Text style={styles.progressPillText}>{completion}%</Text>
+            <Text style={styles.progressPillText}>
+              Step {activeIndex + 1} of {visibleSteps.length}
+            </Text>
           </View>
-          <View style={styles.progressTrack}>
-            <View
-              style={[
-                styles.progressFill,
-                { width: `${Math.max(completion, 8)}%` },
-              ]}
-            />
+          <View style={styles.stepTrackerRow}>
+            {visibleSteps.map((step, index) => (
+              <View
+                key={step.id}
+                style={[
+                  styles.stepSegment,
+                  index < activeIndex && styles.stepSegmentDone,
+                  index === activeIndex && styles.stepSegmentActive,
+                ]}
+              />
+            ))}
           </View>
         </View>
 
@@ -898,225 +944,230 @@ export default function OnboardingScreen() {
             { paddingBottom: insets.bottom + 124 },
           ]}
         >
-          <View style={styles.heroPanel}>
-            <View style={styles.heroIcon}>
-              <Ionicons
-                name={activeStepMeta.icon}
-                size={24}
-                color={theme.white}
-              />
+          <Animated.View style={[styles.stepAnimatedContent, stepAnimStyle]}>
+            <View style={styles.heroPanel}>
+              <View style={styles.heroIcon}>
+                <Ionicons
+                  name={activeStepMeta.icon}
+                  size={24}
+                  color={theme.white}
+                />
+              </View>
+              <View style={styles.heroText}>
+                <Text style={styles.heroEyebrow}>{activeStepMeta.eyebrow}</Text>
+                <Text style={styles.heroTitle}>{activeStepMeta.title}</Text>
+              </View>
             </View>
-            <View style={styles.heroText}>
-              <Text style={styles.heroEyebrow}>{activeStepMeta.eyebrow}</Text>
-              <Text style={styles.heroTitle}>{activeStepMeta.title}</Text>
-            </View>
-          </View>
 
-          {activeStep === 1 && (
-            <View style={styles.formSection}>
-              <TwoColumn>
-                <Field
-                  label="First Name"
-                  value={personalDetails.firstName}
-                  onChangeText={(value) => setPersonalValue("firstName", value)}
-                  styles={styles}
-                  theme={theme}
-                />
-                <Field
-                  label="Last Name"
-                  value={personalDetails.lastName}
-                  onChangeText={(value) => setPersonalValue("lastName", value)}
-                  styles={styles}
-                  theme={theme}
-                />
-              </TwoColumn>
-              <Field
-                label="Email"
-                value={personalDetails.email}
-                onChangeText={(value) => setPersonalValue("email", value)}
-                keyboardType="email-address"
-                editable={false}
-                styles={styles}
-                theme={theme}
-              />
-              <TwoColumn>
-                <Field
-                  label="Contact Number"
-                  value={personalDetails.contactNumber}
-                  onChangeText={(value) =>
-                    setPersonalValue("contactNumber", value)
-                  }
-                  keyboardType="phone-pad"
-                  styles={styles}
-                  theme={theme}
-                />
-                <Field
-                  label="Date of Birth"
-                  value={personalDetails.dateOfBirth}
-                  onChangeText={(value) =>
-                    setPersonalValue(
-                      "dateOfBirth",
-                      formatDateInput(value, {
-                        maxYear: new Date().getFullYear(),
-                      }),
-                    )
-                  }
-                  placeholder="YYYY-MM-DD"
-                  keyboardType="number-pad"
-                  error={dateErrors.dateOfBirth}
-                  styles={styles}
-                  theme={theme}
-                />
-              </TwoColumn>
-              <OptionGrid
-                label="Gender"
-                options={genderOptions}
-                value={
-                  personalDetails.gender.slice(0, 1).toUpperCase() +
-                  personalDetails.gender.slice(1).toLowerCase()
-                }
-                onChange={(value) => setPersonalValue("gender", value)}
-                variant="radio"
-                styles={styles}
-              />
-              <Field
-                label="About Me"
-                value={personalDetails.aboutMe}
-                onChangeText={(value) => setPersonalValue("aboutMe", value)}
-                multiline
-                styles={styles}
-                theme={theme}
-              />
-            </View>
-          )}
-
-          {activeStep === 2 && (
-            <View style={styles.formSection}>
-              {isLoadingStates && (
-                <View style={styles.noticeBox}>
-                  <Ionicons name="sync" size={18} color={theme.primary} />
-                  <Text style={styles.noticeText}>Loading states...</Text>
-                </View>
-              )}
-              {statesError && (
-                <View style={styles.errorBox}>
-                  <Ionicons
-                    name="alert-circle-outline"
-                    size={18}
-                    color={theme.danger}
+            {activeStep === 1 && (
+              <View style={styles.formSection}>
+                <TwoColumn>
+                  <Field
+                    label="First Name"
+                    value={personalDetails.firstName}
+                    onChangeText={(value) =>
+                      setPersonalValue("firstName", value)
+                    }
+                    styles={styles}
+                    theme={theme}
                   />
-                  <Text style={styles.errorText}>{statesError}</Text>
-                </View>
-              )}
-              <DropdownField
-                label="Select State"
-                options={states}
-                value={personalDetails.stateName}
-                onChange={(id, name) => {
-                  const selected = states.find((s) => s.id === id);
-                  setCities(selected?.cities ?? []);
-                  setPersonalDetails((curr) => ({
-                    ...curr,
-                    stateId: id,
-                    stateName: name,
-                    city: "",
-                    cityId: null,
-                  }));
-                }}
-                styles={styles}
-                theme={theme}
-              />
-              <DropdownField
-                label="Select City"
-                options={cities}
-                value={personalDetails.city}
-                placeholder={
-                  personalDetails.stateId
-                    ? "No cities available"
-                    : "Select a state first"
-                }
-                disabled={cities.length === 0}
-                onChange={(id, name) =>
-                  setPersonalDetails((curr) => ({
-                    ...curr,
-                    cityId: id,
-                    city: name,
-                  }))
-                }
-                styles={styles}
-                theme={theme}
-              />
-              <AddressAutocomplete
-                value={personalDetails.address}
-                onSelect={({
-                  address,
-                  latitude,
-                  longitude,
-                  city,
-                  suburb,
-                  postCode,
-                }) =>
-                  setPersonalDetails((curr) => ({
-                    ...curr,
+                  <Field
+                    label="Last Name"
+                    value={personalDetails.lastName}
+                    onChangeText={(value) =>
+                      setPersonalValue("lastName", value)
+                    }
+                    styles={styles}
+                    theme={theme}
+                  />
+                </TwoColumn>
+                <Field
+                  label="Email"
+                  value={personalDetails.email}
+                  onChangeText={(value) => setPersonalValue("email", value)}
+                  keyboardType="email-address"
+                  editable={false}
+                  styles={styles}
+                  theme={theme}
+                />
+                <TwoColumn>
+                  <Field
+                    label="Contact Number"
+                    value={personalDetails.contactNumber}
+                    onChangeText={(value) =>
+                      setPersonalValue("contactNumber", value)
+                    }
+                    keyboardType="phone-pad"
+                    styles={styles}
+                    theme={theme}
+                  />
+                  <Field
+                    label="Date of Birth"
+                    value={personalDetails.dateOfBirth}
+                    onChangeText={(value) =>
+                      setPersonalValue(
+                        "dateOfBirth",
+                        formatDateInput(value, {
+                          maxYear: new Date().getFullYear(),
+                        }),
+                      )
+                    }
+                    placeholder="YYYY-MM-DD"
+                    keyboardType="number-pad"
+                    error={dateErrors.dateOfBirth}
+                    styles={styles}
+                    theme={theme}
+                  />
+                </TwoColumn>
+                <OptionGrid
+                  label="Gender"
+                  options={genderOptions}
+                  value={
+                    personalDetails.gender.slice(0, 1).toUpperCase() +
+                    personalDetails.gender.slice(1).toLowerCase()
+                  }
+                  onChange={(value) => setPersonalValue("gender", value)}
+                  variant="radio"
+                  styles={styles}
+                />
+                <Field
+                  label="About Me"
+                  value={personalDetails.aboutMe}
+                  onChangeText={(value) => setPersonalValue("aboutMe", value)}
+                  multiline
+                  styles={styles}
+                  theme={theme}
+                />
+              </View>
+            )}
+
+            {activeStep === 2 && (
+              <View style={styles.formSection}>
+                {isLoadingStates && (
+                  <View style={styles.noticeBox}>
+                    <Ionicons name="sync" size={18} color={theme.primary} />
+                    <Text style={styles.noticeText}>Loading states...</Text>
+                  </View>
+                )}
+                {statesError && (
+                  <View style={styles.errorBox}>
+                    <Ionicons
+                      name="alert-circle-outline"
+                      size={18}
+                      color={theme.danger}
+                    />
+                    <Text style={styles.errorText}>{statesError}</Text>
+                  </View>
+                )}
+                <DropdownField
+                  label="Select State"
+                  options={states}
+                  value={personalDetails.stateName}
+                  onChange={(id, name) => {
+                    const selected = states.find((s) => s.id === id);
+                    setCities(selected?.cities ?? []);
+                    setPersonalDetails((curr) => ({
+                      ...curr,
+                      stateId: id,
+                      stateName: name,
+                      city: "",
+                      cityId: null,
+                    }));
+                  }}
+                  styles={styles}
+                  theme={theme}
+                />
+                <DropdownField
+                  label="Select City"
+                  options={cities}
+                  value={personalDetails.city}
+                  placeholder={
+                    personalDetails.stateId
+                      ? "No cities available"
+                      : "Select a state first"
+                  }
+                  disabled={cities.length === 0}
+                  onChange={(id, name) =>
+                    setPersonalDetails((curr) => ({
+                      ...curr,
+                      cityId: id,
+                      city: name,
+                    }))
+                  }
+                  styles={styles}
+                  theme={theme}
+                />
+                <AddressAutocomplete
+                  value={personalDetails.address}
+                  onSelect={({
                     address,
                     latitude,
                     longitude,
-                    city: city || curr.city,
-                    suburb: suburb || curr.suburb,
-                    postCode: postCode || curr.postCode,
-                  }))
-                }
-                styles={styles}
-                theme={theme}
-              />
-              <Field
-                label="Suburb"
-                value={personalDetails.suburb}
-                onChangeText={(value) => setPersonalValue("suburb", value)}
-                styles={styles}
-                theme={theme}
-              />
-              <Field
-                label="Post Code"
-                value={personalDetails.postCode}
-                onChangeText={(value) => setPersonalValue("postCode", value)}
-                keyboardType="number-pad"
-                styles={styles}
-                theme={theme}
-              />
-            </View>
-          )}
+                    city,
+                    suburb,
+                    postCode,
+                  }) =>
+                    setPersonalDetails((curr) => ({
+                      ...curr,
+                      address,
+                      latitude,
+                      longitude,
+                      city: city || curr.city,
+                      suburb: suburb || curr.suburb,
+                      postCode: postCode || curr.postCode,
+                    }))
+                  }
+                  styles={styles}
+                  theme={theme}
+                />
+                <Field
+                  label="Suburb"
+                  value={personalDetails.suburb}
+                  onChangeText={(value) => setPersonalValue("suburb", value)}
+                  styles={styles}
+                  theme={theme}
+                />
+                <Field
+                  label="Post Code"
+                  value={personalDetails.postCode}
+                  onChangeText={(value) => setPersonalValue("postCode", value)}
+                  keyboardType="number-pad"
+                  styles={styles}
+                  theme={theme}
+                />
+              </View>
+            )}
 
-          {activeStep === 3 && (
-            <View style={styles.formSection}>
-              <Field
-                label="Tax File Number"
-                value={professionalDetails.tfnNumber}
-                onChangeText={(v) =>
-                  setProfessionalDetails((c) => ({
-                    ...c,
-                    tfnNumber: v.replace(/\D/g, "").slice(0, 9),
-                  }))
-                }
-                keyboardType="number-pad"
-                maxLength={9}
-                error={dateErrors.tfnNumber}
-                styles={styles}
-                theme={theme}
-              />
-              <Field
-                label="Passport Number"
-                value={professionalDetails.registrationNumber}
-                onChangeText={(v) =>
-                  setProfessionalDetails((c) => ({
-                    ...c,
-                    registrationNumber: v,
-                  }))
-                }
-                styles={styles}
-                theme={theme}
-              />
-              {/* <Field
+            {activeStep === 3 && (
+              <View style={styles.formSection}>
+                <Field
+                  label="Tax File Number"
+                  value={professionalDetails.tfnNumber}
+                  onChangeText={(v) =>
+                    setProfessionalDetails((c) => ({
+                      ...c,
+                      tfnNumber: v.replace(/\D/g, "").slice(0, 9),
+                    }))
+                  }
+                  keyboardType="number-pad"
+                  maxLength={9}
+                  error={dateErrors.tfnNumber}
+                  styles={styles}
+                  theme={theme}
+                />
+                <Field
+                  label="Passport Number"
+                  value={professionalDetails.registrationNumber}
+                  onChangeText={(v) =>
+                    setProfessionalDetails((c) => ({
+                      ...c,
+                      registrationNumber: v,
+                    }))
+                  }
+                  styles={styles}
+                  theme={theme}
+                />
+                {/* <Field
                 label="ABN Number"
                 value={professionalDetails.abn_number}
                 onChangeText={(v) =>
@@ -1128,74 +1179,78 @@ export default function OnboardingScreen() {
                 styles={styles}
                 theme={theme}
               /> */}
-              <UploadBox
-                label="CV"
-                file={professionalDetails.cv}
-                mandatory={false}
-                onPick={handlePickCv}
-                onPreview={() => {
-                  if (!professionalDetails.cv) return;
+                <UploadBox
+                  label="CV"
+                  file={professionalDetails.cv}
+                  mandatory={false}
+                  onPick={handlePickCv}
+                  onPreview={() => {
+                    if (!professionalDetails.cv) return;
+                    setPreview({
+                      title: "CV",
+                      file: professionalDetails.cv,
+                      onRemove: () => {
+                        cachedCv = undefined;
+                        setProfessionalDetails((c) => ({
+                          ...c,
+                          cv: undefined,
+                        }));
+                        setPreview(null);
+                      },
+                    });
+                  }}
+                  styles={styles}
+                  theme={theme}
+                />
+              </View>
+            )}
+
+            {activeStep === 4 && (
+              <DocumentRequirementList
+                collection="mandatory"
+                requirements={mandatoryDocumentRequirements}
+                values={mandatoryDocuments}
+                dateErrors={dateErrors}
+                onPick={handlePickDocument}
+                onExpiryChange={setDocumentExpiry}
+                onPreview={(requirement, file) =>
                   setPreview({
-                    title: "CV",
-                    file: professionalDetails.cv,
-                    onRemove: () => {
-                      cachedCv = undefined;
-                      setProfessionalDetails((c) => ({ ...c, cv: undefined }));
-                      setPreview(null);
-                    },
-                  });
-                }}
+                    title: requirement.name,
+                    file,
+                    onRemove: () => removeDocument(requirement, "mandatory"),
+                  })
+                }
                 styles={styles}
                 theme={theme}
               />
-            </View>
-          )}
+            )}
 
-          {activeStep === 4 && (
-            <DocumentRequirementList
-              collection="mandatory"
-              requirements={mandatoryDocumentRequirements}
-              values={mandatoryDocuments}
-              dateErrors={dateErrors}
-              onPick={handlePickDocument}
-              onExpiryChange={setDocumentExpiry}
-              onPreview={(requirement, file) =>
-                setPreview({
-                  title: requirement.name,
-                  file,
-                  onRemove: () => removeDocument(requirement, "mandatory"),
-                })
-              }
-              styles={styles}
-              theme={theme}
-            />
-          )}
-
-          {activeStep === 5 && (
-            <DocumentRequirementList
-              collection="professional"
-              requirements={professionDocumentRequirements}
-              values={professionalDocuments}
-              dateErrors={dateErrors}
-              onPick={handlePickDocument}
-              onExpiryChange={setDocumentExpiry}
-              onPreview={(requirement, file) =>
-                setPreview({
-                  title: requirement.name,
-                  file,
-                  onRemove: () => removeDocument(requirement, "professional"),
-                })
-              }
-              styles={styles}
-              theme={theme}
-            />
-          )}
+            {activeStep === 5 && (
+              <DocumentRequirementList
+                collection="professional"
+                requirements={professionDocumentRequirements}
+                values={professionalDocuments}
+                dateErrors={dateErrors}
+                onPick={handlePickDocument}
+                onExpiryChange={setDocumentExpiry}
+                onPreview={(requirement, file) =>
+                  setPreview({
+                    title: requirement.name,
+                    file,
+                    onRemove: () => removeDocument(requirement, "professional"),
+                  })
+                }
+                styles={styles}
+                theme={theme}
+              />
+            )}
+          </Animated.View>
         </ScrollView>
 
         <View style={[styles.footer]}>
           {activeStep === 1 ? (
             <View style={styles.stepDotsRow}>
-              {steps.map((step) => (
+              {visibleSteps.map((step) => (
                 <View
                   key={step.id}
                   style={[
@@ -1222,7 +1277,7 @@ export default function OnboardingScreen() {
               <MaterialCommunityIcons
                 name="arrow-left-thin"
                 size={24}
-                color={theme.primary}
+                color={TEXT_SAFE_PRIMARY}
               />
               <Text style={styles.secondaryButtonText}>Back</Text>
             </Pressable>
@@ -1520,9 +1575,7 @@ function AddressAutocomplete({
   styles: ReturnType<typeof getStyles>;
   theme: typeof Colors.light;
 }) {
-  const PLACES_KEY =
-    process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY ??
-    "AIzaSyCo1TDkkMMkqguKpLYzOrL9GM4GUjlUA_s";
+  const PLACES_KEY = process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY ?? "";
 
   return (
     <View style={styles.field}>
@@ -1584,7 +1637,7 @@ function AddressAutocomplete({
             minHeight: 42,
             borderWidth: 1,
             borderColor: theme.greyBorder,
-            borderRadius: 5,
+            borderRadius: Radii.sm,
             backgroundColor: theme.whiteBackground,
             paddingHorizontal: 10,
           },
@@ -1596,7 +1649,7 @@ function AddressAutocomplete({
             backgroundColor: theme.whiteBackground,
             borderWidth: 1,
             borderColor: theme.greyBorder,
-            borderRadius: 5,
+            borderRadius: Radii.sm,
             marginTop: 4,
             maxHeight: 250,
             overflow: "hidden",
@@ -1818,7 +1871,7 @@ function DocumentRequirementList({
                   <MaterialCommunityIcons
                     name="file-document-outline"
                     size={20}
-                    color={theme.primary}
+                    color={theme.secondaryText}
                   />
                 </View>
                 <View style={styles.documentTitleBlock}>
@@ -1949,7 +2002,8 @@ const getStyles = (theme: typeof Colors.light) =>
   StyleSheet.create({
     safeArea: {
       flex: 1,
-      backgroundColor: theme.safeAreaBg,
+
+      backgroundColor: theme.whiteBackground,
     },
     successOverlay: {
       flex: 1,
@@ -1960,7 +2014,7 @@ const getStyles = (theme: typeof Colors.light) =>
     },
     successCard: {
       backgroundColor: theme.whiteBackground,
-      borderRadius: 20,
+      borderRadius: Radii.lg,
       padding: 32,
       alignItems: "center",
       width: "100%",
@@ -1999,8 +2053,10 @@ const getStyles = (theme: typeof Colors.light) =>
       paddingTop: 10,
       paddingBottom: 12,
       backgroundColor: theme.whiteBackground,
-      borderBottomWidth: 1,
-      borderBottomColor: theme.greyBorder,
+
+      borderBottomWidth: 2,
+      borderBottomColor: ACCENT_BORDER,
+      zIndex: 1,
     },
     headerTopRow: {
       flexDirection: "row",
@@ -2009,7 +2065,7 @@ const getStyles = (theme: typeof Colors.light) =>
       gap: 12,
     },
     kicker: {
-      color: theme.primary,
+      color: TEXT_SAFE_PRIMARY,
       fontSize: 10,
       fontWeight: "800",
       textTransform: "uppercase",
@@ -2024,7 +2080,7 @@ const getStyles = (theme: typeof Colors.light) =>
       minWidth: 54,
       height: 36,
       paddingHorizontal: 12,
-      borderRadius: 18,
+      borderRadius: Radii.full,
       backgroundColor: theme.heroBg,
       alignItems: "center",
       justifyContent: "center",
@@ -2032,22 +2088,29 @@ const getStyles = (theme: typeof Colors.light) =>
       borderColor: theme.heroBorder,
     },
     progressPillText: {
-      color: theme.primary,
+      color: TEXT_SAFE_PRIMARY,
       fontWeight: "800",
       fontSize: 10,
       textTransform: "uppercase",
     },
-    progressTrack: {
-      height: 5,
-      borderRadius: 4,
-      backgroundColor: theme.heroBg,
-      overflow: "hidden",
-      marginTop: 8,
+    stepTrackerRow: {
+      flexDirection: "row",
+      gap: 6,
+      marginTop: 10,
     },
-    progressFill: {
-      height: "100%",
-      borderRadius: 4,
+    stepSegment: {
+      flex: 1,
+      height: 5,
+      borderRadius: Radii.xs,
+
+      backgroundColor: SURFACE_TINT_DEEP,
+    },
+    stepSegmentDone: {
       backgroundColor: theme.primary,
+    },
+    stepSegmentActive: {
+      backgroundColor: theme.primary,
+      opacity: 0.55,
     },
     stepper: {
       gap: 10,
@@ -2058,7 +2121,7 @@ const getStyles = (theme: typeof Colors.light) =>
       alignItems: "center",
       width: 190,
       padding: 10,
-      borderRadius: 50,
+      borderRadius: Radii.full,
       backgroundColor: theme.whiteBackground,
       borderWidth: 1,
       borderColor: theme.greyBorder,
@@ -2074,7 +2137,7 @@ const getStyles = (theme: typeof Colors.light) =>
     stepIcon: {
       width: 34,
       height: 34,
-      borderRadius: 8,
+      borderRadius: Radii.sm,
       alignItems: "center",
       justifyContent: "center",
       backgroundColor: theme.heroBg,
@@ -2109,13 +2172,18 @@ const getStyles = (theme: typeof Colors.light) =>
     content: {
       padding: 10,
       gap: 14,
+      flexGrow: 1,
+      backgroundColor: SURFACE_TINT,
+    },
+    stepAnimatedContent: {
+      gap: 14,
     },
     heroPanel: {
       flexDirection: "row",
       alignItems: "center",
       gap: 10,
       padding: 8,
-      borderRadius: 5,
+      borderRadius: Radii.md,
       backgroundColor: theme.heroBg,
       borderWidth: 1,
       borderColor: theme.heroBorder,
@@ -2123,7 +2191,7 @@ const getStyles = (theme: typeof Colors.light) =>
     heroIcon: {
       width: 48,
       height: 48,
-      borderRadius: 5,
+      borderRadius: Radii.sm,
       alignItems: "center",
       justifyContent: "center",
       backgroundColor: theme.primary,
@@ -2132,7 +2200,7 @@ const getStyles = (theme: typeof Colors.light) =>
       flex: 1,
     },
     heroEyebrow: {
-      color: theme.primary,
+      color: TEXT_SAFE_PRIMARY,
       fontWeight: "800",
       fontSize: 9,
       textTransform: "uppercase",
@@ -2153,7 +2221,7 @@ const getStyles = (theme: typeof Colors.light) =>
     stepDot: {
       width: 16,
       height: 4,
-      borderRadius: 4,
+      borderRadius: Radii.full,
       backgroundColor: theme.heroBorder,
     },
     stepDotActive: {
@@ -2164,7 +2232,7 @@ const getStyles = (theme: typeof Colors.light) =>
       alignItems: "center",
       gap: 8,
       padding: 12,
-      borderRadius: 8,
+      borderRadius: Radii.sm,
       backgroundColor: theme.heroBg,
       borderWidth: 1,
       borderColor: theme.heroBorder,
@@ -2180,7 +2248,7 @@ const getStyles = (theme: typeof Colors.light) =>
       alignItems: "center",
       gap: 8,
       padding: 12,
-      borderRadius: 8,
+      borderRadius: Radii.sm,
       backgroundColor: theme.errorBg,
       borderWidth: 1,
       borderColor: theme.danger,
@@ -2206,8 +2274,8 @@ const getStyles = (theme: typeof Colors.light) =>
     inputShell: {
       minHeight: 42,
       borderWidth: 1,
-      borderColor: theme.greyBorder,
-      borderRadius: 5,
+      borderColor: ACCENT_BORDER,
+      borderRadius: Radii.sm,
       backgroundColor: theme.whiteBackground,
       paddingHorizontal: 10,
       flexDirection: "row",
@@ -2218,12 +2286,12 @@ const getStyles = (theme: typeof Colors.light) =>
       borderColor: theme.danger,
     },
     fieldError: {
-      color: theme.danger,
+      color: TEXT_SAFE_DANGER,
       fontSize: 12,
       fontWeight: "700",
     },
     requiredAsterisk: {
-      color: theme.danger,
+      color: TEXT_SAFE_DANGER,
       fontWeight: "700",
     },
     textAreaShell: {
@@ -2243,8 +2311,8 @@ const getStyles = (theme: typeof Colors.light) =>
     dropdownTrigger: {
       minHeight: 42,
       borderWidth: 1,
-      borderColor: theme.greyBorder,
-      borderRadius: 5,
+      borderColor: ACCENT_BORDER,
+      borderRadius: Radii.sm,
       backgroundColor: theme.whiteBackground,
       paddingHorizontal: 10,
       flexDirection: "row",
@@ -2265,8 +2333,8 @@ const getStyles = (theme: typeof Colors.light) =>
     },
     dropdownSheet: {
       backgroundColor: theme.whiteBackground,
-      borderTopLeftRadius: 18,
-      borderTopRightRadius: 18,
+      borderTopLeftRadius: Radii.lg,
+      borderTopRightRadius: Radii.lg,
       paddingHorizontal: 12,
       paddingTop: 18,
       paddingBottom: 24,
@@ -2280,7 +2348,7 @@ const getStyles = (theme: typeof Colors.light) =>
     },
     dropdownOption: {
       minHeight: 35,
-      borderRadius: 5,
+      borderRadius: Radii.sm,
       paddingHorizontal: 8,
       flexDirection: "row",
       alignItems: "center",
@@ -2297,7 +2365,7 @@ const getStyles = (theme: typeof Colors.light) =>
       fontWeight: "600",
     },
     dropdownOptionTextActive: {
-      color: theme.primary,
+      color: TEXT_SAFE_PRIMARY,
       fontWeight: "600",
     },
     optionGrid: {
@@ -2308,9 +2376,9 @@ const getStyles = (theme: typeof Colors.light) =>
     optionChip: {
       minHeight: 42,
       paddingHorizontal: 14,
-      borderRadius: 5,
+      borderRadius: Radii.sm,
       borderWidth: 1,
-      borderColor: theme.greyBorder,
+      borderColor: ACCENT_BORDER,
       backgroundColor: theme.whiteBackground,
       alignItems: "center",
       justifyContent: "center",
@@ -2329,7 +2397,7 @@ const getStyles = (theme: typeof Colors.light) =>
     radioOuter: {
       width: 18,
       height: 18,
-      borderRadius: 9,
+      borderRadius: Radii.full,
       borderWidth: 2,
       borderColor: theme.grayBorder,
       alignItems: "center",
@@ -2342,7 +2410,7 @@ const getStyles = (theme: typeof Colors.light) =>
     radioInner: {
       width: 8,
       height: 8,
-      borderRadius: 4,
+      borderRadius: Radii.full,
       backgroundColor: theme.primary,
     },
     optionChipActive: {
@@ -2355,15 +2423,15 @@ const getStyles = (theme: typeof Colors.light) =>
       fontSize: 13,
     },
     optionChipTextActive: {
-      color: theme.primary,
+      color: TEXT_SAFE_PRIMARY,
     },
     uploadBox: {
       minHeight: 76,
-      borderRadius: 5,
+      borderRadius: Radii.sm,
       borderWidth: 1,
       borderStyle: "dashed",
       borderColor: theme.heroBorder,
-      backgroundColor: theme.whiteBackground,
+      backgroundColor: UPLOAD_BOX_BG,
       flexDirection: "row",
       alignItems: "center",
       gap: 12,
@@ -2372,7 +2440,7 @@ const getStyles = (theme: typeof Colors.light) =>
     uploadBoxFilled: {
       borderStyle: "solid",
       borderColor: theme.primary,
-      backgroundColor: theme.heroBg,
+      backgroundColor: UPLOAD_BOX_BG,
     },
     uploadBoxError: {
       borderColor: theme.danger,
@@ -2380,7 +2448,7 @@ const getStyles = (theme: typeof Colors.light) =>
     uploadIcon: {
       width: 44,
       height: 44,
-      borderRadius: 5,
+      borderRadius: Radii.sm,
       alignItems: "center",
       justifyContent: "center",
       backgroundColor: theme.heroBg,
@@ -2390,30 +2458,41 @@ const getStyles = (theme: typeof Colors.light) =>
       minWidth: 0,
     },
     uploadTitle: {
-      color: theme.primaryText,
+      color: "#666666",
       fontWeight: "800",
       fontSize: 14,
     },
     uploadSubtitle: {
-      color: theme.secondaryText,
+      color: "#666666",
       fontSize: 12,
       marginTop: 3,
     },
     uploadAction: {
       width: 34,
       height: 34,
-      borderRadius: 3,
+      borderRadius: Radii.sm,
       alignItems: "center",
       justifyContent: "center",
       backgroundColor: theme.primary,
     },
     documentCard: {
       gap: 14,
-      borderRadius: 5,
+      borderRadius: Radii.md,
       borderWidth: 1,
-      borderColor: theme.greyBorder,
+      borderColor: ACCENT_BORDER,
       backgroundColor: theme.whiteBackground,
       padding: 10,
+      ...Platform.select({
+        ios: {
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.06,
+          shadowRadius: 6,
+        },
+        android: {
+          elevation: 2,
+        },
+      }),
     },
     documentHeader: {
       flexDirection: "row",
@@ -2431,10 +2510,10 @@ const getStyles = (theme: typeof Colors.light) =>
     documentIcon: {
       width: 40,
       height: 40,
-      borderRadius: 5,
+      borderRadius: Radii.sm,
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: theme.heroBg,
+      backgroundColor: theme.greyBorder,
     },
     documentTitleBlock: {
       flex: 1,
@@ -2453,7 +2532,7 @@ const getStyles = (theme: typeof Colors.light) =>
     mandatoryBadge: {
       minHeight: 20,
       paddingHorizontal: 8,
-      borderRadius: 50,
+      borderRadius: Radii.full,
       alignItems: "center",
       justifyContent: "center",
       backgroundColor: theme.heroIconBg,
@@ -2474,10 +2553,11 @@ const getStyles = (theme: typeof Colors.light) =>
       paddingHorizontal: 10,
       paddingTop: 14,
       backgroundColor: theme.whiteBackground,
+      borderTopWidth: 1,
+      borderTopColor: ACCENT_BORDER,
     },
     primaryButton: {
-      borderRadius: 50,
-      // 44pt is Apple HIG's minimum tappable target; 48dp is Material's.
+      borderRadius: Radii.md,
       height: Platform.OS === "ios" ? 44 : 48,
       minWidth: Platform.OS === "ios" ? undefined : 64,
       paddingHorizontal: 24,
@@ -2495,7 +2575,7 @@ const getStyles = (theme: typeof Colors.light) =>
       fontWeight: Platform.OS === "ios" ? "600" : "700",
     },
     secondaryButton: {
-      borderRadius: 50,
+      borderRadius: Radii.md,
       height: Platform.OS === "ios" ? 44 : 48,
       minWidth: Platform.OS === "ios" ? undefined : 64,
       paddingHorizontal: 24,
@@ -2509,7 +2589,7 @@ const getStyles = (theme: typeof Colors.light) =>
       overflow: "hidden",
     },
     secondaryButtonText: {
-      color: theme.primary,
+      color: TEXT_SAFE_PRIMARY,
       fontSize: 15,
       fontWeight: Platform.OS === "ios" ? "600" : "700",
     },
@@ -2519,7 +2599,7 @@ const getStyles = (theme: typeof Colors.light) =>
     suggestionList: {
       borderWidth: 1,
       borderColor: theme.greyBorder,
-      borderRadius: 8,
+      borderRadius: Radii.sm,
       marginTop: 4,
       backgroundColor: theme.whiteBackground,
       overflow: "hidden",

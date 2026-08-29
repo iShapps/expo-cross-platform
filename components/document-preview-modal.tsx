@@ -1,4 +1,4 @@
-import { Colors } from "@/constants/theme";
+import { Colors, Radii } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Ionicons } from "@expo/vector-icons";
 import { PdfView } from "@kishannareshpal/expo-pdf";
@@ -211,8 +211,8 @@ const getStyles = (theme: typeof Colors.light, hasActions: boolean) =>
     },
     previewSheet: {
       maxHeight: "86%",
-      borderTopLeftRadius: 22,
-      borderTopRightRadius: 22,
+      borderTopLeftRadius: Radii.lg,
+      borderTopRightRadius: Radii.lg,
       backgroundColor: theme.whiteBackground,
       padding: 16,
       gap: 14,
@@ -221,7 +221,7 @@ const getStyles = (theme: typeof Colors.light, hasActions: boolean) =>
       alignSelf: "center",
       width: 44,
       height: 5,
-      borderRadius: 3,
+      borderRadius: Radii.xs,
       backgroundColor: theme.grayBorder,
     },
     previewHeader: {
@@ -244,14 +244,14 @@ const getStyles = (theme: typeof Colors.light, hasActions: boolean) =>
     iconButton: {
       width: 40,
       height: 40,
-      borderRadius: 8,
+      borderRadius: Radii.sm,
       alignItems: "center",
       justifyContent: "center",
       backgroundColor: theme.heroBg,
     },
     previewFrame: {
       height: 390,
-      borderRadius: 8,
+      borderRadius: Radii.sm,
       borderWidth: 1,
       borderColor: theme.greyBorder,
       overflow: "hidden",
@@ -289,7 +289,7 @@ const getStyles = (theme: typeof Colors.light, hasActions: boolean) =>
       backgroundColor: theme.primary,
       paddingHorizontal: 20,
       paddingVertical: 10,
-      borderRadius: 8,
+      borderRadius: Radii.sm,
       marginTop: 4,
     },
     openInViewerText: {
@@ -304,7 +304,7 @@ const getStyles = (theme: typeof Colors.light, hasActions: boolean) =>
     actionButton: {
       flex: 1,
       minHeight: 48,
-      borderRadius: 8,
+      borderRadius: Radii.sm,
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
@@ -324,7 +324,7 @@ const getStyles = (theme: typeof Colors.light, hasActions: boolean) =>
     doneButton: {
       flex: 1,
       minHeight: 48,
-      borderRadius: 8,
+      borderRadius: Radii.sm,
       backgroundColor: hasActions ? theme.heroBg : theme.primary,
       alignItems: "center",
       justifyContent: "center",

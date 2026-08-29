@@ -1,5 +1,5 @@
 import { askAssistant, AssistantQueryError } from "@/api-queries/assistant";
-import { Colors } from "@/constants/theme";
+import { Colors, Radii } from "@/constants/theme";
 import { AssistantMessage } from "@/data-types/assistant";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { matchLocalKnowledge } from "@/utils/assistant-intent-matcher";
@@ -313,7 +313,7 @@ const getStyles = (theme: typeof Colors.light) =>
     closeButton: {
       width: 36,
       height: 36,
-      borderRadius: 18,
+      borderRadius: Radii.full,
       alignItems: "center",
       justifyContent: "center",
       backgroundColor: theme.heroBg,
@@ -336,17 +336,17 @@ const getStyles = (theme: typeof Colors.light) =>
       alignItems: "flex-start",
     },
     bubble: {
-      borderRadius: 14,
+      borderRadius: Radii.sm,
       paddingHorizontal: 14,
       paddingVertical: 10,
     },
     bubbleUser: {
       backgroundColor: theme.primary,
-      borderBottomRightRadius: 4,
+      borderBottomRightRadius: Radii.xs,
     },
     bubbleAssistant: {
       backgroundColor: theme.heroBg,
-      borderBottomLeftRadius: 4,
+      borderBottomLeftRadius: Radii.xs,
     },
     bubbleTextUser: {
       color: theme.white,
@@ -364,7 +364,7 @@ const getStyles = (theme: typeof Colors.light) =>
       gap: 6,
       borderWidth: 1,
       borderColor: theme.primary,
-      borderRadius: 20,
+      borderRadius: Radii.full,
       paddingHorizontal: 12,
       paddingVertical: 6,
     },
@@ -397,7 +397,7 @@ const getStyles = (theme: typeof Colors.light) =>
       maxHeight: 100,
       borderWidth: 1,
       borderColor: theme.grayBorder,
-      borderRadius: 20,
+      borderRadius: Radii.full,
       paddingHorizontal: 16,
       paddingVertical: 10,
       fontSize: 14,
@@ -406,7 +406,7 @@ const getStyles = (theme: typeof Colors.light) =>
     sendButton: {
       width: 40,
       height: 40,
-      borderRadius: 20,
+      borderRadius: Radii.full,
       backgroundColor: theme.primary,
       alignItems: "center",
       justifyContent: "center",

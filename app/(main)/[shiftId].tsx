@@ -11,7 +11,7 @@ import Header from "@/components/Header";
 import { ShiftType, ShiftTypePill } from "@/components/shift-type-pill";
 import { ShiftDetailsSkeleton } from "@/components/skeletons";
 import { SwipeButton } from "@/components/swipe-button";
-import { Colors } from "@/constants/theme";
+import { Colors, Radii } from "@/constants/theme";
 import { useProfileData } from "@/data-store/use-account-store";
 import { IShift } from "@/data-types/shifts";
 import { useCalendarAndReminders } from "@/hooks/use-calendar-and-reminders";
@@ -1017,7 +1017,7 @@ const getStyles = (theme: typeof Colors.light) =>
     heroCard: {
       marginTop: 8,
       backgroundColor: theme.heroBg,
-      borderRadius: 5,
+      borderRadius: Radii.md,
       padding: 10,
       flexDirection: "row",
       alignItems: "center",
@@ -1029,7 +1029,7 @@ const getStyles = (theme: typeof Colors.light) =>
     heroIconWrap: {
       height: 64,
       width: 64,
-      borderRadius: 5,
+      borderRadius: Radii.sm,
       backgroundColor: theme.heroIconBg,
       alignItems: "center",
       justifyContent: "center",
@@ -1050,7 +1050,7 @@ const getStyles = (theme: typeof Colors.light) =>
     },
     sectionCard: {
       marginTop: 12,
-      borderRadius: 5,
+      borderRadius: Radii.md,
       padding: 14,
       borderWidth: 1,
       borderColor: theme.divider,
@@ -1107,7 +1107,7 @@ const getStyles = (theme: typeof Colors.light) =>
       left: "50%",
       transform: [{ translateX: -1.5 }],
       width: 2,
-      borderRadius: 2,
+      borderRadius: Radii.xs,
       backgroundColor: theme.grayBorder,
       zIndex: 0,
       height: "50%",
@@ -1115,7 +1115,7 @@ const getStyles = (theme: typeof Colors.light) =>
     timelineDot: {
       width: 40,
       height: 40,
-      borderRadius: 50,
+      borderRadius: Radii.full,
       alignItems: "center",
       justifyContent: "center",
       zIndex: 1,
@@ -1156,7 +1156,7 @@ const getStyles = (theme: typeof Colors.light) =>
       width: "100%",
       maxWidth: 420,
       backgroundColor: theme.whiteBackground,
-      borderRadius: 8,
+      borderRadius: Radii.lg,
       paddingVertical: 20,
       paddingHorizontal: 20,
       borderWidth: 1,
@@ -1171,7 +1171,7 @@ const getStyles = (theme: typeof Colors.light) =>
     errorIconWrap: {
       width: 64,
       height: 64,
-      borderRadius: 32,
+      borderRadius: Radii.full,
       backgroundColor: theme.mutedText,
       alignItems: "center",
       justifyContent: "center",
@@ -1203,7 +1203,7 @@ const getStyles = (theme: typeof Colors.light) =>
       gap: 8,
       alignContent: "center",
       justifyContent: "center",
-      borderRadius: 5,
+      borderRadius: Radii.sm,
       width: "45%",
       alignItems: "center",
     },
@@ -1215,7 +1215,7 @@ const getStyles = (theme: typeof Colors.light) =>
     errorSecondaryBtn: {
       backgroundColor: theme.whiteBackground,
       paddingVertical: 12,
-      borderRadius: 5,
+      borderRadius: Radii.sm,
       alignItems: "center",
       width: "50%",
       display: "flex",
@@ -1231,7 +1231,7 @@ const getStyles = (theme: typeof Colors.light) =>
     },
     button: {
       backgroundColor: theme.primary,
-      borderRadius: 4,
+      borderRadius: Radii.sm,
       paddingHorizontal: 16,
       paddingVertical: 9,
       display: "flex",
@@ -1257,7 +1257,7 @@ const getStyles = (theme: typeof Colors.light) =>
       minWidth: 220,
       paddingHorizontal: 18,
       paddingVertical: 16,
-      borderRadius: 10,
+      borderRadius: Radii.md,
       backgroundColor: "rgba(0, 0, 0, 0.45)",
       borderWidth: 1,
       borderColor: "rgba(255, 255, 255, 0.25)",

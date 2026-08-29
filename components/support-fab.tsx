@@ -1,4 +1,4 @@
-import { Colors } from "@/constants/theme";
+import { Colors, Radii } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -41,7 +41,7 @@ const styles = StyleSheet.create({
     right: 18,
     width: 56,
     height: 56,
-    borderRadius: 28,
+    borderRadius: Radii.full,
     alignItems: "center",
     justifyContent: "center",
     shadowColor: "#000",

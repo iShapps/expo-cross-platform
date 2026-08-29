@@ -1,4 +1,4 @@
-import { Colors } from "@/constants/theme";
+import { Colors, Radii } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useRouter } from "expo-router";
 import React from "react";
@@ -30,137 +30,137 @@ export const ShiftDetailsSkeleton: React.FC = () => {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.heroCard}>
-          <SkeletonBase width={64} height={64} borderRadius={6} />
+          <SkeletonBase width={64} height={64} borderRadius={Radii.sm} />
           <View style={styles.heroContent}>
-            <SkeletonBase width="70%" height={16} borderRadius={4} />
+            <SkeletonBase width="70%" height={16} borderRadius={Radii.xs} />
             <SkeletonBase
               width="85%"
               height={12}
-              borderRadius={4}
+              borderRadius={Radii.xs}
               style={{ marginTop: 6 }}
             />
             <SkeletonBase
               width="60%"
               height={12}
-              borderRadius={4}
+              borderRadius={Radii.xs}
               style={{ marginTop: 6 }}
             />
             <View style={styles.chipRow}>
-              <SkeletonBase width={80} height={20} borderRadius={10} />
+              <SkeletonBase width={80} height={20} borderRadius={Radii.full} />
             </View>
           </View>
         </View>
 
         <View style={styles.sectionCard}>
-          <SkeletonBase width={120} height={12} borderRadius={4} />
+          <SkeletonBase width={120} height={12} borderRadius={Radii.xs} />
           <View style={styles.detailRow}>
-            <SkeletonBase width={60} height={10} borderRadius={4} />
+            <SkeletonBase width={60} height={10} borderRadius={Radii.xs} />
             <SkeletonBase
               width={140}
               height={14}
-              borderRadius={4}
+              borderRadius={Radii.xs}
               style={{ marginTop: 6 }}
             />
           </View>
           <View style={styles.detailRow}>
-            <SkeletonBase width={60} height={10} borderRadius={4} />
+            <SkeletonBase width={60} height={10} borderRadius={Radii.xs} />
             <SkeletonBase
               width={180}
               height={14}
-              borderRadius={4}
+              borderRadius={Radii.xs}
               style={{ marginTop: 6 }}
             />
           </View>
           <View style={styles.detailRow}>
-            <SkeletonBase width={60} height={10} borderRadius={4} />
+            <SkeletonBase width={60} height={10} borderRadius={Radii.xs} />
             <SkeletonBase
               width={110}
               height={14}
-              borderRadius={4}
+              borderRadius={Radii.xs}
               style={{ marginTop: 6 }}
             />
           </View>
           <View style={styles.detailRowNoBorder}>
-            <SkeletonBase width={60} height={10} borderRadius={4} />
+            <SkeletonBase width={60} height={10} borderRadius={Radii.xs} />
             <SkeletonBase
               width={90}
               height={14}
-              borderRadius={4}
+              borderRadius={Radii.xs}
               style={{ marginTop: 6 }}
             />
           </View>
         </View>
 
         <View style={styles.sectionCard}>
-          <SkeletonBase width={110} height={12} borderRadius={4} />
+          <SkeletonBase width={110} height={12} borderRadius={Radii.xs} />
           <View style={styles.detailRow}>
-            <SkeletonBase width={70} height={10} borderRadius={4} />
+            <SkeletonBase width={70} height={10} borderRadius={Radii.xs} />
             <SkeletonBase
               width={140}
               height={14}
-              borderRadius={4}
+              borderRadius={Radii.xs}
               style={{ marginTop: 6 }}
             />
           </View>
           <View style={styles.detailRow}>
-            <SkeletonBase width={70} height={10} borderRadius={4} />
+            <SkeletonBase width={70} height={10} borderRadius={Radii.xs} />
             <SkeletonBase
               width={160}
               height={14}
-              borderRadius={4}
+              borderRadius={Radii.xs}
               style={{ marginTop: 6 }}
             />
           </View>
           <View style={styles.detailRowNoBorder}>
-            <SkeletonBase width={70} height={10} borderRadius={4} />
+            <SkeletonBase width={70} height={10} borderRadius={Radii.xs} />
             <SkeletonBase
               width={120}
               height={14}
-              borderRadius={4}
+              borderRadius={Radii.xs}
               style={{ marginTop: 6 }}
             />
           </View>
         </View>
 
         <View style={styles.sectionCard}>
-          <SkeletonBase width={120} height={12} borderRadius={4} />
+          <SkeletonBase width={120} height={12} borderRadius={Radii.xs} />
           <View style={styles.detailRow}>
-            <SkeletonBase width={80} height={10} borderRadius={4} />
+            <SkeletonBase width={80} height={10} borderRadius={Radii.xs} />
             <SkeletonBase
               width={90}
               height={14}
-              borderRadius={4}
+              borderRadius={Radii.xs}
               style={{ marginTop: 6 }}
             />
           </View>
           <View style={styles.detailRow}>
-            <SkeletonBase width={80} height={10} borderRadius={4} />
+            <SkeletonBase width={80} height={10} borderRadius={Radii.xs} />
             <SkeletonBase
               width={60}
               height={14}
-              borderRadius={4}
+              borderRadius={Radii.xs}
               style={{ marginTop: 6 }}
             />
           </View>
           <View style={styles.detailRowNoBorder}>
-            <SkeletonBase width={80} height={10} borderRadius={4} />
+            <SkeletonBase width={80} height={10} borderRadius={Radii.xs} />
             <SkeletonBase
               width={70}
               height={14}
-              borderRadius={4}
+              borderRadius={Radii.xs}
               style={{ marginTop: 6 }}
             />
           </View>
           <SkeletonBase
             width={180}
             height={10}
-            borderRadius={4}
+            borderRadius={Radii.xs}
             style={{ marginTop: 10 }}
           />
         </View>
 
         <View style={styles.sectionCard}>
-          <SkeletonBase width={150} height={12} borderRadius={4} />
+          <SkeletonBase width={150} height={12} borderRadius={Radii.xs} />
           <View style={styles.timelineContainer}>
             {Array.from({ length: 5 }).map((_, index) => (
               <View key={index} style={styles.timelineItemWrap}>
@@ -168,23 +168,23 @@ export const ShiftDetailsSkeleton: React.FC = () => {
                   <SkeletonBase
                     width={2}
                     height={26}
-                    borderRadius={1}
+                    borderRadius={Radii.xs}
                     style={styles.timelineLineTop}
                   />
-                  <SkeletonBase width={40} height={40} borderRadius={20} />
+                  <SkeletonBase width={40} height={40} borderRadius={Radii.full} />
                   <SkeletonBase
                     width={2}
                     height={26}
-                    borderRadius={1}
+                    borderRadius={Radii.xs}
                     style={styles.timelineLineBottom}
                   />
                 </View>
                 <View style={styles.timelineContent}>
-                  <SkeletonBase width={120} height={12} borderRadius={4} />
+                  <SkeletonBase width={120} height={12} borderRadius={Radii.xs} />
                   <SkeletonBase
                     width={80}
                     height={12}
-                    borderRadius={4}
+                    borderRadius={Radii.xs}
                     style={{ marginTop: 6 }}
                   />
                 </View>
@@ -208,7 +208,7 @@ const getStyles = (theme: typeof Colors.light) =>
     heroCard: {
       marginTop: 8,
       backgroundColor: theme.heroBg,
-      borderRadius: 5,
+      borderRadius: Radii.sm,
       padding: 10,
       flexDirection: "row",
       alignItems: "center",
@@ -228,7 +228,7 @@ const getStyles = (theme: typeof Colors.light) =>
     },
     sectionCard: {
       marginTop: 12,
-      borderRadius: 5,
+      borderRadius: Radii.sm,
       padding: 14,
       borderWidth: 1,
       borderColor: theme.greyBorder,

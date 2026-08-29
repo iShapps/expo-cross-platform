@@ -1,5 +1,5 @@
 import OTPInput, { useOTPInput } from "@/components/shared/otp-input";
-import { Colors } from "@/constants/theme";
+import { Colors, Radii } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import {
   AuthenticationError,
@@ -480,7 +480,7 @@ export default function ForgotPassword() {
                 >
                   <View
                     style={{
-                      borderRadius: 50,
+                      borderRadius: Radii.full,
                       backgroundColor: "rgba(112, 198, 1, 0.15)",
                       width: 100,
                       height: 100,
@@ -598,7 +598,7 @@ const getStyles = (theme: typeof Colors.light) =>
     modalBody: {
       backgroundColor: theme.background,
       padding: 10,
-      borderRadius: 8,
+      borderRadius: Radii.sm,
       width: "92%",
     },
     topContainer: {
@@ -713,7 +713,7 @@ const getStyles = (theme: typeof Colors.light) =>
     button: {
       backgroundColor: theme.activeText,
       paddingVertical: 10,
-      borderRadius: 4,
+      borderRadius: Radii.sm,
       alignItems: "center",
       marginTop: 6,
       display: "flex",
@@ -726,7 +726,7 @@ const getStyles = (theme: typeof Colors.light) =>
     modalButton: {
       backgroundColor: theme.activeText,
       paddingVertical: 10,
-      borderRadius: 5,
+      borderRadius: Radii.sm,
       alignItems: "center",
       marginTop: 6,
     },

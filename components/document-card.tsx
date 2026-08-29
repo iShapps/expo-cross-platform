@@ -10,7 +10,7 @@ import React from "react";
 
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { Colors } from "@/constants/theme";
+import { Colors, Radii } from "@/constants/theme";
 import { formatMediumDate, isExpired } from "@/utils/date-time";
 import { useRouter } from "expo-router";
 
@@ -178,7 +178,7 @@ const getStyles = (theme: typeof Colors.light) =>
       flexDirection: "row",
       alignItems: "center",
       backgroundColor: theme.whiteBackground,
-      borderRadius: 5,
+      borderRadius: Radii.sm,
       padding: 5,
       borderColor: theme.greyBorder,
       borderWidth: 1,
@@ -206,7 +206,7 @@ const getStyles = (theme: typeof Colors.light) =>
       right: 2,
       width: 10,
       height: 10,
-      borderRadius: 5,
+      borderRadius: Radii.full,
       borderWidth: 1.5,
       borderColor: theme.whiteBackground,
       zIndex: 2,
@@ -245,7 +245,7 @@ const getStyles = (theme: typeof Colors.light) =>
     moreIconBtn: {
       marginLeft: 8,
       padding: 4,
-      borderRadius: 16,
+      borderRadius: Radii.full,
       alignSelf: "center",
     },
     metaRow: {

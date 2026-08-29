@@ -2,7 +2,7 @@ import { isAuthError } from "@/api-actions/error-utils";
 import { ApiMutationError } from "@/api-actions/mutations";
 import { changePassword } from "@/api-queries/profile";
 import Header from "@/components/Header";
-import { Colors } from "@/constants/theme";
+import { Colors, Radii } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { AntDesign } from "@expo/vector-icons";
 import Entypo from "@expo/vector-icons/Entypo";
@@ -344,7 +344,7 @@ const getStyles = (theme: typeof Colors.light) =>
     primaryButton: {
       marginTop: 16,
       backgroundColor: theme.activeText,
-      borderRadius: 5,
+      borderRadius: Radii.sm,
       paddingVertical: 12,
       alignItems: "center",
       display: "flex",
@@ -367,7 +367,7 @@ const getStyles = (theme: typeof Colors.light) =>
       minWidth: 220,
       paddingHorizontal: 18,
       paddingVertical: 16,
-      borderRadius: 10,
+      borderRadius: Radii.md,
       alignItems: "center",
       gap: 12,
       backgroundColor: "rgba(0, 0, 0, 0.45)",

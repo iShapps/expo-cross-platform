@@ -6,7 +6,7 @@ import {
 import DocumentCard from "@/components/document-card";
 import TabsHeader from "@/components/shared/tabs-header";
 import { DocumentCardSkeleton } from "@/components/skeletons";
-import { Colors } from "@/constants/theme";
+import { Colors, Radii } from "@/constants/theme";
 import { IDocument } from "@/data-types/documents";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -326,7 +326,7 @@ export default function DocumentsScreen() {
                           backgroundColor: "#FBF2F2",
                           paddingHorizontal: 24,
                           paddingVertical: 10,
-                          borderRadius: 20,
+                          borderRadius: Radii.full,
                           flexDirection: "row",
                           alignItems: "center",
                           justifyContent: "center",
@@ -452,7 +452,7 @@ const getStyles = (theme: typeof Colors.light) =>
     underline: {
       height: 3,
       width: 56,
-      borderRadius: 999,
+      borderRadius: Radii.full,
       backgroundColor: theme.activeText,
       opacity: 0.85,
       marginTop: 6,
@@ -479,7 +479,7 @@ const getStyles = (theme: typeof Colors.light) =>
     tabUnderline: {
       height: 2,
       width: "100%",
-      borderRadius: 999,
+      borderRadius: Radii.full,
       backgroundColor: "transparent",
       marginTop: 6,
     },

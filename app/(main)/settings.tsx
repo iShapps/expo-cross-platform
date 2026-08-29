@@ -1,7 +1,7 @@
 import { sendTestNotification } from "@/api-actions/notifications";
 import { useSession } from "@/app/ctx";
 import Header from "@/components/Header";
-import { Colors } from "@/constants/theme";
+import { Colors, Radii } from "@/constants/theme";
 import { useSettingsStore } from "@/data-store/use-settings-store";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useOneSignalSubscriptionStatus } from "@/hooks/use-one-signal";
@@ -351,12 +351,12 @@ const getStyles = (appTheme: typeof Colors.light) =>
       backgroundColor: appTheme.whiteBackground,
       borderWidth: 1,
       borderColor: appTheme.divider,
-      borderRadius: 5,
+      borderRadius: Radii.md,
     },
     settingCardMain: {
       flexDirection: "column",
       backgroundColor: appTheme.whiteBackground,
-      borderRadius: 5,
+      borderRadius: Radii.sm,
       padding: 10,
       marginBottom: 2,
       shadowColor: appTheme.shadow,
@@ -371,7 +371,7 @@ const getStyles = (appTheme: typeof Colors.light) =>
       flexDirection: "row",
       alignItems: "center",
       backgroundColor: appTheme.whiteBackground,
-      borderRadius: 5,
+      borderRadius: Radii.sm,
       padding: 10,
       marginBottom: 2,
       shadowColor: appTheme.shadow,
@@ -385,7 +385,7 @@ const getStyles = (appTheme: typeof Colors.light) =>
     settingIconWrap: {
       width: 38,
       height: 38,
-      borderRadius: 50,
+      borderRadius: Radii.full,
       backgroundColor: appTheme.heroBg,
       alignItems: "center",
       justifyContent: "center",
@@ -419,7 +419,7 @@ const getStyles = (appTheme: typeof Colors.light) =>
     retryButton: {
       minHeight: 34,
       paddingHorizontal: 12,
-      borderRadius: 5,
+      borderRadius: Radii.sm,
       backgroundColor: appTheme.primary,
       alignItems: "center",
       justifyContent: "center",

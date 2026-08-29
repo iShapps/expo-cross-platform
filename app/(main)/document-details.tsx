@@ -29,7 +29,7 @@ import {
   DocumentPreviewModal,
   PreviewFile,
 } from "../../components/document-preview-modal";
-import { Colors } from "../../constants/theme";
+import { Colors, Radii } from "../../constants/theme";
 import { IDocument } from "../../data-types/documents";
 import { useColorScheme } from "../../hooks/use-color-scheme";
 
@@ -666,7 +666,7 @@ const getStyles = (theme: typeof Colors.light) =>
     },
     sectionCard: {
       marginTop: 12,
-      borderRadius: 5,
+      borderRadius: Radii.md,
       padding: 14,
       borderWidth: 1,
       borderColor: theme.divider,
@@ -719,7 +719,7 @@ const getStyles = (theme: typeof Colors.light) =>
       alignItems: "center",
       paddingHorizontal: 20,
       paddingVertical: 8,
-      borderRadius: 3,
+      borderRadius: Radii.sm,
       backgroundColor: theme.primary,
     },
     cancelButton: {
@@ -744,7 +744,7 @@ const getStyles = (theme: typeof Colors.light) =>
       marginTop: 12,
       marginBottom: 4,
       padding: 12,
-      borderRadius: 8,
+      borderRadius: Radii.sm,
       borderWidth: 1,
       borderColor: theme.heroBorder,
       backgroundColor: theme.heroBg,
@@ -767,13 +767,13 @@ const getStyles = (theme: typeof Colors.light) =>
     },
     uploadProgressTrack: {
       height: 6,
-      borderRadius: 3,
+      borderRadius: Radii.xs,
       backgroundColor: theme.grayBorder,
       overflow: "hidden",
     },
     uploadProgressFill: {
       height: "100%",
-      borderRadius: 3,
+      borderRadius: Radii.xs,
       backgroundColor: theme.primary,
     },
     expiryBackdrop: {
@@ -786,7 +786,7 @@ const getStyles = (theme: typeof Colors.light) =>
     expiryCard: {
       width: "100%",
       maxWidth: 420,
-      borderRadius: 8,
+      borderRadius: Radii.lg,
       padding: 18,
       borderWidth: 1,
       borderColor: theme.grayBorder,
@@ -802,7 +802,7 @@ const getStyles = (theme: typeof Colors.light) =>
       width: "100%",
       maxWidth: 420,
       backgroundColor: theme.whiteBackground,
-      borderRadius: 8,
+      borderRadius: Radii.lg,
       paddingVertical: 20,
       paddingHorizontal: 20,
       borderWidth: 1,
@@ -817,7 +817,7 @@ const getStyles = (theme: typeof Colors.light) =>
     errorIconWrap: {
       width: 64,
       height: 64,
-      borderRadius: 32,
+      borderRadius: Radii.full,
       backgroundColor: theme.mutedText,
       alignItems: "center",
       justifyContent: "center",
@@ -831,7 +831,7 @@ const getStyles = (theme: typeof Colors.light) =>
     errorSecondaryBtn: {
       backgroundColor: theme.whiteBackground,
       paddingVertical: 12,
-      borderRadius: 5,
+      borderRadius: Radii.sm,
       alignItems: "center",
       width: "50%",
       display: "flex",
@@ -854,7 +854,7 @@ const getStyles = (theme: typeof Colors.light) =>
     statusChip: {
       paddingHorizontal: 14,
       paddingVertical: 4,
-      borderRadius: 16,
+      borderRadius: Radii.full,
       borderWidth: 1.5,
       alignSelf: "flex-start",
       marginBottom: 2,

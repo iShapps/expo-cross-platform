@@ -4,7 +4,7 @@ import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 
 import { updateAvailability } from "@/api-queries/profile";
 import Header from "@/components/Header";
-import { Colors } from "@/constants/theme";
+import { Colors, Radii } from "@/constants/theme";
 import { useConfigSettings } from "@/data-store/config-store";
 import { useProfileData } from "@/data-store/use-account-store";
 import { User } from "@/data-types/auth";
@@ -304,7 +304,7 @@ const getStyles = (theme: typeof Colors.light) =>
 
     sectionCard: {
       marginTop: 12,
-      borderRadius: 5,
+      borderRadius: Radii.sm,
       padding: 14,
       borderWidth: 1,
       borderColor: theme.greyBorder,
@@ -359,7 +359,7 @@ const getStyles = (theme: typeof Colors.light) =>
     },
     profileCard: {
       backgroundColor: theme.heroBg,
-      borderRadius: 5,
+      borderRadius: Radii.sm,
       padding: 14,
       borderWidth: 1,
       borderColor: theme.heroBorder,
@@ -370,7 +370,7 @@ const getStyles = (theme: typeof Colors.light) =>
     avatarContainer: {
       height: 68,
       width: 68,
-      borderRadius: 34,
+      borderRadius: Radii.full,
       backgroundColor: theme.heroIconBg,
       alignItems: "center",
       justifyContent: "center",
@@ -379,7 +379,7 @@ const getStyles = (theme: typeof Colors.light) =>
     avatarImage: {
       height: "100%",
       width: "100%",
-      borderRadius: 34,
+      borderRadius: Radii.full,
     },
     rowText: {
       color: theme.primaryText,
@@ -423,7 +423,7 @@ const getStyles = (theme: typeof Colors.light) =>
       backgroundColor: theme.heroBg,
       paddingHorizontal: 8,
       paddingVertical: 4,
-      borderRadius: 999,
+      borderRadius: Radii.full,
     },
     profileTagDivider: {
       color: theme.errorSubtitle,
@@ -434,7 +434,7 @@ const getStyles = (theme: typeof Colors.light) =>
       padding: 4,
       height: 100,
       width: 100,
-      borderRadius: 50,
+      borderRadius: Radii.full,
       display: "flex",
       flexDirection: "row",
       justifyContent: "center",
@@ -470,7 +470,7 @@ const getStyles = (theme: typeof Colors.light) =>
     backIconContainer: {
       height: 40,
       width: 40,
-      borderRadius: 50,
+      borderRadius: Radii.full,
       display: "flex",
       flexDirection: "row",
       justifyContent: "center",
@@ -526,7 +526,7 @@ const getStyles = (theme: typeof Colors.light) =>
     },
     formInput: {
       backgroundColor: theme.grayBorder,
-      borderRadius: 7,
+      borderRadius: Radii.sm,
       padding: 9,
       color: theme.activeText,
     },
@@ -545,7 +545,7 @@ const getStyles = (theme: typeof Colors.light) =>
     },
     button: {
       backgroundColor: theme.activeText,
-      borderRadius: 22,
+      borderRadius: Radii.full,
       padding: 12,
       color: theme.whiteBackground,
       justifyContent: "center",
@@ -556,7 +556,7 @@ const getStyles = (theme: typeof Colors.light) =>
     },
     dropdown: {
       backgroundColor: theme.grayBorder,
-      borderRadius: 7,
+      borderRadius: Radii.sm,
       padding: 9,
       color: theme.activeText,
     },
@@ -592,7 +592,7 @@ const getStyles = (theme: typeof Colors.light) =>
       minWidth: 220,
       paddingHorizontal: 18,
       paddingVertical: 16,
-      borderRadius: 10,
+      borderRadius: Radii.md,
       alignItems: "center",
       gap: 12,
       backgroundColor: "rgba(0, 0, 0, 0.45)",

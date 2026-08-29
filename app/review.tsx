@@ -1,6 +1,6 @@
 import { isAuthError } from "@/api-actions/error-utils";
 import { rateShift } from "@/api-queries/profile";
-import { Colors } from "@/constants/theme";
+import { Colors, Radii } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { AntDesign } from "@expo/vector-icons";
 import SimpleLineIcons from "@expo/vector-icons/SimpleLineIcons";
@@ -252,8 +252,8 @@ const getStyles = (theme: typeof Colors.light) =>
 
     sheet: {
       backgroundColor: theme.whiteBackground,
-      borderTopLeftRadius: 24,
-      borderTopRightRadius: 24,
+      borderTopLeftRadius: Radii.lg,
+      borderTopRightRadius: Radii.lg,
       padding: 20,
       paddingBottom: 30,
     },
@@ -283,7 +283,7 @@ const getStyles = (theme: typeof Colors.light) =>
     input: {
       width: "100%",
       minHeight: 80,
-      borderRadius: 12,
+      borderRadius: Radii.md,
       borderWidth: 1,
       borderColor: theme.greyBorder,
       backgroundColor: theme.whiteBackground,
@@ -297,7 +297,7 @@ const getStyles = (theme: typeof Colors.light) =>
     button: {
       width: "100%",
       backgroundColor: theme.primary,
-      borderRadius: 30,
+      borderRadius: Radii.full,
       paddingVertical: 14,
       alignItems: "center",
       justifyContent: "center",

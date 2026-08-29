@@ -1,4 +1,4 @@
-import { Colors } from "@/constants/theme";
+import { Colors, Radii } from "@/constants/theme";
 import { useSettingsStore } from "@/data-store/use-settings-store";
 import LoginCredentials from "@/data-types/auth";
 import { useColorScheme } from "@/hooks/use-color-scheme";
@@ -35,6 +35,8 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSession } from "../ctx";
+
+const FORGOT_PASSWORD_TEXT_SAFE = "#3D7A00";
 
 export default function Login() {
   const colorScheme = useColorScheme() || "light";
@@ -428,12 +430,19 @@ export default function Login() {
             </View>
           </View>
           <View>
-            <Link href="/(open)/forgot-password">
+            <Link
+              href="/(open)/forgot-password"
+              style={{ paddingVertical: 10, paddingHorizontal: 4 }}
+            >
               <Text
                 style={{
-                  color: theme.activeText,
+                  color:
+                    colorScheme === "light"
+                      ? FORGOT_PASSWORD_TEXT_SAFE
+                      : theme.activeText,
                   textAlign: "right",
                   textDecorationLine: "underline",
+                  fontWeight: "600",
                 }}
               >
                 Forgot Password?
@@ -540,8 +549,8 @@ const getStyles = (theme: typeof Colors.light) =>
       backgroundColor: theme.whiteBackground,
       paddingVertical: 20,
       paddingHorizontal: 20,
-      borderTopRightRadius: 30,
-      borderTopLeftRadius: 30,
+      borderTopRightRadius: Radii.lg,
+      borderTopLeftRadius: Radii.lg,
       marginTop: -30,
     },
     iconContainer: {
@@ -618,15 +627,10 @@ const getStyles = (theme: typeof Colors.light) =>
       color: theme.secondaryText,
       fontSize: 14,
     },
-    forgot: {
-      color: theme.primary,
-      fontSize: 14,
-      fontWeight: "600",
-    },
     button: {
       backgroundColor: theme.primary,
       paddingVertical: 10,
-      borderRadius: 4,
+      borderRadius: Radii.sm,
       alignItems: "center",
       flexDirection: "row",
       justifyContent: "center",

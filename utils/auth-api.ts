@@ -396,8 +396,9 @@ export function computeOnboardingStep(
 ): 1 | 2 | 3 | 4 | 5 {
   // Personal details spans steps 1 and 2; always start at 1 when incomplete.
   if (steps.account_created && !steps.personal_details_complete) return 1;
-  if (steps.personal_details_complete && !steps.profession_selected) return 3;
-  if (steps.profession_selected && !steps.documents_uploaded) return 4;
+
+  // if (steps.personal_details_complete && !steps.profession_selected) return 3;
+  if (steps.personal_details_complete && !steps.documents_uploaded) return 4;
   if (steps.documents_uploaded && !steps.registration_complete) return 5;
   return 1;
 }

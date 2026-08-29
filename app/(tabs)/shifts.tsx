@@ -5,7 +5,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 
 import TabsHeader from "@/components/shared/tabs-header";
-import { Colors } from "@/constants/theme";
+import { Colors, Radii } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useFocusEffect } from "@react-navigation/native";
 import { useInfiniteQuery } from "@tanstack/react-query";
@@ -334,7 +334,7 @@ export default function Shifts() {
                 backgroundColor: theme.mutedText,
                 paddingHorizontal: 24,
                 paddingVertical: 10,
-                borderRadius: 20,
+                borderRadius: Radii.full,
                 flexDirection: "row",
                 alignItems: "center",
                 justifyContent: "center",
@@ -382,7 +382,7 @@ const getStyles = (theme: typeof Colors.light) =>
     underline: {
       height: 3,
       width: 56,
-      borderRadius: 999,
+      borderRadius: Radii.full,
       backgroundColor: theme.activeText,
       opacity: 0.85,
       marginTop: 6,
@@ -409,7 +409,7 @@ const getStyles = (theme: typeof Colors.light) =>
     tabUnderline: {
       height: 2,
       width: "100%",
-      borderRadius: 999,
+      borderRadius: Radii.full,
       backgroundColor: "transparent",
       marginTop: 6,
     },

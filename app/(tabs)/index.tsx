@@ -20,7 +20,7 @@ import { useCallback, useEffect } from "react";
 
 import { getHCPDashboard } from "@/api-queries/dashboard";
 import { getNotifications } from "@/api-queries/notifcations";
-import { Colors } from "@/constants/theme";
+import { Colors, Radii } from "@/constants/theme";
 import { useConfigSettings } from "@/data-store/config-store";
 import { User } from "@/data-types/auth";
 import { useColorScheme } from "@/hooks/use-color-scheme";
@@ -491,7 +491,7 @@ const getStyles = (theme: typeof Colors.light) =>
       backgroundColor: "rgba(255,140,26,0.35)",
       borderWidth: 1,
       borderColor: "rgba(255,140,26,0.6)",
-      borderRadius: 8,
+      borderRadius: Radii.sm,
       marginTop: 10,
       paddingVertical: 8,
       paddingHorizontal: 10,
@@ -543,7 +543,7 @@ const getStyles = (theme: typeof Colors.light) =>
       alignItems: "center",
       alignContent: "center",
       flexDirection: "row",
-      borderRadius: 5,
+      borderRadius: Radii.sm,
       padding: 8,
       position: "relative",
     },
@@ -553,7 +553,7 @@ const getStyles = (theme: typeof Colors.light) =>
       right: 11,
       width: 6,
       height: 6,
-      borderRadius: 4,
+      borderRadius: Radii.full,
       backgroundColor: theme.danger,
     },
     sectionLabel: {
@@ -583,7 +583,7 @@ const getStyles = (theme: typeof Colors.light) =>
       display: "flex",
       alignItems: "flex-start",
       justifyContent: "space-between",
-      borderRadius: 12,
+      borderRadius: Radii.md,
       padding: 12,
       borderWidth: 1,
       width: "31%",
@@ -610,7 +610,7 @@ const getStyles = (theme: typeof Colors.light) =>
     iconPill: {
       width: 28,
       height: 28,
-      borderRadius: 999,
+      borderRadius: Radii.full,
       alignItems: "center",
       justifyContent: "center",
       backgroundColor: theme.heroIconBg,
@@ -626,7 +626,7 @@ const getStyles = (theme: typeof Colors.light) =>
     },
     payrunCard: {
       marginTop: 5,
-      borderRadius: 12,
+      borderRadius: Radii.md,
       padding: 12,
       borderWidth: 1,
       borderColor: theme.heroBorder,
@@ -646,7 +646,7 @@ const getStyles = (theme: typeof Colors.light) =>
     iconPillPayrun: {
       width: 28,
       height: 28,
-      borderRadius: 999,
+      borderRadius: Radii.full,
       alignItems: "center",
       justifyContent: "center",
       backgroundColor: theme.heroIconBg,
@@ -687,7 +687,7 @@ const getStyles = (theme: typeof Colors.light) =>
       height: 1,
       width: 48,
       marginTop: 8,
-      borderRadius: 999,
+      borderRadius: Radii.full,
       backgroundColor: theme.whiteBackground,
       opacity: 0.8,
     },
@@ -708,7 +708,7 @@ const getStyles = (theme: typeof Colors.light) =>
     avatarImage: {
       height: 50,
       width: 50,
-      borderRadius: 50,
+      borderRadius: Radii.full,
       borderWidth: 1,
       borderColor: theme.white,
     },
