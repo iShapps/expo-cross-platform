@@ -324,26 +324,18 @@ export default function OnboardingScreen() {
 
   const professionDocumentRequirements = useMemo<DocumentRequirement[]>(() => {
     if (!registrationStatus) return [];
-    console.log(
-      "[ONB] missing_documents.profession:",
-      JSON.stringify(registrationStatus.missing_documents.profession, null, 2),
-    );
-    return registrationStatus.missing_documents.profession.map((item) => ({
-      id: String(item.document.id),
-      name: item.document.name,
-      mandatory: item.document.mandatory_status === "yes",
-      requiresExpiry: item.document.expiry_date_mandatory === "yes",
+    return registrationStatus.missing_documents.profession.map((doc) => ({
+      id: String(doc.document_id),
+      name: doc.name,
+      mandatory: doc.mandatory_status === "yes",
+      requiresExpiry: doc.expiry_date_mandatory === "yes",
     }));
   }, [registrationStatus]);
 
   const mandatoryDocumentRequirements = useMemo<DocumentRequirement[]>(() => {
     if (!registrationStatus) return [];
-    console.log(
-      "[ONB] missing_documents.general:",
-      JSON.stringify(registrationStatus.missing_documents.general, null, 2),
-    );
     return registrationStatus.missing_documents.general.map((doc) => ({
-      id: String(doc.id),
+      id: String(doc.document_id),
       name: doc.name,
       mandatory: doc.mandatory_status === "yes",
       requiresExpiry: doc.expiry_date_mandatory === "yes",
