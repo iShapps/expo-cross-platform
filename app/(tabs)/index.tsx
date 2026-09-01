@@ -8,7 +8,7 @@ import { useProfileData } from "@/data-store/use-account-store";
 import { DashboardResponse } from "@/data-types/dashboard";
 import { useLocation } from "@/hooks/use-location";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect, useIsFocused } from "@react-navigation/native";
 import {
   useInfiniteQuery,
   useQuery,
@@ -24,6 +24,7 @@ import { Colors, Radii } from "@/constants/theme";
 import { useConfigSettings } from "@/data-store/config-store";
 import { User } from "@/data-types/auth";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useFirstVisitTour } from "@/hooks/use-first-visit-tour";
 import { useOneSignalSubscriptionStatus } from "@/hooks/use-one-signal";
 import { getAvatarImageSource } from "@/utils/auth";
 import { FontAwesome6, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -36,7 +37,10 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { CopilotStep, walkthroughable } from "react-native-copilot";
 import { useSession } from "../ctx";
+
+const WalkthroughableView = walkthroughable(View);
 
 export default function HomeScreen() {
   // const { expoPushToken, notification } = usePushNotifications();
@@ -67,6 +71,13 @@ export default function HomeScreen() {
     refetchOnWindowFocus: "always",
     enabled: !!userDetails?.id,
   });
+
+  const isFocused = useIsFocused();
+
+  useFirstVisitTour(
+    "dashboard",
+    isFocused && !dashboardLoading && !!userDetails,
+  );
 
   const handleRetryNotificationsSetup = async () => {
     try {
@@ -248,30 +259,46 @@ export default function HomeScreen() {
               </View>
             </View>
           </View>
-          <Pressable
-            onPress={() => router.push("/(main)/notifications")}
-            style={styles.notificationContainer}
+          <CopilotStep
+            name="dashboard-notifications"
+            order={2}
+            active={isFocused}
+            text="This is where shift updates, approvals, and reminders land. The dot means something's waiting for you."
           >
-            <MaterialIcons name="notifications" size={20} color="#fff" />
+            <WalkthroughableView>
+              <Pressable
+                onPress={() => router.push("/(main)/notifications")}
+                style={styles.notificationContainer}
+              >
+                <MaterialIcons name="notifications" size={20} color="#fff" />
 
-            {notifications.length > 0 && (
-              <View style={styles.notificationDot} />
-            )}
-          </Pressable>
+                {notifications.length > 0 && (
+                  <View style={styles.notificationDot} />
+                )}
+              </Pressable>
+            </WalkthroughableView>
+          </CopilotStep>
         </View>
 
         {userDetails?.hcp?.status === "pending-approval" && (
-          <View style={styles.pendingApprovalBanner}>
-            <MaterialCommunityIcons
-              name="clock-alert-outline"
-              size={18}
-              color={theme.white}
-            />
-            <Text style={styles.pendingApprovalText}>
-              Your account is pending approval. You&apos;ll be notified once
-              it has been reviewed.
-            </Text>
-          </View>
+          <CopilotStep
+            name="dashboard-pending-approval"
+            order={3}
+            active={isFocused}
+            text="You're almost set up — once your documents are reviewed and your account's approved, you'll be able to accept shifts."
+          >
+            <WalkthroughableView style={styles.pendingApprovalBanner}>
+              <MaterialCommunityIcons
+                name="clock-alert-outline"
+                size={18}
+                color={theme.white}
+              />
+              <Text style={styles.pendingApprovalText}>
+                Your account is pending approval. You&apos;ll be notified once
+                it has been reviewed.
+              </Text>
+            </WalkthroughableView>
+          </CopilotStep>
         )}
       </View>
 
@@ -285,58 +312,67 @@ export default function HomeScreen() {
         {dashboardLoading ? (
           <DashboardAnalyticsSkeleton />
         ) : (
-          <View style={styles.dashboardRow}>
-            <TouchableOpacity
-              onPress={() => router.push("/(tabs)/shifts")}
-              style={[styles.dashboardCard, theme.dashboardCardAvailable]}
-            >
-              <View style={styles.dashboardTopRow}>
-                <View style={[styles.iconPill, styles.iconPillAvailable]}>
-                  <MaterialIcons
-                    name="event-available"
-                    size={16}
-                    color={theme.primary}
-                  />
+          <CopilotStep
+            name="dashboard-stats"
+            order={1}
+            active={isFocused}
+            text={
+              '"Available" shows open shifts you can pick up, "Upcoming" shows shifts starting soon, and "My Shifts" is everything on your schedule. Tap any card to jump straight there.'
+            }
+          >
+            <WalkthroughableView style={styles.dashboardRow}>
+              <TouchableOpacity
+                onPress={() => router.push("/(tabs)/shifts")}
+                style={[styles.dashboardCard, theme.dashboardCardAvailable]}
+              >
+                <View style={styles.dashboardTopRow}>
+                  <View style={[styles.iconPill, styles.iconPillAvailable]}>
+                    <MaterialIcons
+                      name="event-available"
+                      size={16}
+                      color={theme.primary}
+                    />
+                  </View>
+                  <Text style={styles.dashboardValue}>{availableShifts}</Text>
                 </View>
-                <Text style={styles.dashboardValue}>{availableShifts}</Text>
-              </View>
-              <Text style={styles.dashboardTitle}>Available</Text>
-            </TouchableOpacity>
+                <Text style={styles.dashboardTitle}>Available</Text>
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={() =>
-                router.push({
-                  pathname: "/(tabs)/schedules",
-                  params: { activeTab: "scheduled" },
-                })
-              }
-              style={[styles.dashboardCard, theme.dashboardCardUpcoming]}
-            >
-              <View style={styles.dashboardTopRow}>
-                <View style={[styles.iconPill, styles.iconPillUpcoming]}>
-                  <MaterialIcons name="schedule" size={16} color="#FFC107" />
+              <TouchableOpacity
+                onPress={() =>
+                  router.push({
+                    pathname: "/(tabs)/schedules",
+                    params: { activeTab: "scheduled" },
+                  })
+                }
+                style={[styles.dashboardCard, theme.dashboardCardUpcoming]}
+              >
+                <View style={styles.dashboardTopRow}>
+                  <View style={[styles.iconPill, styles.iconPillUpcoming]}>
+                    <MaterialIcons name="schedule" size={16} color="#FFC107" />
+                  </View>
+                  <Text style={styles.dashboardValue}>{upcomingShifts}</Text>
                 </View>
-                <Text style={styles.dashboardValue}>{upcomingShifts}</Text>
-              </View>
-              <Text style={styles.dashboardTitle}>Upcoming</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => router.push("/(tabs)/schedules")}
-              style={[styles.dashboardCard, theme.dashboardCardMy]}
-            >
-              <View style={styles.dashboardTopRow}>
-                <View style={[styles.iconPill, styles.iconPillMy]}>
-                  <MaterialIcons
-                    name="assignment-ind"
-                    size={16}
-                    color="#4A90E2"
-                  />
+                <Text style={styles.dashboardTitle}>Upcoming</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => router.push("/(tabs)/schedules")}
+                style={[styles.dashboardCard, theme.dashboardCardMy]}
+              >
+                <View style={styles.dashboardTopRow}>
+                  <View style={[styles.iconPill, styles.iconPillMy]}>
+                    <MaterialIcons
+                      name="assignment-ind"
+                      size={16}
+                      color="#4A90E2"
+                    />
+                  </View>
+                  <Text style={styles.dashboardValue}>{scheduledShifts}</Text>
                 </View>
-                <Text style={styles.dashboardValue}>{scheduledShifts}</Text>
-              </View>
-              <Text style={styles.dashboardTitle}>My Shifts</Text>
-            </TouchableOpacity>
-          </View>
+                <Text style={styles.dashboardTitle}>My Shifts</Text>
+              </TouchableOpacity>
+            </WalkthroughableView>
+          </CopilotStep>
         )}
 
         {dashboardLoading ? (

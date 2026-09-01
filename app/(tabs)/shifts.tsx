@@ -7,7 +7,8 @@ import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import TabsHeader from "@/components/shared/tabs-header";
 import { Colors, Radii } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFirstVisitTour } from "@/hooks/use-first-visit-tour";
+import { useFocusEffect, useIsFocused } from "@react-navigation/native";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import React, { useCallback, useRef, useState } from "react";
 import {
@@ -19,7 +20,10 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
+import { CopilotStep, walkthroughable } from "react-native-copilot";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+const WalkthroughableView = walkthroughable(View);
 
 const STATUS_TABS = ["Available", "Transfers"] as const;
 
@@ -83,6 +87,10 @@ export default function Shifts() {
   const showSkeletonLoading =
     isLoading || (isRefetching && !isFetchingNextPage);
 
+  const isFocused = useIsFocused();
+
+  useFirstVisitTour("shifts", isFocused && !showSkeletonLoading);
+
   const handlePullToRefresh = async () => {
     await refetch();
   };
@@ -145,40 +153,52 @@ export default function Shifts() {
     <SafeAreaView style={styles.safeArea}>
       <TabsHeader title="Shifts" />
       <View style={styles.container}>
-        <ScrollView
-          ref={tabScrollRef}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.tabsRow}
+        <CopilotStep
+          name="shifts-tabs"
+          order={1}
+          active={isFocused}
+          text='"Available" is open shifts you can accept. "Transfers" is shifts other HCPs are offering to you directly.'
         >
-          {STATUS_TABS.map((status, index) => {
-            const isActive = activeStatus === status;
-            return (
-              <Pressable
-                key={status}
-                onPress={() => handleTabPress(index)}
-                style={styles.tabButton}
-                android_ripple={{ color: theme.grayBorder }}
-                onLayout={(e) => {
-                  tabOffsetsRef.current[index] = e.nativeEvent.layout.x;
-                  tabWidthsRef.current[index] = e.nativeEvent.layout.width;
-                }}
-              >
-                <Text
-                  style={[styles.tabText, isActive && styles.tabTextActive]}
-                >
-                  {status}
-                </Text>
-                <View
-                  style={[
-                    styles.tabUnderline,
-                    isActive && styles.tabUnderlineActive,
-                  ]}
-                />
-              </Pressable>
-            );
-          })}
-        </ScrollView>
+          <WalkthroughableView>
+            <ScrollView
+              ref={tabScrollRef}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.tabsRow}
+            >
+              {STATUS_TABS.map((status, index) => {
+                const isActive = activeStatus === status;
+                return (
+                  <Pressable
+                    key={status}
+                    onPress={() => handleTabPress(index)}
+                    style={styles.tabButton}
+                    android_ripple={{ color: theme.grayBorder }}
+                    onLayout={(e) => {
+                      tabOffsetsRef.current[index] = e.nativeEvent.layout.x;
+                      tabWidthsRef.current[index] = e.nativeEvent.layout.width;
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.tabText,
+                        isActive && styles.tabTextActive,
+                      ]}
+                    >
+                      {status}
+                    </Text>
+                    <View
+                      style={[
+                        styles.tabUnderline,
+                        isActive && styles.tabUnderlineActive,
+                      ]}
+                    />
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </WalkthroughableView>
+        </CopilotStep>
 
         <ScrollView
           ref={contentScrollRef}
@@ -203,7 +223,21 @@ export default function Shifts() {
                   renderItem={
                     showSkeletonLoading
                       ? () => <ShiftCardBaseSkeleton />
-                      : ({ item }) => <ShiftCardBase shift={item} />
+                      : ({ item, index }) =>
+                          status === "Available" && index === 0 ? (
+                            <CopilotStep
+                              name="shifts-first-card"
+                              order={2}
+                              active={isFocused}
+                              text="Tap any shift to see the full details before you commit."
+                            >
+                              <WalkthroughableView>
+                                <ShiftCardBase shift={item} />
+                              </WalkthroughableView>
+                            </CopilotStep>
+                          ) : (
+                            <ShiftCardBase shift={item} />
+                          )
                   }
                   keyExtractor={
                     showSkeletonLoading

@@ -1,4 +1,5 @@
 import { useSettingsStore } from "@/data-store/use-settings-store";
+import { useTourStore } from "@/data-store/use-tour-store";
 import { useOneSignal } from "@/hooks/use-one-signal";
 import { useOTAUpdate } from "@/hooks/use-ota-update";
 import { usePermissionMonitor } from "@/hooks/use-permission-monitor";
@@ -22,6 +23,7 @@ import { SplashScreen, Stack, usePathname } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import { AppState, Platform } from "react-native";
+import { CopilotProvider } from "react-native-copilot";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { GlobalUpdateGate } from "../components/global-update-gate";
 import { SupportFab } from "../components/support-fab";
@@ -92,7 +94,7 @@ export default Sentry.wrap(function Root() {
     const initializeApp = async () => {
       debug("Initializing app...");
       const store = useSettingsStore.getState();
-      await store.hydrate();
+      await Promise.all([store.hydrate(), useTourStore.getState().hydrate()]);
 
       if (!cancelled) {
         setIsHydrated(true);
@@ -108,15 +110,27 @@ export default Sentry.wrap(function Root() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <QueryClientProvider client={queryClient}>
-        <SessionProvider>
-          {isHydrated && <AppLifecycleHooks />}
-          <SplashScreenController>
-            <RootNavigator />
-            <GlobalUpdateGate />
-          </SplashScreenController>
-        </SessionProvider>
-      </QueryClientProvider>
+      <CopilotProvider
+        overlay="view"
+        animated
+        stopOnOutsideClick
+        labels={{
+          skip: "Skip",
+          previous: "Back",
+          next: "Next",
+          finish: "Done",
+        }}
+      >
+        <QueryClientProvider client={queryClient}>
+          <SessionProvider>
+            {isHydrated && <AppLifecycleHooks />}
+            <SplashScreenController>
+              <RootNavigator />
+              <GlobalUpdateGate />
+            </SplashScreenController>
+          </SessionProvider>
+        </QueryClientProvider>
+      </CopilotProvider>
       <StatusBar style="auto" />
     </GestureHandlerRootView>
   );
