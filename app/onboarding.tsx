@@ -710,6 +710,18 @@ export default function OnboardingScreen() {
         return;
       }
 
+      if (
+        !personalDetails.address.trim() ||
+        !personalDetails.latitude ||
+        !personalDetails.longitude
+      ) {
+        Alert.alert(
+          "Missing field",
+          "Please select your address from the suggestions.",
+        );
+        return;
+      }
+
       setIsSubmittingStep(true);
 
       const personalPayload = {
@@ -717,10 +729,10 @@ export default function OnboardingScreen() {
         last_name: personalDetails.lastName,
         gender: personalDetails.gender.toLowerCase(),
         country: 1,
-        state: personalDetails.stateId,
-        address: "123 Test Street, Sydney NSW 2000",
-        latitude: "-33.8688",
-        longitude: "151.2093",
+        state_id: personalDetails.stateId,
+        address: personalDetails.address,
+        latitude: personalDetails.latitude,
+        longitude: personalDetails.longitude,
         contact_number: personalDetails.contactNumber,
         date_of_birth: personalDetails.dateOfBirth,
         city: personalDetails.city,

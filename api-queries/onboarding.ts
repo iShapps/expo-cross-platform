@@ -245,7 +245,7 @@ export type PersonalDetailsPayload = {
   last_name: string;
   gender: string;
   country: number;
-  state: number;
+  state_id: number;
   address: string;
   latitude: string;
   longitude: string;
