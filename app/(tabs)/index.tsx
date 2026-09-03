@@ -27,6 +27,7 @@ import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useFirstVisitTour } from "@/hooks/use-first-visit-tour";
 import { useOneSignalSubscriptionStatus } from "@/hooks/use-one-signal";
 import { getAvatarImageSource } from "@/utils/auth";
+import { getRegistrationStatus, TokenStorage } from "@/utils/auth-api";
 import { FontAwesome6, MaterialCommunityIcons } from "@expo/vector-icons";
 import {
   FlatList,
@@ -44,7 +45,7 @@ const WalkthroughableView = walkthroughable(View);
 
 export default function HomeScreen() {
   // const { expoPushToken, notification } = usePushNotifications();
-  const { retryNotificationSetup } = useSession();
+  const { retryNotificationSetup, updateHcp } = useSession();
   const { isChecking, isSetup, refresh } = useOneSignalSubscriptionStatus();
   const { requestPermission } = useLocation();
   const colorScheme = useColorScheme() || "light";
@@ -71,6 +72,34 @@ export default function HomeScreen() {
     refetchOnWindowFocus: "always",
     enabled: !!userDetails?.id,
   });
+
+  const { data: hcpStatusSync } = useQuery({
+    queryKey: ["hcp-status-sync"],
+    queryFn: async () => {
+      const token = await TokenStorage.getToken();
+      if (!token) return null;
+      return getRegistrationStatus(token);
+    },
+    gcTime: 1000 * 60 * 60,
+    staleTime: 0,
+    refetchInterval: 30 * 60 * 1000,
+    refetchIntervalInBackground: true,
+    refetchOnMount: "always",
+    refetchOnReconnect: true,
+    refetchOnWindowFocus: "always",
+    enabled: !!userDetails?.id,
+  });
+
+  useEffect(() => {
+    const freshStatus = hcpStatusSync?.data?.hcp_status;
+    if (
+      freshStatus &&
+      userDetails?.hcp &&
+      freshStatus !== userDetails.hcp.status
+    ) {
+      updateHcp({ status: freshStatus });
+    }
+  }, [hcpStatusSync, userDetails, updateHcp]);
 
   const isFocused = useIsFocused();
 
@@ -183,7 +212,10 @@ export default function HomeScreen() {
     : "Payrun: --";
 
   const payrunDisclaimer = weekEnd
-    ? `Only shifts completed by 5:00 PM on ${format(new Date(weekEnd), "dd MMM")} are included.`
+    ? `Only shifts completed by 5:00 PM on ${format(
+        new Date(weekEnd),
+        "dd MMM",
+      )} are included.`
     : "";
 
   useEffect(() => {

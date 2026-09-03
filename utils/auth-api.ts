@@ -407,6 +407,9 @@ export function resolveOnboardingStep(
   data: RegistrationStatusResponse["data"],
 ): 1 | 2 | 3 | 4 | 5 {
   const step = computeOnboardingStep(data.steps);
+  if ((step === 4 || step === 5) && data.missing_documents.general.length > 0) {
+    return 4;
+  }
   if (step === 4 && data.missing_documents.general.length === 0) {
     return 5;
   }
