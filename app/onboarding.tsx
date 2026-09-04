@@ -403,32 +403,50 @@ export default function OnboardingScreen() {
     updateHcpRef.current = updateHcp;
   }, [updateHcp]);
 
+  const signOutRef = useRef(signOut);
+  useEffect(() => {
+    signOutRef.current = signOut;
+  }, [signOut]);
+
   const refreshStatus = React.useCallback(async () => {
     const token = await TokenStorage.getToken();
-    if (!token) return null;
-    const status = await getRegistrationStatus(token).catch(() => null);
+    if (!token || !hcpId) return null;
+    const status = await getRegistrationStatus(token, hcpId).catch(() => null);
     if (!status) return null;
+
+    if (status.data.steps.registration_complete) {
+      updateHcpRef.current({ app_registration_screen: "0" });
+      void signOutRef.current().then(() => {
+        router.replace("/(open)/login");
+      });
+      return null;
+    }
+
     setRegistrationStatus(status.data);
     updateHcpRef.current({
       app_registration_screen: String(resolveOnboardingStep(status.data)),
     });
     return status.data;
-  }, []);
+  }, [router, hcpId]);
 
   useEffect(() => {
     let cancelled = false;
 
     TokenStorage.getToken()
       .then((token) => {
-        if (cancelled || !token) return null;
-        return getRegistrationStatus(token);
+        if (cancelled || !token || !hcpId) return null;
+        return getRegistrationStatus(token, hcpId);
       })
       .then((statusResponse) => {
         if (cancelled || !statusResponse) return;
-        // Registration fully done — leave onboarding and go to the main app.
+        // Registration fully done via some other path (e.g. an admin
+        // finishing document upload while the user was still on this
+        // screen) — sign out and force a fresh login
         if (statusResponse.data.steps.registration_complete) {
           updateHcpRef.current({ app_registration_screen: "0" });
-          router.replace("/(tabs)");
+          void signOutRef.current().then(() => {
+            router.replace("/(open)/login");
+          });
           return;
         }
         setRegistrationStatus(statusResponse.data);
@@ -446,7 +464,7 @@ export default function OnboardingScreen() {
     return () => {
       cancelled = true;
     };
-  }, [router]);
+  }, [router, hcpId]);
 
   // Effect 2: HCP data -> used only to prefill form fields.
   useEffect(() => {
@@ -641,6 +659,20 @@ export default function OnboardingScreen() {
     const nextDateErrors: Record<string, string> = {};
 
     if (activeStep === 1) {
+      if (
+        !personalDetails.firstName.trim() ||
+        !personalDetails.lastName.trim() ||
+        !personalDetails.contactNumber.trim() ||
+        !personalDetails.gender.trim() ||
+        !personalDetails.dateOfBirth.trim()
+      ) {
+        Alert.alert(
+          "Missing field",
+          "Please fill in your first name, last name, contact number, date of birth, and gender.",
+        );
+        return;
+      }
+
       const dateOfBirthError = getDateError(personalDetails.dateOfBirth, {
         label: "Date of birth",
         allowFuture: false,
@@ -671,8 +703,9 @@ export default function OnboardingScreen() {
         const hasFile = !!values[requirement.id]?.file;
 
         if (requirement.mandatory && !hasFile) {
-          nextDateErrors[`${collection}:${requirement.id}:file`] =
-            `${requirement.name} is required.`;
+          nextDateErrors[
+            `${collection}:${requirement.id}:file`
+          ] = `${requirement.name} is required.`;
         }
 
         if (!requirement.requiresExpiry) return;
@@ -681,8 +714,9 @@ export default function OnboardingScreen() {
 
         if (!expiry.trim()) {
           if (hasFile || requirement.mandatory) {
-            nextDateErrors[`${collection}:${requirement.id}:expiry`] =
-              `${requirement.name} expiry is required.`;
+            nextDateErrors[
+              `${collection}:${requirement.id}:expiry`
+            ] = `${requirement.name} expiry is required.`;
           }
           return;
         }
@@ -713,7 +747,8 @@ export default function OnboardingScreen() {
       if (
         !personalDetails.address.trim() ||
         !personalDetails.latitude ||
-        !personalDetails.longitude
+        !personalDetails.longitude ||
+        !personalDetails.postCode.trim()
       ) {
         Alert.alert(
           "Missing field",
@@ -749,8 +784,20 @@ export default function OnboardingScreen() {
         JSON.stringify(personalPayload, null, 2),
       );
 
+      if (!hcpId) {
+        Alert.alert("Error", "Missing HCP profile. Please sign in again.");
+        setIsSubmittingStep(false);
+        void signOut().then(() => {
+          router.replace("/(open)/login");
+        });
+        return;
+      }
+
       try {
-        const personalResult = await submitPersonalDetails(personalPayload);
+        const personalResult = await submitPersonalDetails(
+          hcpId,
+          personalPayload,
+        );
         updateHcp(personalResult.data);
         const freshData = await refreshStatus();
         setActiveStep(freshData ? resolveOnboardingStep(freshData) : 4);
@@ -836,6 +883,14 @@ export default function OnboardingScreen() {
         JSON.stringify(docPayloads, null, 2),
       );
 
+      if (!hcpId) {
+        Alert.alert("Error", "Missing HCP profile. Please sign in again.");
+        void signOut().then(() => {
+          router.replace("/(open)/login");
+        });
+        return;
+      }
+
       setIsSubmittingStep(true);
 
       try {
@@ -844,7 +899,7 @@ export default function OnboardingScreen() {
             `[ONB] Uploading document_id=${requirement.id} (${requirement.name})…`,
           );
           try {
-            await uploadDocument({
+            await uploadDocument(hcpId, {
               document_id: Number(requirement.id),
               file: values[requirement.id]!.file!,
               expiry_date: requirement.requiresExpiry

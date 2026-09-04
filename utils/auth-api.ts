@@ -379,10 +379,12 @@ export const isAuthenticated = async (): Promise<boolean> => {
 
 export const getRegistrationStatus = async (
   token: string,
+  hcpId: number,
 ): Promise<RegistrationStatusResponse> => {
+  const endpoint = `/v2/hcps/${hcpId}/onboarding-status`;
   const { data } = await apiRequest<RegistrationStatusResponse>({
-    url: `${API_CONFIG.baseURL}/v2/registration/status`,
-    endpoint: "/v2/registration/status",
+    url: `${API_CONFIG.baseURL}${endpoint}`,
+    endpoint,
     method: "GET",
     headers: { Authorization: `Bearer ${token}` },
     timeoutMs: API_CONFIG.timeout,
@@ -400,7 +402,7 @@ export function computeOnboardingStep(
   // if (steps.personal_details_complete && !steps.profession_selected) return 3;
   if (steps.personal_details_complete && !steps.documents_uploaded) return 4;
   if (steps.documents_uploaded && !steps.registration_complete) return 5;
-  return 1;
+  return 5;
 }
 
 export function resolveOnboardingStep(

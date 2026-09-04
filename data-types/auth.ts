@@ -136,6 +136,7 @@ export interface User {
   updated_at: Date;
   deleted_at: null;
   hcp: Hcp;
+  require_password_reset?: number;
 }
 
 export interface Hcp {

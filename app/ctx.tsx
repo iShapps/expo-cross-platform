@@ -35,7 +35,9 @@ import { Alert } from "react-native";
 import { useStorageState } from "./useStorageState";
 
 const AuthContext = React.createContext<{
-  signIn: (data: LoginCredentials) => Promise<"authenticated" | "onboarding">;
+  signIn: (
+    data: LoginCredentials,
+  ) => Promise<"authenticated" | "onboarding" | "password-reset-required">;
   retryNotificationSetup: () => Promise<boolean>;
   setSess: (data: string) => void;
   signOut: () => Promise<void>;
@@ -86,6 +88,9 @@ export const getOnboardingRouteParams = (user?: User | null) => {
   };
 };
 
+export const needsForcedPasswordReset = (user?: User | null) =>
+  user?.require_password_reset === 1;
+
 export function useProtectedRoute(
   session: string | null | undefined,
   user: User | null,
@@ -103,22 +108,36 @@ export function useProtectedRoute(
     const inAuthGroup = segments[0] === "(open)";
     const inOnboarding = segments[0] === "onboarding";
     const inSupportChat = segments[0] === "support-chat";
+    const inForcedPasswordReset = segments[0] === "force-password-reset";
+    const requiresPasswordReset = needsForcedPasswordReset(user);
     const onboardingParams = getOnboardingRouteParams(user);
 
-    if (!session && !inAuthGroup && currentRoute) {
+    if (!session && !inAuthGroup && (currentRoute || inForcedPasswordReset)) {
       // Redirect to the sign-in page.
       router.replace("/(open)/login");
-    } else if (session && onboardingParams && !inOnboarding && !inSupportChat) {
+    } else if (session && requiresPasswordReset && !inForcedPasswordReset) {
+      // Takes priority over onboarding
+      router.replace("/force-password-reset");
+    } else if (
+      session &&
+      !requiresPasswordReset &&
+      onboardingParams &&
+      !inOnboarding &&
+      !inSupportChat
+    ) {
       router.replace({
         pathname: "/onboarding",
         params: onboardingParams,
       });
     } else if (
       session &&
+      !requiresPasswordReset &&
       !onboardingParams &&
-      ((inAuthGroup && !inOnboarding) || currentRoute)
+      ((inAuthGroup && !inOnboarding) || currentRoute || inOnboarding)
     ) {
-      // Redirect to the home page.
+      // Redirect to the home page. Includes the case where onboardingParams
+      // just became null while already sitting on /onboarding (registration
+      // completed)
       router.replace("/(tabs)");
     }
   }, [authLoading, currentRoute, router, segments, session, user]);
@@ -173,11 +192,19 @@ export function SessionProvider(props: React.PropsWithChildren) {
       // Cache profile data for global access
       queryClient.setQueryData(["profile-details"], result.data.user);
 
+      if (needsForcedPasswordReset(result.data.user)) {
+        router.replace("/force-password-reset");
+        return "password-reset-required";
+      }
+
       // Login to OneSignal for push notifications
       await onLoginSuccess(result.data.user.id.toString());
 
       try {
-        const regStatus = await getRegistrationStatus(result.data.access_token);
+        const regStatus = await getRegistrationStatus(
+          result.data.access_token,
+          result.data.user.hcp.id,
+        );
 
         console.log("[REGSTATUS]", regStatus);
         if (regStatus.data.registration_screen === "0") {

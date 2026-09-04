@@ -207,7 +207,10 @@ export default function Login() {
         return;
       }
 
-      if (signInResult === "onboarding") {
+      if (
+        signInResult === "onboarding" ||
+        signInResult === "password-reset-required"
+      ) {
         return;
       }
 

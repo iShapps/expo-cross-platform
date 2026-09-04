@@ -14,7 +14,7 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { format } from "date-fns";
+import { format, parse } from "date-fns";
 import { router } from "expo-router";
 import { useCallback, useEffect } from "react";
 
@@ -77,8 +77,9 @@ export default function HomeScreen() {
     queryKey: ["hcp-status-sync"],
     queryFn: async () => {
       const token = await TokenStorage.getToken();
-      if (!token) return null;
-      return getRegistrationStatus(token);
+      const hcpId = userDetails?.hcp?.id;
+      if (!token || !hcpId) return null;
+      return getRegistrationStatus(token, hcpId);
     },
     gcTime: 1000 * 60 * 60,
     staleTime: 0,
@@ -87,7 +88,7 @@ export default function HomeScreen() {
     refetchOnMount: "always",
     refetchOnReconnect: true,
     refetchOnWindowFocus: "always",
-    enabled: !!userDetails?.id,
+    enabled: !!userDetails?.hcp?.id,
   });
 
   useEffect(() => {
@@ -197,25 +198,36 @@ export default function HomeScreen() {
   const availableShifts = dashboardData?.available_shifts ?? 0;
   const scheduledShifts = dashboardData?.scheduled_shifts ?? 0;
   const upcomingShifts = dashboardData?.upcoming_shifts ?? 0;
-  const weekStart = dashboardData?.week_start_date;
-  const weekEnd = dashboardData?.week_end_date;
+  const periodStart = dashboardData?.period_start;
+  const periodEnd = dashboardData?.period_end;
+  const periodLabel =
+    dashboardData?.payroll_frequency === "fortnightly" ? "Fortnight" : "Week";
 
   const dashboardPayrunLabel =
-    weekStart && weekEnd
-      ? `Payrun: Week of ${format(new Date(weekStart), "dd MMM")} - ${format(
-          new Date(weekEnd),
-          "dd MMM yyyy",
-        )}`
+    periodStart && periodEnd
+      ? `Payrun: ${periodLabel} of ${format(
+          new Date(periodStart),
+          "dd MMM",
+        )} - ${format(new Date(periodEnd), "dd MMM yyyy")}`
       : null;
   const payrunLabel = dashboardPayrunLabel
     ? dashboardPayrunLabel
     : "Payrun: --";
 
-  const payrunDisclaimer = weekEnd
-    ? `Only shifts completed by 5:00 PM on ${format(
-        new Date(weekEnd),
-        "dd MMM",
-      )} are included.`
+  const cutoffTimeRaw = dashboardData?.payroll_cutoff_time;
+  const formattedCutoffTime = cutoffTimeRaw
+    ? format(parse(cutoffTimeRaw, "HH:mm:ss", new Date()), "h:mm a")
+    : "5:00 PM";
+
+  const cutoffDayRaw = dashboardData?.payroll_cutoff_day;
+  const formattedCutoffDay = cutoffDayRaw
+    ? cutoffDayRaw.charAt(0).toUpperCase() + cutoffDayRaw.slice(1).toLowerCase()
+    : periodEnd
+      ? format(new Date(periodEnd), "dd MMM")
+      : null;
+
+  const payrunDisclaimer = formattedCutoffDay
+    ? `Only shifts completed by ${formattedCutoffTime} on ${formattedCutoffDay} are included.`
     : "";
 
   useEffect(() => {

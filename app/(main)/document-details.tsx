@@ -421,14 +421,14 @@ const DocumentDetails = () => {
                       borderColor: theme.danger,
                     }
                   : document.document.status === "active"
-                    ? {
-                        backgroundColor: theme.primary + "22",
-                        borderColor: theme.primary,
-                      }
-                    : {
-                        backgroundColor: theme.danger + "22",
-                        borderColor: theme.danger,
-                      },
+                  ? {
+                      backgroundColor: theme.primary + "22",
+                      borderColor: theme.primary,
+                    }
+                  : {
+                      backgroundColor: theme.danger + "22",
+                      borderColor: theme.danger,
+                    },
               ]}
             >
               <Text
@@ -438,16 +438,16 @@ const DocumentDetails = () => {
                     color: expired
                       ? theme.danger
                       : document.document.status === "active"
-                        ? theme.primary
-                        : theme.danger,
+                      ? theme.primary
+                      : theme.danger,
                   },
                 ]}
               >
                 {expired
                   ? "Expired"
                   : document.document.status === "active"
-                    ? "Active"
-                    : "Inactive"}
+                  ? "Active"
+                  : "Inactive"}
               </Text>
             </View>
           </View>
@@ -557,8 +557,12 @@ const DocumentDetails = () => {
             onPress={handleReplace}
             disabled={isUploading}
           >
-            <Ionicons name="refresh" size={18} color={theme.whiteText} />
-            <Text style={styles.buttonText}>Replace document</Text>
+            <Ionicons
+              name="cloud-upload-outline"
+              size={18}
+              color={theme.whiteText}
+            />
+            <Text style={styles.buttonText}>Re Upload</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -571,8 +575,8 @@ const DocumentDetails = () => {
         actions={[
           {
             key: "replace",
-            label: "Replace",
-            icon: "refresh",
+            label: "Re Upload",
+            icon: "cloud-upload-outline",
             onPress: () => {
               setPreviewVisible(false);
               void handleReplace();
@@ -613,7 +617,12 @@ const DocumentDetails = () => {
               style={[styles.input, { borderColor: theme.grayBorder }]}
             />
             {expiryError && (
-              <Text style={[styles.detailLabel, { color: theme.danger, marginTop: 6 }]}>
+              <Text
+                style={[
+                  styles.detailLabel,
+                  { color: theme.danger, marginTop: 6 },
+                ]}
+              >
                 {expiryError}
               </Text>
             )}

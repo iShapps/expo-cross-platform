@@ -27,7 +27,12 @@ import { CopilotProvider } from "react-native-copilot";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { GlobalUpdateGate } from "../components/global-update-gate";
 import { SupportFab } from "../components/support-fab";
-import { getOnboardingRouteParams, SessionProvider, useSession } from "./ctx";
+import {
+  getOnboardingRouteParams,
+  needsForcedPasswordReset,
+  SessionProvider,
+  useSession,
+} from "./ctx";
 import { SplashScreenController } from "./splash";
 
 const sentryGlobal = globalThis as typeof globalThis & {
@@ -156,7 +161,9 @@ function RootNavigator() {
   // Registration status/user data hasn't settled yet (hydrating or a login
   // is actively resolving)
   const needsOnboarding = !!getOnboardingRouteParams(user);
-  const canEnterMainApp = !!session && !isLoading && !needsOnboarding;
+  const needsPasswordReset = needsForcedPasswordReset(user);
+  const canEnterMainApp =
+    !!session && !isLoading && !needsOnboarding && !needsPasswordReset;
   // A login is actively resolving (setSession fires before the registration
   // status check finishes, while isLoading/authLoading is still true)
   const canEnterAuthGroup = !session || isLoading;
@@ -178,6 +185,14 @@ function RootNavigator() {
           name="onboarding"
           options={{
             headerShown: false,
+          }}
+        />
+
+        <Stack.Screen
+          name="force-password-reset"
+          options={{
+            headerShown: false,
+            gestureEnabled: false,
           }}
         />
 
