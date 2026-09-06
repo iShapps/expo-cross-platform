@@ -72,9 +72,16 @@ export default function NotificationsScreen() {
   ];
 
   const [activeTab, setActiveTab] = useState(tabTypes[0]);
+  const activeTabIndex = tabTypes.indexOf(activeTab);
 
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const contentScrollRef = useRef<ScrollView>(null);
+  const [containerHeight, setContainerHeight] = useState(0);
+  const [tabsRowHeight, setTabsRowHeight] = useState(0);
+  const pageHeight =
+    containerHeight > 0 && tabsRowHeight > 0
+      ? containerHeight - tabsRowHeight
+      : undefined;
 
   const handleTabPress = useCallback(
     (index: number) => {
@@ -117,12 +124,20 @@ export default function NotificationsScreen() {
       {/* Header */}
       <Header title="Notifications" onBack={() => router.back()} />
 
-      <View style={styles.container}>
+      <View
+        style={styles.container}
+        onLayout={(event) =>
+          setContainerHeight(event.nativeEvent.layout.height)
+        }
+      >
         {/* Tabs */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.tabsRow}
+          onLayout={(event) =>
+            setTabsRowHeight(event.nativeEvent.layout.height)
+          }
         >
           {tabTypes.map((tab, index) => {
             const isActive = activeTab === tab;
@@ -156,9 +171,16 @@ export default function NotificationsScreen() {
           onMomentumScrollEnd={handleContentScrollEnd}
           scrollEventThrottle={16}
           onScrollBeginDrag={() => {}}
+          style={pageHeight ? { height: pageHeight } : { flex: 1 }}
         >
           {tabData.map((tabNotifications, index) => (
-            <View key={tabTypes[index]} style={{ width: screenWidth - 18 }}>
+            <View
+              key={tabTypes[index]}
+              style={{
+                width: screenWidth - 18,
+                ...(pageHeight ? { height: pageHeight } : { flex: 1 }),
+              }}
+            >
               {isLoading ? (
                 <FlatList
                   data={[...Array(2)]}
@@ -168,42 +190,6 @@ export default function NotificationsScreen() {
                   onRefresh={handlePullToRefresh}
                   contentContainerStyle={styles.listContainer}
                 />
-              ) : tabNotifications.length === 0 ? (
-                <View style={styles.emptyState}>
-                  <MaterialCommunityIcons
-                    name="broadcast-off"
-                    size={72}
-                    color={theme.grayBorder}
-                  />
-                  <Text
-                    style={{
-                      fontSize: 20,
-                      fontWeight: "700",
-                      color: theme.primary,
-                      marginBottom: 8,
-                    }}
-                  >
-                    No notifications yet
-                  </Text>
-                  <Text
-                    style={{
-                      fontSize: 15,
-                      color: theme.secondaryText,
-                      textAlign: "center",
-                      maxWidth: 260,
-                    }}
-                  >
-                    You have no{" "}
-                    <Text
-                      style={{
-                        textTransform: "lowercase",
-                      }}
-                    >
-                      {tabTypes[index].toLowerCase()}
-                    </Text>{" "}
-                    notifications at the moment.
-                  </Text>
-                </View>
               ) : (
                 <FlatList
                   data={tabNotifications}
@@ -224,51 +210,46 @@ export default function NotificationsScreen() {
                       </View>
                     ) : null
                   }
-                  ListEmptyComponent={
-                    !isLoading && !isError && tabNotifications.length === 0 ? (
-                      <View style={styles.emptyState}>
-                        <MaterialCommunityIcons
-                          name="broadcast-off"
-                          size={72}
-                          color={theme.grayBorder}
-                        />
-                        <Text
-                          style={{
-                            fontSize: 20,
-                            fontWeight: "700",
-                            color: theme.primary,
-                            marginBottom: 8,
-                          }}
-                        >
-                          No notifications yet
-                        </Text>
-                        <Text
-                          style={{
-                            fontSize: 15,
-                            color: theme.secondaryText,
-                            textAlign: "center",
-                            maxWidth: 260,
-                          }}
-                        >
-                          You have no{" "}
-                          <Text
-                            style={{
-                              textTransform: "lowercase",
-                            }}
-                          >
-                            {tabTypes[index].toLowerCase()}
-                          </Text>{" "}
-                          notifications at the moment.
-                        </Text>
-                      </View>
-                    ) : null
-                  }
                   contentContainerStyle={styles.listContainer}
                 />
               )}
             </View>
           ))}
         </ScrollView>
+
+        {!isLoading && tabData[activeTabIndex]?.length === 0 && (
+          <View style={styles.emptyState} pointerEvents="none">
+            <MaterialCommunityIcons
+              name="broadcast-off"
+              size={72}
+              color={theme.grayBorder}
+            />
+            <Text
+              style={{
+                fontSize: 20,
+                fontWeight: "700",
+                color: theme.primary,
+                marginBottom: 8,
+              }}
+            >
+              No notifications yet
+            </Text>
+            <Text
+              style={{
+                fontSize: 15,
+                color: theme.secondaryText,
+                textAlign: "center",
+                maxWidth: 260,
+              }}
+            >
+              You have no{" "}
+              <Text style={{ textTransform: "lowercase" }}>
+                {tabTypes[activeTabIndex].toLowerCase()}
+              </Text>{" "}
+              notifications at the moment.
+            </Text>
+          </View>
+        )}
       </View>
 
       {/* Error Overlay */}
@@ -298,6 +279,7 @@ const getStyles = (theme: typeof Colors.light, screenHeight: number) =>
       backgroundColor: theme.background,
     },
     container: {
+      flex: 1,
       backgroundColor: theme.whiteBackground,
       paddingHorizontal: 8,
       display: "flex",
@@ -338,9 +320,10 @@ const getStyles = (theme: typeof Colors.light, screenHeight: number) =>
       gap: 4,
     },
     emptyState: {
-      flex: 1,
+      ...StyleSheet.absoluteFillObject,
       alignItems: "center",
-      top: screenHeight * 0.2,
+      justifyContent: "center",
+      paddingHorizontal: 24,
     },
     emptyTitle: {
       fontSize: 18,

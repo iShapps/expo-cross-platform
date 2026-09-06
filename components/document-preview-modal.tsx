@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { PdfView } from "@kishannareshpal/expo-pdf";
 import { Directory, File, Paths } from "expo-file-system";
 import { Image } from "expo-image";
+import * as Sharing from "expo-sharing";
 import React, { useEffect, useState } from "react";
 import { TokenStorage } from "@/utils/auth-api";
 import { error as logError } from "@/utils/logger";
@@ -118,6 +119,25 @@ export function DocumentPreviewModal({
   const uri = file.uri;
   const isImage = file.mimeType?.startsWith("image/");
 
+  const openFile = async (target: string) => {
+    try {
+      // Linking.openURL only handles remote URLs / registered schemes — a
+      // local file:// (or content://) URI needs the native share/preview
+      // sheet instead, which Linking can't provide.
+      if (/^https?:\/\//i.test(target)) {
+        await Linking.openURL(target);
+        return;
+      }
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(target);
+      } else {
+        await Linking.openURL(target);
+      }
+    } catch (err) {
+      logError("Failed to open file:", err, target);
+    }
+  };
+
   return (
     <Modal
       animationType="slide"
@@ -183,7 +203,7 @@ export function DocumentPreviewModal({
                 </Text>
                 <TouchableOpacity
                   style={styles.openInViewerButton}
-                  onPress={() => Linking.openURL(uri).catch(() => null)}
+                  onPress={() => void openFile(uri)}
                 >
                   <Ionicons name="open-outline" size={16} color={theme.white} />
                   <Text style={styles.openInViewerText}>
@@ -203,7 +223,7 @@ export function DocumentPreviewModal({
                 </Text>
                 <TouchableOpacity
                   style={styles.openInViewerButton}
-                  onPress={() => Linking.openURL(uri).catch(() => null)}
+                  onPress={() => void openFile(uri)}
                 >
                   <Ionicons name="open-outline" size={16} color={theme.white} />
                   <Text style={styles.openInViewerText}>
