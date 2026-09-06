@@ -95,6 +95,7 @@ export function useProtectedRoute(
   session: string | null | undefined,
   user: User | null,
   authLoading: boolean,
+  isHydrating: boolean,
 ) {
   const segments = useSegments();
   const router = useRouter();
@@ -103,7 +104,7 @@ export function useProtectedRoute(
   const pathname = usePathname();
   const currentRoute = pathname === "/(open)/index";
   useEffect(() => {
-    if (authLoading) return;
+    if (authLoading || isHydrating) return;
 
     const inAuthGroup = segments[0] === "(open)";
     const inOnboarding = segments[0] === "onboarding";
@@ -140,7 +141,7 @@ export function useProtectedRoute(
       // completed)
       router.replace("/(tabs)");
     }
-  }, [authLoading, currentRoute, router, segments, session, user]);
+  }, [authLoading, currentRoute, isHydrating, router, segments, session, user]);
 }
 
 export function SessionProvider(props: React.PropsWithChildren) {
@@ -157,7 +158,7 @@ export function SessionProvider(props: React.PropsWithChildren) {
 
   const user = userJson ? (JSON.parse(userJson) as User) : null;
 
-  useProtectedRoute(session, user, authLoading);
+  useProtectedRoute(session, user, authLoading, isHydrating || isHydratingUser);
 
   useEffect(() => {
     incrementProviderMount("SessionProvider");
