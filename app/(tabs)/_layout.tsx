@@ -5,6 +5,7 @@ import {
   TabBarIMaterialIcon,
   TabBarOctIcon,
 } from "@/components/ui/tab-bar-icon";
+import { Radii } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useIsFetching } from "@tanstack/react-query";
 import { Tabs } from "expo-router";
@@ -199,7 +200,7 @@ const styles = StyleSheet.create({
     top: 0,
     height: 2,
     width: 120,
-    borderRadius: 999,
+    borderRadius: Radii.full,
     backgroundColor: "#70C601",
     opacity: 0.9,
   },

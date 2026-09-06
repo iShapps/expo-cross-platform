@@ -1,4 +1,5 @@
 import OTPInput, { useOTPInput } from "@/components/shared/otp-input";
+import { Radii } from "@/constants/theme";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import Entypo from "@expo/vector-icons/Entypo";
 import { Checkbox } from "expo-checkbox";
@@ -293,7 +294,7 @@ export default function SignUp() {
                 >
                   <View
                     style={{
-                      borderRadius: 50,
+                      borderRadius: Radii.full,
                       backgroundColor: "rgba(112, 198, 1, 0.15)",
                       width: 100,
                       height: 100,
@@ -399,7 +400,7 @@ const styles = StyleSheet.create({
   modalBody: {
     backgroundColor: "#ffffff",
     padding: 10,
-    borderRadius: 8,
+    borderRadius: Radii.sm,
     width: "92%",
   },
   topContainer: {
@@ -519,7 +520,7 @@ const styles = StyleSheet.create({
   button: {
     backgroundColor: "#70C601",
     paddingVertical: 10,
-    borderRadius: 4,
+    borderRadius: Radii.sm,
     alignItems: "center",
     marginTop: 6,
   },
@@ -527,7 +528,7 @@ const styles = StyleSheet.create({
   modalButton: {
     backgroundColor: "#70C601",
     paddingVertical: 10,
-    borderRadius: 5,
+    borderRadius: Radii.sm,
     alignItems: "center",
     marginTop: 6,
   },

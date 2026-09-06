@@ -379,10 +379,12 @@ export const isAuthenticated = async (): Promise<boolean> => {
 
 export const getRegistrationStatus = async (
   token: string,
+  hcpId: number,
 ): Promise<RegistrationStatusResponse> => {
+  const endpoint = `/v2/hcps/${hcpId}/onboarding-status`;
   const { data } = await apiRequest<RegistrationStatusResponse>({
-    url: `${API_CONFIG.baseURL}/v2/registration/status`,
-    endpoint: "/v2/registration/status",
+    url: `${API_CONFIG.baseURL}${endpoint}`,
+    endpoint,
     method: "GET",
     headers: { Authorization: `Bearer ${token}` },
     timeoutMs: API_CONFIG.timeout,
@@ -396,17 +398,21 @@ export function computeOnboardingStep(
 ): 1 | 2 | 3 | 4 | 5 {
   // Personal details spans steps 1 and 2; always start at 1 when incomplete.
   if (steps.account_created && !steps.personal_details_complete) return 1;
-  if (steps.personal_details_complete && !steps.profession_selected) return 3;
-  if (steps.profession_selected && !steps.documents_uploaded) return 4;
+
+  // if (steps.personal_details_complete && !steps.profession_selected) return 3;
+  if (steps.personal_details_complete && !steps.documents_uploaded) return 4;
   if (steps.documents_uploaded && !steps.registration_complete) return 5;
-  return 1;
+  return 5;
 }
 
 export function resolveOnboardingStep(
   data: RegistrationStatusResponse["data"],
 ): 1 | 2 | 3 | 4 | 5 {
   const step = computeOnboardingStep(data.steps);
-  if (step === 4 && data.missing_documents.profession.length === 0) {
+  if ((step === 4 || step === 5) && data.missing_documents.general.length > 0) {
+    return 4;
+  }
+  if (step === 4 && data.missing_documents.general.length === 0) {
     return 5;
   }
   return step;

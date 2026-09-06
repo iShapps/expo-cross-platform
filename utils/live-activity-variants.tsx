@@ -1,3 +1,4 @@
+import { Radii } from "@/constants/theme";
 import { IShift } from "@/data-types/shifts";
 import React from "react";
 import { Voltra } from "voltra";
@@ -39,7 +40,7 @@ export function buildVariants(shift: IShift, now: Date) {
     <Voltra.View
       style={{
         backgroundColor: BG,
-        borderRadius: 8,
+        borderRadius: Radii.full,
         paddingHorizontal: 6,
         paddingVertical: 2,
       }}
@@ -98,7 +99,7 @@ export function buildVariants(shift: IShift, now: Date) {
           style={{
             // backgroundColor: "rgba(112,198,1,0.18)",
             width: "100%",
-            borderRadius: 8,
+            borderRadius: Radii.full,
             paddingHorizontal: 0,
             paddingVertical: 4,
             alignItems: "flex-start",
@@ -177,7 +178,7 @@ export function buildVariants(shift: IShift, now: Date) {
           style={{
             width: "100%",
             height: 6,
-            borderRadius: 999,
+            borderRadius: Radii.full,
             backgroundColor: "rgba(255,255,255,0.15)",
             flexDirection: "row",
             overflow: "hidden",
@@ -186,7 +187,7 @@ export function buildVariants(shift: IShift, now: Date) {
           <Voltra.View
             style={{
               flex: progressPercent / 100,
-              borderRadius: 999,
+              borderRadius: Radii.full,
               height: "100%",
               backgroundColor: "#70C601",
             }}
@@ -195,7 +196,7 @@ export function buildVariants(shift: IShift, now: Date) {
           <Voltra.View
             style={{
               flex: 1 - progressPercent / 100,
-              borderRadius: 999,
+              borderRadius: Radii.full,
               height: "100%",
             }}
           />

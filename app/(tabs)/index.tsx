@@ -8,24 +8,26 @@ import { useProfileData } from "@/data-store/use-account-store";
 import { DashboardResponse } from "@/data-types/dashboard";
 import { useLocation } from "@/hooks/use-location";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect, useIsFocused } from "@react-navigation/native";
 import {
   useInfiniteQuery,
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { format } from "date-fns";
+import { format, parse } from "date-fns";
 import { router } from "expo-router";
 import { useCallback, useEffect } from "react";
 
 import { getHCPDashboard } from "@/api-queries/dashboard";
 import { getNotifications } from "@/api-queries/notifcations";
-import { Colors } from "@/constants/theme";
+import { Colors, Radii } from "@/constants/theme";
 import { useConfigSettings } from "@/data-store/config-store";
 import { User } from "@/data-types/auth";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useFirstVisitTour } from "@/hooks/use-first-visit-tour";
 import { useOneSignalSubscriptionStatus } from "@/hooks/use-one-signal";
 import { getAvatarImageSource } from "@/utils/auth";
+import { getRegistrationStatus, TokenStorage } from "@/utils/auth-api";
 import { FontAwesome6, MaterialCommunityIcons } from "@expo/vector-icons";
 import {
   FlatList,
@@ -36,11 +38,14 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { CopilotStep, walkthroughable } from "react-native-copilot";
 import { useSession } from "../ctx";
+
+const WalkthroughableView = walkthroughable(View);
 
 export default function HomeScreen() {
   // const { expoPushToken, notification } = usePushNotifications();
-  const { retryNotificationSetup } = useSession();
+  const { retryNotificationSetup, updateHcp } = useSession();
   const { isChecking, isSetup, refresh } = useOneSignalSubscriptionStatus();
   const { requestPermission } = useLocation();
   const colorScheme = useColorScheme() || "light";
@@ -67,6 +72,42 @@ export default function HomeScreen() {
     refetchOnWindowFocus: "always",
     enabled: !!userDetails?.id,
   });
+
+  const { data: hcpStatusSync } = useQuery({
+    queryKey: ["hcp-status-sync"],
+    queryFn: async () => {
+      const token = await TokenStorage.getToken();
+      const hcpId = userDetails?.hcp?.id;
+      if (!token || !hcpId) return null;
+      return getRegistrationStatus(token, hcpId);
+    },
+    gcTime: 1000 * 60 * 60,
+    staleTime: 0,
+    refetchInterval: 30 * 60 * 1000,
+    refetchIntervalInBackground: true,
+    refetchOnMount: "always",
+    refetchOnReconnect: true,
+    refetchOnWindowFocus: "always",
+    enabled: !!userDetails?.hcp?.id,
+  });
+
+  useEffect(() => {
+    const freshStatus = hcpStatusSync?.data?.hcp_status;
+    if (
+      freshStatus &&
+      userDetails?.hcp &&
+      freshStatus !== userDetails.hcp.status
+    ) {
+      updateHcp({ status: freshStatus });
+    }
+  }, [hcpStatusSync, userDetails, updateHcp]);
+
+  const isFocused = useIsFocused();
+
+  useFirstVisitTour(
+    "dashboard",
+    isFocused && !dashboardLoading && !!userDetails,
+  );
 
   const handleRetryNotificationsSetup = async () => {
     try {
@@ -157,22 +198,36 @@ export default function HomeScreen() {
   const availableShifts = dashboardData?.available_shifts ?? 0;
   const scheduledShifts = dashboardData?.scheduled_shifts ?? 0;
   const upcomingShifts = dashboardData?.upcoming_shifts ?? 0;
-  const weekStart = dashboardData?.week_start_date;
-  const weekEnd = dashboardData?.week_end_date;
+  const periodStart = dashboardData?.period_start;
+  const periodEnd = dashboardData?.period_end;
+  const periodLabel =
+    dashboardData?.payroll_frequency === "fortnightly" ? "Fortnight" : "Week";
 
   const dashboardPayrunLabel =
-    weekStart && weekEnd
-      ? `Payrun: Week of ${format(new Date(weekStart), "dd MMM")} - ${format(
-          new Date(weekEnd),
-          "dd MMM yyyy",
-        )}`
+    periodStart && periodEnd
+      ? `Payrun: ${periodLabel} of ${format(
+          new Date(periodStart),
+          "dd MMM",
+        )} - ${format(new Date(periodEnd), "dd MMM yyyy")}`
       : null;
   const payrunLabel = dashboardPayrunLabel
     ? dashboardPayrunLabel
     : "Payrun: --";
 
-  const payrunDisclaimer = weekEnd
-    ? `Only shifts completed by 5:00 PM on ${format(new Date(weekEnd), "dd MMM")} are included.`
+  const cutoffTimeRaw = dashboardData?.payroll_cutoff_time;
+  const formattedCutoffTime = cutoffTimeRaw
+    ? format(parse(cutoffTimeRaw, "HH:mm:ss", new Date()), "h:mm a")
+    : "5:00 PM";
+
+  const cutoffDayRaw = dashboardData?.payroll_cutoff_day;
+  const formattedCutoffDay = cutoffDayRaw
+    ? cutoffDayRaw.charAt(0).toUpperCase() + cutoffDayRaw.slice(1).toLowerCase()
+    : periodEnd
+      ? format(new Date(periodEnd), "dd MMM")
+      : null;
+
+  const payrunDisclaimer = formattedCutoffDay
+    ? `Only shifts completed by ${formattedCutoffTime} on ${formattedCutoffDay} are included.`
     : "";
 
   useEffect(() => {
@@ -248,17 +303,47 @@ export default function HomeScreen() {
               </View>
             </View>
           </View>
-          <Pressable
-            onPress={() => router.push("/(main)/notifications")}
-            style={styles.notificationContainer}
+          <CopilotStep
+            name="dashboard-notifications"
+            order={2}
+            active={isFocused}
+            text="This is where shift updates, approvals, and reminders land. The dot means something's waiting for you."
           >
-            <MaterialIcons name="notifications" size={20} color="#fff" />
+            <WalkthroughableView>
+              <Pressable
+                onPress={() => router.push("/(main)/notifications")}
+                style={styles.notificationContainer}
+              >
+                <MaterialIcons name="notifications" size={20} color="#fff" />
 
-            {notifications.length > 0 && (
-              <View style={styles.notificationDot} />
-            )}
-          </Pressable>
+                {notifications.length > 0 && (
+                  <View style={styles.notificationDot} />
+                )}
+              </Pressable>
+            </WalkthroughableView>
+          </CopilotStep>
         </View>
+
+        {userDetails?.hcp?.status === "pending-approval" && (
+          <CopilotStep
+            name="dashboard-pending-approval"
+            order={3}
+            active={isFocused}
+            text="You're almost set up — once your documents are reviewed and your account's approved, you'll be able to accept shifts."
+          >
+            <WalkthroughableView style={styles.pendingApprovalBanner}>
+              <MaterialCommunityIcons
+                name="clock-alert-outline"
+                size={18}
+                color={theme.white}
+              />
+              <Text style={styles.pendingApprovalText}>
+                Your account is pending approval. You&apos;ll be notified once
+                it has been reviewed.
+              </Text>
+            </WalkthroughableView>
+          </CopilotStep>
+        )}
       </View>
 
       {/* CONTENT */}
@@ -271,58 +356,67 @@ export default function HomeScreen() {
         {dashboardLoading ? (
           <DashboardAnalyticsSkeleton />
         ) : (
-          <View style={styles.dashboardRow}>
-            <TouchableOpacity
-              onPress={() => router.push("/(tabs)/shifts")}
-              style={[styles.dashboardCard, theme.dashboardCardAvailable]}
-            >
-              <View style={styles.dashboardTopRow}>
-                <View style={[styles.iconPill, styles.iconPillAvailable]}>
-                  <MaterialIcons
-                    name="event-available"
-                    size={16}
-                    color={theme.primary}
-                  />
+          <CopilotStep
+            name="dashboard-stats"
+            order={1}
+            active={isFocused}
+            text={
+              '"Available" shows open shifts you can pick up, "Upcoming" shows shifts starting soon, and "My Shifts" is everything on your schedule. Tap any card to jump straight there.'
+            }
+          >
+            <WalkthroughableView style={styles.dashboardRow}>
+              <TouchableOpacity
+                onPress={() => router.push("/(tabs)/shifts")}
+                style={[styles.dashboardCard, theme.dashboardCardAvailable]}
+              >
+                <View style={styles.dashboardTopRow}>
+                  <View style={[styles.iconPill, styles.iconPillAvailable]}>
+                    <MaterialIcons
+                      name="event-available"
+                      size={16}
+                      color={theme.primary}
+                    />
+                  </View>
+                  <Text style={styles.dashboardValue}>{availableShifts}</Text>
                 </View>
-                <Text style={styles.dashboardValue}>{availableShifts}</Text>
-              </View>
-              <Text style={styles.dashboardTitle}>Available</Text>
-            </TouchableOpacity>
+                <Text style={styles.dashboardTitle}>Available</Text>
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={() =>
-                router.push({
-                  pathname: "/(tabs)/schedules",
-                  params: { activeTab: "scheduled" },
-                })
-              }
-              style={[styles.dashboardCard, theme.dashboardCardUpcoming]}
-            >
-              <View style={styles.dashboardTopRow}>
-                <View style={[styles.iconPill, styles.iconPillUpcoming]}>
-                  <MaterialIcons name="schedule" size={16} color="#FFC107" />
+              <TouchableOpacity
+                onPress={() =>
+                  router.push({
+                    pathname: "/(tabs)/schedules",
+                    params: { activeTab: "scheduled" },
+                  })
+                }
+                style={[styles.dashboardCard, theme.dashboardCardUpcoming]}
+              >
+                <View style={styles.dashboardTopRow}>
+                  <View style={[styles.iconPill, styles.iconPillUpcoming]}>
+                    <MaterialIcons name="schedule" size={16} color="#FFC107" />
+                  </View>
+                  <Text style={styles.dashboardValue}>{upcomingShifts}</Text>
                 </View>
-                <Text style={styles.dashboardValue}>{upcomingShifts}</Text>
-              </View>
-              <Text style={styles.dashboardTitle}>Upcoming</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => router.push("/(tabs)/schedules")}
-              style={[styles.dashboardCard, theme.dashboardCardMy]}
-            >
-              <View style={styles.dashboardTopRow}>
-                <View style={[styles.iconPill, styles.iconPillMy]}>
-                  <MaterialIcons
-                    name="assignment-ind"
-                    size={16}
-                    color="#4A90E2"
-                  />
+                <Text style={styles.dashboardTitle}>Upcoming</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => router.push("/(tabs)/schedules")}
+                style={[styles.dashboardCard, theme.dashboardCardMy]}
+              >
+                <View style={styles.dashboardTopRow}>
+                  <View style={[styles.iconPill, styles.iconPillMy]}>
+                    <MaterialIcons
+                      name="assignment-ind"
+                      size={16}
+                      color="#4A90E2"
+                    />
+                  </View>
+                  <Text style={styles.dashboardValue}>{scheduledShifts}</Text>
                 </View>
-                <Text style={styles.dashboardValue}>{scheduledShifts}</Text>
-              </View>
-              <Text style={styles.dashboardTitle}>My Shifts</Text>
-            </TouchableOpacity>
-          </View>
+                <Text style={styles.dashboardTitle}>My Shifts</Text>
+              </TouchableOpacity>
+            </WalkthroughableView>
+          </CopilotStep>
         )}
 
         {dashboardLoading ? (
@@ -469,6 +563,25 @@ const getStyles = (theme: typeof Colors.light) =>
       borderBottomColor: theme.whiteBackground,
       borderBottomWidth: 0.5,
     },
+    pendingApprovalBanner: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      width: "100%",
+      backgroundColor: "rgba(255,140,26,0.35)",
+      borderWidth: 1,
+      borderColor: "rgba(255,140,26,0.6)",
+      borderRadius: Radii.sm,
+      marginTop: 10,
+      paddingVertical: 8,
+      paddingHorizontal: 10,
+    },
+    pendingApprovalText: {
+      flex: 1,
+      fontSize: 12.5,
+      lineHeight: 17,
+      color: theme.white,
+    },
     dashboardContainer: {
       display: "flex",
       flexDirection: "column",
@@ -510,7 +623,7 @@ const getStyles = (theme: typeof Colors.light) =>
       alignItems: "center",
       alignContent: "center",
       flexDirection: "row",
-      borderRadius: 5,
+      borderRadius: Radii.sm,
       padding: 8,
       position: "relative",
     },
@@ -520,7 +633,7 @@ const getStyles = (theme: typeof Colors.light) =>
       right: 11,
       width: 6,
       height: 6,
-      borderRadius: 4,
+      borderRadius: Radii.full,
       backgroundColor: theme.danger,
     },
     sectionLabel: {
@@ -550,7 +663,7 @@ const getStyles = (theme: typeof Colors.light) =>
       display: "flex",
       alignItems: "flex-start",
       justifyContent: "space-between",
-      borderRadius: 12,
+      borderRadius: Radii.md,
       padding: 12,
       borderWidth: 1,
       width: "31%",
@@ -577,7 +690,7 @@ const getStyles = (theme: typeof Colors.light) =>
     iconPill: {
       width: 28,
       height: 28,
-      borderRadius: 999,
+      borderRadius: Radii.full,
       alignItems: "center",
       justifyContent: "center",
       backgroundColor: theme.heroIconBg,
@@ -593,7 +706,7 @@ const getStyles = (theme: typeof Colors.light) =>
     },
     payrunCard: {
       marginTop: 5,
-      borderRadius: 12,
+      borderRadius: Radii.md,
       padding: 12,
       borderWidth: 1,
       borderColor: theme.heroBorder,
@@ -613,7 +726,7 @@ const getStyles = (theme: typeof Colors.light) =>
     iconPillPayrun: {
       width: 28,
       height: 28,
-      borderRadius: 999,
+      borderRadius: Radii.full,
       alignItems: "center",
       justifyContent: "center",
       backgroundColor: theme.heroIconBg,
@@ -654,7 +767,7 @@ const getStyles = (theme: typeof Colors.light) =>
       height: 1,
       width: 48,
       marginTop: 8,
-      borderRadius: 999,
+      borderRadius: Radii.full,
       backgroundColor: theme.whiteBackground,
       opacity: 0.8,
     },
@@ -675,7 +788,7 @@ const getStyles = (theme: typeof Colors.light) =>
     avatarImage: {
       height: 50,
       width: 50,
-      borderRadius: 50,
+      borderRadius: Radii.full,
       borderWidth: 1,
       borderColor: theme.white,
     },

@@ -1,4 +1,5 @@
 import { useSettingsStore } from "@/data-store/use-settings-store";
+import { useTourStore } from "@/data-store/use-tour-store";
 import { useOneSignal } from "@/hooks/use-one-signal";
 import { useOTAUpdate } from "@/hooks/use-ota-update";
 import { usePermissionMonitor } from "@/hooks/use-permission-monitor";
@@ -18,13 +19,20 @@ import {
   QueryClient,
   QueryClientProvider,
 } from "@tanstack/react-query";
-import { SplashScreen, Stack } from "expo-router";
+import { SplashScreen, Stack, usePathname } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import { AppState, Platform } from "react-native";
+import { CopilotProvider } from "react-native-copilot";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { GlobalUpdateGate } from "../components/global-update-gate";
-import { SessionProvider, useSession } from "./ctx";
+import { SupportFab } from "../components/support-fab";
+import {
+  getOnboardingRouteParams,
+  needsForcedPasswordReset,
+  SessionProvider,
+  useSession,
+} from "./ctx";
 import { SplashScreenController } from "./splash";
 
 const sentryGlobal = globalThis as typeof globalThis & {
@@ -91,7 +99,7 @@ export default Sentry.wrap(function Root() {
     const initializeApp = async () => {
       debug("Initializing app...");
       const store = useSettingsStore.getState();
-      await store.hydrate();
+      await Promise.all([store.hydrate(), useTourStore.getState().hydrate()]);
 
       if (!cancelled) {
         setIsHydrated(true);
@@ -107,15 +115,27 @@ export default Sentry.wrap(function Root() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <QueryClientProvider client={queryClient}>
-        <SessionProvider>
-          {isHydrated && <AppLifecycleHooks />}
-          <SplashScreenController>
-            <RootNavigator />
-            <GlobalUpdateGate />
-          </SplashScreenController>
-        </SessionProvider>
-      </QueryClientProvider>
+      <CopilotProvider
+        overlay="view"
+        animated
+        stopOnOutsideClick
+        labels={{
+          skip: "Skip",
+          previous: "Back",
+          next: "Next",
+          finish: "Done",
+        }}
+      >
+        <QueryClientProvider client={queryClient}>
+          <SessionProvider>
+            {isHydrated && <AppLifecycleHooks />}
+            <SplashScreenController>
+              <RootNavigator />
+              <GlobalUpdateGate />
+            </SplashScreenController>
+          </SessionProvider>
+        </QueryClientProvider>
+      </CopilotProvider>
       <StatusBar style="auto" />
     </GestureHandlerRootView>
   );
@@ -136,43 +156,71 @@ function AppLifecycleHooks() {
 }
 
 function RootNavigator() {
-  const { session } = useSession();
+  const { session, user, isLoading } = useSession();
+  const pathname = usePathname();
+  // Registration status/user data hasn't settled yet (hydrating or a login
+  // is actively resolving)
+  const needsOnboarding = !!getOnboardingRouteParams(user);
+  const needsPasswordReset = needsForcedPasswordReset(user);
+  const canEnterMainApp =
+    !!session && !isLoading && !needsOnboarding && !needsPasswordReset;
+  // A login is actively resolving (setSession fires before the registration
+  // status check finishes, while isLoading/authLoading is still true)
+  const canEnterAuthGroup = !session || isLoading;
 
   return (
-    <Stack>
-      <Stack.Protected guard={!!session}>
-        <Stack.Screen options={{ headerShown: false }} name="(tabs)" />
-      </Stack.Protected>
-      <Stack.Protected guard={!!session}>
-        <Stack.Screen options={{ headerShown: false }} name="(main)" />
-      </Stack.Protected>
-      <Stack.Protected guard={!session}>
-        <Stack.Screen options={{ headerShown: false }} name="(open)" />
-      </Stack.Protected>
+    <>
+      <Stack>
+        <Stack.Protected guard={canEnterMainApp}>
+          <Stack.Screen options={{ headerShown: false }} name="(tabs)" />
+        </Stack.Protected>
+        <Stack.Protected guard={canEnterMainApp}>
+          <Stack.Screen options={{ headerShown: false }} name="(main)" />
+        </Stack.Protected>
+        <Stack.Protected guard={canEnterAuthGroup}>
+          <Stack.Screen options={{ headerShown: false }} name="(open)" />
+        </Stack.Protected>
 
-      <Stack.Screen
-        name="onboarding"
-        options={{
-          headerShown: false,
-        }}
-      />
+        <Stack.Screen
+          name="onboarding"
+          options={{
+            headerShown: false,
+          }}
+        />
 
-      <Stack.Screen
-        name="review"
-        options={{
-          headerShown: false,
-          presentation: "transparentModal",
-          animation: "fade",
-        }}
-      />
-      <Stack.Screen
-        name="date-sheet"
-        options={{
-          headerShown: false,
-          presentation: "transparentModal",
-          animation: "fade",
-        }}
-      />
-    </Stack>
+        <Stack.Screen
+          name="force-password-reset"
+          options={{
+            headerShown: false,
+            gestureEnabled: false,
+          }}
+        />
+
+        <Stack.Screen
+          name="review"
+          options={{
+            headerShown: false,
+            presentation: "transparentModal",
+            animation: "fade",
+          }}
+        />
+        <Stack.Screen
+          name="date-sheet"
+          options={{
+            headerShown: false,
+            presentation: "transparentModal",
+            animation: "fade",
+          }}
+        />
+        <Stack.Screen
+          name="support-chat"
+          options={{
+            headerShown: false,
+            presentation: "modal",
+          }}
+        />
+      </Stack>
+      {!!session && pathname !== "/support-chat" && <SupportFab />}
+    </>
   );
 }

@@ -1,4 +1,4 @@
-import { Colors } from "@/constants/theme";
+import { Colors, Radii } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import React from "react";
 import { StyleSheet, View } from "react-native";
@@ -35,7 +35,7 @@ const getStyles = (theme: typeof Colors.light) =>
       flexDirection: "row",
       alignItems: "center",
       backgroundColor: theme.whiteBackground,
-      borderRadius: 5,
+      borderRadius: Radii.sm,
       padding: 5,
       borderColor: theme.greyBorder,
       borderWidth: 1,
@@ -44,7 +44,7 @@ const getStyles = (theme: typeof Colors.light) =>
     iconSkeleton: {
       width: 44,
       height: 44,
-      borderRadius: 22,
+      borderRadius: Radii.full,
       backgroundColor: theme.greyBorder,
       marginRight: 16,
       marginLeft: 2,
@@ -58,7 +58,7 @@ const getStyles = (theme: typeof Colors.light) =>
       height: 10,
       width: 80,
       backgroundColor: theme.greyBorder,
-      borderRadius: 4,
+      borderRadius: Radii.xs,
       marginBottom: 6,
       marginLeft: 2,
     },
@@ -72,13 +72,13 @@ const getStyles = (theme: typeof Colors.light) =>
       height: 16,
       width: 120,
       backgroundColor: theme.greyBorder,
-      borderRadius: 4,
+      borderRadius: Radii.xs,
       marginRight: 8,
     },
     circleSkeleton: {
       width: 24,
       height: 24,
-      borderRadius: 12,
+      borderRadius: Radii.full,
       backgroundColor: theme.greyBorder,
     },
     lineSmallRow: {
@@ -90,7 +90,7 @@ const getStyles = (theme: typeof Colors.light) =>
     dotSkeleton: {
       width: 8,
       height: 8,
-      borderRadius: 4,
+      borderRadius: Radii.xs,
       backgroundColor: theme.greyBorder,
       marginHorizontal: 3,
       marginTop: -1,
@@ -98,7 +98,7 @@ const getStyles = (theme: typeof Colors.light) =>
     moreIconSkeleton: {
       width: 26,
       height: 26,
-      borderRadius: 13,
+      borderRadius: Radii.full,
       backgroundColor: theme.greyBorder,
       marginLeft: 8,
       alignSelf: "flex-start",

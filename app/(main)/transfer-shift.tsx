@@ -4,7 +4,7 @@ import { getAllHcps } from "@/api-queries/hcps";
 import { transferShift } from "@/api-queries/profile";
 import { ShiftCardBaseSkeleton } from "@/components/skeletons";
 import HcpListSkeleton from "@/components/skeletons/hcp-skeleton";
-import { Colors } from "@/constants/theme";
+import { Colors, Radii } from "@/constants/theme";
 import { useConfigSettings } from "@/data-store/config-store";
 import { IHcp } from "@/data-types/hcps";
 import { useColorScheme } from "@/hooks/use-color-scheme";
@@ -272,7 +272,7 @@ const TransferShift = () => {
                     style={{
                       width: 40,
                       height: 40,
-                      borderRadius: 20,
+                      borderRadius: Radii.full,
                       backgroundColor: "#f0f0f0",
                       marginRight: 12,
                     }}
@@ -318,7 +318,7 @@ const TransferShift = () => {
                       style={{
                         width: 22,
                         height: 22,
-                        borderRadius: 11,
+                        borderRadius: Radii.full,
                         borderWidth: 2,
                         borderColor:
                           selectedHcpId === item.id ? theme.primary : "#ccc",
@@ -331,7 +331,7 @@ const TransferShift = () => {
                           style={{
                             width: 12,
                             height: 12,
-                            borderRadius: 6,
+                            borderRadius: Radii.full,
                             backgroundColor: theme.primary,
                           }}
                         />
@@ -461,7 +461,7 @@ const TransferShift = () => {
               backgroundColor: theme.mutedText,
               paddingHorizontal: 24,
               paddingVertical: 10,
-              borderRadius: 20,
+              borderRadius: Radii.full,
               flexDirection: "row",
               alignItems: "center",
               justifyContent: "center",
@@ -504,20 +504,20 @@ const getStyles = (theme: typeof Colors.light) =>
     searchInput: {
       borderWidth: 1,
       borderColor: theme.grayBorder,
-      borderRadius: 5,
+      borderRadius: Radii.sm,
       width: "100%",
       padding: 10,
       marginTop: 10,
     },
     button: {
       backgroundColor: theme.primary,
-      borderRadius: 4,
+      borderRadius: Radii.sm,
       paddingHorizontal: 16,
       paddingVertical: 9,
       alignItems: "center",
       flexDirection: "row",
       justifyContent: "center",
-      borderTopRightRadius: 20,
+      borderTopRightRadius: Radii.lg,
     },
     buttonText: {
       color: theme.white,

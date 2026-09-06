@@ -1,4 +1,4 @@
-import { Colors } from "@/constants/theme";
+import { Colors, Radii } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import React from "react";
 import { StyleSheet, View } from "react-native";
@@ -37,7 +37,7 @@ const getStyles = (theme: typeof Colors.light) =>
     avatar: {
       width: 40,
       height: 40,
-      borderRadius: 20,
+      borderRadius: Radii.full,
       marginRight: 12,
     },
     textBlock: {
@@ -47,18 +47,18 @@ const getStyles = (theme: typeof Colors.light) =>
     nameSkeleton: {
       width: "60%",
       height: 16,
-      borderRadius: 4,
+      borderRadius: Radii.xs,
       marginBottom: 6,
     },
     professionSkeleton: {
       width: "40%",
       height: 14,
-      borderRadius: 4,
+      borderRadius: Radii.xs,
     },
     radioWrap: {
       width: 22,
       height: 22,
-      borderRadius: 11,
+      borderRadius: Radii.full,
       borderWidth: 2,
       borderColor: theme.greyBorder,
       alignItems: "center",
@@ -67,7 +67,7 @@ const getStyles = (theme: typeof Colors.light) =>
     radioDot: {
       width: 12,
       height: 12,
-      borderRadius: 6,
+      borderRadius: Radii.full,
     },
   });
 

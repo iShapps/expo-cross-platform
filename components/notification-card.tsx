@@ -1,3 +1,4 @@
+import { Radii } from "@/constants/theme";
 import { INotification } from "@/data-types/notifications";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -109,7 +110,7 @@ const getStyles = (colorScheme: string) =>
   StyleSheet.create({
     card: {
       backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff",
-      borderRadius: 5,
+      borderRadius: Radii.sm,
       padding: 12,
       marginBottom: 4,
       flexDirection: "row",
@@ -132,7 +133,7 @@ const getStyles = (colorScheme: string) =>
     iconContainer: {
       width: 40,
       height: 40,
-      borderRadius: 20,
+      borderRadius: Radii.full,
       justifyContent: "center",
       alignItems: "center",
       marginRight: 12,
@@ -156,7 +157,7 @@ const getStyles = (colorScheme: string) =>
     unreadDot: {
       width: 8,
       height: 8,
-      borderRadius: 4,
+      borderRadius: Radii.full,
       backgroundColor: colorScheme === "dark" ? "#edebe3" : "#70C601",
       position: "absolute",
       top: -2,

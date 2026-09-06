@@ -7,12 +7,11 @@ import {
 import { Hcp } from "@/data-types/auth";
 import { TokenStorage } from "@/utils/auth-api";
 
-const API_BASE_URL =
-  process.env.EXPO_PUBLIC_API_URL ?? "https://admin.ishapps.com/shapp-dev/api";
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 const API_TIMEOUT = 30000;
 
 const getApiUrl = (endpoint: string) =>
-  `${API_BASE_URL.replace(/\/$/, "")}${endpoint}`;
+  `${API_BASE_URL!.replace(/\/$/, "")}${endpoint}`;
 
 export type ProfessionDocument = {
   id: number;
@@ -246,7 +245,7 @@ export type PersonalDetailsPayload = {
   last_name: string;
   gender: string;
   country: number;
-  state: number;
+  state_id: number;
   address: string;
   latitude: string;
   longitude: string;
@@ -267,12 +266,31 @@ export type PersonalDetailsResponse = {
 };
 
 export async function submitPersonalDetails(
+  hcpId: number,
   payload: PersonalDetailsPayload,
 ): Promise<PersonalDetailsResponse> {
-  const endpoint = "/v2/registration/personal-details";
+  const endpoint = `/v2/hcps/${hcpId}`;
   const token = await TokenStorage.getToken();
   const headers: Record<string, string> = { Accept: "application/json" };
   if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const body = {
+    first_name: payload.first_name,
+    last_name: payload.last_name,
+    contact_number: payload.contact_number,
+    date_of_birth: payload.date_of_birth,
+    gender: payload.gender,
+    state_id: payload.state_id,
+    address: payload.address,
+    suburb_name: payload.suburb,
+    city_name: payload.city,
+    post_code: payload.post_code,
+    about_me: payload.about_me,
+    latitude: payload.latitude,
+    longitude: payload.longitude,
+    maximum_distance: payload.maximum_distance,
+    accept_lower_level_job: payload.accept_lower_level_job,
+  };
 
   try {
     const { data } = await apiRequest<PersonalDetailsResponse>({
@@ -280,7 +298,7 @@ export async function submitPersonalDetails(
       endpoint,
       method: "PATCH",
       headers,
-      body: payload,
+      body,
       timeoutMs: API_TIMEOUT,
       retryOnAndroidNetworkError: true,
     });
@@ -389,9 +407,10 @@ export type DocumentUploadResponse = {
 };
 
 export async function uploadDocument(
+  hcpId: number,
   payload: DocumentUploadPayload,
 ): Promise<DocumentUploadResponse> {
-  const endpoint = "/v2/registration/documents";
+  const endpoint = `/v2/hcps/${hcpId}/documents`;
   const token = await TokenStorage.getToken();
 
   const form = new FormData();

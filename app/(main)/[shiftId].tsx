@@ -11,11 +11,12 @@ import Header from "@/components/Header";
 import { ShiftType, ShiftTypePill } from "@/components/shift-type-pill";
 import { ShiftDetailsSkeleton } from "@/components/skeletons";
 import { SwipeButton } from "@/components/swipe-button";
-import { Colors } from "@/constants/theme";
+import { Colors, Radii } from "@/constants/theme";
 import { useProfileData } from "@/data-store/use-account-store";
 import { IShift } from "@/data-types/shifts";
 import { useCalendarAndReminders } from "@/hooks/use-calendar-and-reminders";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useFirstVisitTour } from "@/hooks/use-first-visit-tour";
 import { useLiveActivity } from "@/hooks/use-live-activity";
 import { useLocation } from "@/hooks/use-location";
 import { formatMediumDate } from "@/utils/date-time";
@@ -25,6 +26,7 @@ import Feather from "@expo/vector-icons/Feather";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useIsFocused } from "@react-navigation/native";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BlurView } from "expo-blur";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -40,7 +42,10 @@ import {
   Text,
   View,
 } from "react-native";
+import { CopilotStep, walkthroughable } from "react-native-copilot";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+const WalkthroughableView = walkthroughable(View);
 
 const iconMap: Record<string, { name: string; bg: string; color: string }> = {
   "Afternoon start": {
@@ -220,6 +225,10 @@ export default function ShiftDetails() {
 
   const shift = data?.data?.shift as IShift;
   const shiftStatus = Number(shift?.shift_status);
+
+  const isFocused = useIsFocused();
+
+  useFirstVisitTour("shiftDetails", isFocused && !isLoading && !!shift);
 
   const { start: startLiveActivityForShift, stop: endLiveActivityForShift } =
     useLiveActivity();
@@ -632,53 +641,66 @@ export default function ShiftDetails() {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        <Pressable
-          onPress={openMaps}
-          style={[
-            styles.heroCard,
-            {
-              backgroundColor: theme.heroBg,
-              borderColor: theme.heroBorder,
-            },
-          ]}
+        <CopilotStep
+          name="shift-details-hero"
+          order={1}
+          active={isFocused}
+          text="Tap the address to open it in Maps and get directions."
         >
-          <View
-            style={[
-              styles.heroIconWrap,
-              {
-                backgroundColor: theme.heroIconBg,
-              },
-            ]}
-          >
-            <MaterialCommunityIcons
-              name="office-building-marker"
-              size={32}
-              color={theme.primary}
-            />
-          </View>
-          <View style={styles.heroContent}>
-            <Text style={[styles.heroName, { color: theme.primaryText }]}>
-              {shift?.facility?.name ?? "—"}
-            </Text>
-            <Text style={[styles.heroMeta, { color: theme.secondaryText }]}>
-              {shift?.facility?.address ?? "—"}
-            </Text>
-            <Text style={[styles.heroMeta, { color: theme.secondaryText }]}>
-              {shift?.state?.name ?? "—"}
-            </Text>
-            <View style={styles.chipRow}>
-              {shift?.shift_type && (
-                <ShiftTypePill
-                  type={
-                    shift?.is_sleepover_shift
-                      ? "sleepover"
-                      : (shift?.shift_type as ShiftType)
-                  }
+          <WalkthroughableView>
+            <Pressable
+              onPress={openMaps}
+              style={[
+                styles.heroCard,
+                {
+                  backgroundColor: theme.heroBg,
+                  borderColor: theme.heroBorder,
+                },
+              ]}
+            >
+              <View
+                style={[
+                  styles.heroIconWrap,
+                  {
+                    backgroundColor: theme.heroIconBg,
+                  },
+                ]}
+              >
+                <MaterialCommunityIcons
+                  name="office-building-marker"
+                  size={32}
+                  color={theme.primary}
                 />
-              )}
-            </View>
-          </View>
-        </Pressable>
+              </View>
+              <View style={styles.heroContent}>
+                <Text style={[styles.heroName, { color: theme.primaryText }]}>
+                  {shift?.facility?.name ?? "—"}
+                </Text>
+                <Text
+                  style={[styles.heroMeta, { color: theme.secondaryText }]}
+                >
+                  {shift?.facility?.address ?? "—"}
+                </Text>
+                <Text
+                  style={[styles.heroMeta, { color: theme.secondaryText }]}
+                >
+                  {shift?.state?.name ?? "—"}
+                </Text>
+                <View style={styles.chipRow}>
+                  {shift?.shift_type && (
+                    <ShiftTypePill
+                      type={
+                        shift?.is_sleepover_shift
+                          ? "sleepover"
+                          : (shift?.shift_type as ShiftType)
+                      }
+                    />
+                  )}
+                </View>
+              </View>
+            </Pressable>
+          </WalkthroughableView>
+        </CopilotStep>
         {/* show transfer button for shifts accepted but not started */}
         {/* {[1].includes(shiftStatus) && (
           <View
@@ -886,21 +908,30 @@ export default function ShiftDetails() {
         >
           <BottomSheetView style={styles.contentContainer}>
             {shiftStatus === 0 && (
-              <SwipeButton
-                text="Swipe to Accept"
-                onSwipeComplete={async () => {
-                  try {
-                    await handleAcceptShift();
-                  } catch {
-                  } finally {
-                    setTimeout(() => acceptShiftMutation.reset(), 1500);
-                  }
-                }}
-                disabled={isBusy}
-                bgColor={theme.primary}
-                processing={isAccepting}
-                completed={acceptShiftMutation.isSuccess}
-              />
+              <CopilotStep
+                name="shift-details-swipe-button"
+                order={2}
+                active={isFocused}
+                text="Swipe to confirm your next step here — Accept a shift, Start it when you arrive, or End it when you're done. The button updates depending on where the shift is at."
+              >
+                <WalkthroughableView>
+                  <SwipeButton
+                    text="Swipe to Accept"
+                    onSwipeComplete={async () => {
+                      try {
+                        await handleAcceptShift();
+                      } catch {
+                      } finally {
+                        setTimeout(() => acceptShiftMutation.reset(), 1500);
+                      }
+                    }}
+                    disabled={isBusy}
+                    bgColor={theme.primary}
+                    processing={isAccepting}
+                    completed={acceptShiftMutation.isSuccess}
+                  />
+                </WalkthroughableView>
+              </CopilotStep>
             )}
 
             {shiftStatus === 1 &&
@@ -1017,7 +1048,7 @@ const getStyles = (theme: typeof Colors.light) =>
     heroCard: {
       marginTop: 8,
       backgroundColor: theme.heroBg,
-      borderRadius: 5,
+      borderRadius: Radii.md,
       padding: 10,
       flexDirection: "row",
       alignItems: "center",
@@ -1029,7 +1060,7 @@ const getStyles = (theme: typeof Colors.light) =>
     heroIconWrap: {
       height: 64,
       width: 64,
-      borderRadius: 5,
+      borderRadius: Radii.sm,
       backgroundColor: theme.heroIconBg,
       alignItems: "center",
       justifyContent: "center",
@@ -1050,7 +1081,7 @@ const getStyles = (theme: typeof Colors.light) =>
     },
     sectionCard: {
       marginTop: 12,
-      borderRadius: 5,
+      borderRadius: Radii.md,
       padding: 14,
       borderWidth: 1,
       borderColor: theme.divider,
@@ -1107,7 +1138,7 @@ const getStyles = (theme: typeof Colors.light) =>
       left: "50%",
       transform: [{ translateX: -1.5 }],
       width: 2,
-      borderRadius: 2,
+      borderRadius: Radii.xs,
       backgroundColor: theme.grayBorder,
       zIndex: 0,
       height: "50%",
@@ -1115,7 +1146,7 @@ const getStyles = (theme: typeof Colors.light) =>
     timelineDot: {
       width: 40,
       height: 40,
-      borderRadius: 50,
+      borderRadius: Radii.full,
       alignItems: "center",
       justifyContent: "center",
       zIndex: 1,
@@ -1156,7 +1187,7 @@ const getStyles = (theme: typeof Colors.light) =>
       width: "100%",
       maxWidth: 420,
       backgroundColor: theme.whiteBackground,
-      borderRadius: 8,
+      borderRadius: Radii.lg,
       paddingVertical: 20,
       paddingHorizontal: 20,
       borderWidth: 1,
@@ -1171,7 +1202,7 @@ const getStyles = (theme: typeof Colors.light) =>
     errorIconWrap: {
       width: 64,
       height: 64,
-      borderRadius: 32,
+      borderRadius: Radii.full,
       backgroundColor: theme.mutedText,
       alignItems: "center",
       justifyContent: "center",
@@ -1203,7 +1234,7 @@ const getStyles = (theme: typeof Colors.light) =>
       gap: 8,
       alignContent: "center",
       justifyContent: "center",
-      borderRadius: 5,
+      borderRadius: Radii.sm,
       width: "45%",
       alignItems: "center",
     },
@@ -1215,7 +1246,7 @@ const getStyles = (theme: typeof Colors.light) =>
     errorSecondaryBtn: {
       backgroundColor: theme.whiteBackground,
       paddingVertical: 12,
-      borderRadius: 5,
+      borderRadius: Radii.sm,
       alignItems: "center",
       width: "50%",
       display: "flex",
@@ -1231,7 +1262,7 @@ const getStyles = (theme: typeof Colors.light) =>
     },
     button: {
       backgroundColor: theme.primary,
-      borderRadius: 4,
+      borderRadius: Radii.sm,
       paddingHorizontal: 16,
       paddingVertical: 9,
       display: "flex",
@@ -1257,7 +1288,7 @@ const getStyles = (theme: typeof Colors.light) =>
       minWidth: 220,
       paddingHorizontal: 18,
       paddingVertical: 16,
-      borderRadius: 10,
+      borderRadius: Radii.md,
       backgroundColor: "rgba(0, 0, 0, 0.45)",
       borderWidth: 1,
       borderColor: "rgba(255, 255, 255, 0.25)",

@@ -6,11 +6,13 @@ import {
 import DocumentCard from "@/components/document-card";
 import TabsHeader from "@/components/shared/tabs-header";
 import { DocumentCardSkeleton } from "@/components/skeletons";
-import { Colors } from "@/constants/theme";
+import { Colors, Radii } from "@/constants/theme";
 import { IDocument } from "@/data-types/documents";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useFirstVisitTour } from "@/hooks/use-first-visit-tour";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
+import { useIsFocused } from "@react-navigation/native";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useCallback, useRef, useState } from "react";
 import {
@@ -23,7 +25,10 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
+import { CopilotStep, walkthroughable } from "react-native-copilot";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+const WalkthroughableView = walkthroughable(View);
 
 const useShiftInfiniteQuery = (
   key: string,
@@ -118,44 +123,60 @@ export default function DocumentsScreen() {
   const theme = Colors[colorScheme];
   const styles = getStyles(theme);
 
+  const isFocused = useIsFocused();
+
+  useFirstVisitTour("documents", isFocused && !generalQuery.isLoading);
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <TabsHeader title="My documents" />
       <View style={styles.container}>
-        <ScrollView
-          ref={tabScrollRef}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.tabsRow}
+        <CopilotStep
+          name="documents-tabs"
+          order={1}
+          active={isFocused}
+          text="Documents are grouped into General, Professional, and Others — switch tabs to see what's required in each category."
         >
-          {documentTabs.map((status, index) => {
-            const isActive = activeStatus === status;
-            return (
-              <Pressable
-                key={status}
-                onPress={() => handleTabPress(index)}
-                style={styles.tabButton}
-                android_ripple={{ color: "#ccc" }}
-                onLayout={(e) => {
-                  tabOffsetsRef.current[index] = e.nativeEvent.layout.x;
-                  tabWidthsRef.current[index] = e.nativeEvent.layout.width;
-                }}
-              >
-                <Text
-                  style={[styles.tabText, isActive && styles.tabTextActive]}
-                >
-                  {status}
-                </Text>
-                <View
-                  style={[
-                    styles.tabUnderline,
-                    isActive && styles.tabUnderlineActive,
-                  ]}
-                />
-              </Pressable>
-            );
-          })}
-        </ScrollView>
+          <WalkthroughableView>
+            <ScrollView
+              ref={tabScrollRef}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.tabsRow}
+            >
+              {documentTabs.map((status, index) => {
+                const isActive = activeStatus === status;
+                return (
+                  <Pressable
+                    key={status}
+                    onPress={() => handleTabPress(index)}
+                    style={styles.tabButton}
+                    android_ripple={{ color: "#ccc" }}
+                    onLayout={(e) => {
+                      tabOffsetsRef.current[index] = e.nativeEvent.layout.x;
+                      tabWidthsRef.current[index] = e.nativeEvent.layout.width;
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.tabText,
+                        isActive && styles.tabTextActive,
+                      ]}
+                    >
+                      {status}
+                    </Text>
+                    <View
+                      style={[
+                        styles.tabUnderline,
+                        isActive && styles.tabUnderlineActive,
+                      ]}
+                    />
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </WalkthroughableView>
+        </CopilotStep>
         {/* <FlatList
           // style={{ flex: 1 }}
           data={sample_payruns}
@@ -326,7 +347,7 @@ export default function DocumentsScreen() {
                           backgroundColor: "#FBF2F2",
                           paddingHorizontal: 24,
                           paddingVertical: 10,
-                          borderRadius: 20,
+                          borderRadius: Radii.full,
                           flexDirection: "row",
                           alignItems: "center",
                           justifyContent: "center",
@@ -355,7 +376,22 @@ export default function DocumentsScreen() {
                 return (
                   <FlatList
                     data={data}
-                    renderItem={({ item }) => <DocumentCard document={item} />}
+                    renderItem={({ item, index }) =>
+                      status === "General" && index === 0 ? (
+                        <CopilotStep
+                          name="documents-first-card"
+                          order={2}
+                          active={isFocused}
+                          text="The dot shows if a document's active or needs attention, and the chips tell you if it's mandatory and whether it needs an expiry date. Tap it to preview or upload/replace the file."
+                        >
+                          <WalkthroughableView>
+                            <DocumentCard document={item} />
+                          </WalkthroughableView>
+                        </CopilotStep>
+                      ) : (
+                        <DocumentCard document={item} />
+                      )
+                    }
                     keyExtractor={(item) =>
                       item.id?.toString?.() || String(item.id)
                     }
@@ -452,7 +488,7 @@ const getStyles = (theme: typeof Colors.light) =>
     underline: {
       height: 3,
       width: 56,
-      borderRadius: 999,
+      borderRadius: Radii.full,
       backgroundColor: theme.activeText,
       opacity: 0.85,
       marginTop: 6,
@@ -479,7 +515,7 @@ const getStyles = (theme: typeof Colors.light) =>
     tabUnderline: {
       height: 2,
       width: "100%",
-      borderRadius: 999,
+      borderRadius: Radii.full,
       backgroundColor: "transparent",
       marginTop: 6,
     },

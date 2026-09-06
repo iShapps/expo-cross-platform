@@ -136,6 +136,7 @@ export interface User {
   updated_at: Date;
   deleted_at: null;
   hcp: Hcp;
+  require_password_reset?: number;
 }
 
 export interface Hcp {
@@ -193,36 +194,12 @@ export interface Hcp {
   hcp_professions: HcpProfession[];
 }
 
-export interface GeneralDocument {
-  id: number;
-  document_prefix: string;
+export interface MissingDocument {
+  document_id: number;
   name: string;
-  required_for: string;
+  status: string;
   mandatory_status: "yes" | "no";
   expiry_date_mandatory: "yes" | "no";
-  profession_id: number | null;
-  doc_type: string;
-  status: string;
-  created_by: number | null;
-  updated_by: number | null;
-  created_at: string;
-  updated_at: string;
-  deleted_at: string | null;
-}
-
-export interface MissingDocument {
-  id: number;
-  document_id: number;
-  profession_id: number;
-  created_by: number | null;
-  updated_by: number | null;
-  created_at: string;
-  updated_at: string;
-  document: GeneralDocument;
-  profession: {
-    id: number;
-    name: string;
-  };
 }
 
 export interface RegistrationStatusResponse {
@@ -246,7 +223,7 @@ export interface RegistrationStatusResponse {
       is_compliant: boolean;
     };
     missing_documents: {
-      general: GeneralDocument[];
+      general: MissingDocument[];
       profession: MissingDocument[];
     };
   };

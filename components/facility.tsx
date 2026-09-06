@@ -1,4 +1,4 @@
-import { Colors } from "@/constants/theme";
+import { Colors, Radii } from "@/constants/theme";
 import { IFacility } from "@/data-types/facilities";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Fontisto, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -108,7 +108,7 @@ const getStyles = (theme: typeof Colors.light) =>
     heroCard: {
       // marginTop: 4,
       backgroundColor: theme.heroBg,
-      borderRadius: 5,
+      borderRadius: Radii.md,
       padding: 10,
       display: "flex",
       flexDirection: "column",
@@ -125,7 +125,7 @@ const getStyles = (theme: typeof Colors.light) =>
     heroIconWrap: {
       height: 64,
       width: 64,
-      borderRadius: 5,
+      borderRadius: Radii.sm,
       backgroundColor: theme.heroIconBg,
       alignItems: "center",
       justifyContent: "center",

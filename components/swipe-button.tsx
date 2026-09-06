@@ -1,3 +1,4 @@
+import { Radii } from "@/constants/theme";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect } from "react";
 import { Dimensions, StyleSheet, View } from "react-native";
@@ -167,7 +168,7 @@ export const SwipeButton = ({
 const styles = StyleSheet.create({
   outerWrapper: {
     height: 60,
-    borderRadius: 30,
+    borderRadius: Radii.full,
     overflow: "hidden",
     justifyContent: "center",
     paddingHorizontal: 4,
@@ -180,17 +181,17 @@ const styles = StyleSheet.create({
     top: 0,
     right: 0,
     bottom: 0,
-    borderRadius: 30,
+    borderRadius: Radii.full,
   },
   fillLayer: {
     position: "absolute",
     left: 0,
     top: 0,
     bottom: 0,
-    borderRadius: 50,
+    borderRadius: Radii.full,
   },
   knob: {
-    borderRadius: 30,
+    borderRadius: Radii.full,
     position: "absolute",
     alignItems: "center",
     justifyContent: "center",

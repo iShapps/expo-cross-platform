@@ -2,7 +2,7 @@ import { getFacilities } from "@/api-queries/facilities";
 import FacilityCard from "@/components/facility";
 import Header from "@/components/Header";
 import FacilityCardSkeleton from "@/components/skeletons/facility-card-skeleton";
-import { Colors } from "@/constants/theme";
+import { Colors, Radii } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
@@ -124,7 +124,7 @@ const getStyles = (theme: typeof Colors.light) =>
     },
     card: {
       padding: 16,
-      borderRadius: 14,
+      borderRadius: Radii.md,
       backgroundColor: theme.whiteBackground,
       shadowColor: theme.primaryText,
       shadowOpacity: 0.05,
@@ -186,7 +186,7 @@ const getStyles = (theme: typeof Colors.light) =>
       backgroundColor: theme.mutedText,
       paddingHorizontal: 24,
       paddingVertical: 10,
-      borderRadius: 20,
+      borderRadius: Radii.full,
       flexDirection: "row",
       alignItems: "center",
       gap: 8,
