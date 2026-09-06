@@ -2,8 +2,11 @@ import { Colors, Radii } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Ionicons } from "@expo/vector-icons";
 import { PdfView } from "@kishannareshpal/expo-pdf";
+import { Directory, File, Paths } from "expo-file-system";
 import { Image } from "expo-image";
 import React, { useEffect, useState } from "react";
+import { TokenStorage } from "@/utils/auth-api";
+import { error as logError } from "@/utils/logger";
 import {
   ActivityIndicator,
   Linking,
@@ -49,21 +52,71 @@ export function DocumentPreviewModal({
 
   const [loading, setLoading] = useState(false);
   const [pdfError, setPdfError] = useState(false);
+  const [pdfErrorMessage, setPdfErrorMessage] = useState<string | null>(null);
+  const [localPdfUri, setLocalPdfUri] = useState<string | null>(null);
+
+  const isPdf = file?.mimeType === "application/pdf";
+  const remoteUri = file?.uri;
 
   useEffect(() => {
     if (!visible || !file) {
       setPdfError(false);
+      setPdfErrorMessage(null);
+      setLocalPdfUri(null);
       setLoading(false);
-    } else {
-      setLoading(true);
+      return;
     }
-  }, [visible, file]);
+
+    setLoading(true);
+
+    if (!isPdf || !remoteUri) return;
+
+    // Files picked locally (not yet uploaded) are already a local file/content
+    // URI — PdfView can use those directly, no download needed.
+    if (!/^https?:\/\//i.test(remoteUri)) {
+      setLocalPdfUri(remoteUri);
+      return;
+    }
+
+    // PdfView only accepts local file URIs, not remote http(s) URLs — download
+    // the file to cache first, per @kishannareshpal/expo-pdf's own docs.
+    let cancelled = false;
+    const destination = new Directory(Paths.cache, "pdf-previews");
+
+    (async () => {
+      try {
+        destination.create({ intermediates: true, idempotent: true });
+        const token = await TokenStorage.getToken();
+        const downloaded = await File.downloadFileAsync(
+          remoteUri,
+          destination,
+          {
+            idempotent: true,
+            headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+          },
+        );
+        if (!cancelled) setLocalPdfUri(downloaded.uri);
+      } catch (err) {
+        logError("PDF download failed:", err, remoteUri);
+        if (!cancelled) {
+          setPdfError(true);
+          setPdfErrorMessage(
+            err instanceof Error ? err.message : "Could not download file.",
+          );
+          setLoading(false);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [visible, file, isPdf, remoteUri]);
 
   if (!file) return null;
 
   const uri = file.uri;
   const isImage = file.mimeType?.startsWith("image/");
-  const isPdf = file.mimeType === "application/pdf";
 
   return (
     <Modal
@@ -95,14 +148,16 @@ export function DocumentPreviewModal({
                 style={styles.previewImage}
                 contentFit="contain"
               />
-            ) : isPdf && uri && !pdfError ? (
+            ) : isPdf && localPdfUri && !pdfError ? (
               <>
                 <PdfView
-                  uri={uri}
+                  uri={localPdfUri}
                   style={styles.webView}
                   onLoadComplete={() => setLoading(false)}
-                  onError={() => {
+                  onError={({ code, message }) => {
+                    logError("PDF preview failed:", code, message, uri);
                     setPdfError(true);
+                    setPdfErrorMessage(message || code);
                     setLoading(false);
                   }}
                 />
@@ -114,6 +169,8 @@ export function DocumentPreviewModal({
                   />
                 )}
               </>
+            ) : isPdf && !pdfError ? (
+              <ActivityIndicator size="large" color={theme.primary} />
             ) : isPdf && pdfError ? (
               <View style={styles.previewOpenFallback}>
                 <Ionicons
@@ -122,7 +179,7 @@ export function DocumentPreviewModal({
                   color={theme.secondaryText}
                 />
                 <Text style={styles.previewFallback} numberOfLines={2}>
-                  PDF preview unavailable
+                  {pdfErrorMessage || "PDF preview unavailable"}
                 </Text>
                 <TouchableOpacity
                   style={styles.openInViewerButton}

@@ -1,5 +1,6 @@
 import { formatMediumDate, isExpired } from "@/utils/date-time";
 import { pickDocument } from "@/utils/file-pickers";
+import { error } from "@/utils/logger";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
@@ -92,6 +93,7 @@ const DocumentDetails = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const cancelUploadRef = useRef<(() => Promise<void>) | null>(null);
+  const isPickingDocumentRef = useRef(false);
 
   let colorScheme = useColorScheme();
   if (!colorScheme) colorScheme = "light";
@@ -178,25 +180,33 @@ const DocumentDetails = () => {
   };
 
   const handleReplace = async () => {
-    if (!document) return;
+    if (!document || isPickingDocumentRef.current) return;
 
-    const picked = await pickDocument();
-    if (!picked) return;
+    isPickingDocumentRef.current = true;
+    try {
+      const picked = await pickDocument();
+      if (!picked) return;
 
-    const file = {
-      uri: picked.uri,
-      name: picked.name,
-      mimeType: picked.mimeType,
-    };
+      const file = {
+        uri: picked.uri,
+        name: picked.name,
+        mimeType: picked.mimeType,
+      };
 
-    if (document.document.expiry_date_mandatory === "yes") {
-      setPendingFile(file);
-      setExpiryDraft("");
-      setExpiryError(null);
-      return;
+      if (document.document.expiry_date_mandatory === "yes") {
+        setPendingFile(file);
+        setExpiryDraft("");
+        setExpiryError(null);
+        return;
+      }
+
+      openConfirm(file);
+    } catch (err) {
+      error("Re-upload document picker failed:", err);
+      Alert.alert("Error", "Could not open the file picker. Please try again.");
+    } finally {
+      isPickingDocumentRef.current = false;
     }
-
-    openConfirm(file);
   };
 
   const confirmReplacementWithExpiry = () => {
