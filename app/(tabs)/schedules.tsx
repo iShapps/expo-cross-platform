@@ -9,13 +9,15 @@ import {
 import { ShiftCardBase } from "@/components/pay-run";
 import TabsHeader from "@/components/shared/tabs-header";
 import { ShiftCardBaseSkeleton } from "@/components/skeletons/payrun-card-base-skeleton";
-import { Colors } from "@/constants/theme";
+import { Colors, Radii } from "@/constants/theme";
 import { useProfileData } from "@/data-store/use-account-store";
 import { IShift } from "@/data-types/shifts";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useFirstVisitTour } from "@/hooks/use-first-visit-tour";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { useIsFocused } from "@react-navigation/native";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import React, {
@@ -35,7 +37,10 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
+import { CopilotStep, walkthroughable } from "react-native-copilot";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+const WalkthroughableView = walkthroughable(View);
 
 // a4cfbbf7-fae5-470b-bb0c-b6bc8f673ade -android app id
 
@@ -236,62 +241,87 @@ export default function Schedules() {
     }
   }, [scheduledShifts.length]);
 
+  const isFocused = useIsFocused();
+
+  useFirstVisitTour("myShifts", isFocused && !runningQuery.isLoading);
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <TabsHeader
         title="Schedule"
         right={
-          <Pressable
-            onPress={() =>
-              router.push({
-                pathname: "/date-sheet",
-              })
-            }
-            style={{ paddingRight: 18 }}
+          <CopilotStep
+            name="my-shifts-date-filter"
+            order={1}
+            active={isFocused}
+            text="Filter by date range to find shifts on a specific day or week."
           >
-            <Ionicons
-              name="calendar-outline"
-              size={24}
-              color={theme.whiteText}
-            />
-          </Pressable>
+            <WalkthroughableView>
+              <Pressable
+                onPress={() =>
+                  router.push({
+                    pathname: "/date-sheet",
+                  })
+                }
+                style={{ paddingRight: 18 }}
+              >
+                <Ionicons
+                  name="calendar-outline"
+                  size={24}
+                  color={theme.whiteText}
+                />
+              </Pressable>
+            </WalkthroughableView>
+          </CopilotStep>
         }
       />
       <View style={styles.container}>
-        <ScrollView
-          ref={tabScrollRef}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.tabsRow}
+        <CopilotStep
+          name="my-shifts-tabs"
+          order={2}
+          active={isFocused}
+          text="Running, Scheduled, Pending Approval, Approved, Cancelled, and Transferred — track every stage of your shifts here."
         >
-          {statusTabs.map((status, index) => {
-            const isActive = activeStatus === status;
-            return (
-              <Pressable
-                key={status}
-                onPress={() => handleTabPress(index)}
-                style={styles.tabButton}
-                android_ripple={{ color: theme.grayBorder }}
-                onLayout={(e) => {
-                  tabOffsetsRef.current[index] = e.nativeEvent.layout.x;
-                  tabWidthsRef.current[index] = e.nativeEvent.layout.width;
-                }}
-              >
-                <Text
-                  style={[styles.tabText, isActive && styles.tabTextActive]}
-                >
-                  {status}
-                </Text>
-                <View
-                  style={[
-                    styles.tabUnderline,
-                    isActive && styles.tabUnderlineActive,
-                  ]}
-                />
-              </Pressable>
-            );
-          })}
-        </ScrollView>
+          <WalkthroughableView>
+            <ScrollView
+              ref={tabScrollRef}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.tabsRow}
+            >
+              {statusTabs.map((status, index) => {
+                const isActive = activeStatus === status;
+                return (
+                  <Pressable
+                    key={status}
+                    onPress={() => handleTabPress(index)}
+                    style={styles.tabButton}
+                    android_ripple={{ color: theme.grayBorder }}
+                    onLayout={(e) => {
+                      tabOffsetsRef.current[index] = e.nativeEvent.layout.x;
+                      tabWidthsRef.current[index] = e.nativeEvent.layout.width;
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.tabText,
+                        isActive && styles.tabTextActive,
+                      ]}
+                    >
+                      {status}
+                    </Text>
+                    <View
+                      style={[
+                        styles.tabUnderline,
+                        isActive && styles.tabUnderlineActive,
+                      ]}
+                    />
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </WalkthroughableView>
+        </CopilotStep>
         {/* <FlatList
           // style={{ flex: 1 }}
           data={sample_payruns}
@@ -507,7 +537,7 @@ export default function Schedules() {
                           backgroundColor: theme.mutedText,
                           paddingHorizontal: 24,
                           paddingVertical: 10,
-                          borderRadius: 20,
+                          borderRadius: Radii.full,
                           flexDirection: "row",
                           alignItems: "center",
                           justifyContent: "center",
@@ -535,7 +565,22 @@ export default function Schedules() {
                 return (
                   <FlatList
                     data={data}
-                    renderItem={({ item }) => <ShiftCardBase shift={item} />}
+                    renderItem={({ item, index }) =>
+                      status === "Running" && index === 0 ? (
+                        <CopilotStep
+                          name="my-shifts-first-card"
+                          order={3}
+                          active={isFocused}
+                          text="Tap any shift to see its full details."
+                        >
+                          <WalkthroughableView>
+                            <ShiftCardBase shift={item} />
+                          </WalkthroughableView>
+                        </CopilotStep>
+                      ) : (
+                        <ShiftCardBase shift={item} />
+                      )
+                    }
                     keyExtractor={(item) =>
                       item.id?.toString?.() || String(item.id)
                     }
@@ -633,7 +678,7 @@ const getStyles = (theme: typeof Colors.light) =>
     underline: {
       height: 3,
       width: 56,
-      borderRadius: 999,
+      borderRadius: Radii.full,
       backgroundColor: theme.activeText,
       opacity: 0.85,
       marginTop: 6,
@@ -660,7 +705,7 @@ const getStyles = (theme: typeof Colors.light) =>
     tabUnderline: {
       height: 2,
       width: "100%",
-      borderRadius: 999,
+      borderRadius: Radii.full,
       backgroundColor: "transparent",
       marginTop: 6,
     },

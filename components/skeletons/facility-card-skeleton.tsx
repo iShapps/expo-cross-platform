@@ -1,4 +1,4 @@
-import { Colors } from "@/constants/theme";
+import { Colors, Radii } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import React from "react";
 import { StyleSheet, View } from "react-native";
@@ -14,15 +14,27 @@ const FacilityCardSkeleton: React.FC = () => {
       <View style={styles.heroContent}>
         <SkeletonBase width={120} height={18} style={styles.heroName} />
         <View style={styles.heroText}>
-          <SkeletonBase width={16} height={16} style={{ borderRadius: 8 }} />
+          <SkeletonBase
+            width={16}
+            height={16}
+            style={{ borderRadius: Radii.full }}
+          />
           <SkeletonBase width={90} height={14} style={styles.heroMeta} />
         </View>
         <View style={styles.heroText}>
-          <SkeletonBase width={16} height={16} style={{ borderRadius: 8 }} />
+          <SkeletonBase
+            width={16}
+            height={16}
+            style={{ borderRadius: Radii.full }}
+          />
           <SkeletonBase width={110} height={14} style={styles.heroMeta} />
         </View>
         <View style={styles.heroText}>
-          <SkeletonBase width={14} height={14} style={{ borderRadius: 7 }} />
+          <SkeletonBase
+            width={14}
+            height={14}
+            style={{ borderRadius: Radii.full }}
+          />
           <SkeletonBase width={60} height={14} style={styles.heroMeta} />
         </View>
       </View>
@@ -37,7 +49,7 @@ const getStyles = (theme: typeof Colors.light) =>
     heroCard: {
       marginTop: 8,
       backgroundColor: theme.heroBg,
-      borderRadius: 5,
+      borderRadius: Radii.sm,
       padding: 10,
       display: "flex",
       flexDirection: "column",

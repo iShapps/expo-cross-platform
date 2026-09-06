@@ -1,11 +1,14 @@
 import { sendTestNotification } from "@/api-actions/notifications";
 import { useSession } from "@/app/ctx";
 import Header from "@/components/Header";
-import { Colors } from "@/constants/theme";
+import { Colors, Radii } from "@/constants/theme";
 import { useSettingsStore } from "@/data-store/use-settings-store";
+import { useTourStore } from "@/data-store/use-tour-store";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useFirstVisitTour } from "@/hooks/use-first-visit-tour";
 import { useOneSignalSubscriptionStatus } from "@/hooks/use-one-signal";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { useIsFocused } from "@react-navigation/native";
 import * as Application from "expo-application";
 import { router } from "expo-router";
 import React, { useState } from "react";
@@ -18,7 +21,10 @@ import {
   Text,
   View,
 } from "react-native";
+import { CopilotStep, walkthroughable } from "react-native-copilot";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+const WalkthroughableView = walkthroughable(View);
 
 export default function SettingsScreen() {
   let colorScheme = useColorScheme();
@@ -45,7 +51,30 @@ export default function SettingsScreen() {
     setBiometrics,
   } = useSettingsStore();
 
+  const resetTours = useTourStore((state) => state.resetAll);
+
+  const isFocused = useIsFocused();
+
+  useFirstVisitTour("settings", isFocused);
+
   const appVersion = `${Application.nativeApplicationVersion} (${Application.nativeBuildVersion})`;
+
+  const handleReplayTour = () => {
+    Alert.alert(
+      "Replay app tour",
+      "This will show the guided tour again the next time you visit the Dashboard, Shifts, My Shifts, a shift's details, Documents, and More.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Replay",
+          onPress: async () => {
+            await resetTours();
+            router.push("/(tabs)");
+          },
+        },
+      ],
+    );
+  };
 
   const handleRetryNotificationsSetup = async () => {
     setIsRetryingNotifications(true);
@@ -114,9 +143,15 @@ export default function SettingsScreen() {
       <View style={{ flex: 1 }}>
         <View style={styles.linksContainer}>
           <Text style={styles.sectionHeader}>App permissions</Text>
-          <View style={styles.settingsWrap}>
-            {/* Location Access */}
-            <View style={styles.settingCard}>
+          <CopilotStep
+            name="settings-overview"
+            order={1}
+            active={isFocused}
+            text="Manage device permissions, theme, biometric login, and replay the app tour from here."
+          >
+            <WalkthroughableView style={styles.settingsWrap}>
+              {/* Location Access */}
+              <View style={styles.settingCard}>
               <View style={styles.settingIconWrap}>
                 <Ionicons
                   name="location-sharp"
@@ -211,23 +246,35 @@ export default function SettingsScreen() {
                       )}
                     </Pressable>
                   )}
-                  <Pressable
-                    onPress={handleTestPushNotifications}
-                    disabled={isTestingNotifications}
-                    style={({ pressed }) => [
-                      styles.retryButton,
-                      pressed && styles.retryButtonPressed,
-                      isTestingNotifications && styles.retryButtonDisabled,
-                    ]}
+                  <CopilotStep
+                    name="settings-test-notification"
+                    order={2}
+                    active={isFocused}
+                    text="Send yourself a test notification to confirm push notifications are actually reaching this device."
                   >
-                    {isTestingNotifications ? (
-                      <ActivityIndicator size="small" color={appTheme.white} />
-                    ) : (
-                      <Text style={styles.retryButtonText}>
-                        Test push notifications
-                      </Text>
-                    )}
-                  </Pressable>
+                    <WalkthroughableView>
+                      <Pressable
+                        onPress={handleTestPushNotifications}
+                        disabled={isTestingNotifications}
+                        style={({ pressed }) => [
+                          styles.retryButton,
+                          pressed && styles.retryButtonPressed,
+                          isTestingNotifications && styles.retryButtonDisabled,
+                        ]}
+                      >
+                        {isTestingNotifications ? (
+                          <ActivityIndicator
+                            size="small"
+                            color={appTheme.white}
+                          />
+                        ) : (
+                          <Text style={styles.retryButtonText}>
+                            Test push notifications
+                          </Text>
+                        )}
+                      </Pressable>
+                    </WalkthroughableView>
+                  </CopilotStep>
                 </View>
               </View>
             </View>
@@ -305,7 +352,31 @@ export default function SettingsScreen() {
                 trackColor={{ false: "gray", true: appTheme.primary }}
               />
             </View>
-          </View>
+
+            {/* Replay app tour */}
+            <Pressable style={styles.settingCard} onPress={handleReplayTour}>
+              <View style={styles.settingIconWrap}>
+                <Ionicons
+                  name="school-outline"
+                  size={22}
+                  color={appTheme.activeText}
+                />
+              </View>
+              <View style={styles.settingTextWrap}>
+                <Text style={styles.settingTitle}>Replay app tour</Text>
+                <Text style={styles.settingDesc}>
+                  See the guided walkthrough of the dashboard, shifts, my
+                  shifts, documents, and more again.
+                </Text>
+              </View>
+              <Ionicons
+                name="chevron-forward"
+                size={20}
+                color={appTheme.secondaryText}
+              />
+            </Pressable>
+            </WalkthroughableView>
+          </CopilotStep>
         </View>
         {/* App Version Footer */}
         <View style={styles.versionContainer}>
@@ -351,12 +422,12 @@ const getStyles = (appTheme: typeof Colors.light) =>
       backgroundColor: appTheme.whiteBackground,
       borderWidth: 1,
       borderColor: appTheme.divider,
-      borderRadius: 5,
+      borderRadius: Radii.md,
     },
     settingCardMain: {
       flexDirection: "column",
       backgroundColor: appTheme.whiteBackground,
-      borderRadius: 5,
+      borderRadius: Radii.sm,
       padding: 10,
       marginBottom: 2,
       shadowColor: appTheme.shadow,
@@ -371,7 +442,7 @@ const getStyles = (appTheme: typeof Colors.light) =>
       flexDirection: "row",
       alignItems: "center",
       backgroundColor: appTheme.whiteBackground,
-      borderRadius: 5,
+      borderRadius: Radii.sm,
       padding: 10,
       marginBottom: 2,
       shadowColor: appTheme.shadow,
@@ -385,7 +456,7 @@ const getStyles = (appTheme: typeof Colors.light) =>
     settingIconWrap: {
       width: 38,
       height: 38,
-      borderRadius: 50,
+      borderRadius: Radii.full,
       backgroundColor: appTheme.heroBg,
       alignItems: "center",
       justifyContent: "center",
@@ -419,7 +490,7 @@ const getStyles = (appTheme: typeof Colors.light) =>
     retryButton: {
       minHeight: 34,
       paddingHorizontal: 12,
-      borderRadius: 5,
+      borderRadius: Radii.sm,
       backgroundColor: appTheme.primary,
       alignItems: "center",
       justifyContent: "center",

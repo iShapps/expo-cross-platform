@@ -1,4 +1,4 @@
-import { Colors } from "@/constants/theme";
+import { Colors, Radii } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import React from "react";
 import { StyleSheet, View } from "react-native";
@@ -13,25 +13,25 @@ export const NotificationCardSkeleton: React.FC = () => {
   return (
     <View style={styles.card}>
       <View style={styles.iconContainer}>
-        <SkeletonBase width={40} height={40} borderRadius={20} />
+        <SkeletonBase width={40} height={40} borderRadius={Radii.full} />
       </View>
       <View style={styles.content}>
         <SkeletonBase
           width="70%"
           height={14}
-          borderRadius={4}
+          borderRadius={Radii.xs}
           style={styles.title}
         />
         <SkeletonBase
           width="100%"
           height={12}
-          borderRadius={4}
+          borderRadius={Radii.xs}
           style={styles.message}
         />
-        <SkeletonBase width="50%" height={11} borderRadius={4} />
+        <SkeletonBase width="50%" height={11} borderRadius={Radii.xs} />
       </View>
       <View style={styles.detailHint}>
-        <SkeletonBase width={20} height={20} borderRadius={4} />
+        <SkeletonBase width={20} height={20} borderRadius={Radii.xs} />
       </View>
     </View>
   );
@@ -41,7 +41,7 @@ const getStyles = (theme: typeof Colors.light) =>
   StyleSheet.create({
     card: {
       backgroundColor: theme.whiteBackground,
-      borderRadius: 5,
+      borderRadius: Radii.sm,
       padding: 12,
       marginBottom: 4,
       flexDirection: "row",
@@ -60,7 +60,7 @@ const getStyles = (theme: typeof Colors.light) =>
     iconContainer: {
       width: 40,
       height: 40,
-      borderRadius: 20,
+      borderRadius: Radii.full,
       justifyContent: "center",
       alignItems: "center",
       marginRight: 12,

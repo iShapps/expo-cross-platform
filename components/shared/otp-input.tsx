@@ -1,3 +1,4 @@
+import { Radii } from "@/constants/theme";
 import React, {
     forwardRef,
     useEffect,
@@ -267,7 +268,7 @@ const styles = StyleSheet.create({
     height: 46,
     borderWidth: 2,
     borderColor: "#E0E0E0",
-    borderRadius: 8,
+    borderRadius: Radii.sm,
     textAlign: "center",
     fontSize: 24,
     fontWeight: "600",

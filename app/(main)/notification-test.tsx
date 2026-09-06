@@ -1,4 +1,4 @@
-import { Colors } from "@/constants/theme";
+import { Colors, Radii } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { router } from "expo-router";
@@ -83,7 +83,7 @@ const getStyles = (theme: typeof Colors.light) =>
     checkOuter: {
       width: 132,
       height: 132,
-      borderRadius: 66,
+      borderRadius: Radii.full,
       alignItems: "center",
       justifyContent: "center",
       backgroundColor: `${theme.primary}1A`,
@@ -92,7 +92,7 @@ const getStyles = (theme: typeof Colors.light) =>
     checkInner: {
       width: 96,
       height: 96,
-      borderRadius: 48,
+      borderRadius: Radii.full,
       alignItems: "center",
       justifyContent: "center",
     },
@@ -114,7 +114,7 @@ const getStyles = (theme: typeof Colors.light) =>
     },
     button: {
       paddingVertical: 10,
-      borderRadius: 50,
+      borderRadius: Radii.full,
       paddingHorizontal: 20,
       flexDirection: "row",
       alignItems: "center",

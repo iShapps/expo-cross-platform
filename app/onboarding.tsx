@@ -1,13 +1,16 @@
+import { logApiErrorToSentry } from "@/api-actions/error-utils";
 import {
   City,
   getOnboardingHcp,
   getStates,
+  OnboardingQueryError,
   State,
   submitPersonalDetails,
   submitProfessionalDetails,
   uploadDocument,
 } from "@/api-queries/onboarding";
-import { Colors } from "@/constants/theme";
+import { DocumentPreviewModal } from "@/components/document-preview-modal";
+import { Colors, Radii } from "@/constants/theme";
 import { RegistrationStatusResponse } from "@/data-types/auth";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import {
@@ -17,15 +20,16 @@ import {
 } from "@/utils/auth-api";
 import { pickDocument } from "@/utils/file-pickers";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import * as FileSystem from "expo-file-system";
-import { Image } from "expo-image";
+import * as Haptics from "expo-haptics";
+
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Animated,
+  Easing,
   KeyboardAvoidingView,
-  Linking,
   Modal,
   Platform,
   Pressable,
@@ -43,10 +47,22 @@ import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
-import { WebView } from "react-native-webview";
 import { useSession } from "./ctx";
 
+const TEXT_SAFE_PRIMARY = "#3D7A00";
+const TEXT_SAFE_DANGER = "#C93C2E";
+
+const SURFACE_TINT = "#F2F9E9";
+const SURFACE_TINT_DEEP = "#E6F3D4";
+const ACCENT_BORDER = "#CFE8A8";
+const UPLOAD_BOX_BG = "#F5F5F5";
+
 type OnboardingStepId = 1 | 2 | 3 | 4 | 5;
+
+function parseOnboardingStep(value?: string): OnboardingStepId {
+  const parsed = Number(value);
+  return parsed >= 1 && parsed <= 5 ? (parsed as OnboardingStepId) : 1;
+}
 
 type UploadedFile = {
   name: string;
@@ -54,6 +70,8 @@ type UploadedFile = {
   mimeType?: string;
   size?: number;
 };
+
+let cachedCv: UploadedFile | undefined;
 
 type DocumentRequirement = {
   id: string;
@@ -78,7 +96,7 @@ const steps: {
 }[] = [
   {
     id: 1,
-    title: "Basic details",
+    title: "Personal details",
     eyebrow: "Profile",
     icon: "person-outline",
   },
@@ -96,17 +114,22 @@ const steps: {
   },
   {
     id: 4,
-    title: "Professional documents",
-    eyebrow: "Documents",
-    icon: "document-text-outline",
-  },
-  {
-    id: 5,
     title: "Mandatory documents",
     eyebrow: "Compliance",
     icon: "shield-checkmark-outline",
   },
+  {
+    id: 5,
+    title: "Professional documents",
+    eyebrow: "Documents",
+    icon: "document-text-outline",
+  },
 ];
+
+const PROFESSIONAL_DETAILS_STEP_ENABLED = false;
+const visibleSteps = PROFESSIONAL_DETAILS_STEP_ENABLED
+  ? steps
+  : steps.filter((step) => step.id !== 3);
 
 const genderOptions = ["Male", "Female", "Other"];
 
@@ -256,8 +279,7 @@ export default function OnboardingScreen() {
     RegistrationStatusResponse["data"] | null
   >(null);
 
-  const [activeStep, setActiveStep] = useState<OnboardingStepId>(1);
-  const [personalDetails, setPersonalDetails] = useState({
+  const buildPersonalDetails = () => ({
     firstName: user?.hcp?.first_name ?? "",
     lastName: user?.hcp?.last_name ?? "",
     email: user?.email ?? "",
@@ -280,12 +302,20 @@ export default function OnboardingScreen() {
       : "",
     acceptLowerLevelJob: (user?.hcp?.accept_lower_level_job ?? 0) === 1,
   });
-  const [professionalDetails, setProfessionalDetails] = useState({
+  const buildProfessionalDetails = (cv: UploadedFile | undefined) => ({
     tfnNumber: user?.hcp?.tfn_number ?? "",
     registrationNumber: user?.hcp?.registration_number ?? "",
     abn_number: user?.hcp?.abn_number ?? "",
-    cv: undefined as UploadedFile | undefined,
+    cv,
   });
+
+  const [activeStep, setActiveStep] = useState<OnboardingStepId>(() =>
+    parseOnboardingStep(params.screen),
+  );
+  const [personalDetails, setPersonalDetails] = useState(buildPersonalDetails);
+  const [professionalDetails, setProfessionalDetails] = useState(() =>
+    buildProfessionalDetails(cachedCv),
+  );
   const [states, setStates] = useState<State[]>([]);
   const [isLoadingStates, setIsLoadingStates] = useState(false);
   const [statesError, setStatesError] = useState<string | null>(null);
@@ -294,18 +324,18 @@ export default function OnboardingScreen() {
 
   const professionDocumentRequirements = useMemo<DocumentRequirement[]>(() => {
     if (!registrationStatus) return [];
-    return registrationStatus.missing_documents.profession.map((item) => ({
-      id: String(item.document.id),
-      name: item.document.name,
-      mandatory: item.document.mandatory_status === "yes",
-      requiresExpiry: item.document.expiry_date_mandatory === "yes",
+    return registrationStatus.missing_documents.profession.map((doc) => ({
+      id: String(doc.document_id),
+      name: doc.name,
+      mandatory: doc.mandatory_status === "yes",
+      requiresExpiry: doc.expiry_date_mandatory === "yes",
     }));
   }, [registrationStatus]);
 
   const mandatoryDocumentRequirements = useMemo<DocumentRequirement[]>(() => {
     if (!registrationStatus) return [];
     return registrationStatus.missing_documents.general.map((doc) => ({
-      id: String(doc.id),
+      id: String(doc.document_id),
       name: doc.name,
       mandatory: doc.mandatory_status === "yes",
       requiresExpiry: doc.expiry_date_mandatory === "yes",
@@ -324,51 +354,99 @@ export default function OnboardingScreen() {
   const [dateErrors, setDateErrors] = useState<Record<string, string>>({});
   const [showSuccess, setShowSuccess] = useState(false);
 
-  const activeIndex = steps.findIndex((step) => step.id === activeStep);
-  const activeStepMeta = steps[activeIndex] ?? steps[0];
-  const completion = useMemo(() => {
-    const completed = Math.max(activeIndex, 0);
-    return Math.round((completed / steps.length) * 100);
-  }, [activeIndex]);
+  const previousHcpIdRef = useRef(hcpId);
+  useEffect(() => {
+    if (previousHcpIdRef.current === hcpId) return;
+    previousHcpIdRef.current = hcpId;
+
+    cachedCv = undefined;
+    setActiveStep(parseOnboardingStep(params.screen));
+    setPersonalDetails(buildPersonalDetails());
+    setProfessionalDetails(buildProfessionalDetails(undefined));
+    setProfessionalDocuments({});
+    setMandatoryDocuments({});
+    setDateErrors({});
+    setRegistrationStatus(null);
+    setIsCheckingStatus(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hcpId]);
+
+  const activeIndex = visibleSteps.findIndex((step) => step.id === activeStep);
+  const activeStepMeta = visibleSteps[activeIndex] ?? visibleSteps[0];
+
+  // Fades/slides the step content in on every step change, forward or back.
+  const stepAnim = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    stepAnim.setValue(0);
+    Animated.timing(stepAnim, {
+      toValue: 1,
+      duration: 260,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+  }, [activeStep, stepAnim]);
+  const stepAnimStyle = {
+    opacity: stepAnim,
+    transform: [
+      {
+        translateY: stepAnim.interpolate({
+          inputRange: [0, 1],
+          outputRange: [14, 0],
+        }),
+      },
+    ],
+  };
 
   // Keep a stable ref to updateHcp so Effect 1 can call the latest version
-  // without listing it as a dependency (which would restart the effect on every user-store write and cause an infinite loop).
   const updateHcpRef = useRef(updateHcp);
   useEffect(() => {
     updateHcpRef.current = updateHcp;
   }, [updateHcp]);
 
-  // Single source of truth for "fetch status -> update local state".
-  // Every call site goes through here so setRegistrationStatus is never skipped.
-  // Returns the fresh data so callers can derive the next step from it.
+  const signOutRef = useRef(signOut);
+  useEffect(() => {
+    signOutRef.current = signOut;
+  }, [signOut]);
+
   const refreshStatus = React.useCallback(async () => {
     const token = await TokenStorage.getToken();
-    if (!token) return null;
-    const status = await getRegistrationStatus(token).catch(() => null);
+    if (!token || !hcpId) return null;
+    const status = await getRegistrationStatus(token, hcpId).catch(() => null);
     if (!status) return null;
+
+    if (status.data.steps.registration_complete) {
+      updateHcpRef.current({ app_registration_screen: "0" });
+      void signOutRef.current().then(() => {
+        router.replace("/(open)/login");
+      });
+      return null;
+    }
+
     setRegistrationStatus(status.data);
     updateHcpRef.current({
       app_registration_screen: String(resolveOnboardingStep(status.data)),
     });
     return status.data;
-  }, []);
+  }, [router, hcpId]);
 
-  // Effect 1: Registration status is sole source of truth for the current step.
-  // Runs exactly once on mount. Independent of the HCP data fetch so a failure in either does not block the other.
   useEffect(() => {
     let cancelled = false;
 
     TokenStorage.getToken()
       .then((token) => {
-        if (cancelled || !token) return null;
-        return getRegistrationStatus(token);
+        if (cancelled || !token || !hcpId) return null;
+        return getRegistrationStatus(token, hcpId);
       })
       .then((statusResponse) => {
         if (cancelled || !statusResponse) return;
-        // Registration fully done — leave onboarding and go to the main app.
+        // Registration fully done via some other path (e.g. an admin
+        // finishing document upload while the user was still on this
+        // screen) — sign out and force a fresh login
         if (statusResponse.data.steps.registration_complete) {
           updateHcpRef.current({ app_registration_screen: "0" });
-          router.replace("/(tabs)");
+          void signOutRef.current().then(() => {
+            router.replace("/(open)/login");
+          });
           return;
         }
         setRegistrationStatus(statusResponse.data);
@@ -386,7 +464,7 @@ export default function OnboardingScreen() {
     return () => {
       cancelled = true;
     };
-  }, [router]);
+  }, [router, hcpId]);
 
   // Effect 2: HCP data -> used only to prefill form fields.
   useEffect(() => {
@@ -403,26 +481,27 @@ export default function OnboardingScreen() {
 
         setPersonalDetails((current) => ({
           ...current,
-          firstName: details.first_name ?? "",
-          lastName: details.last_name ?? "",
-          email: details.email ?? "",
-          contactNumber: details.contact_number ?? "",
-          dateOfBirth: details.date_of_birth ?? "",
-          gender: details.gender ?? "",
-          stateName: details.state?.name ?? "",
-          stateId: details.state?.id ?? null,
-          address: details.address ?? "",
-          city: details.city_name ?? "",
-          suburb: details.suburb_name ?? "",
-          postCode: details.post_code ?? "",
-          nextOfKin: details.next_of_kin ?? "",
-          aboutMe: details.about_me ?? "",
+          firstName: current.firstName || details.first_name || "",
+          lastName: current.lastName || details.last_name || "",
+          email: current.email || details.email || "",
+          contactNumber: current.contactNumber || details.contact_number || "",
+          dateOfBirth: current.dateOfBirth || details.date_of_birth || "",
+          gender: current.gender || details.gender || "",
+          stateName: current.stateName || details.state?.name || "",
+          stateId: current.stateId ?? details.state?.id ?? null,
+          address: current.address || details.address || "",
+          city: current.city || details.city_name || "",
+          suburb: current.suburb || details.suburb_name || "",
+          postCode: current.postCode || details.post_code || "",
+          nextOfKin: current.nextOfKin || details.next_of_kin || "",
+          aboutMe: current.aboutMe || details.about_me || "",
         }));
         setProfessionalDetails((current) => ({
           ...current,
-          tfnNumber: details.tfn_number ?? "",
-          registrationNumber: details.registration_number ?? "",
-          abn_number: details.abn_number ?? "",
+          tfnNumber: current.tfnNumber || details.tfn_number || "",
+          registrationNumber:
+            current.registrationNumber || details.registration_number || "",
+          abn_number: current.abn_number || details.abn_number || "",
         }));
       })
       .catch(() => {
@@ -480,15 +559,14 @@ export default function OnboardingScreen() {
   const handlePickCv = async () => {
     const file = await pickDocument();
     if (!file) return;
-    setProfessionalDetails((curr) => ({
-      ...curr,
-      cv: {
-        name: file.name,
-        uri: file.uri,
-        mimeType: file.mimeType,
-        size: file.size,
-      },
-    }));
+    const picked: UploadedFile = {
+      name: file.name,
+      uri: file.uri,
+      mimeType: file.mimeType,
+      size: file.size,
+    };
+    cachedCv = picked;
+    setProfessionalDetails((curr) => ({ ...curr, cv: picked }));
   };
 
   const handlePickDocument = async (
@@ -515,6 +593,13 @@ export default function OnboardingScreen() {
         },
       },
     }));
+    setDateErrors((current) => {
+      const key = `${collection}:${requirement.id}:file`;
+      if (!(key in current)) return current;
+      const next = { ...current };
+      delete next[key];
+      return next;
+    });
   };
 
   const setDocumentExpiry = (
@@ -536,7 +621,7 @@ export default function OnboardingScreen() {
     }));
     setDateErrors((current) => {
       const next = { ...current };
-      const key = `${collection}:${requirement.id}`;
+      const key = `${collection}:${requirement.id}:expiry`;
       const error = getPartialDateError(expiry, {
         label: `${requirement.name} expiry`,
         allowPast: false,
@@ -574,6 +659,20 @@ export default function OnboardingScreen() {
     const nextDateErrors: Record<string, string> = {};
 
     if (activeStep === 1) {
+      if (
+        !personalDetails.firstName.trim() ||
+        !personalDetails.lastName.trim() ||
+        !personalDetails.contactNumber.trim() ||
+        !personalDetails.gender.trim() ||
+        !personalDetails.dateOfBirth.trim()
+      ) {
+        Alert.alert(
+          "Missing field",
+          "Please fill in your first name, last name, contact number, date of birth, and gender.",
+        );
+        return;
+      }
+
       const dateOfBirthError = getDateError(personalDetails.dateOfBirth, {
         label: "Date of birth",
         allowFuture: false,
@@ -584,26 +683,52 @@ export default function OnboardingScreen() {
       }
     }
 
+    if (activeStep === 3) {
+      const tfn = professionalDetails.tfnNumber.trim();
+      if (tfn && tfn.length !== 9) {
+        nextDateErrors.tfnNumber = "Tax File Number must be 9 digits.";
+      }
+    }
+
     if (activeStep === 4 || activeStep === 5) {
-      const collection = activeStep === 4 ? "professional" : "mandatory";
+      const collection = activeStep === 4 ? "mandatory" : "professional";
       const requirements =
         activeStep === 4
-          ? professionDocumentRequirements
-          : mandatoryDocumentRequirements;
+          ? mandatoryDocumentRequirements
+          : professionDocumentRequirements;
       const values =
-        activeStep === 4 ? professionalDocuments : mandatoryDocuments;
+        activeStep === 4 ? mandatoryDocuments : professionalDocuments;
 
       requirements.forEach((requirement) => {
+        const hasFile = !!values[requirement.id]?.file;
+
+        if (requirement.mandatory && !hasFile) {
+          nextDateErrors[
+            `${collection}:${requirement.id}:file`
+          ] = `${requirement.name} is required.`;
+        }
+
+        if (!requirement.requiresExpiry) return;
+
         const expiry = values[requirement.id]?.expiry ?? "";
-        const expiryError = requirement.requiresExpiry
-          ? getDateError(expiry, {
-              label: `${requirement.name} expiry`,
-              allowPast: false,
-            })
-          : null;
+
+        if (!expiry.trim()) {
+          if (hasFile || requirement.mandatory) {
+            nextDateErrors[
+              `${collection}:${requirement.id}:expiry`
+            ] = `${requirement.name} expiry is required.`;
+          }
+          return;
+        }
+
+        const expiryError = getDateError(expiry, {
+          label: `${requirement.name} expiry`,
+          allowPast: false,
+        });
 
         if (expiryError) {
-          nextDateErrors[`${collection}:${requirement.id}`] = expiryError;
+          nextDateErrors[`${collection}:${requirement.id}:expiry`] =
+            expiryError;
         }
       });
     }
@@ -619,17 +744,30 @@ export default function OnboardingScreen() {
         return;
       }
 
+      if (
+        !personalDetails.address.trim() ||
+        !personalDetails.latitude ||
+        !personalDetails.longitude ||
+        !personalDetails.postCode.trim()
+      ) {
+        Alert.alert(
+          "Missing field",
+          "Please select your address from the suggestions.",
+        );
+        return;
+      }
+
       setIsSubmittingStep(true);
 
       const personalPayload = {
         first_name: personalDetails.firstName,
         last_name: personalDetails.lastName,
         gender: personalDetails.gender.toLowerCase(),
-        country: 13,
-        state: personalDetails.stateId,
-        address: "123 Test Street, Sydney NSW 2000",
-        latitude: "-33.8688",
-        longitude: "151.2093",
+        country: 1,
+        state_id: personalDetails.stateId,
+        address: personalDetails.address,
+        latitude: personalDetails.latitude,
+        longitude: personalDetails.longitude,
         contact_number: personalDetails.contactNumber,
         date_of_birth: personalDetails.dateOfBirth,
         city: personalDetails.city,
@@ -646,13 +784,29 @@ export default function OnboardingScreen() {
         JSON.stringify(personalPayload, null, 2),
       );
 
+      if (!hcpId) {
+        Alert.alert("Error", "Missing HCP profile. Please sign in again.");
+        setIsSubmittingStep(false);
+        void signOut().then(() => {
+          router.replace("/(open)/login");
+        });
+        return;
+      }
+
       try {
-        const personalResult = await submitPersonalDetails(personalPayload);
+        const personalResult = await submitPersonalDetails(
+          hcpId,
+          personalPayload,
+        );
         updateHcp(personalResult.data);
-        await refreshStatus();
-        setActiveStep(3);
+        const freshData = await refreshStatus();
+        setActiveStep(freshData ? resolveOnboardingStep(freshData) : 4);
       } catch (err) {
         console.log("[ONB_ERROR]", err);
+        logApiErrorToSentry(err, {
+          endpoint: "/v2/registration/personal-details",
+          method: "PATCH",
+        });
         Alert.alert(
           "Error",
           err instanceof Error
@@ -688,9 +842,14 @@ export default function OnboardingScreen() {
       try {
         const profResult = await submitProfessionalDetails(professionalPayload);
         updateHcp(profResult.data);
+        cachedCv = undefined;
         const freshData = await refreshStatus();
         setActiveStep(freshData ? resolveOnboardingStep(freshData) : 4);
       } catch (err) {
+        logApiErrorToSentry(err, {
+          endpoint: "/v2/registration/professional-details",
+          method: "PATCH",
+        });
         Alert.alert(
           "Error",
           err instanceof Error
@@ -706,21 +865,10 @@ export default function OnboardingScreen() {
     if (activeStep === 4 || activeStep === 5) {
       const requirements =
         activeStep === 4
-          ? professionDocumentRequirements
-          : mandatoryDocumentRequirements;
+          ? mandatoryDocumentRequirements
+          : professionDocumentRequirements;
       const values =
-        activeStep === 4 ? professionalDocuments : mandatoryDocuments;
-
-      const missing = requirements.filter(
-        (r) => r.mandatory && !values[r.id]?.file,
-      );
-      if (missing.length > 0) {
-        Alert.alert(
-          "Missing documents",
-          `Please upload: ${missing.map((r) => r.name).join(", ")}`,
-        );
-        return;
-      }
+        activeStep === 4 ? mandatoryDocuments : professionalDocuments;
 
       const toUpload = requirements.filter((r) => values[r.id]?.file);
 
@@ -735,29 +883,63 @@ export default function OnboardingScreen() {
         JSON.stringify(docPayloads, null, 2),
       );
 
+      if (!hcpId) {
+        Alert.alert("Error", "Missing HCP profile. Please sign in again.");
+        void signOut().then(() => {
+          router.replace("/(open)/login");
+        });
+        return;
+      }
+
       setIsSubmittingStep(true);
 
       try {
-        await Promise.all(
-          toUpload.map((requirement) =>
-            uploadDocument({
+        for (const requirement of toUpload) {
+          console.log(
+            `[ONB] Uploading document_id=${requirement.id} (${requirement.name})…`,
+          );
+          try {
+            await uploadDocument(hcpId, {
               document_id: Number(requirement.id),
               file: values[requirement.id]!.file!,
               expiry_date: requirement.requiresExpiry
                 ? values[requirement.id]?.expiry
                 : undefined,
-            }),
-          ),
-        );
+            });
+            console.log(
+              `[ONB] Uploaded document_id=${requirement.id} (${requirement.name}) OK`,
+            );
+          } catch (uploadErr) {
+            console.log(
+              `[ONB] FAILED document_id=${requirement.id} (${requirement.name}):`,
+              uploadErr instanceof OnboardingQueryError
+                ? JSON.stringify(
+                    {
+                      message: uploadErr.message,
+                      statusCode: uploadErr.statusCode,
+                      details: uploadErr.details,
+                    },
+                    null,
+                    2,
+                  )
+                : uploadErr,
+            );
+            throw uploadErr;
+          }
+        }
 
         await refreshStatus();
-        const nextStep = steps[activeIndex + 1];
+        const nextStep = visibleSteps[activeIndex + 1];
         if (nextStep) {
           setActiveStep(nextStep.id);
         } else {
           setShowSuccess(true);
         }
       } catch (err) {
+        logApiErrorToSentry(err, {
+          endpoint: "/v2/registration/documents",
+          method: "POST",
+        });
         Alert.alert(
           "Error",
           err instanceof Error ? err.message : "Failed to upload documents.",
@@ -768,7 +950,7 @@ export default function OnboardingScreen() {
       return;
     }
 
-    const nextStep = steps[activeIndex + 1];
+    const nextStep = visibleSteps[activeIndex + 1];
 
     if (nextStep) {
       setActiveStep(nextStep.id);
@@ -776,7 +958,7 @@ export default function OnboardingScreen() {
   };
 
   const handleBack = () => {
-    const previousStep = steps[activeIndex - 1];
+    const previousStep = visibleSteps[activeIndex - 1];
 
     if (previousStep) {
       setActiveStep(previousStep.id);
@@ -795,15 +977,21 @@ export default function OnboardingScreen() {
               <Text style={styles.kicker}>Self onboarding</Text>
               <Text style={styles.title}>Complete your registration</Text>
             </View>
-            <Text style={styles.progressPillText}>{completion}%</Text>
+            <Text style={styles.progressPillText}>
+              Step {activeIndex + 1} of {visibleSteps.length}
+            </Text>
           </View>
-          <View style={styles.progressTrack}>
-            <View
-              style={[
-                styles.progressFill,
-                { width: `${Math.max(completion, 8)}%` },
-              ]}
-            />
+          <View style={styles.stepTrackerRow}>
+            {visibleSteps.map((step, index) => (
+              <View
+                key={step.id}
+                style={[
+                  styles.stepSegment,
+                  index < activeIndex && styles.stepSegmentDone,
+                  index === activeIndex && styles.stepSegmentActive,
+                ]}
+              />
+            ))}
           </View>
         </View>
 
@@ -815,213 +1003,189 @@ export default function OnboardingScreen() {
             { paddingBottom: insets.bottom + 124 },
           ]}
         >
-          <View style={styles.heroPanel}>
-            <View style={styles.heroIcon}>
-              <Ionicons
-                name={activeStepMeta.icon}
-                size={24}
-                color={theme.white}
-              />
+          <Animated.View style={[styles.stepAnimatedContent, stepAnimStyle]}>
+            <View style={styles.heroPanel}>
+              <View style={styles.heroIcon}>
+                <Ionicons
+                  name={activeStepMeta.icon}
+                  size={24}
+                  color={theme.white}
+                />
+              </View>
+              <View style={styles.heroText}>
+                <Text style={styles.heroEyebrow}>{activeStepMeta.eyebrow}</Text>
+                <Text style={styles.heroTitle}>{activeStepMeta.title}</Text>
+              </View>
             </View>
-            <View style={styles.heroText}>
-              <Text style={styles.heroEyebrow}>{activeStepMeta.eyebrow}</Text>
-              <Text style={styles.heroTitle}>{activeStepMeta.title}</Text>
-            </View>
-          </View>
 
-          {isLoadingHcp && (
-            <View style={styles.noticeBox}>
-              <Ionicons name="sync" size={18} color={theme.primary} />
-              <Text style={styles.noticeText}>
-                Loading your registration...
-              </Text>
-            </View>
-          )}
-          {activeStep === 1 && (
-            <View style={styles.formSection}>
-              <TwoColumn>
-                <Field
-                  label="First Name"
-                  value={personalDetails.firstName}
-                  onChangeText={(value) => setPersonalValue("firstName", value)}
-                  styles={styles}
-                  theme={theme}
-                />
-                <Field
-                  label="Last Name"
-                  value={personalDetails.lastName}
-                  onChangeText={(value) => setPersonalValue("lastName", value)}
-                  styles={styles}
-                  theme={theme}
-                />
-              </TwoColumn>
-              <Field
-                label="Email"
-                value={personalDetails.email}
-                onChangeText={(value) => setPersonalValue("email", value)}
-                keyboardType="email-address"
-                styles={styles}
-                theme={theme}
-              />
-              <TwoColumn>
-                <Field
-                  label="Contact Number"
-                  value={personalDetails.contactNumber}
-                  onChangeText={(value) =>
-                    setPersonalValue("contactNumber", value)
-                  }
-                  keyboardType="phone-pad"
-                  styles={styles}
-                  theme={theme}
-                />
-                <Field
-                  label="Date of Birth"
-                  value={personalDetails.dateOfBirth}
-                  onChangeText={(value) =>
-                    setPersonalValue(
-                      "dateOfBirth",
-                      formatDateInput(value, {
-                        maxYear: new Date().getFullYear(),
-                      }),
-                    )
-                  }
-                  placeholder="YYYY-MM-DD"
-                  keyboardType="number-pad"
-                  error={dateErrors.dateOfBirth}
-                  styles={styles}
-                  theme={theme}
-                />
-              </TwoColumn>
-              <OptionGrid
-                label="Gender"
-                options={genderOptions}
-                value={personalDetails.gender}
-                onChange={(value) => setPersonalValue("gender", value)}
-                variant="radio"
-                styles={styles}
-              />
-              <Field
-                label="About Me"
-                value={personalDetails.aboutMe}
-                onChangeText={(value) => setPersonalValue("aboutMe", value)}
-                multiline
-                styles={styles}
-                theme={theme}
-              />
-              <Field
-                label="Maximum Distance (km)"
-                value={personalDetails.maximumDistance}
-                onChangeText={(value) =>
-                  setPersonalValue("maximumDistance", value)
-                }
-                keyboardType="number-pad"
-                placeholder="e.g. 50"
-                styles={styles}
-                theme={theme}
-              />
-              <OptionGrid
-                label="Accept Lower Level Job"
-                options={["Yes", "No"]}
-                value={personalDetails.acceptLowerLevelJob ? "Yes" : "No"}
-                onChange={(value) =>
-                  setPersonalDetails((curr) => ({
-                    ...curr,
-                    acceptLowerLevelJob: value === "Yes",
-                  }))
-                }
-                variant="radio"
-                styles={styles}
-              />
-            </View>
-          )}
-
-          {activeStep === 2 && (
-            <View style={styles.formSection}>
-              {isLoadingStates && (
-                <View style={styles.noticeBox}>
-                  <Ionicons name="sync" size={18} color={theme.primary} />
-                  <Text style={styles.noticeText}>Loading states...</Text>
-                </View>
-              )}
-              {statesError && (
-                <View style={styles.errorBox}>
-                  <Ionicons
-                    name="alert-circle-outline"
-                    size={18}
-                    color={theme.danger}
+            {activeStep === 1 && (
+              <View style={styles.formSection}>
+                <TwoColumn>
+                  <Field
+                    label="First Name"
+                    value={personalDetails.firstName}
+                    onChangeText={(value) =>
+                      setPersonalValue("firstName", value)
+                    }
+                    styles={styles}
+                    theme={theme}
                   />
-                  <Text style={styles.errorText}>{statesError}</Text>
-                </View>
-              )}
-              <DropdownField
-                label="Select State"
-                options={states}
-                value={personalDetails.stateName}
-                onChange={(id, name) => {
-                  const selected = states.find((s) => s.id === id);
-                  setCities(selected?.cities ?? []);
-                  setPersonalDetails((curr) => ({
-                    ...curr,
-                    stateId: id,
-                    stateName: name,
-                    city: "",
-                    cityId: null,
-                  }));
-                }}
-                styles={styles}
-                theme={theme}
-              />
-              <DropdownField
-                label="Select City"
-                options={cities}
-                value={personalDetails.city}
-                placeholder={
-                  personalDetails.stateId
-                    ? "No cities available"
-                    : "Select a state first"
-                }
-                disabled={cities.length === 0}
-                onChange={(id, name) =>
-                  setPersonalDetails((curr) => ({
-                    ...curr,
-                    cityId: id,
-                    city: name,
-                  }))
-                }
-                styles={styles}
-                theme={theme}
-              />
-              <AddressAutocomplete
-                value={personalDetails.address}
-                onSelect={({
-                  address,
-                  latitude,
-                  longitude,
-                  city,
-                  suburb,
-                  postCode,
-                }) =>
-                  setPersonalDetails((curr) => ({
-                    ...curr,
+                  <Field
+                    label="Last Name"
+                    value={personalDetails.lastName}
+                    onChangeText={(value) =>
+                      setPersonalValue("lastName", value)
+                    }
+                    styles={styles}
+                    theme={theme}
+                  />
+                </TwoColumn>
+                <Field
+                  label="Email"
+                  value={personalDetails.email}
+                  onChangeText={(value) => setPersonalValue("email", value)}
+                  keyboardType="email-address"
+                  editable={false}
+                  styles={styles}
+                  theme={theme}
+                />
+                <TwoColumn>
+                  <Field
+                    label="Contact Number"
+                    value={personalDetails.contactNumber}
+                    onChangeText={(value) =>
+                      setPersonalValue("contactNumber", value)
+                    }
+                    keyboardType="phone-pad"
+                    styles={styles}
+                    theme={theme}
+                  />
+                  <Field
+                    label="Date of Birth"
+                    value={personalDetails.dateOfBirth}
+                    onChangeText={(value) =>
+                      setPersonalValue(
+                        "dateOfBirth",
+                        formatDateInput(value, {
+                          maxYear: new Date().getFullYear(),
+                        }),
+                      )
+                    }
+                    placeholder="YYYY-MM-DD"
+                    keyboardType="number-pad"
+                    error={dateErrors.dateOfBirth}
+                    styles={styles}
+                    theme={theme}
+                  />
+                </TwoColumn>
+                <OptionGrid
+                  label="Gender"
+                  options={genderOptions}
+                  value={
+                    personalDetails.gender.slice(0, 1).toUpperCase() +
+                    personalDetails.gender.slice(1).toLowerCase()
+                  }
+                  onChange={(value) => setPersonalValue("gender", value)}
+                  variant="radio"
+                  styles={styles}
+                />
+                <Field
+                  label="About Me"
+                  value={personalDetails.aboutMe}
+                  onChangeText={(value) => setPersonalValue("aboutMe", value)}
+                  multiline
+                  styles={styles}
+                  theme={theme}
+                />
+              </View>
+            )}
+
+            {activeStep === 2 && (
+              <View style={styles.formSection}>
+                {isLoadingStates && (
+                  <View style={styles.noticeBox}>
+                    <Ionicons name="sync" size={18} color={theme.primary} />
+                    <Text style={styles.noticeText}>Loading states...</Text>
+                  </View>
+                )}
+                {statesError && (
+                  <View style={styles.errorBox}>
+                    <Ionicons
+                      name="alert-circle-outline"
+                      size={18}
+                      color={theme.danger}
+                    />
+                    <Text style={styles.errorText}>{statesError}</Text>
+                  </View>
+                )}
+                <DropdownField
+                  label="Select State"
+                  options={states}
+                  value={personalDetails.stateName}
+                  onChange={(id, name) => {
+                    const selected = states.find((s) => s.id === id);
+                    setCities(selected?.cities ?? []);
+                    setPersonalDetails((curr) => ({
+                      ...curr,
+                      stateId: id,
+                      stateName: name,
+                      city: "",
+                      cityId: null,
+                    }));
+                  }}
+                  styles={styles}
+                  theme={theme}
+                />
+                <DropdownField
+                  label="Select City"
+                  options={cities}
+                  value={personalDetails.city}
+                  placeholder={
+                    personalDetails.stateId
+                      ? "No cities available"
+                      : "Select a state first"
+                  }
+                  disabled={cities.length === 0}
+                  onChange={(id, name) =>
+                    setPersonalDetails((curr) => ({
+                      ...curr,
+                      cityId: id,
+                      city: name,
+                    }))
+                  }
+                  styles={styles}
+                  theme={theme}
+                />
+                <AddressAutocomplete
+                  value={personalDetails.address}
+                  onSelect={({
                     address,
                     latitude,
                     longitude,
-                    city: city || curr.city,
-                    suburb: suburb || curr.suburb,
-                    postCode: postCode || curr.postCode,
-                  }))
-                }
-                styles={styles}
-                theme={theme}
-              />
-              <Field
-                label="Suburb"
-                value={personalDetails.suburb}
-                onChangeText={(value) => setPersonalValue("suburb", value)}
-                styles={styles}
-                theme={theme}
-              />
-              <TwoColumn>
+                    city,
+                    suburb,
+                    postCode,
+                  }) =>
+                    setPersonalDetails((curr) => ({
+                      ...curr,
+                      address,
+                      latitude,
+                      longitude,
+                      city: city || curr.city,
+                      suburb: suburb || curr.suburb,
+                      postCode: postCode || curr.postCode,
+                    }))
+                  }
+                  styles={styles}
+                  theme={theme}
+                />
+                <Field
+                  label="Suburb"
+                  value={personalDetails.suburb}
+                  onChangeText={(value) => setPersonalValue("suburb", value)}
+                  styles={styles}
+                  theme={theme}
+                />
                 <Field
                   label="Post Code"
                   value={personalDetails.postCode}
@@ -1030,42 +1194,39 @@ export default function OnboardingScreen() {
                   styles={styles}
                   theme={theme}
                 />
+              </View>
+            )}
+
+            {activeStep === 3 && (
+              <View style={styles.formSection}>
                 <Field
-                  label="Next Of Kin"
-                  value={personalDetails.nextOfKin}
-                  onChangeText={(value) => setPersonalValue("nextOfKin", value)}
+                  label="Tax File Number"
+                  value={professionalDetails.tfnNumber}
+                  onChangeText={(v) =>
+                    setProfessionalDetails((c) => ({
+                      ...c,
+                      tfnNumber: v.replace(/\D/g, "").slice(0, 9),
+                    }))
+                  }
+                  keyboardType="number-pad"
+                  maxLength={9}
+                  error={dateErrors.tfnNumber}
                   styles={styles}
                   theme={theme}
                 />
-              </TwoColumn>
-            </View>
-          )}
-
-          {activeStep === 3 && (
-            <View style={styles.formSection}>
-              <Field
-                label="TFN Number"
-                value={professionalDetails.tfnNumber}
-                onChangeText={(v) =>
-                  setProfessionalDetails((c) => ({ ...c, tfnNumber: v }))
-                }
-                keyboardType="number-pad"
-                styles={styles}
-                theme={theme}
-              />
-              <Field
-                label="Registration Number"
-                value={professionalDetails.registrationNumber}
-                onChangeText={(v) =>
-                  setProfessionalDetails((c) => ({
-                    ...c,
-                    registrationNumber: v,
-                  }))
-                }
-                styles={styles}
-                theme={theme}
-              />
-              <Field
+                <Field
+                  label="Passport Number"
+                  value={professionalDetails.registrationNumber}
+                  onChangeText={(v) =>
+                    setProfessionalDetails((c) => ({
+                      ...c,
+                      registrationNumber: v,
+                    }))
+                  }
+                  styles={styles}
+                  theme={theme}
+                />
+                {/* <Field
                 label="ABN Number"
                 value={professionalDetails.abn_number}
                 onChangeText={(v) =>
@@ -1076,74 +1237,79 @@ export default function OnboardingScreen() {
                 }
                 styles={styles}
                 theme={theme}
-              />
-              <UploadBox
-                label="CV"
-                file={professionalDetails.cv}
-                mandatory={false}
-                onPick={handlePickCv}
-                onPreview={() => {
-                  if (!professionalDetails.cv) return;
+              /> */}
+                <UploadBox
+                  label="CV"
+                  file={professionalDetails.cv}
+                  mandatory={false}
+                  onPick={handlePickCv}
+                  onPreview={() => {
+                    if (!professionalDetails.cv) return;
+                    setPreview({
+                      title: "CV",
+                      file: professionalDetails.cv,
+                      onRemove: () => {
+                        cachedCv = undefined;
+                        setProfessionalDetails((c) => ({
+                          ...c,
+                          cv: undefined,
+                        }));
+                        setPreview(null);
+                      },
+                    });
+                  }}
+                  styles={styles}
+                  theme={theme}
+                />
+              </View>
+            )}
+
+            {activeStep === 4 && (
+              <DocumentRequirementList
+                collection="mandatory"
+                requirements={mandatoryDocumentRequirements}
+                values={mandatoryDocuments}
+                dateErrors={dateErrors}
+                onPick={handlePickDocument}
+                onExpiryChange={setDocumentExpiry}
+                onPreview={(requirement, file) =>
                   setPreview({
-                    title: "CV",
-                    file: professionalDetails.cv,
-                    onRemove: () => {
-                      setProfessionalDetails((c) => ({ ...c, cv: undefined }));
-                      setPreview(null);
-                    },
-                  });
-                }}
+                    title: requirement.name,
+                    file,
+                    onRemove: () => removeDocument(requirement, "mandatory"),
+                  })
+                }
                 styles={styles}
                 theme={theme}
               />
-            </View>
-          )}
+            )}
 
-          {activeStep === 4 && (
-            <DocumentRequirementList
-              collection="professional"
-              requirements={professionDocumentRequirements}
-              values={professionalDocuments}
-              dateErrors={dateErrors}
-              onPick={handlePickDocument}
-              onExpiryChange={setDocumentExpiry}
-              onPreview={(requirement, file) =>
-                setPreview({
-                  title: requirement.name,
-                  file,
-                  onRemove: () => removeDocument(requirement, "professional"),
-                })
-              }
-              styles={styles}
-              theme={theme}
-            />
-          )}
-
-          {activeStep === 5 && (
-            <DocumentRequirementList
-              collection="mandatory"
-              requirements={mandatoryDocumentRequirements}
-              values={mandatoryDocuments}
-              dateErrors={dateErrors}
-              onPick={handlePickDocument}
-              onExpiryChange={setDocumentExpiry}
-              onPreview={(requirement, file) =>
-                setPreview({
-                  title: requirement.name,
-                  file,
-                  onRemove: () => removeDocument(requirement, "mandatory"),
-                })
-              }
-              styles={styles}
-              theme={theme}
-            />
-          )}
+            {activeStep === 5 && (
+              <DocumentRequirementList
+                collection="professional"
+                requirements={professionDocumentRequirements}
+                values={professionalDocuments}
+                dateErrors={dateErrors}
+                onPick={handlePickDocument}
+                onExpiryChange={setDocumentExpiry}
+                onPreview={(requirement, file) =>
+                  setPreview({
+                    title: requirement.name,
+                    file,
+                    onRemove: () => removeDocument(requirement, "professional"),
+                  })
+                }
+                styles={styles}
+                theme={theme}
+              />
+            )}
+          </Animated.View>
         </ScrollView>
 
         <View style={[styles.footer]}>
           {activeStep === 1 ? (
             <View style={styles.stepDotsRow}>
-              {steps.map((step) => (
+              {visibleSteps.map((step) => (
                 <View
                   key={step.id}
                   style={[
@@ -1154,24 +1320,42 @@ export default function OnboardingScreen() {
               ))}
             </View>
           ) : (
-            <TouchableOpacity
-              style={styles.secondaryButton}
-              onPress={handleBack}
+            <Pressable
+              style={({ pressed }) => [
+                styles.secondaryButton,
+                Platform.OS === "ios" && pressed && { opacity: 0.6 },
+              ]}
+              android_ripple={{ color: theme.heroBorder }}
+              onPress={() => {
+                if (Platform.OS === "ios") {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }
+                handleBack();
+              }}
             >
               <MaterialCommunityIcons
                 name="arrow-left-thin"
                 size={24}
-                color={theme.primary}
+                color={TEXT_SAFE_PRIMARY}
               />
               <Text style={styles.secondaryButtonText}>Back</Text>
-            </TouchableOpacity>
+            </Pressable>
           )}
-          <TouchableOpacity
-            style={[
+          <Pressable
+            style={({ pressed }) => [
               styles.primaryButton,
               (isSubmittingStep || isCheckingStatus) && { opacity: 0.7 },
+              Platform.OS === "ios" &&
+                pressed &&
+                !(isSubmittingStep || isCheckingStatus) && { opacity: 0.85 },
             ]}
-            onPress={() => void handleNext()}
+            android_ripple={{ color: "rgba(255,255,255,0.25)" }}
+            onPress={() => {
+              if (Platform.OS === "ios") {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              }
+              void handleNext();
+            }}
             disabled={isSubmittingStep || isCheckingStatus}
           >
             {isSubmittingStep || isCheckingStatus ? (
@@ -1188,14 +1372,27 @@ export default function OnboardingScreen() {
                 />
               </>
             )}
-          </TouchableOpacity>
+          </Pressable>
         </View>
 
         <DocumentPreviewModal
-          preview={preview}
+          visible={!!preview}
+          title={preview?.title ?? "Preview"}
+          file={preview?.file ?? null}
           onClose={() => setPreview(null)}
-          styles={styles}
-          theme={theme}
+          actions={
+            preview
+              ? [
+                  {
+                    key: "remove",
+                    label: "Remove",
+                    icon: "trash-outline",
+                    variant: "danger",
+                    onPress: preview.onRemove,
+                  },
+                ]
+              : []
+          }
         />
       </KeyboardAvoidingView>
 
@@ -1231,7 +1428,121 @@ export default function OnboardingScreen() {
           <View style={{ height: screenHeight * 0.1 }} />
         </View>
       </Modal>
+
+      <SnakeBorderLoader visible={isLoadingHcp} />
     </SafeAreaView>
+  );
+}
+
+function SnakeBorderLoader({ visible }: { visible: boolean }) {
+  const { width, height } = useWindowDimensions();
+  const progress = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (!visible) {
+      progress.setValue(0);
+      return;
+    }
+    const anim = Animated.loop(
+      Animated.timing(progress, {
+        toValue: 5,
+        duration: 2500,
+        easing: Easing.linear,
+        useNativeDriver: false,
+      }),
+    );
+    anim.start();
+    return () => anim.stop();
+  }, [visible, progress]);
+
+  if (!visible) return null;
+
+  const T = 3;
+  const COLOR = "#70C601";
+
+  // Left side: bottom to top (progress 0–1 grow, 1–2 shrink)
+  const leftTop = progress.interpolate({
+    inputRange: [0, 1, 2, 5],
+    outputRange: [height, 0, 0, 0],
+  });
+  const leftHeight = progress.interpolate({
+    inputRange: [0, 1, 2, 5],
+    outputRange: [0, height, 0, 0],
+  });
+
+  // Top side: left to right (progress 1–2 grow, 2–3 shrink)
+  const topLeft = progress.interpolate({
+    inputRange: [0, 1, 2, 3, 5],
+    outputRange: [0, 0, 0, width, width],
+  });
+  const topWidth = progress.interpolate({
+    inputRange: [0, 1, 2, 3, 5],
+    outputRange: [0, 0, width, 0, 0],
+  });
+
+  // Right side: top to bottom (progress 2–3 grow, 3–4 shrink)
+  const rightTop = progress.interpolate({
+    inputRange: [0, 2, 3, 4, 5],
+    outputRange: [0, 0, 0, height, height],
+  });
+  const rightHeight = progress.interpolate({
+    inputRange: [0, 2, 3, 4, 5],
+    outputRange: [0, 0, height, 0, 0],
+  });
+
+  // Bottom side: right to left (progress 3–4 grow, 4–5 shrink)
+  const bottomRight = progress.interpolate({
+    inputRange: [0, 3, 4, 5],
+    outputRange: [0, 0, 0, width],
+  });
+  const bottomWidth = progress.interpolate({
+    inputRange: [0, 3, 4, 5],
+    outputRange: [0, 0, width, 0],
+  });
+
+  return (
+    <View style={StyleSheet.absoluteFill} pointerEvents="none">
+      <Animated.View
+        style={{
+          position: "absolute",
+          left: 0,
+          top: leftTop,
+          width: T,
+          height: leftHeight,
+          backgroundColor: COLOR,
+        }}
+      />
+      <Animated.View
+        style={{
+          position: "absolute",
+          top: 0,
+          left: topLeft,
+          height: T,
+          width: topWidth,
+          backgroundColor: COLOR,
+        }}
+      />
+      <Animated.View
+        style={{
+          position: "absolute",
+          right: 0,
+          top: rightTop,
+          width: T,
+          height: rightHeight,
+          backgroundColor: COLOR,
+        }}
+      />
+      <Animated.View
+        style={{
+          position: "absolute",
+          bottom: 0,
+          right: bottomRight,
+          height: T,
+          width: bottomWidth,
+          backgroundColor: COLOR,
+        }}
+      />
+    </View>
   );
 }
 
@@ -1249,6 +1560,9 @@ function Field({
   multiline,
   rightAccessory,
   error,
+  editable,
+  maxLength,
+  required,
   styles,
   theme,
 }: {
@@ -1261,17 +1575,24 @@ function Field({
   multiline?: boolean;
   rightAccessory?: React.ReactNode;
   error?: string;
+  editable?: boolean;
+  maxLength?: number;
+  required?: boolean;
   styles: ReturnType<typeof getStyles>;
   theme: typeof Colors.light;
 }) {
   return (
     <View style={styles.field}>
-      <Text style={styles.fieldLabel}>{label}</Text>
+      <Text style={styles.fieldLabel}>
+        {label}
+        {required && <Text style={styles.requiredAsterisk}> *</Text>}
+      </Text>
       <View
         style={[
           styles.inputShell,
           multiline && styles.textAreaShell,
           error && styles.inputShellError,
+          editable === false && { opacity: 0.6 },
         ]}
       >
         <TextInput
@@ -1282,6 +1603,8 @@ function Field({
           keyboardType={keyboardType}
           secureTextEntry={secureTextEntry}
           multiline={multiline}
+          editable={editable}
+          maxLength={maxLength}
           textAlignVertical={multiline ? "top" : "center"}
           style={[styles.input, multiline && styles.textArea]}
           cursorColor={theme.primary}
@@ -1373,7 +1696,7 @@ function AddressAutocomplete({
             minHeight: 42,
             borderWidth: 1,
             borderColor: theme.greyBorder,
-            borderRadius: 5,
+            borderRadius: Radii.sm,
             backgroundColor: theme.whiteBackground,
             paddingHorizontal: 10,
           },
@@ -1385,7 +1708,7 @@ function AddressAutocomplete({
             backgroundColor: theme.whiteBackground,
             borderWidth: 1,
             borderColor: theme.greyBorder,
-            borderRadius: 5,
+            borderRadius: Radii.sm,
             marginTop: 4,
             maxHeight: 250,
             overflow: "hidden",
@@ -1607,7 +1930,7 @@ function DocumentRequirementList({
                   <MaterialCommunityIcons
                     name="file-document-outline"
                     size={20}
-                    color={theme.primary}
+                    color={theme.secondaryText}
                   />
                 </View>
                 <View style={styles.documentTitleBlock}>
@@ -1633,6 +1956,7 @@ function DocumentRequirementList({
               onPreview={() => {
                 if (value?.file) onPreview(requirement, value.file);
               }}
+              error={dateErrors[`${collection}:${requirement.id}:file`]}
               styles={styles}
               theme={theme}
             />
@@ -1649,11 +1973,8 @@ function DocumentRequirementList({
                 }
                 placeholder="YYYY-MM-DD"
                 keyboardType="number-pad"
-                error={
-                  values[requirement.id]?.expiry
-                    ? dateErrors[`${collection}:${requirement.id}`]
-                    : undefined
-                }
+                error={dateErrors[`${collection}:${requirement.id}:expiry`]}
+                required
                 styles={styles}
                 theme={theme}
               />
@@ -1671,6 +1992,7 @@ function UploadBox({
   mandatory,
   onPick,
   onPreview,
+  error,
   styles,
   theme,
 }: {
@@ -1679,18 +2001,23 @@ function UploadBox({
   mandatory: boolean;
   onPick: () => void;
   onPreview: () => void;
+  error?: string;
   styles: ReturnType<typeof getStyles>;
   theme: typeof Colors.light;
 }) {
   return (
     <View style={styles.field}>
-      <View style={styles.uploadLabelRow}>
-        <Text style={styles.fieldLabel}>{label}</Text>
-        {mandatory && <Text style={styles.requiredText}>Required</Text>}
-      </View>
+      <Text style={styles.fieldLabel}>
+        {label}
+        {mandatory && <Text style={styles.requiredAsterisk}> *</Text>}
+      </Text>
       <Pressable
         onPress={file ? onPreview : onPick}
-        style={[styles.uploadBox, file && styles.uploadBoxFilled]}
+        style={[
+          styles.uploadBox,
+          file && styles.uploadBoxFilled,
+          error && styles.uploadBoxError,
+        ]}
       >
         <View style={styles.uploadIcon}>
           <Ionicons
@@ -1718,129 +2045,8 @@ function UploadBox({
           />
         </TouchableOpacity>
       </Pressable>
+      {error && <Text style={styles.fieldError}>{error}</Text>}
     </View>
-  );
-}
-
-function DocumentPreviewModal({
-  preview,
-  onClose,
-  styles,
-  theme,
-}: {
-  preview: {
-    title: string;
-    file: UploadedFile;
-    onRemove: () => void;
-  } | null;
-  onClose: () => void;
-  styles: ReturnType<typeof getStyles>;
-  theme: typeof Colors.light;
-}) {
-  const isImage = preview?.file.mimeType?.startsWith("image/");
-  const [resolvedUri, setResolvedUri] = useState<string | null>(null);
-  const [uriLoading, setUriLoading] = useState(false);
-
-  useEffect(() => {
-    if (!preview || isImage) {
-      setResolvedUri(null);
-      return;
-    }
-    if (Platform.OS === "android") {
-      setUriLoading(true);
-      FileSystem.getContentUriAsync(preview.file.uri)
-        .then((uri) => setResolvedUri(uri))
-        .catch(() => setResolvedUri(preview.file.uri))
-        .finally(() => setUriLoading(false));
-    } else {
-      setResolvedUri(preview.file.uri);
-    }
-  }, [preview?.file.uri, isImage]);
-
-  return (
-    <Modal
-      animationType="slide"
-      transparent
-      visible={!!preview}
-      onRequestClose={onClose}
-    >
-      <View style={styles.modalBackdrop}>
-        <View style={styles.previewSheet}>
-          <View style={styles.previewHandle} />
-          <View style={styles.previewHeader}>
-            <View>
-              <Text style={styles.previewTitle}>{preview?.title}</Text>
-              <Text style={styles.previewFileName} numberOfLines={1}>
-                {preview?.file.name}
-              </Text>
-            </View>
-            <TouchableOpacity onPress={onClose} style={styles.iconButton}>
-              <Ionicons name="close" size={20} color={theme.primaryText} />
-            </TouchableOpacity>
-          </View>
-          <View style={styles.previewFrame}>
-            {preview?.file.uri && isImage ? (
-              <Image
-                source={{ uri: preview.file.uri }}
-                style={styles.previewImage}
-                contentFit="contain"
-              />
-            ) : uriLoading ? (
-              <ActivityIndicator size="large" color={theme.primary} />
-            ) : Platform.OS === "ios" && resolvedUri ? (
-              <WebView
-                source={{ uri: resolvedUri }}
-                style={styles.webView}
-                allowFileAccess
-                allowFileAccessFromFileURLs
-                allowUniversalAccessFromFileURLs
-                originWhitelist={["*", "file://*"]}
-                startInLoadingState
-                renderLoading={() => (
-                  <ActivityIndicator
-                    size="large"
-                    color={theme.primary}
-                    style={StyleSheet.absoluteFillObject}
-                  />
-                )}
-              />
-            ) : resolvedUri ? (
-              <View style={styles.previewOpenFallback}>
-                <Ionicons
-                  name="document-text-outline"
-                  size={56}
-                  color={theme.secondaryText}
-                />
-                <Text style={styles.previewFallback} numberOfLines={2}>
-                  {preview?.file.name}
-                </Text>
-                <TouchableOpacity
-                  style={styles.openInViewerButton}
-                  onPress={() => Linking.openURL(resolvedUri).catch(() => null)}
-                >
-                  <Ionicons name="open-outline" size={16} color={theme.white} />
-                  <Text style={styles.openInViewerText}>Open in viewer</Text>
-                </TouchableOpacity>
-              </View>
-            ) : (
-              <Text style={styles.previewFallback}>No preview available</Text>
-            )}
-          </View>
-          <View style={styles.previewActions}>
-            <TouchableOpacity
-              onPress={preview?.onRemove}
-              style={styles.removeButton}
-            >
-              <Ionicons name="trash-outline" size={18} color={theme.danger} />
-              <Text style={styles.removeButtonText}>Remove</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={onClose} style={styles.doneButton}>
-              <Text style={styles.doneButtonText}>Done</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-    </Modal>
   );
 }
 
@@ -1855,7 +2061,8 @@ const getStyles = (theme: typeof Colors.light) =>
   StyleSheet.create({
     safeArea: {
       flex: 1,
-      backgroundColor: theme.safeAreaBg,
+
+      backgroundColor: theme.whiteBackground,
     },
     successOverlay: {
       flex: 1,
@@ -1866,7 +2073,7 @@ const getStyles = (theme: typeof Colors.light) =>
     },
     successCard: {
       backgroundColor: theme.whiteBackground,
-      borderRadius: 20,
+      borderRadius: Radii.lg,
       padding: 32,
       alignItems: "center",
       width: "100%",
@@ -1905,8 +2112,10 @@ const getStyles = (theme: typeof Colors.light) =>
       paddingTop: 10,
       paddingBottom: 12,
       backgroundColor: theme.whiteBackground,
-      borderBottomWidth: 1,
-      borderBottomColor: theme.greyBorder,
+
+      borderBottomWidth: 2,
+      borderBottomColor: ACCENT_BORDER,
+      zIndex: 1,
     },
     headerTopRow: {
       flexDirection: "row",
@@ -1915,7 +2124,7 @@ const getStyles = (theme: typeof Colors.light) =>
       gap: 12,
     },
     kicker: {
-      color: theme.primary,
+      color: TEXT_SAFE_PRIMARY,
       fontSize: 10,
       fontWeight: "800",
       textTransform: "uppercase",
@@ -1930,7 +2139,7 @@ const getStyles = (theme: typeof Colors.light) =>
       minWidth: 54,
       height: 36,
       paddingHorizontal: 12,
-      borderRadius: 18,
+      borderRadius: Radii.full,
       backgroundColor: theme.heroBg,
       alignItems: "center",
       justifyContent: "center",
@@ -1938,22 +2147,29 @@ const getStyles = (theme: typeof Colors.light) =>
       borderColor: theme.heroBorder,
     },
     progressPillText: {
-      color: theme.primary,
+      color: TEXT_SAFE_PRIMARY,
       fontWeight: "800",
       fontSize: 10,
       textTransform: "uppercase",
     },
-    progressTrack: {
-      height: 5,
-      borderRadius: 4,
-      backgroundColor: theme.heroBg,
-      overflow: "hidden",
-      marginTop: 8,
+    stepTrackerRow: {
+      flexDirection: "row",
+      gap: 6,
+      marginTop: 10,
     },
-    progressFill: {
-      height: "100%",
-      borderRadius: 4,
+    stepSegment: {
+      flex: 1,
+      height: 5,
+      borderRadius: Radii.xs,
+
+      backgroundColor: SURFACE_TINT_DEEP,
+    },
+    stepSegmentDone: {
       backgroundColor: theme.primary,
+    },
+    stepSegmentActive: {
+      backgroundColor: theme.primary,
+      opacity: 0.55,
     },
     stepper: {
       gap: 10,
@@ -1964,7 +2180,7 @@ const getStyles = (theme: typeof Colors.light) =>
       alignItems: "center",
       width: 190,
       padding: 10,
-      borderRadius: 50,
+      borderRadius: Radii.full,
       backgroundColor: theme.whiteBackground,
       borderWidth: 1,
       borderColor: theme.greyBorder,
@@ -1980,7 +2196,7 @@ const getStyles = (theme: typeof Colors.light) =>
     stepIcon: {
       width: 34,
       height: 34,
-      borderRadius: 8,
+      borderRadius: Radii.sm,
       alignItems: "center",
       justifyContent: "center",
       backgroundColor: theme.heroBg,
@@ -2015,13 +2231,18 @@ const getStyles = (theme: typeof Colors.light) =>
     content: {
       padding: 10,
       gap: 14,
+      flexGrow: 1,
+      backgroundColor: SURFACE_TINT,
+    },
+    stepAnimatedContent: {
+      gap: 14,
     },
     heroPanel: {
       flexDirection: "row",
       alignItems: "center",
       gap: 10,
       padding: 8,
-      borderRadius: 5,
+      borderRadius: Radii.md,
       backgroundColor: theme.heroBg,
       borderWidth: 1,
       borderColor: theme.heroBorder,
@@ -2029,7 +2250,7 @@ const getStyles = (theme: typeof Colors.light) =>
     heroIcon: {
       width: 48,
       height: 48,
-      borderRadius: 5,
+      borderRadius: Radii.sm,
       alignItems: "center",
       justifyContent: "center",
       backgroundColor: theme.primary,
@@ -2038,7 +2259,7 @@ const getStyles = (theme: typeof Colors.light) =>
       flex: 1,
     },
     heroEyebrow: {
-      color: theme.primary,
+      color: TEXT_SAFE_PRIMARY,
       fontWeight: "800",
       fontSize: 9,
       textTransform: "uppercase",
@@ -2059,7 +2280,7 @@ const getStyles = (theme: typeof Colors.light) =>
     stepDot: {
       width: 16,
       height: 4,
-      borderRadius: 4,
+      borderRadius: Radii.full,
       backgroundColor: theme.heroBorder,
     },
     stepDotActive: {
@@ -2070,7 +2291,7 @@ const getStyles = (theme: typeof Colors.light) =>
       alignItems: "center",
       gap: 8,
       padding: 12,
-      borderRadius: 8,
+      borderRadius: Radii.sm,
       backgroundColor: theme.heroBg,
       borderWidth: 1,
       borderColor: theme.heroBorder,
@@ -2086,7 +2307,7 @@ const getStyles = (theme: typeof Colors.light) =>
       alignItems: "center",
       gap: 8,
       padding: 12,
-      borderRadius: 8,
+      borderRadius: Radii.sm,
       backgroundColor: theme.errorBg,
       borderWidth: 1,
       borderColor: theme.danger,
@@ -2112,8 +2333,8 @@ const getStyles = (theme: typeof Colors.light) =>
     inputShell: {
       minHeight: 42,
       borderWidth: 1,
-      borderColor: theme.greyBorder,
-      borderRadius: 5,
+      borderColor: ACCENT_BORDER,
+      borderRadius: Radii.sm,
       backgroundColor: theme.whiteBackground,
       paddingHorizontal: 10,
       flexDirection: "row",
@@ -2124,8 +2345,12 @@ const getStyles = (theme: typeof Colors.light) =>
       borderColor: theme.danger,
     },
     fieldError: {
-      color: theme.danger,
+      color: TEXT_SAFE_DANGER,
       fontSize: 12,
+      fontWeight: "700",
+    },
+    requiredAsterisk: {
+      color: TEXT_SAFE_DANGER,
       fontWeight: "700",
     },
     textAreaShell: {
@@ -2145,8 +2370,8 @@ const getStyles = (theme: typeof Colors.light) =>
     dropdownTrigger: {
       minHeight: 42,
       borderWidth: 1,
-      borderColor: theme.greyBorder,
-      borderRadius: 5,
+      borderColor: ACCENT_BORDER,
+      borderRadius: Radii.sm,
       backgroundColor: theme.whiteBackground,
       paddingHorizontal: 10,
       flexDirection: "row",
@@ -2167,8 +2392,8 @@ const getStyles = (theme: typeof Colors.light) =>
     },
     dropdownSheet: {
       backgroundColor: theme.whiteBackground,
-      borderTopLeftRadius: 18,
-      borderTopRightRadius: 18,
+      borderTopLeftRadius: Radii.lg,
+      borderTopRightRadius: Radii.lg,
       paddingHorizontal: 12,
       paddingTop: 18,
       paddingBottom: 24,
@@ -2182,7 +2407,7 @@ const getStyles = (theme: typeof Colors.light) =>
     },
     dropdownOption: {
       minHeight: 35,
-      borderRadius: 5,
+      borderRadius: Radii.sm,
       paddingHorizontal: 8,
       flexDirection: "row",
       alignItems: "center",
@@ -2199,7 +2424,7 @@ const getStyles = (theme: typeof Colors.light) =>
       fontWeight: "600",
     },
     dropdownOptionTextActive: {
-      color: theme.primary,
+      color: TEXT_SAFE_PRIMARY,
       fontWeight: "600",
     },
     optionGrid: {
@@ -2210,9 +2435,9 @@ const getStyles = (theme: typeof Colors.light) =>
     optionChip: {
       minHeight: 42,
       paddingHorizontal: 14,
-      borderRadius: 5,
+      borderRadius: Radii.sm,
       borderWidth: 1,
-      borderColor: theme.greyBorder,
+      borderColor: ACCENT_BORDER,
       backgroundColor: theme.whiteBackground,
       alignItems: "center",
       justifyContent: "center",
@@ -2231,7 +2456,7 @@ const getStyles = (theme: typeof Colors.light) =>
     radioOuter: {
       width: 18,
       height: 18,
-      borderRadius: 9,
+      borderRadius: Radii.full,
       borderWidth: 2,
       borderColor: theme.grayBorder,
       alignItems: "center",
@@ -2244,7 +2469,7 @@ const getStyles = (theme: typeof Colors.light) =>
     radioInner: {
       width: 8,
       height: 8,
-      borderRadius: 4,
+      borderRadius: Radii.full,
       backgroundColor: theme.primary,
     },
     optionChipActive: {
@@ -2257,26 +2482,15 @@ const getStyles = (theme: typeof Colors.light) =>
       fontSize: 13,
     },
     optionChipTextActive: {
-      color: theme.primary,
-    },
-    uploadLabelRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      gap: 12,
-    },
-    requiredText: {
-      color: theme.danger,
-      fontSize: 12,
-      fontWeight: "600",
+      color: TEXT_SAFE_PRIMARY,
     },
     uploadBox: {
       minHeight: 76,
-      borderRadius: 5,
+      borderRadius: Radii.sm,
       borderWidth: 1,
       borderStyle: "dashed",
       borderColor: theme.heroBorder,
-      backgroundColor: theme.whiteBackground,
+      backgroundColor: UPLOAD_BOX_BG,
       flexDirection: "row",
       alignItems: "center",
       gap: 12,
@@ -2285,12 +2499,15 @@ const getStyles = (theme: typeof Colors.light) =>
     uploadBoxFilled: {
       borderStyle: "solid",
       borderColor: theme.primary,
-      backgroundColor: theme.heroBg,
+      backgroundColor: UPLOAD_BOX_BG,
+    },
+    uploadBoxError: {
+      borderColor: theme.danger,
     },
     uploadIcon: {
       width: 44,
       height: 44,
-      borderRadius: 5,
+      borderRadius: Radii.sm,
       alignItems: "center",
       justifyContent: "center",
       backgroundColor: theme.heroBg,
@@ -2300,30 +2517,41 @@ const getStyles = (theme: typeof Colors.light) =>
       minWidth: 0,
     },
     uploadTitle: {
-      color: theme.primaryText,
+      color: "#666666",
       fontWeight: "800",
       fontSize: 14,
     },
     uploadSubtitle: {
-      color: theme.secondaryText,
+      color: "#666666",
       fontSize: 12,
       marginTop: 3,
     },
     uploadAction: {
       width: 34,
       height: 34,
-      borderRadius: 3,
+      borderRadius: Radii.sm,
       alignItems: "center",
       justifyContent: "center",
       backgroundColor: theme.primary,
     },
     documentCard: {
       gap: 14,
-      borderRadius: 5,
+      borderRadius: Radii.md,
       borderWidth: 1,
-      borderColor: theme.greyBorder,
+      borderColor: ACCENT_BORDER,
       backgroundColor: theme.whiteBackground,
       padding: 10,
+      ...Platform.select({
+        ios: {
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.06,
+          shadowRadius: 6,
+        },
+        android: {
+          elevation: 2,
+        },
+      }),
     },
     documentHeader: {
       flexDirection: "row",
@@ -2341,10 +2569,10 @@ const getStyles = (theme: typeof Colors.light) =>
     documentIcon: {
       width: 40,
       height: 40,
-      borderRadius: 5,
+      borderRadius: Radii.sm,
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: theme.heroBg,
+      backgroundColor: theme.greyBorder,
     },
     documentTitleBlock: {
       flex: 1,
@@ -2363,7 +2591,7 @@ const getStyles = (theme: typeof Colors.light) =>
     mandatoryBadge: {
       minHeight: 20,
       paddingHorizontal: 8,
-      borderRadius: 50,
+      borderRadius: Radii.full,
       alignItems: "center",
       justifyContent: "center",
       backgroundColor: theme.heroIconBg,
@@ -2384,28 +2612,32 @@ const getStyles = (theme: typeof Colors.light) =>
       paddingHorizontal: 10,
       paddingTop: 14,
       backgroundColor: theme.whiteBackground,
+      borderTopWidth: 1,
+      borderTopColor: ACCENT_BORDER,
     },
     primaryButton: {
-      borderRadius: 50,
-      height: 35,
-      paddingHorizontal: 20,
-      paddingVertical: 4,
+      borderRadius: Radii.md,
+      height: Platform.OS === "ios" ? 44 : 48,
+      minWidth: Platform.OS === "ios" ? undefined : 64,
+      paddingHorizontal: 24,
       alignItems: "center",
       justifyContent: "center",
       flexDirection: "row",
       gap: 8,
       backgroundColor: theme.primary,
+      overflow: "hidden",
+      ...(Platform.OS === "android" ? { elevation: 2 } : null),
     },
     primaryButtonText: {
       color: theme.white,
       fontSize: 15,
-      fontWeight: "700",
+      fontWeight: Platform.OS === "ios" ? "600" : "700",
     },
     secondaryButton: {
-      borderRadius: 50,
-      height: 35,
-      paddingHorizontal: 20,
-      paddingVertical: 4,
+      borderRadius: Radii.md,
+      height: Platform.OS === "ios" ? 44 : 48,
+      minWidth: Platform.OS === "ios" ? undefined : 64,
+      paddingHorizontal: 24,
       alignItems: "center",
       justifyContent: "center",
       flexDirection: "row",
@@ -2413,145 +2645,20 @@ const getStyles = (theme: typeof Colors.light) =>
       backgroundColor: theme.heroBg,
       borderWidth: 1,
       borderColor: theme.heroBorder,
+      overflow: "hidden",
     },
     secondaryButtonText: {
-      color: theme.primary,
+      color: TEXT_SAFE_PRIMARY,
       fontSize: 15,
-      fontWeight: "700",
+      fontWeight: Platform.OS === "ios" ? "600" : "700",
     },
     hidden: {
       opacity: 0,
     },
-    modalBackdrop: {
-      flex: 1,
-      backgroundColor: "rgba(0,0,0,0.42)",
-      justifyContent: "flex-end",
-    },
-    previewSheet: {
-      maxHeight: "86%",
-      borderTopLeftRadius: 22,
-      borderTopRightRadius: 22,
-      backgroundColor: theme.whiteBackground,
-      padding: 16,
-      gap: 14,
-    },
-    previewHandle: {
-      alignSelf: "center",
-      width: 44,
-      height: 5,
-      borderRadius: 3,
-      backgroundColor: theme.grayBorder,
-    },
-    previewHeader: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      gap: 8,
-    },
-    previewTitle: {
-      color: theme.primaryText,
-      fontSize: 18,
-      fontWeight: "800",
-    },
-    previewFileName: {
-      color: theme.secondaryText,
-      fontSize: 12,
-      marginTop: 3,
-      maxWidth: 260,
-    },
-    iconButton: {
-      width: 40,
-      height: 40,
-      borderRadius: 8,
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: theme.heroBg,
-    },
-    previewFrame: {
-      height: 390,
-      borderRadius: 8,
-      borderWidth: 1,
-      borderColor: theme.greyBorder,
-      overflow: "hidden",
-      backgroundColor: theme.heroBg,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    previewImage: {
-      width: "100%",
-      height: "100%",
-    },
-    webView: {
-      width: "100%",
-      height: "100%",
-      backgroundColor: theme.whiteBackground,
-    },
-    previewFallback: {
-      color: theme.secondaryText,
-      fontWeight: "700",
-      textAlign: "center",
-      marginTop: 8,
-      paddingHorizontal: 16,
-    },
-    previewOpenFallback: {
-      flex: 1,
-      alignItems: "center",
-      justifyContent: "center",
-      gap: 12,
-      padding: 16,
-    },
-    openInViewerButton: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 6,
-      backgroundColor: theme.primary,
-      paddingHorizontal: 20,
-      paddingVertical: 10,
-      borderRadius: 8,
-      marginTop: 4,
-    },
-    openInViewerText: {
-      color: theme.white,
-      fontWeight: "700",
-      fontSize: 14,
-    },
-    previewActions: {
-      flexDirection: "row",
-      gap: 12,
-    },
-    removeButton: {
-      minHeight: 48,
-      minWidth: 124,
-      borderRadius: 8,
-      borderWidth: 1,
-      borderColor: theme.danger,
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
-      gap: 8,
-    },
-    removeButtonText: {
-      color: theme.danger,
-      fontSize: 14,
-      fontWeight: "800",
-    },
-    doneButton: {
-      flex: 1,
-      minHeight: 48,
-      borderRadius: 8,
-      backgroundColor: theme.primary,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    doneButtonText: {
-      color: theme.white,
-      fontSize: 14,
-      fontWeight: "800",
-    },
     suggestionList: {
       borderWidth: 1,
       borderColor: theme.greyBorder,
-      borderRadius: 8,
+      borderRadius: Radii.sm,
       marginTop: 4,
       backgroundColor: theme.whiteBackground,
       overflow: "hidden",

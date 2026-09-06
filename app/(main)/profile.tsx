@@ -1,7 +1,7 @@
 import { isAuthError } from "@/api-actions/error-utils";
 import { updateAvailability } from "@/api-queries/profile";
 import Header from "@/components/Header";
-import { Colors } from "@/constants/theme";
+import { Colors, Radii } from "@/constants/theme";
 import { useConfigSettings } from "@/data-store/config-store";
 import { useProfileData } from "@/data-store/use-account-store";
 import { User } from "@/data-types/auth";
@@ -316,7 +316,7 @@ const getStyles = (theme: typeof Colors.light) =>
     backIconContainer: {
       height: 40,
       width: 40,
-      borderRadius: 50,
+      borderRadius: Radii.full,
       display: "flex",
       flexDirection: "row",
       justifyContent: "center",
@@ -329,7 +329,7 @@ const getStyles = (theme: typeof Colors.light) =>
     faintbackIconContainer: {
       height: 40,
       width: 40,
-      borderRadius: 50,
+      borderRadius: Radii.full,
       display: "flex",
       flexDirection: "row",
       justifyContent: "center",
@@ -350,7 +350,7 @@ const getStyles = (theme: typeof Colors.light) =>
     heroCard: {
       marginTop: 8,
       backgroundColor: theme.heroBg,
-      borderRadius: 5,
+      borderRadius: Radii.md,
       padding: 10,
       flexDirection: "row",
       alignItems: "center",
@@ -361,7 +361,7 @@ const getStyles = (theme: typeof Colors.light) =>
     avatarWrap: {
       height: 64,
       width: 64,
-      borderRadius: 5,
+      borderRadius: Radii.sm,
       backgroundColor: theme.heroIconBg,
       alignItems: "center",
       justifyContent: "center",
@@ -370,7 +370,7 @@ const getStyles = (theme: typeof Colors.light) =>
     avatarImage: {
       height: "100%",
       width: "100%",
-      borderRadius: 5,
+      borderRadius: Radii.sm,
     },
     avatarFallback: {
       fontSize: 22,
@@ -392,7 +392,7 @@ const getStyles = (theme: typeof Colors.light) =>
     },
     sectionCard: {
       marginTop: 12,
-      borderRadius: 5,
+      borderRadius: Radii.md,
       padding: 14,
       borderWidth: 1,
       borderColor: theme.greyBorder,
@@ -455,7 +455,7 @@ const getStyles = (theme: typeof Colors.light) =>
       minWidth: 220,
       paddingHorizontal: 18,
       paddingVertical: 16,
-      borderRadius: 10,
+      borderRadius: Radii.md,
       alignItems: "center",
       gap: 12,
       backgroundColor: "rgba(0, 0, 0, 0.45)",

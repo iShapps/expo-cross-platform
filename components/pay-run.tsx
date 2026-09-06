@@ -1,4 +1,4 @@
-import { Colors } from "@/constants/theme";
+import { Colors, Radii } from "@/constants/theme";
 import { IShift } from "@/data-types/shifts";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -173,7 +173,7 @@ const getStyles = (theme: typeof Colors.light) =>
   StyleSheet.create({
     card: {
       backgroundColor: theme.whiteBackground,
-      borderRadius: 5,
+      borderRadius: Radii.sm,
       padding: 8,
       borderWidth: 1,
       borderColor: theme.activeBorder,
@@ -222,11 +222,11 @@ const getStyles = (theme: typeof Colors.light) =>
       alignSelf: "flex-start",
       paddingHorizontal: 12,
       paddingVertical: 4,
-      borderRadius: 12,
+      borderRadius: Radii.full,
     },
     dateCard: {
       backgroundColor: theme.background,
-      borderRadius: 5,
+      borderRadius: Radii.sm,
       padding: 4,
       display: "flex",
       flexDirection: "column",

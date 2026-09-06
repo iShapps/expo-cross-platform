@@ -1,4 +1,4 @@
-import { Colors } from "@/constants/theme";
+import { Colors, Radii } from "@/constants/theme";
 import { useAppUpdateGate } from "@/hooks/use-app-update-gate";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
@@ -72,7 +72,7 @@ const getStyles = (theme: typeof Colors.light) =>
     updateCard: {
       width: "100%",
       maxWidth: 420,
-      borderRadius: 12,
+      borderRadius: Radii.lg,
       paddingHorizontal: 22,
       paddingVertical: 26,
       alignItems: "center",
@@ -83,7 +83,7 @@ const getStyles = (theme: typeof Colors.light) =>
     updateIconWrap: {
       width: 72,
       height: 72,
-      borderRadius: 36,
+      borderRadius: Radii.full,
       alignItems: "center",
       justifyContent: "center",
       backgroundColor: theme.heroIconBg,
@@ -110,7 +110,7 @@ const getStyles = (theme: typeof Colors.light) =>
     updateButton: {
       marginTop: 18,
       width: "100%",
-      borderRadius: 8,
+      borderRadius: Radii.sm,
       paddingVertical: 14,
       alignItems: "center",
       justifyContent: "center",

@@ -2,7 +2,7 @@ import { getNotifications } from "@/api-queries/notifcations";
 import Header from "@/components/Header";
 import { NotificationCard } from "@/components/notification-card";
 import { NotificationCardSkeleton } from "@/components/skeletons";
-import { Colors } from "@/constants/theme";
+import { Colors, Radii } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useInfiniteQuery } from "@tanstack/react-query";
@@ -325,7 +325,7 @@ const getStyles = (theme: typeof Colors.light, screenHeight: number) =>
       width: "100%",
       backgroundColor: "transparent",
       marginTop: 6,
-      borderRadius: 999,
+      borderRadius: Radii.full,
     },
     tabUnderlineActive: {
       backgroundColor: theme.activeText,
@@ -369,6 +369,6 @@ const getStyles = (theme: typeof Colors.light, screenHeight: number) =>
       paddingHorizontal: 24,
       paddingVertical: 10,
       backgroundColor: "#FBF2F2",
-      borderRadius: 20,
+      borderRadius: Radii.full,
     },
   });

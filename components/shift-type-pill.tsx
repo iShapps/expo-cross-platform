@@ -1,3 +1,4 @@
+import { Radii } from "@/constants/theme";
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 
@@ -41,7 +42,7 @@ const styles = StyleSheet.create({
   pill: {
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 16,
+    borderRadius: Radii.full,
     alignSelf: "flex-end",
     marginBottom: 2,
     marginRight: 2,
