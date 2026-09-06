@@ -2,14 +2,14 @@
   "expo": {
     "name": "iShapps",
     "slug": "ishapps",
-    "version": "2.9.4",
+    "version": "2.9.5",
     "orientation": "portrait",
     "icon": "./assets/images/smhealth.png",
     "scheme": "ishapps",
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "buildNumber": "32",
+      "buildNumber": "33",
       "bundleIdentifier": "com.apporio.iShapps",
       "infoPlist": {
         "NSFaceIDUsageDescription": "Allow $(PRODUCT_NAME) to use Face ID for authentication.",
@@ -32,7 +32,7 @@
       }
     },
     "android": {
-      "versionCode": 32,
+      "versionCode": 33,
       "adaptiveIcon": {
         "backgroundColor": "#ffffff",
         "foregroundImage": "./assets/images/smhealth.png",
