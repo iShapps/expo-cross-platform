@@ -1,3 +1,4 @@
+import { Radii } from "@/constants/theme";
 import { IShift } from "@/data-types/shifts";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Alert, Pressable, Text, View } from "react-native";
@@ -88,7 +89,7 @@ function buildVariants(shift: IShift, now: Date) {
         <Voltra.HStack
           style={{
             backgroundColor: "rgba(112,198,1,0.18)",
-            borderRadius: 8,
+            borderRadius: Radii.sm,
             paddingHorizontal: 10,
             paddingVertical: 4,
             alignItems: "flex-start",
@@ -168,7 +169,7 @@ function buildVariants(shift: IShift, now: Date) {
           style={{
             width: "100%",
             height: 6,
-            borderRadius: 999,
+            borderRadius: Radii.full,
             backgroundColor: "rgba(255,255,255,0.15)",
             flexDirection: "row",
             overflow: "hidden",
@@ -177,7 +178,7 @@ function buildVariants(shift: IShift, now: Date) {
           <Voltra.View
             style={{
               flex: progressPercent / 100,
-              borderRadius: 999,
+              borderRadius: Radii.full,
               height: "100%",
               backgroundColor: "#70C601",
             }}
@@ -186,7 +187,7 @@ function buildVariants(shift: IShift, now: Date) {
           <Voltra.View
             style={{
               flex: 1 - progressPercent / 100,
-              borderRadius: 999,
+              borderRadius: Radii.full,
               height: "100%",
             }}
           />
@@ -305,7 +306,7 @@ export default function ShiftLiveActivity({ shift }: Props) {
               : "#70C601",
           paddingHorizontal: 16,
           paddingVertical: 9,
-          borderRadius: 10,
+          borderRadius: Radii.sm,
           flexDirection: "row",
           alignItems: "center",
           gap: 6,

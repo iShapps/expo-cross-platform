@@ -4,12 +4,14 @@ import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 
 import { updateAvailability } from "@/api-queries/profile";
 import Header from "@/components/Header";
-import { Colors } from "@/constants/theme";
+import { Colors, Radii } from "@/constants/theme";
 import { useConfigSettings } from "@/data-store/config-store";
 import { useProfileData } from "@/data-store/use-account-store";
 import { User } from "@/data-types/auth";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useFirstVisitTour } from "@/hooks/use-first-visit-tour";
 import { MaterialIcons } from "@expo/vector-icons";
+import { useIsFocused } from "@react-navigation/native";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { BlurView } from "expo-blur";
 import { Image } from "expo-image";
@@ -25,8 +27,11 @@ import {
   Text,
   View,
 } from "react-native";
+import { CopilotStep, walkthroughable } from "react-native-copilot";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useSession } from "../ctx";
+
+const WalkthroughableView = walkthroughable(View);
 
 export default function More() {
   const { signOut } = useSession();
@@ -45,6 +50,10 @@ export default function More() {
   if (!colorScheme) colorScheme = "light";
   const theme = Colors[colorScheme];
   const styles = getStyles(theme);
+
+  const isFocused = useIsFocused();
+
+  useFirstVisitTour("more", isFocused && !!userDetails);
 
   const handleLogout = () => {
     // add confirmation dialog
@@ -171,63 +180,76 @@ export default function More() {
               </View>
             </View>
           </View>
-          <View style={styles.sectionCard}>
-            <Text style={styles.sectionTitle}>Availability</Text>
-            <View style={styles.rowBetween}>
-              <View>
-                <Text style={styles.rowTitle}>Available for jobs</Text>
-                <Text style={styles.rowSubtitle}>
-                  Toggle your availability for shifts
-                </Text>
+          <CopilotStep
+            name="more-availability"
+            order={1}
+            active={isFocused}
+            text="Turn this on to let facilities know you're available for new shifts — turn it off anytime you don't want new offers."
+          >
+            <WalkthroughableView style={styles.sectionCard}>
+              <Text style={styles.sectionTitle}>Availability</Text>
+              <View style={styles.rowBetween}>
+                <View>
+                  <Text style={styles.rowTitle}>Available for jobs</Text>
+                  <Text style={styles.rowSubtitle}>
+                    Toggle your availability for shifts
+                  </Text>
+                </View>
+                <Switch
+                  value={isAvailable}
+                  onValueChange={toggleAvailability}
+                  disabled={updateAvailabilityMutation.isPending}
+                  thumbColor={isAvailable ? "#fff" : "#f4f4f4"}
+                  trackColor={{ false: "#E5E7EB", true: theme.primary }}
+                />
               </View>
-              <Switch
-                value={isAvailable}
-                onValueChange={toggleAvailability}
-                disabled={updateAvailabilityMutation.isPending}
-                thumbColor={isAvailable ? "#fff" : "#f4f4f4"}
-                trackColor={{ false: "#E5E7EB", true: theme.primary }}
-              />
-            </View>
-          </View>
+            </WalkthroughableView>
+          </CopilotStep>
         </View>
-        <View style={styles.linksSection}>
-          <Pressable
-            onPress={() => router.push("/(main)/account")}
-            style={styles.profileLinks}
-          >
-            <View style={styles.profileContainer}>
+        <CopilotStep
+          name="more-links"
+          order={2}
+          active={isFocused}
+          text="Manage your profile details, browse the facilities you work with, and adjust app settings here."
+        >
+          <WalkthroughableView style={styles.linksSection}>
+            <Pressable
+              onPress={() => router.push("/(main)/account")}
+              style={styles.profileLinks}
+            >
+              <View style={styles.profileContainer}>
+                <MaterialCommunityIcons
+                  name="account-cog-outline"
+                  size={24}
+                  color={theme.primary}
+                />
+                <Text style={styles.rowText}>Your profile</Text>
+              </View>
               <MaterialCommunityIcons
-                name="account-cog-outline"
+                name="chevron-right"
                 size={24}
                 color={theme.primary}
               />
-              <Text style={styles.rowText}>Your profile</Text>
-            </View>
-            <MaterialCommunityIcons
-              name="chevron-right"
-              size={24}
-              color={theme.primary}
-            />
-          </Pressable>
-          <Pressable
-            onPress={() => router.push("/(main)/facilities")}
-            style={styles.profileLinks}
-          >
-            <View style={styles.profileContainer}>
+            </Pressable>
+            <Pressable
+              onPress={() => router.push("/(main)/facilities")}
+              style={styles.profileLinks}
+            >
+              <View style={styles.profileContainer}>
+                <MaterialCommunityIcons
+                  name="office-building-marker"
+                  size={24}
+                  color={theme.primary}
+                />
+                <Text style={styles.rowText}>Facilities</Text>
+              </View>
               <MaterialCommunityIcons
-                name="office-building-marker"
+                name="chevron-right"
                 size={24}
                 color={theme.primary}
               />
-              <Text style={styles.rowText}>Facilities</Text>
-            </View>
-            <MaterialCommunityIcons
-              name="chevron-right"
-              size={24}
-              color={theme.primary}
-            />
-          </Pressable>
-          {/* <Pressable
+            </Pressable>
+            {/* <Pressable
             onPress={() => router.push("/(main)/interviews")}
             style={styles.profileLinks}
           >
@@ -245,21 +267,22 @@ export default function More() {
               color={theme.primary}
             />
           </Pressable> */}
-          <Pressable
-            onPress={() => router.push("/(main)/settings")}
-            style={styles.profileLinks}
-          >
-            <View style={styles.profileContainer}>
-              <Feather name="settings" size={24} color={theme.primary} />
-              <Text style={styles.rowText}>Settings</Text>
-            </View>
-            <MaterialCommunityIcons
-              name="chevron-right"
-              size={24}
-              color={theme.primary}
-            />
-          </Pressable>
-        </View>
+            <Pressable
+              onPress={() => router.push("/(main)/settings")}
+              style={styles.profileLinks}
+            >
+              <View style={styles.profileContainer}>
+                <Feather name="settings" size={24} color={theme.primary} />
+                <Text style={styles.rowText}>Settings</Text>
+              </View>
+              <MaterialCommunityIcons
+                name="chevron-right"
+                size={24}
+                color={theme.primary}
+              />
+            </Pressable>
+          </WalkthroughableView>
+        </CopilotStep>
       </ScrollView>
 
       {updateAvailabilityMutation.isPending && (
@@ -304,7 +327,7 @@ const getStyles = (theme: typeof Colors.light) =>
 
     sectionCard: {
       marginTop: 12,
-      borderRadius: 5,
+      borderRadius: Radii.sm,
       padding: 14,
       borderWidth: 1,
       borderColor: theme.greyBorder,
@@ -359,7 +382,7 @@ const getStyles = (theme: typeof Colors.light) =>
     },
     profileCard: {
       backgroundColor: theme.heroBg,
-      borderRadius: 5,
+      borderRadius: Radii.sm,
       padding: 14,
       borderWidth: 1,
       borderColor: theme.heroBorder,
@@ -370,7 +393,7 @@ const getStyles = (theme: typeof Colors.light) =>
     avatarContainer: {
       height: 68,
       width: 68,
-      borderRadius: 34,
+      borderRadius: Radii.full,
       backgroundColor: theme.heroIconBg,
       alignItems: "center",
       justifyContent: "center",
@@ -379,7 +402,7 @@ const getStyles = (theme: typeof Colors.light) =>
     avatarImage: {
       height: "100%",
       width: "100%",
-      borderRadius: 34,
+      borderRadius: Radii.full,
     },
     rowText: {
       color: theme.primaryText,
@@ -423,7 +446,7 @@ const getStyles = (theme: typeof Colors.light) =>
       backgroundColor: theme.heroBg,
       paddingHorizontal: 8,
       paddingVertical: 4,
-      borderRadius: 999,
+      borderRadius: Radii.full,
     },
     profileTagDivider: {
       color: theme.errorSubtitle,
@@ -434,7 +457,7 @@ const getStyles = (theme: typeof Colors.light) =>
       padding: 4,
       height: 100,
       width: 100,
-      borderRadius: 50,
+      borderRadius: Radii.full,
       display: "flex",
       flexDirection: "row",
       justifyContent: "center",
@@ -470,7 +493,7 @@ const getStyles = (theme: typeof Colors.light) =>
     backIconContainer: {
       height: 40,
       width: 40,
-      borderRadius: 50,
+      borderRadius: Radii.full,
       display: "flex",
       flexDirection: "row",
       justifyContent: "center",
@@ -526,7 +549,7 @@ const getStyles = (theme: typeof Colors.light) =>
     },
     formInput: {
       backgroundColor: theme.grayBorder,
-      borderRadius: 7,
+      borderRadius: Radii.sm,
       padding: 9,
       color: theme.activeText,
     },
@@ -545,7 +568,7 @@ const getStyles = (theme: typeof Colors.light) =>
     },
     button: {
       backgroundColor: theme.activeText,
-      borderRadius: 22,
+      borderRadius: Radii.full,
       padding: 12,
       color: theme.whiteBackground,
       justifyContent: "center",
@@ -556,7 +579,7 @@ const getStyles = (theme: typeof Colors.light) =>
     },
     dropdown: {
       backgroundColor: theme.grayBorder,
-      borderRadius: 7,
+      borderRadius: Radii.sm,
       padding: 9,
       color: theme.activeText,
     },
@@ -592,7 +615,7 @@ const getStyles = (theme: typeof Colors.light) =>
       minWidth: 220,
       paddingHorizontal: 18,
       paddingVertical: 16,
-      borderRadius: 10,
+      borderRadius: Radii.md,
       alignItems: "center",
       gap: 12,
       backgroundColor: "rgba(0, 0, 0, 0.45)",

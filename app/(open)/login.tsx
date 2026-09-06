@@ -1,7 +1,8 @@
-import { Colors } from "@/constants/theme";
+import { Colors, Radii } from "@/constants/theme";
 import { useSettingsStore } from "@/data-store/use-settings-store";
 import LoginCredentials from "@/data-types/auth";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useFirstVisitTour } from "@/hooks/use-first-visit-tour";
 import { ensureOneSignalSubscriptionId } from "@/hooks/use-one-signal";
 import {
   authenticateWithBiometrics,
@@ -13,6 +14,7 @@ import {
   saveLoginCredentials,
 } from "@/utils/secure-login-credentials";
 import { AntDesign, Entypo, FontAwesome6, Ionicons } from "@expo/vector-icons";
+import { useIsFocused } from "@react-navigation/native";
 import * as Sentry from "@sentry/react-native";
 import { Checkbox } from "expo-checkbox";
 import * as Device from "expo-device";
@@ -33,8 +35,12 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { CopilotStep, walkthroughable } from "react-native-copilot";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSession } from "../ctx";
+
+const FORGOT_PASSWORD_TEXT_SAFE = "#3D7A00";
+const WalkthroughableView = walkthroughable(View);
 
 export default function Login() {
   const colorScheme = useColorScheme() || "light";
@@ -42,6 +48,10 @@ export default function Login() {
   const styles = getStyles(theme);
 
   const insets = useSafeAreaInsets();
+
+  const isFocused = useIsFocused();
+
+  useFirstVisitTour("login", isFocused);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -197,7 +207,10 @@ export default function Login() {
         return;
       }
 
-      if (signInResult === "onboarding") {
+      if (
+        signInResult === "onboarding" ||
+        signInResult === "password-reset-required"
+      ) {
         return;
       }
 
@@ -427,19 +440,33 @@ export default function Login() {
               </TouchableOpacity>
             </View>
           </View>
-          <View>
-            <Link href="/(open)/forgot-password">
-              <Text
-                style={{
-                  color: theme.activeText,
-                  textAlign: "right",
-                  textDecorationLine: "underline",
-                }}
+          <CopilotStep
+            name="login-forgot-password"
+            order={1}
+            active={isFocused}
+            text="Forgot your password? Tap here to reset it via email."
+          >
+            <WalkthroughableView>
+              <Link
+                href="/(open)/forgot-password"
+                style={{ paddingVertical: 10, paddingHorizontal: 4 }}
               >
-                Forgot Password?
-              </Text>
-            </Link>
-          </View>
+                <Text
+                  style={{
+                    color:
+                      colorScheme === "light"
+                        ? FORGOT_PASSWORD_TEXT_SAFE
+                        : theme.activeText,
+                    textAlign: "right",
+                    textDecorationLine: "underline",
+                    fontWeight: "600",
+                  }}
+                >
+                  Forgot Password?
+                </Text>
+              </Link>
+            </WalkthroughableView>
+          </CopilotStep>
 
           <View style={styles.optionsRow}>
             <View
@@ -482,43 +509,52 @@ export default function Login() {
               </Text>
             </View>
           </View>
-          <TouchableOpacity
-            style={[
-              styles.button,
-              isLoginBusy && { opacity: 0.6 },
-              {
-                backgroundColor: theme.activeText,
-                marginBottom: insets.bottom > 0 ? 0 : 8,
-              },
-            ]}
-            onPress={handleLogin}
-            disabled={isLoginBusy}
+          <CopilotStep
+            name="login-sign-in"
+            order={2}
+            active={isFocused}
+            text="Enter your email and password, then tap here to sign in."
           >
-            {isLoginBusy && (
-              <Animated.View
-                style={{
-                  marginRight: 10,
-                  transform: [
-                    {
-                      rotate: spinAnim.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: ["0deg", "360deg"],
-                      }),
-                    },
-                  ],
-                }}
+            <WalkthroughableView>
+              <TouchableOpacity
+                style={[
+                  styles.button,
+                  isLoginBusy && { opacity: 0.6 },
+                  {
+                    backgroundColor: theme.activeText,
+                    marginBottom: insets.bottom > 0 ? 0 : 8,
+                  },
+                ]}
+                onPress={handleLogin}
+                disabled={isLoginBusy}
               >
-                <AntDesign
-                  name="loading-3-quarters"
-                  size={20}
-                  color={theme.white}
-                />
-              </Animated.View>
-            )}
-            <Text style={[styles.buttonText, { color: theme.white }]}>
-              {isLoginBusy ? "signing you in..." : "Sign in"}
-            </Text>
-          </TouchableOpacity>
+                {isLoginBusy && (
+                  <Animated.View
+                    style={{
+                      marginRight: 10,
+                      transform: [
+                        {
+                          rotate: spinAnim.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: ["0deg", "360deg"],
+                          }),
+                        },
+                      ],
+                    }}
+                  >
+                    <AntDesign
+                      name="loading-3-quarters"
+                      size={20}
+                      color={theme.white}
+                    />
+                  </Animated.View>
+                )}
+                <Text style={[styles.buttonText, { color: theme.white }]}>
+                  {isLoginBusy ? "signing you in..." : "Sign in"}
+                </Text>
+              </TouchableOpacity>
+            </WalkthroughableView>
+          </CopilotStep>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -540,8 +576,8 @@ const getStyles = (theme: typeof Colors.light) =>
       backgroundColor: theme.whiteBackground,
       paddingVertical: 20,
       paddingHorizontal: 20,
-      borderTopRightRadius: 30,
-      borderTopLeftRadius: 30,
+      borderTopRightRadius: Radii.lg,
+      borderTopLeftRadius: Radii.lg,
       marginTop: -30,
     },
     iconContainer: {
@@ -618,15 +654,10 @@ const getStyles = (theme: typeof Colors.light) =>
       color: theme.secondaryText,
       fontSize: 14,
     },
-    forgot: {
-      color: theme.primary,
-      fontSize: 14,
-      fontWeight: "600",
-    },
     button: {
       backgroundColor: theme.primary,
       paddingVertical: 10,
-      borderRadius: 4,
+      borderRadius: Radii.sm,
       alignItems: "center",
       flexDirection: "row",
       justifyContent: "center",

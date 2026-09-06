@@ -45,9 +45,18 @@ export interface DashboardData {
   current_year: number;
   hcp_current_point: number;
   hcp_messages: DashboardMessages;
+  payroll_frequency: "weekly" | "fortnightly" | string;
+  payroll_cutoff_day: string | null;
+  payroll_cutoff_time: string | null;
+  period_start: string | null;
+  period_end: string | null;
+  /** @deprecated use period_start/period_end + payroll_frequency instead */
   fortnight_start_date: string | null;
+  /** @deprecated use period_start/period_end + payroll_frequency instead */
   fortnight_end_date: string | null;
+  /** @deprecated use period_start/period_end + payroll_frequency instead */
   week_start_date: string | null;
+  /** @deprecated use period_start/period_end + payroll_frequency instead */
   week_end_date: string | null;
   pending_profession_documents: unknown[];
 }

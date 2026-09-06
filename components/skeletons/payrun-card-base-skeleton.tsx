@@ -1,4 +1,4 @@
-import { Colors } from "@/constants/theme";
+import { Colors, Radii } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import React from "react";
 import { StyleSheet, View } from "react-native";
@@ -13,21 +13,21 @@ export const ShiftCardBaseSkeleton: React.FC = () => {
   return (
     <View style={styles.card}>
       <View style={styles.headerRow}>
-        <SkeletonBase width={60} height={24} borderRadius={12} />
+        <SkeletonBase width={60} height={24} borderRadius={Radii.full} />
       </View>
       <View style={styles.dateContainer}>
         <View style={styles.dateCard}>
-          <SkeletonBase width={40} height={20} borderRadius={3} />
+          <SkeletonBase width={40} height={20} borderRadius={Radii.xs} />
           <View style={{ height: 4 }} />
-          <SkeletonBase width={40} height={18} borderRadius={3} />
+          <SkeletonBase width={40} height={18} borderRadius={Radii.xs} />
         </View>
       </View>
       <View style={styles.mainContent}>
-        <SkeletonBase width="70%" height={14} borderRadius={4} />
-        <SkeletonBase width="50%" height={12} borderRadius={4} />
+        <SkeletonBase width="70%" height={14} borderRadius={Radii.xs} />
+        <SkeletonBase width="50%" height={12} borderRadius={Radii.xs} />
         <View style={styles.spacer} />
-        <SkeletonBase width="80%" height={12} borderRadius={4} />
-        <SkeletonBase width="75%" height={12} borderRadius={4} />
+        <SkeletonBase width="80%" height={12} borderRadius={Radii.xs} />
+        <SkeletonBase width="75%" height={12} borderRadius={Radii.xs} />
       </View>
     </View>
   );
@@ -37,7 +37,7 @@ const getStyles = (theme: typeof Colors.light) =>
   StyleSheet.create({
     card: {
       backgroundColor: theme.whiteBackground,
-      borderRadius: 5,
+      borderRadius: Radii.sm,
       padding: 8,
       borderWidth: 1,
       borderColor: theme.activeBorder,
@@ -62,7 +62,7 @@ const getStyles = (theme: typeof Colors.light) =>
     },
     dateCard: {
       backgroundColor: theme.greyBorder,
-      borderRadius: 5,
+      borderRadius: Radii.sm,
       padding: 4,
       display: "flex",
       flexDirection: "column",

@@ -35,7 +35,9 @@ import { Alert } from "react-native";
 import { useStorageState } from "./useStorageState";
 
 const AuthContext = React.createContext<{
-  signIn: (data: LoginCredentials) => Promise<"authenticated" | "onboarding">;
+  signIn: (
+    data: LoginCredentials,
+  ) => Promise<"authenticated" | "onboarding" | "password-reset-required">;
   retryNotificationSetup: () => Promise<boolean>;
   setSess: (data: string) => void;
   signOut: () => Promise<void>;
@@ -66,23 +68,34 @@ export function useSession() {
   return value;
 }
 
-const getOnboardingRouteParams = (user?: User | null) => {
+export const getOnboardingRouteParams = (user?: User | null) => {
   const hcp = user?.hcp;
-  const registrationScreen = hcp?.app_registration_screen;
+  if (!hcp?.id) {
+    return null;
+  }
 
-  if (!hcp?.id || !registrationScreen || registrationScreen === "0") {
+  // "0" means registration is fully complete — skip onboarding. Anything
+  // else, including null/unset (never started), still needs onboarding —
+  // default to step 1 rather than treating "never started" as "complete".
+  const registrationScreen = hcp.app_registration_screen;
+  if (registrationScreen === "0") {
     return null;
   }
 
   return {
     hcpId: String(hcp.id),
-    screen: registrationScreen,
+    screen: registrationScreen || "1",
   };
 };
+
+export const needsForcedPasswordReset = (user?: User | null) =>
+  user?.require_password_reset === 1;
 
 export function useProtectedRoute(
   session: string | null | undefined,
   user: User | null,
+  authLoading: boolean,
+  isHydrating: boolean,
 ) {
   const segments = useSegments();
   const router = useRouter();
@@ -91,27 +104,44 @@ export function useProtectedRoute(
   const pathname = usePathname();
   const currentRoute = pathname === "/(open)/index";
   useEffect(() => {
+    if (authLoading || isHydrating) return;
+
     const inAuthGroup = segments[0] === "(open)";
     const inOnboarding = segments[0] === "onboarding";
+    const inSupportChat = segments[0] === "support-chat";
+    const inForcedPasswordReset = segments[0] === "force-password-reset";
+    const requiresPasswordReset = needsForcedPasswordReset(user);
     const onboardingParams = getOnboardingRouteParams(user);
 
-    if (!session && !inAuthGroup && currentRoute) {
+    if (!session && !inAuthGroup && (currentRoute || inForcedPasswordReset)) {
       // Redirect to the sign-in page.
       router.replace("/(open)/login");
-    } else if (session && onboardingParams && !inOnboarding) {
+    } else if (session && requiresPasswordReset && !inForcedPasswordReset) {
+      // Takes priority over onboarding
+      router.replace("/force-password-reset");
+    } else if (
+      session &&
+      !requiresPasswordReset &&
+      onboardingParams &&
+      !inOnboarding &&
+      !inSupportChat
+    ) {
       router.replace({
         pathname: "/onboarding",
         params: onboardingParams,
       });
     } else if (
       session &&
+      !requiresPasswordReset &&
       !onboardingParams &&
-      ((inAuthGroup && !inOnboarding) || currentRoute)
+      ((inAuthGroup && !inOnboarding) || currentRoute || inOnboarding)
     ) {
-      // Redirect to the home page.
+      // Redirect to the home page. Includes the case where onboardingParams
+      // just became null while already sitting on /onboarding (registration
+      // completed)
       router.replace("/(tabs)");
     }
-  }, [currentRoute, router, segments, session, user]);
+  }, [authLoading, currentRoute, isHydrating, router, segments, session, user]);
 }
 
 export function SessionProvider(props: React.PropsWithChildren) {
@@ -128,7 +158,7 @@ export function SessionProvider(props: React.PropsWithChildren) {
 
   const user = userJson ? (JSON.parse(userJson) as User) : null;
 
-  useProtectedRoute(session, user);
+  useProtectedRoute(session, user, authLoading, isHydrating || isHydratingUser);
 
   useEffect(() => {
     incrementProviderMount("SessionProvider");
@@ -163,14 +193,30 @@ export function SessionProvider(props: React.PropsWithChildren) {
       // Cache profile data for global access
       queryClient.setQueryData(["profile-details"], result.data.user);
 
+      if (needsForcedPasswordReset(result.data.user)) {
+        router.replace("/force-password-reset");
+        return "password-reset-required";
+      }
+
       // Login to OneSignal for push notifications
       await onLoginSuccess(result.data.user.id.toString());
 
       try {
-        const regStatus = await getRegistrationStatus(result.data.access_token);
+        const regStatus = await getRegistrationStatus(
+          result.data.access_token,
+          result.data.user.hcp.id,
+        );
 
         console.log("[REGSTATUS]", regStatus);
         if (regStatus.data.registration_screen === "0") {
+          const completedUser: User = {
+            ...result.data.user,
+            hcp: { ...result.data.user.hcp, app_registration_screen: "0" },
+          };
+          setUserJson(JSON.stringify(completedUser));
+          profileStore.setUserDetails(completedUser);
+          queryClient.setQueryData(["profile-details"], completedUser);
+
           Alert.alert("Success", "Login successful!", [{ text: "OK" }]);
           return "authenticated";
         }
@@ -189,19 +235,11 @@ export function SessionProvider(props: React.PropsWithChildren) {
         profileStore.setUserDetails(updatedUser);
         queryClient.setQueryData(["profile-details"], updatedUser);
 
-        router.replace({
-          pathname: "/onboarding",
-          params: {
-            hcpId: String(result.data.user.hcp.id),
-            screen: String(onboardingStep),
-          },
-        });
         return "onboarding";
       } catch {
-        // Fall back to local user data if the status check fails
-        const onboardingParams = getOnboardingRouteParams(result.data.user);
-        if (onboardingParams) {
-          router.replace({ pathname: "/onboarding", params: onboardingParams });
+        // Fall back to local user data if the status check fails — no
+        // explicit redirect needed here either, for the same reason.
+        if (getOnboardingRouteParams(result.data.user)) {
           return "onboarding";
         }
       }

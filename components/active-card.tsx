@@ -1,3 +1,4 @@
+import { Radii } from "@/constants/theme";
 import { Payrun } from "@/data-types/dashboard";
 import { useShiftCountdown } from "@/hooks/use-shift-countdown";
 import { Ionicons } from "@expo/vector-icons";
@@ -123,7 +124,7 @@ export default ActiveCard;
 const getStyles = (colorScheme: string) => StyleSheet.create({
   card: {
     marginTop: 5,
-    borderRadius: 12,
+    borderRadius: Radii.md,
     padding: 12,
     borderWidth: 1,
     borderColor: colorScheme === "dark" ? "#36454F" : "#FF9800",
@@ -137,12 +138,12 @@ const getStyles = (colorScheme: string) => StyleSheet.create({
   },
 
   cardUpcoming: {
-    borderRadius: 8,
+    borderRadius: Radii.sm,
     padding: 10,
     gap: 5,
     marginTop: 10,
-    borderTopLeftRadius: 25,
-    borderTopRightRadius: 25,
+    borderTopLeftRadius: Radii.lg,
+    borderTopRightRadius: Radii.lg,
     backgroundColor: colorScheme === "dark" ? "#FFD966" : "#ffe493",
     borderWidth: 1,
     borderColor: colorScheme === "dark" ? "#FFD966" : "#ffd966",
@@ -159,14 +160,14 @@ const getStyles = (colorScheme: string) => StyleSheet.create({
     backgroundColor: colorScheme === "dark" ? "#36454F" : "#71c6013b",
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 10,
+    borderRadius: Radii.full,
     gap: 8,
   },
 
   statusDot: {
     width: 8,
     height: 8,
-    borderRadius: 4,
+    borderRadius: Radii.full,
     backgroundColor: colorScheme === "dark" ? "#FFD966" : "#70C601",
   },
 
@@ -205,7 +206,7 @@ const getStyles = (colorScheme: string) => StyleSheet.create({
     gap: 10,
     backgroundColor: colorScheme === "dark" ? "#36454F" : "#FF9800",
     padding: 12,
-    borderRadius: 8,
+    borderRadius: Radii.sm,
     marginTop: 5,
   },
 
@@ -225,7 +226,7 @@ const getStyles = (colorScheme: string) => StyleSheet.create({
     gap: 8,
     backgroundColor: colorScheme === "dark" ? "#36454F" : "rgba(255,255,255,0.25)",
     padding: 12,
-    borderRadius: 8,
+    borderRadius: Radii.sm,
   },
 
   addressText: {
@@ -242,7 +243,7 @@ const getStyles = (colorScheme: string) => StyleSheet.create({
     gap: 8,
     backgroundColor: colorScheme === "dark" ? "#36454F" : "rgba(255,255,255,0.25)",
     paddingVertical: 14,
-    borderRadius: 18,
+    borderRadius: Radii.md,
   },
 
   buttonText: {

@@ -111,6 +111,14 @@ export const Colors = {
   },
 };
 
+export const Radii = {
+  xs: 4,
+  sm: 8,
+  md: 12,
+  lg: 20,
+  full: 999,
+};
+
 export const Fonts = Platform.select({
   ios: {
     /** iOS `UIFontDescriptorSystemDesignDefault` */

@@ -1,4 +1,4 @@
-import { Colors } from "@/constants/theme";
+import { Colors, Radii } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import React from "react";
 import { StyleSheet, View } from "react-native";
@@ -13,31 +13,31 @@ export const ActiveCardSkeleton: React.FC = () => {
   return (
     <View style={styles.card}>
       <View style={styles.topContent}>
-        <SkeletonBase width={120} height={22} borderRadius={999} />
-        <SkeletonBase width={100} height={18} borderRadius={4} />
+        <SkeletonBase width={120} height={22} borderRadius={Radii.full} />
+        <SkeletonBase width={100} height={18} borderRadius={Radii.xs} />
       </View>
 
       <SkeletonBase
         width="70%"
         height={17}
-        borderRadius={4}
+        borderRadius={Radii.xs}
         style={styles.title}
       />
       <SkeletonBase
         width="50%"
         height={13}
-        borderRadius={4}
+        borderRadius={Radii.xs}
         style={styles.subtitle}
       />
 
       <View style={styles.infoPill}>
-        <SkeletonBase width={16} height={16} borderRadius={4} />
-        <SkeletonBase width="75%" height={14} borderRadius={4} />
+        <SkeletonBase width={16} height={16} borderRadius={Radii.xs} />
+        <SkeletonBase width="75%" height={14} borderRadius={Radii.xs} />
       </View>
 
       <View style={styles.addressPill}>
-        <SkeletonBase width={16} height={16} borderRadius={4} />
-        <SkeletonBase width="80%" height={14} borderRadius={4} />
+        <SkeletonBase width={16} height={16} borderRadius={Radii.xs} />
+        <SkeletonBase width="80%" height={14} borderRadius={Radii.xs} />
       </View>
     </View>
   );
@@ -46,7 +46,7 @@ export const ActiveCardSkeleton: React.FC = () => {
 const getStyles = (theme: typeof Colors.light) =>
   StyleSheet.create({
     card: {
-      borderRadius: 8,
+      borderRadius: Radii.sm,
       padding: 10,
       gap: 5,
       marginTop: 10,
@@ -73,7 +73,7 @@ const getStyles = (theme: typeof Colors.light) =>
       gap: 10,
       backgroundColor: theme.greyBorder,
       padding: 12,
-      borderRadius: 8,
+      borderRadius: Radii.sm,
       marginBottom: 8,
     },
     addressPill: {
@@ -82,6 +82,6 @@ const getStyles = (theme: typeof Colors.light) =>
       gap: 8,
       backgroundColor: theme.greyBorder,
       padding: 12,
-      borderRadius: 8,
+      borderRadius: Radii.sm,
     },
   });

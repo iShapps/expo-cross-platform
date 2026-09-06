@@ -1,4 +1,4 @@
-import { Colors } from "@/constants/theme";
+import { Colors, Radii } from "@/constants/theme";
 import { useProfileData } from "@/data-store/use-account-store";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -360,8 +360,8 @@ const getStyles = (theme: typeof Colors.light) =>
     },
     sheet: {
       backgroundColor: theme.whiteBackground,
-      borderTopLeftRadius: 24,
-      borderTopRightRadius: 24,
+      borderTopLeftRadius: Radii.lg,
+      borderTopRightRadius: Radii.lg,
       padding: 20,
       paddingHorizontal: 10,
       paddingBottom: 36,
@@ -371,7 +371,7 @@ const getStyles = (theme: typeof Colors.light) =>
       alignSelf: "center",
       width: 40,
       height: 4,
-      borderRadius: 2,
+      borderRadius: Radii.xs,
       backgroundColor: theme.grayBorder,
       marginBottom: 16,
     },
@@ -394,7 +394,7 @@ const getStyles = (theme: typeof Colors.light) =>
       flex: 1,
       borderWidth: 1,
       borderColor: theme.secondaryText,
-      borderRadius: 8,
+      borderRadius: Radii.sm,
       padding: 10,
     },
     pillActive: {
@@ -430,7 +430,7 @@ const getStyles = (theme: typeof Colors.light) =>
     navBtn: {
       width: 34,
       height: 34,
-      borderRadius: 17,
+      borderRadius: Radii.full,
       alignItems: "center",
       justifyContent: "center",
       backgroundColor: theme.safeAreaBg ?? "#f5f5f5",
@@ -481,7 +481,7 @@ const getStyles = (theme: typeof Colors.light) =>
     dayCircle: {
       width: 36,
       height: 36,
-      borderRadius: 18,
+      borderRadius: Radii.full,
       alignItems: "center",
       justifyContent: "center",
     },
@@ -502,7 +502,7 @@ const getStyles = (theme: typeof Colors.light) =>
       bottom: 2,
       width: 4,
       height: 4,
-      borderRadius: 2,
+      borderRadius: Radii.full,
       backgroundColor: theme.primary,
     },
 
@@ -521,7 +521,7 @@ const getStyles = (theme: typeof Colors.light) =>
     clearBtn: {
       flex: 1,
       paddingVertical: 14,
-      borderRadius: 30,
+      borderRadius: Radii.full,
       alignItems: "center",
       borderWidth: 1.5,
       borderColor: theme.greyBorder,
@@ -534,7 +534,7 @@ const getStyles = (theme: typeof Colors.light) =>
     applyBtn: {
       flex: 2,
       paddingVertical: 14,
-      borderRadius: 30,
+      borderRadius: Radii.full,
       alignItems: "center",
       backgroundColor: theme.primary,
     },

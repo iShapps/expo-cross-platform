@@ -1,24 +1,99 @@
 import { formatMediumDate, isExpired } from "@/utils/date-time";
+import { pickDocument } from "@/utils/file-pickers";
+import { error } from "@/utils/logger";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
+  DocumentsQueryError,
+  getDocumentFileUrl,
   getDutyStatementDocuments,
   getGenaralStatementDocuments,
   getProfessionDocuments,
+  startBackgroundDocumentUpload,
 } from "../../api-queries/documents";
 import Header from "../../components/Header";
-import { Colors } from "../../constants/theme";
+import {
+  DocumentPreviewModal,
+  PreviewFile,
+} from "../../components/document-preview-modal";
+import { Colors, Radii } from "../../constants/theme";
 import { IDocument } from "../../data-types/documents";
 import { useColorScheme } from "../../hooks/use-color-scheme";
+
+function extensionToMimeType(ext?: string): string | undefined {
+  switch ((ext ?? "").toLowerCase()) {
+    case "pdf":
+      return "application/pdf";
+    case "jpg":
+    case "jpeg":
+      return "image/jpeg";
+    case "png":
+      return "image/png";
+    default:
+      return undefined;
+  }
+}
+
+function isValidFutureIsoDate(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const parsed = new Date(`${value}T00:00:00Z`);
+  if (Number.isNaN(parsed.getTime())) return false;
+  const today = new Date();
+  const todayUtc = new Date(
+    Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()),
+  );
+  return parsed >= todayUtc;
+}
 
 const DocumentDetails = () => {
   const { id, doc } = useLocalSearchParams<{ id: string; doc?: string }>();
   const [document, setDocument] = useState<IDocument | null>(null);
 
   const [loading, setLoading] = useState(true);
+
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
+  const [previewVisible, setPreviewVisible] = useState(false);
+  const [previewFile, setPreviewFile] = useState<PreviewFile | null>(null);
+
+  const [pendingFile, setPendingFile] = useState<{
+    uri: string;
+    name: string;
+    mimeType?: string;
+  } | null>(null);
+  const [expiryDraft, setExpiryDraft] = useState("");
+  const [expiryError, setExpiryError] = useState<string | null>(null);
+
+  // Confirmation step shown before a picked replacement is actually uploaded.
+  const [confirmVisible, setConfirmVisible] = useState(false);
+  const [confirmFile, setConfirmFile] = useState<{
+    uri: string;
+    name: string;
+    mimeType?: string;
+  } | null>(null);
+  const [confirmExpiry, setConfirmExpiry] = useState<string | undefined>(
+    undefined,
+  );
+
+  // Background upload started after confirmation — tracked so the screen
+  // stays interactive (no blocking spinner) while it finishes.
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const cancelUploadRef = useRef<(() => Promise<void>) | null>(null);
+  const isPickingDocumentRef = useRef(false);
 
   let colorScheme = useColorScheme();
   if (!colorScheme) colorScheme = "light";
@@ -70,6 +145,150 @@ const DocumentDetails = () => {
     }
     if (id) fetchDocument();
   }, [id, doc]);
+
+  const handlePreview = async () => {
+    if (!document) return;
+
+    setIsPreviewLoading(true);
+    try {
+      const res = await getDocumentFileUrl(document.hcp_id, document.id);
+      setPreviewFile({
+        uri: res.data.url,
+        name: res.data.filename,
+        mimeType: extensionToMimeType(res.data.type),
+      });
+      setPreviewVisible(true);
+    } catch (err) {
+      Alert.alert(
+        "Preview unavailable",
+        err instanceof DocumentsQueryError
+          ? err.message
+          : "Could not load this document right now.",
+      );
+    } finally {
+      setIsPreviewLoading(false);
+    }
+  };
+
+  const openConfirm = (
+    file: { uri: string; name: string; mimeType?: string },
+    expiryDate?: string,
+  ) => {
+    setConfirmFile(file);
+    setConfirmExpiry(expiryDate);
+    setConfirmVisible(true);
+  };
+
+  const handleReplace = async () => {
+    if (!document || isPickingDocumentRef.current) return;
+
+    isPickingDocumentRef.current = true;
+    try {
+      const picked = await pickDocument();
+      if (!picked) return;
+
+      const file = {
+        uri: picked.uri,
+        name: picked.name,
+        mimeType: picked.mimeType,
+      };
+
+      if (document.document.expiry_date_mandatory === "yes") {
+        setPendingFile(file);
+        setExpiryDraft("");
+        setExpiryError(null);
+        return;
+      }
+
+      openConfirm(file);
+    } catch (err) {
+      error("Re-upload document picker failed:", err);
+      Alert.alert("Error", "Could not open the file picker. Please try again.");
+    } finally {
+      isPickingDocumentRef.current = false;
+    }
+  };
+
+  const confirmReplacementWithExpiry = () => {
+    if (!pendingFile) return;
+
+    if (!isValidFutureIsoDate(expiryDraft)) {
+      setExpiryError("Enter a valid future date as YYYY-MM-DD.");
+      return;
+    }
+
+    openConfirm(pendingFile, expiryDraft);
+    setPendingFile(null);
+  };
+
+  // Kicks off the upload as a native background task and returns immediately —
+  // the screen stays fully interactive while it finishes, instead of blocking
+  // on a big multipart request. Progress + completion are reflected via state.
+  const handleConfirmedUpload = async () => {
+    if (!document || !confirmFile) return;
+
+    const file = confirmFile;
+    const expiryDate = confirmExpiry;
+
+    setConfirmVisible(false);
+    setConfirmFile(null);
+    setPreviewVisible(false);
+    setIsUploading(true);
+    setUploadProgress(0);
+
+    try {
+      const { completion, cancel } = await startBackgroundDocumentUpload(
+        { document_id: document.document_id, file, expiry_date: expiryDate },
+        (progress) => setUploadProgress(progress.percent),
+      );
+      cancelUploadRef.current = cancel;
+
+      completion
+        .then(() => {
+          setDocument((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  document_name: file.name,
+                  document_approval: "pending",
+                  expiry_date: expiryDate ?? prev.expiry_date,
+                }
+              : prev,
+          );
+          Alert.alert(
+            "Document updated",
+            "Your new file has been submitted and is pending review.",
+          );
+        })
+        .catch((err) => {
+          Alert.alert(
+            "Update failed",
+            err instanceof DocumentsQueryError
+              ? err.message
+              : "Could not update this document right now.",
+          );
+        })
+        .finally(() => {
+          cancelUploadRef.current = null;
+          setIsUploading(false);
+          setUploadProgress(null);
+        });
+    } catch (err) {
+      cancelUploadRef.current = null;
+      setIsUploading(false);
+      setUploadProgress(null);
+      Alert.alert(
+        "Update failed",
+        err instanceof DocumentsQueryError
+          ? err.message
+          : "Could not start the upload.",
+      );
+    }
+  };
+
+  const handleCancelUpload = async () => {
+    await cancelUploadRef.current?.();
+  };
 
   if (loading) {
     return (
@@ -212,14 +431,14 @@ const DocumentDetails = () => {
                       borderColor: theme.danger,
                     }
                   : document.document.status === "active"
-                    ? {
-                        backgroundColor: theme.primary + "22",
-                        borderColor: theme.primary,
-                      }
-                    : {
-                        backgroundColor: theme.danger + "22",
-                        borderColor: theme.danger,
-                      },
+                  ? {
+                      backgroundColor: theme.primary + "22",
+                      borderColor: theme.primary,
+                    }
+                  : {
+                      backgroundColor: theme.danger + "22",
+                      borderColor: theme.danger,
+                    },
               ]}
             >
               <Text
@@ -229,16 +448,16 @@ const DocumentDetails = () => {
                     color: expired
                       ? theme.danger
                       : document.document.status === "active"
-                        ? theme.primary
-                        : theme.danger,
+                      ? theme.primary
+                      : theme.danger,
                   },
                 ]}
               >
                 {expired
                   ? "Expired"
                   : document.document.status === "active"
-                    ? "Active"
-                    : "Inactive"}
+                  ? "Active"
+                  : "Inactive"}
               </Text>
             </View>
           </View>
@@ -307,7 +526,151 @@ const DocumentDetails = () => {
             </Text>
           </View>
         </View>
+
+        {isUploading && (
+          <View style={styles.uploadBanner}>
+            <View style={styles.uploadBannerHeader}>
+              <Text style={styles.uploadBannerText}>
+                Uploading new file
+                {uploadProgress != null ? ` — ${uploadProgress}%` : "…"}
+              </Text>
+              <TouchableOpacity onPress={handleCancelUpload}>
+                <Text style={styles.uploadBannerCancel}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.uploadProgressTrack}>
+              <View
+                style={[
+                  styles.uploadProgressFill,
+                  { width: `${uploadProgress ?? 8}%` },
+                ]}
+              />
+            </View>
+          </View>
+        )}
+
+        <View style={styles.actions}>
+          <TouchableOpacity
+            style={[styles.button, styles.previewActionButton]}
+            onPress={handlePreview}
+            disabled={isPreviewLoading || isUploading}
+          >
+            {isPreviewLoading ? (
+              <ActivityIndicator size="small" color={theme.primary} />
+            ) : (
+              <Ionicons name="eye-outline" size={18} color={theme.primary} />
+            )}
+            <Text style={styles.previewActionButtonText}>Preview</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.button}
+            onPress={handleReplace}
+            disabled={isUploading}
+          >
+            <Ionicons
+              name="cloud-upload-outline"
+              size={18}
+              color={theme.whiteText}
+            />
+            <Text style={styles.buttonText}>Re Upload</Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
+
+      <DocumentPreviewModal
+        visible={previewVisible}
+        title={document.document.name}
+        file={previewFile}
+        onClose={() => setPreviewVisible(false)}
+        actions={[
+          {
+            key: "replace",
+            label: "Re Upload",
+            icon: "cloud-upload-outline",
+            onPress: () => {
+              setPreviewVisible(false);
+              void handleReplace();
+            },
+            disabled: isUploading,
+          },
+        ]}
+      />
+
+      <Modal
+        visible={!!pendingFile}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setPendingFile(null)}
+      >
+        <View style={styles.expiryBackdrop}>
+          <View
+            style={[
+              styles.expiryCard,
+              { backgroundColor: theme.whiteBackground },
+            ]}
+          >
+            <Text style={[styles.sectionTitle, { marginBottom: 4 }]}>
+              Expiry date required
+            </Text>
+            <Text style={[styles.detailLabel, { marginBottom: 12 }]}>
+              This document needs an expiry date to be submitted.
+            </Text>
+            <TextInput
+              value={expiryDraft}
+              onChangeText={(value) => {
+                setExpiryDraft(value);
+                setExpiryError(null);
+              }}
+              placeholder="YYYY-MM-DD"
+              placeholderTextColor={theme.secondaryText}
+              keyboardType="number-pad"
+              style={[styles.input, { borderColor: theme.grayBorder }]}
+            />
+            {expiryError && (
+              <Text
+                style={[
+                  styles.detailLabel,
+                  { color: theme.danger, marginTop: 6 },
+                ]}
+              >
+                {expiryError}
+              </Text>
+            )}
+            <View style={[styles.actions, { marginTop: 16 }]}>
+              <TouchableOpacity
+                style={[styles.button, styles.cancelButton]}
+                onPress={() => setPendingFile(null)}
+              >
+                <Text style={styles.buttonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.button}
+                onPress={confirmReplacementWithExpiry}
+              >
+                <Text style={styles.buttonText}>Next</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <DocumentPreviewModal
+        visible={confirmVisible}
+        title="Confirm new file"
+        file={confirmFile}
+        onClose={() => {
+          setConfirmVisible(false);
+          setConfirmFile(null);
+        }}
+        actions={[
+          {
+            key: "confirm",
+            label: "Confirm & upload",
+            icon: "cloud-upload-outline",
+            onPress: () => void handleConfirmedUpload(),
+          },
+        ]}
+      />
     </SafeAreaView>
   );
 };
@@ -322,7 +685,7 @@ const getStyles = (theme: typeof Colors.light) =>
     },
     sectionCard: {
       marginTop: 12,
-      borderRadius: 5,
+      borderRadius: Radii.md,
       padding: 14,
       borderWidth: 1,
       borderColor: theme.divider,
@@ -375,7 +738,7 @@ const getStyles = (theme: typeof Colors.light) =>
       alignItems: "center",
       paddingHorizontal: 20,
       paddingVertical: 8,
-      borderRadius: 3,
+      borderRadius: Radii.sm,
       backgroundColor: theme.primary,
     },
     cancelButton: {
@@ -385,6 +748,67 @@ const getStyles = (theme: typeof Colors.light) =>
       color: theme.whiteText,
       marginLeft: 8,
       fontSize: 14,
+    },
+    previewActionButton: {
+      backgroundColor: theme.whiteBackground,
+      borderWidth: 1,
+      borderColor: theme.primary,
+    },
+    previewActionButtonText: {
+      color: theme.primary,
+      marginLeft: 8,
+      fontSize: 14,
+    },
+    uploadBanner: {
+      marginTop: 12,
+      marginBottom: 4,
+      padding: 12,
+      borderRadius: Radii.sm,
+      borderWidth: 1,
+      borderColor: theme.heroBorder,
+      backgroundColor: theme.heroBg,
+      gap: 8,
+    },
+    uploadBannerHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+    },
+    uploadBannerText: {
+      fontSize: 13,
+      fontWeight: "600",
+      color: theme.primaryText,
+    },
+    uploadBannerCancel: {
+      fontSize: 13,
+      fontWeight: "700",
+      color: theme.danger,
+    },
+    uploadProgressTrack: {
+      height: 6,
+      borderRadius: Radii.xs,
+      backgroundColor: theme.grayBorder,
+      overflow: "hidden",
+    },
+    uploadProgressFill: {
+      height: "100%",
+      borderRadius: Radii.xs,
+      backgroundColor: theme.primary,
+    },
+    expiryBackdrop: {
+      flex: 1,
+      backgroundColor: "rgba(0,0,0,0.42)",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: 20,
+    },
+    expiryCard: {
+      width: "100%",
+      maxWidth: 420,
+      borderRadius: Radii.lg,
+      padding: 18,
+      borderWidth: 1,
+      borderColor: theme.grayBorder,
     },
     errorScreen: {
       flex: 1,
@@ -397,7 +821,7 @@ const getStyles = (theme: typeof Colors.light) =>
       width: "100%",
       maxWidth: 420,
       backgroundColor: theme.whiteBackground,
-      borderRadius: 8,
+      borderRadius: Radii.lg,
       paddingVertical: 20,
       paddingHorizontal: 20,
       borderWidth: 1,
@@ -412,7 +836,7 @@ const getStyles = (theme: typeof Colors.light) =>
     errorIconWrap: {
       width: 64,
       height: 64,
-      borderRadius: 32,
+      borderRadius: Radii.full,
       backgroundColor: theme.mutedText,
       alignItems: "center",
       justifyContent: "center",
@@ -426,7 +850,7 @@ const getStyles = (theme: typeof Colors.light) =>
     errorSecondaryBtn: {
       backgroundColor: theme.whiteBackground,
       paddingVertical: 12,
-      borderRadius: 5,
+      borderRadius: Radii.sm,
       alignItems: "center",
       width: "50%",
       display: "flex",
@@ -449,7 +873,7 @@ const getStyles = (theme: typeof Colors.light) =>
     statusChip: {
       paddingHorizontal: 14,
       paddingVertical: 4,
-      borderRadius: 16,
+      borderRadius: Radii.full,
       borderWidth: 1.5,
       alignSelf: "flex-start",
       marginBottom: 2,
