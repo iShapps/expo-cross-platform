@@ -18,6 +18,9 @@ export function useFirstVisitTour(key: TourKey, ready: boolean) {
   }, [start]);
 
   useEffect(() => {
+    // Tours temporarily disabled — re-enable by uncommenting below.
+    return;
+    /*
     if (seen || !ready) {
       startedRef.current = false;
       return;
@@ -32,6 +35,7 @@ export function useFirstVisitTour(key: TourKey, ready: boolean) {
     }, 500);
 
     return () => clearTimeout(timer);
+    */
   }, [hasHydrated, seen, ready]);
 
   useEffect(() => {
