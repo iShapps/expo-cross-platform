@@ -152,229 +152,235 @@ export default function SettingsScreen() {
             <WalkthroughableView style={styles.settingsWrap}>
               {/* Location Access */}
               <View style={styles.settingCard}>
-              <View style={styles.settingIconWrap}>
-                <Ionicons
-                  name="location-sharp"
-                  size={22}
-                  color={appTheme.activeText}
-                />
-              </View>
-              <View style={styles.settingTextWrap}>
-                <Text style={styles.settingTitle}>Location Access</Text>
-                <Text style={styles.settingDesc}>
-                  Allow app to access your location for better experience.
-                </Text>
-              </View>
-              <Switch
-                value={locationEnabled}
-                onValueChange={setLocation}
-                thumbColor={appTheme.white}
-                trackColor={{ false: "gray", true: appTheme.primary }}
-              />
-            </View>
-
-            {/* Notifications */}
-            <View style={styles.settingCardMain}>
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: 12,
-                }}
-              >
                 <View style={styles.settingIconWrap}>
                   <Ionicons
-                    name="notifications"
+                    name="location-sharp"
                     size={22}
                     color={appTheme.activeText}
                   />
                 </View>
                 <View style={styles.settingTextWrap}>
-                  <Text style={styles.settingTitle}>Notifications</Text>
+                  <Text style={styles.settingTitle}>Location Access</Text>
                   <Text style={styles.settingDesc}>
-                    Enable push notifications for important updates.
+                    Allow app to access your location for better experience.
                   </Text>
                 </View>
                 <Switch
-                  value={notificationsEnabled}
-                  onValueChange={setNotifications}
+                  value={locationEnabled}
+                  onValueChange={setLocation}
                   thumbColor={appTheme.white}
                   trackColor={{ false: "gray", true: appTheme.primary }}
                 />
               </View>
 
-              <View
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 3,
-                }}
-              >
-                {((!isChecking && !isSetup) || !hcp?.device_id) && (
-                  <Text style={styles.settingError}>
-                    Push notifications are not set up on this device.
-                  </Text>
-                )}
+              {/* Notifications */}
+              <View style={styles.settingCardMain}>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 12,
+                  }}
+                >
+                  <View style={styles.settingIconWrap}>
+                    <Ionicons
+                      name="notifications"
+                      size={22}
+                      color={appTheme.activeText}
+                    />
+                  </View>
+                  <View style={styles.settingTextWrap}>
+                    <Text style={styles.settingTitle}>Notifications</Text>
+                    <Text style={styles.settingDesc}>
+                      Enable push notifications for important updates.
+                    </Text>
+                  </View>
+                  <Switch
+                    value={notificationsEnabled}
+                    onValueChange={setNotifications}
+                    thumbColor={appTheme.white}
+                    trackColor={{ false: "gray", true: appTheme.primary }}
+                  />
+                </View>
+
                 <View
                   style={{
                     display: "flex",
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    width: "100%",
-                    gap: 10,
+                    flexDirection: "column",
+                    gap: 3,
                   }}
                 >
                   {((!isChecking && !isSetup) || !hcp?.device_id) && (
-                    <Pressable
-                      onPress={handleRetryNotificationsSetup}
-                      disabled={isRetryingNotifications}
-                      style={({ pressed }) => [
-                        styles.retryButton,
-                        pressed && styles.retryButtonPressed,
-                        isRetryingNotifications && styles.retryButtonDisabled,
-                      ]}
-                    >
-                      {isRetryingNotifications ? (
-                        <ActivityIndicator
-                          size="small"
-                          color={appTheme.white}
-                        />
-                      ) : (
-                        <Text style={styles.retryButtonText}>
-                          Retry notifications setup
-                        </Text>
-                      )}
-                    </Pressable>
+                    <Text style={styles.settingError}>
+                      Push notifications are not set up on this device.
+                    </Text>
                   )}
-                  <CopilotStep
-                    name="settings-test-notification"
-                    order={2}
-                    active={isFocused}
-                    text="Send yourself a test notification to confirm push notifications are actually reaching this device."
+                  <View
+                    style={{
+                      display: "flex",
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      width: "100%",
+                      gap: 10,
+                    }}
                   >
-                    <WalkthroughableView>
+                    {((!isChecking && !isSetup) || !hcp?.device_id) && (
                       <Pressable
-                        onPress={handleTestPushNotifications}
-                        disabled={isTestingNotifications}
+                        onPress={handleRetryNotificationsSetup}
+                        disabled={isRetryingNotifications}
                         style={({ pressed }) => [
                           styles.retryButton,
                           pressed && styles.retryButtonPressed,
-                          isTestingNotifications && styles.retryButtonDisabled,
+                          isRetryingNotifications && styles.retryButtonDisabled,
                         ]}
                       >
-                        {isTestingNotifications ? (
+                        {isRetryingNotifications ? (
                           <ActivityIndicator
                             size="small"
                             color={appTheme.white}
                           />
                         ) : (
                           <Text style={styles.retryButtonText}>
-                            Test push notifications
+                            Retry notifications setup
                           </Text>
                         )}
                       </Pressable>
-                    </WalkthroughableView>
-                  </CopilotStep>
+                    )}
+                    <CopilotStep
+                      name="settings-test-notification"
+                      order={2}
+                      active={isFocused}
+                      text="Send yourself a test notification to confirm push notifications are actually reaching this device."
+                    >
+                      <WalkthroughableView>
+                        <Pressable
+                          onPress={handleTestPushNotifications}
+                          disabled={isTestingNotifications}
+                          style={({ pressed }) => [
+                            styles.retryButton,
+                            pressed && styles.retryButtonPressed,
+                            isTestingNotifications &&
+                              styles.retryButtonDisabled,
+                          ]}
+                        >
+                          {isTestingNotifications ? (
+                            <ActivityIndicator
+                              size="small"
+                              color={appTheme.white}
+                            />
+                          ) : (
+                            <Text style={styles.retryButtonText}>
+                              Test push notifications
+                            </Text>
+                          )}
+                        </Pressable>
+                      </WalkthroughableView>
+                    </CopilotStep>
+                  </View>
                 </View>
               </View>
-            </View>
 
-            {/* Calendar & Reminders */}
-            <View style={styles.settingCard}>
-              <View style={styles.settingIconWrap}>
-                <Ionicons
-                  name="calendar"
-                  size={22}
-                  color={appTheme.activeText}
+              {/* Calendar & Reminders */}
+              <View style={styles.settingCard}>
+                <View style={styles.settingIconWrap}>
+                  <Ionicons
+                    name="calendar"
+                    size={22}
+                    color={appTheme.activeText}
+                  />
+                </View>
+                <View style={styles.settingTextWrap}>
+                  <Text style={styles.settingTitle}>Calendar & Reminders</Text>
+                  <Text style={styles.settingDesc}>
+                    Allow app to add shifts to your calendar with reminders.
+                  </Text>
+                </View>
+                <Switch
+                  value={calendarEnabled}
+                  onValueChange={setCalendar}
+                  thumbColor={appTheme.white}
+                  trackColor={{ false: "gray", true: appTheme.primary }}
                 />
               </View>
-              <View style={styles.settingTextWrap}>
-                <Text style={styles.settingTitle}>Calendar & Reminders</Text>
-                <Text style={styles.settingDesc}>
-                  Allow app to add shifts to your calendar with reminders.
-                </Text>
-              </View>
-              <Switch
-                value={calendarEnabled}
-                onValueChange={setCalendar}
-                thumbColor={appTheme.white}
-                trackColor={{ false: "gray", true: appTheme.primary }}
-              />
-            </View>
 
-            {/* Theme */}
-            <View style={styles.settingCard}>
-              <View style={styles.settingIconWrap}>
-                <MaterialCommunityIcons
-                  name="theme-light-dark"
-                  size={22}
-                  color={appTheme.activeText}
+              {/* Theme */}
+              <View style={styles.settingCard}>
+                <View style={styles.settingIconWrap}>
+                  <MaterialCommunityIcons
+                    name="theme-light-dark"
+                    size={22}
+                    color={appTheme.activeText}
+                  />
+                </View>
+                <View style={styles.settingTextWrap}>
+                  <Text style={styles.settingTitle}>Theme</Text>
+                  <Text style={styles.settingDesc}>
+                    Toggle between Light and Dark theme for the app.
+                  </Text>
+                </View>
+                <Switch
+                  value={theme === "dark"}
+                  onValueChange={(value) => setTheme(value ? "dark" : "light")}
+                  thumbColor={appTheme.white}
+                  trackColor={{
+                    false: "gray",
+                    true: appTheme.primary,
+                  }}
                 />
               </View>
-              <View style={styles.settingTextWrap}>
-                <Text style={styles.settingTitle}>Theme</Text>
-                <Text style={styles.settingDesc}>
-                  Toggle between Light and Dark theme for the app.
-                </Text>
-              </View>
-              <Switch
-                value={theme === "dark"}
-                onValueChange={(value) => setTheme(value ? "dark" : "light")}
-                thumbColor={appTheme.white}
-                trackColor={{
-                  false: "gray",
-                  true: appTheme.primary,
-                }}
-              />
-            </View>
 
-            {/* Biometrics */}
-            <View style={styles.settingCard}>
-              <View style={styles.settingIconWrap}>
-                <Ionicons
-                  name="finger-print"
-                  size={22}
-                  color={appTheme.activeText}
+              {/* Biometrics */}
+              <View style={styles.settingCard}>
+                <View style={styles.settingIconWrap}>
+                  <Ionicons
+                    name="finger-print"
+                    size={22}
+                    color={appTheme.activeText}
+                  />
+                </View>
+                <View style={styles.settingTextWrap}>
+                  <Text style={styles.settingTitle}>
+                    Biometric Authentication
+                  </Text>
+                  <Text style={styles.settingDesc}>
+                    Enable biometric authentication for added security.
+                  </Text>
+                </View>
+                <Switch
+                  value={biometricsEnabled}
+                  onValueChange={setBiometrics}
+                  thumbColor={appTheme.white}
+                  trackColor={{ false: "gray", true: appTheme.primary }}
                 />
               </View>
-              <View style={styles.settingTextWrap}>
-                <Text style={styles.settingTitle}>
-                  Biometric Authentication
-                </Text>
-                <Text style={styles.settingDesc}>
-                  Enable biometric authentication for added security.
-                </Text>
-              </View>
-              <Switch
-                value={biometricsEnabled}
-                onValueChange={setBiometrics}
-                thumbColor={appTheme.white}
-                trackColor={{ false: "gray", true: appTheme.primary }}
-              />
-            </View>
 
-            {/* Replay app tour */}
-            <Pressable style={styles.settingCard} onPress={handleReplayTour}>
-              <View style={styles.settingIconWrap}>
-                <Ionicons
-                  name="school-outline"
-                  size={22}
-                  color={appTheme.activeText}
-                />
-              </View>
-              <View style={styles.settingTextWrap}>
-                <Text style={styles.settingTitle}>Replay app tour</Text>
-                <Text style={styles.settingDesc}>
-                  See the guided walkthrough of the dashboard, shifts, my
-                  shifts, documents, and more again.
-                </Text>
-              </View>
-              <Ionicons
-                name="chevron-forward"
-                size={20}
-                color={appTheme.secondaryText}
-              />
-            </Pressable>
+              {/* Replay app tour */}
+              {false && (
+                <Pressable
+                  style={styles.settingCard}
+                  onPress={handleReplayTour}
+                >
+                  <View style={styles.settingIconWrap}>
+                    <Ionicons
+                      name="school-outline"
+                      size={22}
+                      color={appTheme.activeText}
+                    />
+                  </View>
+                  <View style={styles.settingTextWrap}>
+                    <Text style={styles.settingTitle}>Replay app tour</Text>
+                    <Text style={styles.settingDesc}>
+                      See the guided walkthrough of the dashboard, shifts, my
+                      shifts, documents, and more again.
+                    </Text>
+                  </View>
+                  <Ionicons
+                    name="chevron-forward"
+                    size={20}
+                    color={appTheme.secondaryText}
+                  />
+                </Pressable>
+              )}
             </WalkthroughableView>
           </CopilotStep>
         </View>
