@@ -129,6 +129,7 @@ export async function getDocumentFileUrl(
 }
 
 export type UpdateDocumentPayload = {
+  hcp_id: number;
   document_id: number;
   file: { uri: string; name: string; mimeType?: string };
   expiry_date?: string;
@@ -153,18 +154,11 @@ export type BackgroundDocumentUpload = {
   cancel: () => Promise<void>;
 };
 
-// Replaces the file for a document the HCP already has on record, via a native
-// (OS-level) background upload session rather than a JS `fetch`. This keeps
-// the request off the JS thread — the UI stays responsive, the upload survives
-// the app being backgrounded, and large files stream instead of sitting fully
-// in memory as a JS FormData blob. Re-uses the registration upload endpoint,
-// which upserts by document_id for the signed-in HCP and resets approval back
-// to "pending" for admin re-review.
 export async function startBackgroundDocumentUpload(
   payload: UpdateDocumentPayload,
   onProgress?: (progress: DocumentUploadProgress) => void,
 ): Promise<BackgroundDocumentUpload> {
-  const endpoint = "/v2/registration/documents";
+  const endpoint = `/v2/hcps/${payload.hcp_id}/documents`;
   const token = await TokenStorage.getToken();
 
   const headers: Record<string, string> = { Accept: "application/json" };
@@ -223,7 +217,10 @@ export async function startBackgroundDocumentUpload(
     }
 
     if (result.status < 200 || result.status >= 300) {
-      const message = extractApiErrorMessage(json, "Could not update document.");
+      const message = extractApiErrorMessage(
+        json,
+        "Could not update document.",
+      );
       if (isUnauthorizedStatus(result.status)) {
         await notifyAuthExpired({ message, statusCode: result.status });
       }
