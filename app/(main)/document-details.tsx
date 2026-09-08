@@ -1,3 +1,4 @@
+import { FileTooLargeError } from "@/utils/compress-file";
 import { formatMediumDate, isExpired } from "@/utils/date-time";
 import { pickDocument } from "@/utils/file-pickers";
 import { error } from "@/utils/logger";
@@ -46,6 +47,12 @@ function extensionToMimeType(ext?: string): string | undefined {
     default:
       return undefined;
   }
+}
+
+function formatDateInput(raw: string): string {
+  const digits = raw.replace(/\D/g, "").slice(0, 8);
+  const parts = [digits.slice(0, 4), digits.slice(4, 6), digits.slice(6, 8)];
+  return parts.filter(Boolean).join("-");
 }
 
 function isValidFutureIsoDate(value: string): boolean {
@@ -203,7 +210,12 @@ const DocumentDetails = () => {
       openConfirm(file);
     } catch (err) {
       error("Re-upload document picker failed:", err);
-      Alert.alert("Error", "Could not open the file picker. Please try again.");
+      Alert.alert(
+        "Error",
+        err instanceof FileTooLargeError
+          ? err.message
+          : "Could not open the file picker. Please try again.",
+      );
     } finally {
       isPickingDocumentRef.current = false;
     }
@@ -618,12 +630,13 @@ const DocumentDetails = () => {
             <TextInput
               value={expiryDraft}
               onChangeText={(value) => {
-                setExpiryDraft(value);
+                setExpiryDraft(formatDateInput(value));
                 setExpiryError(null);
               }}
               placeholder="YYYY-MM-DD"
               placeholderTextColor={theme.secondaryText}
               keyboardType="number-pad"
+              maxLength={10}
               style={[styles.input, { borderColor: theme.grayBorder }]}
             />
             {expiryError && (
