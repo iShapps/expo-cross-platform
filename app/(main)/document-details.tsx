@@ -250,7 +250,12 @@ const DocumentDetails = () => {
 
     try {
       const { completion, cancel } = await startBackgroundDocumentUpload(
-        { document_id: document.document_id, file, expiry_date: expiryDate },
+        {
+          hcp_id: document.hcp_id,
+          document_id: document.document_id,
+          file,
+          expiry_date: expiryDate,
+        },
         (progress) => setUploadProgress(progress.percent),
       );
       cancelUploadRef.current = cancel;
