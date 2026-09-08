@@ -237,6 +237,9 @@ export function DocumentPreviewModal({
           </View>
 
           <View style={styles.previewActions}>
+            <TouchableOpacity onPress={onClose} style={styles.doneButton}>
+              <Text style={styles.doneButtonText}>Close</Text>
+            </TouchableOpacity>
             {actions.map((action) => (
               <TouchableOpacity
                 key={action.key}
@@ -269,9 +272,6 @@ export function DocumentPreviewModal({
                 </Text>
               </TouchableOpacity>
             ))}
-            <TouchableOpacity onPress={onClose} style={styles.doneButton}>
-              <Text style={styles.doneButtonText}>Done</Text>
-            </TouchableOpacity>
           </View>
         </View>
       </View>
