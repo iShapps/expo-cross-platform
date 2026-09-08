@@ -1,6 +1,7 @@
 import * as DocumentPicker from "expo-document-picker";
 import { File } from "expo-file-system";
 import * as ImagePicker from "expo-image-picker";
+import { ensureWithinUploadLimit } from "./compress-file";
 
 export async function pickImageFromCamera() {
   const result = await ImagePicker.launchCameraAsync({
@@ -9,7 +10,7 @@ export async function pickImageFromCamera() {
     quality: 0.8,
   });
   if (!result.canceled && result.assets && result.assets.length > 0) {
-    return result.assets[0];
+    return ensureWithinUploadLimit(result.assets[0]);
   }
   return null;
 }
@@ -21,7 +22,7 @@ export async function pickImageFromLibrary() {
     quality: 0.8,
   });
   if (!result.canceled && result.assets && result.assets.length > 0) {
-    return result.assets[0];
+    return ensureWithinUploadLimit(result.assets[0]);
   }
   return null;
 }
@@ -35,12 +36,12 @@ export async function pickDocument() {
   if (!result.canceled && result.assets && result.assets.length > 0) {
     const asset = result.assets[0];
     const file = new File(asset.uri);
-    return {
+    return ensureWithinUploadLimit({
       name: asset.name,
       uri: file.uri,
       mimeType: asset.mimeType,
       size: asset.size,
-    };
+    });
   }
   return null;
 }

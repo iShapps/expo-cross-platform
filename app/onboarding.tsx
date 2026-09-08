@@ -18,6 +18,7 @@ import {
   resolveOnboardingStep,
   TokenStorage,
 } from "@/utils/auth-api";
+import { FileTooLargeError } from "@/utils/compress-file";
 import { pickDocument } from "@/utils/file-pickers";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
@@ -557,7 +558,18 @@ export default function OnboardingScreen() {
   };
 
   const handlePickCv = async () => {
-    const file = await pickDocument();
+    let file;
+    try {
+      file = await pickDocument();
+    } catch (err) {
+      Alert.alert(
+        "Error",
+        err instanceof FileTooLargeError
+          ? err.message
+          : "Could not open the file picker. Please try again.",
+      );
+      return;
+    }
     if (!file) return;
     const picked: UploadedFile = {
       name: file.name,
@@ -573,7 +585,18 @@ export default function OnboardingScreen() {
     requirement: DocumentRequirement,
     collection: "professional" | "mandatory",
   ) => {
-    const file = await pickDocument();
+    let file;
+    try {
+      file = await pickDocument();
+    } catch (err) {
+      Alert.alert(
+        "Error",
+        err instanceof FileTooLargeError
+          ? err.message
+          : "Could not open the file picker. Please try again.",
+      );
+      return;
+    }
     if (!file) return;
 
     const setter =
