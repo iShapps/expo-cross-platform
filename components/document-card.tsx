@@ -18,8 +18,13 @@ interface DocumentCardProps {
   document: IDocument;
 }
 
+const PENDING_APPROVAL_STATUSES = ["pending", "pending-reapproval"];
+
 const DocumentCard: React.FC<DocumentCardProps> = ({ document }) => {
   const expired = isExpired(document.expiry_date);
+  const pendingApproval = PENDING_APPROVAL_STATUSES.includes(
+    document.document_approval,
+  );
   let colorScheme = useColorScheme();
   if (!colorScheme) colorScheme = "light";
   const theme = Colors[colorScheme];
@@ -120,6 +125,19 @@ const DocumentCard: React.FC<DocumentCardProps> = ({ document }) => {
       hitSlop={8}
       style={[styles.card, expired && styles.expiredCard]}
     >
+      {expired ? (
+        <View style={[styles.statusPill, styles.statusPillDanger]}>
+          <Text style={[styles.statusPillText, styles.statusPillTextDanger]}>
+            Expired
+          </Text>
+        </View>
+      ) : pendingApproval ? (
+        <View style={[styles.statusPill, styles.statusPillPending]}>
+          <Text style={[styles.statusPillText, styles.statusPillTextPending]}>
+            Pending Approval
+          </Text>
+        </View>
+      ) : null}
       <View style={styles.iconWrapper}>
         {iconComponent}
         <View
@@ -172,8 +190,38 @@ const DocumentCard: React.FC<DocumentCardProps> = ({ document }) => {
 
 export default DocumentCard;
 
+const PENDING_AMBER = "#f59e0b";
+
 const getStyles = (theme: typeof Colors.light) =>
   StyleSheet.create({
+    statusPill: {
+      position: "absolute",
+      top: 6,
+      right: 6,
+      zIndex: 3,
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: Radii.full,
+      borderWidth: 1,
+    },
+    statusPillDanger: {
+      backgroundColor: theme.danger + "22",
+      borderColor: theme.danger,
+    },
+    statusPillPending: {
+      backgroundColor: PENDING_AMBER + "22",
+      borderColor: PENDING_AMBER,
+    },
+    statusPillText: {
+      fontSize: 10,
+      fontWeight: "700",
+    },
+    statusPillTextDanger: {
+      color: theme.danger,
+    },
+    statusPillTextPending: {
+      color: PENDING_AMBER,
+    },
     card: {
       flexDirection: "row",
       alignItems: "center",
