@@ -3,12 +3,17 @@ import { useSettingsStore } from "@/data-store/use-settings-store";
 import LoginCredentials from "@/data-types/auth";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useFirstVisitTour } from "@/hooks/use-first-visit-tour";
-import { ensureOneSignalSubscriptionId } from "@/hooks/use-one-signal";
+import {
+  ensureOneSignalSubscriptionId,
+  waitForSubscriptionId,
+} from "@/hooks/use-one-signal";
+import { login as apiLogin } from "@/utils/auth-api";
 import {
   authenticateWithBiometrics,
   isBiometricAllowed,
   isBiometricAvailable,
 } from "@/utils/biometrics";
+import { debug, error as logError } from "@/utils/logger";
 import {
   getLoginCredentials,
   saveLoginCredentials,
@@ -41,6 +46,28 @@ import { useSession } from "../ctx";
 
 const FORGOT_PASSWORD_TEXT_SAFE = "#3D7A00";
 const WalkthroughableView = walkthroughable(View);
+
+const backfillDeviceId = async (credentials: {
+  email: string;
+  password: string;
+  device_name?: string;
+  device_type?: string;
+  device_version?: string;
+}) => {
+  try {
+    const subscriptionId = await waitForSubscriptionId(30000);
+
+    if (!subscriptionId) {
+      debug("Device id backfill: no subscription id resolved in time");
+      return;
+    }
+
+    await apiLogin({ ...credentials, device_id: subscriptionId });
+    debug("Device id backfilled after login:", subscriptionId);
+  } catch (err) {
+    logError("Device id backfill failed:", err);
+  }
+};
 
 export default function Login() {
   const colorScheme = useColorScheme() || "light";
@@ -212,6 +239,19 @@ export default function Login() {
         signInResult === "password-reset-required"
       ) {
         return;
+      }
+
+      if (!subscriptionId) {
+        // Login succeeded but we didn't have a subscription id in time —
+        // keep waiting in the background and silently re send it once
+        // OneSignal has one.
+        void backfillDeviceId({
+          email,
+          password,
+          device_name: loginPayload.device_name,
+          device_type: loginPayload.device_type,
+          device_version: loginPayload.device_version,
+        });
       }
 
       if (biometricSupported && biometricAllowed) {
