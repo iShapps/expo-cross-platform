@@ -165,8 +165,9 @@ export const useOneSignal = () => {
 
             if (canRequest) {
               hasRequestedPermissionThisSession = true; // NEW: Mark as requested
-              const granted =
-                await OneSignal.Notifications.requestPermission(true);
+              const granted = await OneSignal.Notifications.requestPermission(
+                true,
+              );
               debug("Permission granted:", granted);
 
               if (!granted) return;
@@ -310,10 +311,12 @@ export const useOneSignalSubscriptionStatus = () => {
   useEffect(() => {
     const listener = (event: any) => {
       const newId = event.current?.id ?? null;
+      const optedIn = event.current?.optedIn ?? false;
       setSubscriptionId(newId);
 
-      // Sync on push subscription change — only once
-      if (newId && !hasSyncedSettings.current) {
+      // Sync on push subscription change — only once, and only once the
+      // subscription is genuinely opted in.
+      if (newId && optedIn && !hasSyncedSettings.current) {
         const currentEnabled = useSettingsStore.getState().notificationsEnabled;
         if (!currentEnabled) {
           debug(

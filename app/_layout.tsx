@@ -56,6 +56,8 @@ if (!sentryGlobal.__ISHAPPS_SENTRY_INITIALIZED__) {
     spotlight: __DEV__,
   });
   sentryGlobal.__ISHAPPS_SENTRY_INITIALIZED__ = true;
+
+  Sentry.setTag("api_url", process.env.EXPO_PUBLIC_API_URL ?? "unset");
 }
 
 SplashScreen.preventAutoHideAsync();
