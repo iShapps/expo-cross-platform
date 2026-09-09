@@ -7,23 +7,28 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
-      "channel": "development"
+      "channel": "development",
+      "environment": "development"
     },
     "preview": {
       "distribution": "internal",
-      "channel": "preview"
+      "channel": "preview",
+      "environment": "preview"
     },
     "production": {
       "autoIncrement": true,
+      "channel": "production",
+      "environment": "production",
       "env": {
         "APP_ENV": "production",
         "SENTRY_ORG": "truride",
         "SENTRY_PROJECT": "ishapps"
-      },
-      "channel": "production"
+      }
     }
   },
   "submit": {
     "production": {}
   }
 }
+
+// eas update --branch production --environment production --message ""
