@@ -4,6 +4,12 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
+interface LastLocationUpdate {
+  latitude: number;
+  longitude: number;
+  sentAt: number;
+}
+
 interface AccountStoreType {
   token: string | null;
   setToken: (token: string) => void;
@@ -17,15 +23,24 @@ interface AccountStoreType {
   endDate: string | null;
   setEndDate: (date: string | null) => void;
   clearDateFilters: () => void;
+  lastLocationUpdate: LastLocationUpdate | null;
+  setLastLocationUpdate: (update: LastLocationUpdate | null) => void;
+  activeTrackingIntervalMs: number | null;
+  setActiveTrackingIntervalMs: (ms: number | null) => void;
 }
 
 export const useProfileData = create<AccountStoreType>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       token: null,
       userDetails: null,
       acceptedShift: null,
-      setAcceptedShift: (shift) => set({ acceptedShift: shift }),
+      setAcceptedShift: (shift) =>
+        set({
+          acceptedShift: shift,
+          lastLocationUpdate: null,
+          activeTrackingIntervalMs: null,
+        }),
       setUserDetails: (userDetails) => set({ userDetails }),
       setToken: (token) => set({ token: token }),
       clearDetails: () =>
@@ -35,12 +50,19 @@ export const useProfileData = create<AccountStoreType>()(
           acceptedShift: null,
           startDate: null,
           endDate: null,
+          lastLocationUpdate: null,
+          activeTrackingIntervalMs: null,
         }),
       startDate: null,
       setStartDate: (date) => set({ startDate: date }),
       endDate: null,
       setEndDate: (date) => set({ endDate: date }),
       clearDateFilters: () => set({ startDate: null, endDate: null }),
+      lastLocationUpdate: null,
+      setLastLocationUpdate: (update) => set({ lastLocationUpdate: update }),
+      activeTrackingIntervalMs: null,
+      setActiveTrackingIntervalMs: (ms) =>
+        set({ activeTrackingIntervalMs: ms }),
     }),
     {
       name: "ishapps-account-data",
