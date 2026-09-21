@@ -22,15 +22,13 @@ import { useLocation } from "@/hooks/use-location";
 import { formatMediumDate } from "@/utils/date-time";
 import { shiftToCalendarEvent } from "@/utils/shift-calendar-utils";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import Feather from "@expo/vector-icons/Feather";
-import Ionicons from "@expo/vector-icons/Ionicons";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useIsFocused } from "@react-navigation/native";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BlurView } from "expo-blur";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -193,6 +191,7 @@ export default function ShiftDetails() {
 
   // ref
   const bottomSheetRef = useRef<BottomSheet>(null);
+  const hasShownDetailsErrorAlertRef = useRef(false);
 
   const profileStore = useProfileData();
   const queryClient = useQueryClient();
@@ -534,89 +533,33 @@ export default function ShiftDetails() {
   //   }
   // }, [shift?.id]);
 
-  const handleRefetch = async () => {
-    await refetch();
-  };
-
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme ?? "light"];
   const styles = getStyles(theme);
 
-  if (isLoading || isRefetching) {
-    return <ShiftDetailsSkeleton />;
-  }
+  const hasDetailsError = !isLoading && (isError || !shift || isRefetchError);
 
-  if (!isLoading && (isError || !shift || isRefetchError)) {
-    return (
-      <View
-        style={[styles.errorScreen, { backgroundColor: theme.whiteBackground }]}
-      >
-        <View
-          style={[styles.errorCard, { backgroundColor: theme.whiteBackground }]}
-        >
-          <View
-            style={[
-              styles.errorIconWrap,
-              {
-                backgroundColor: theme.errorBg,
-              },
-            ]}
-          >
-            <MaterialCommunityIcons
-              name="cloud-alert-outline"
-              size={34}
-              color={theme.danger}
-            />
-          </View>
-          <Text style={[styles.errorTitle, { color: theme.errorTitle }]}>
-            Something went wrong
-          </Text>
-          <Text style={[styles.errorSubtitle, { color: theme.errorTitle }]}>
-            {data?.message ??
-              "We couldn’t load this shift right now. Check your connection and try again."}
-          </Text>
-          <View style={styles.errorActions}>
-            <Pressable
-              style={[
-                styles.errorPrimaryBtn,
-                {
-                  backgroundColor: theme.errorBg,
-                },
-              ]}
-              onPress={handleRefetch}
-            >
-              <Feather name="rotate-ccw" size={18} color={theme.white} />
-              <Text style={[styles.errorPrimaryText, { color: theme.white }]}>
-                Try again
-              </Text>
-            </Pressable>
-            <Pressable
-              style={[
-                styles.errorSecondaryBtn,
-                {
-                  backgroundColor: theme.whiteBackground,
-                },
-              ]}
-              onPress={() => router.canGoBack() && router.back()}
-            >
-              <Ionicons
-                name="return-up-back"
-                size={18}
-                color={theme.errorSubtitle}
-              />
-              <Text
-                style={[
-                  styles.errorSecondaryText,
-                  { color: theme.errorSubtitle },
-                ]}
-              >
-                Go back
-              </Text>
-            </Pressable>
-          </View>
-        </View>
-      </View>
+  useEffect(() => {
+    if (!hasDetailsError) {
+      hasShownDetailsErrorAlertRef.current = false;
+      return;
+    }
+    if (hasShownDetailsErrorAlertRef.current) return;
+    hasShownDetailsErrorAlertRef.current = true;
+
+    const goBack = () => router.canGoBack() && router.back();
+
+    Alert.alert(
+      "Something went wrong",
+      data?.message ??
+        "We couldn’t load this shift right now. Check your connection and try again.",
+      [{ text: "OK", onPress: goBack }],
+      { cancelable: true, onDismiss: goBack },
     );
+  }, [hasDetailsError, data?.message, router]);
+
+  if (isLoading || isRefetching || hasDetailsError) {
+    return <ShiftDetailsSkeleton />;
   }
 
   const isSleepover = Boolean(shift?.is_sleepover_shift);
@@ -1175,90 +1118,6 @@ const getStyles = (theme: typeof Colors.light) =>
       color: theme.secondaryText,
       fontWeight: "300",
       textTransform: "capitalize",
-    },
-    errorScreen: {
-      flex: 1,
-      backgroundColor: theme.whiteBackground,
-      alignItems: "center",
-      justifyContent: "center",
-      padding: 16,
-    },
-    errorCard: {
-      width: "100%",
-      maxWidth: 420,
-      backgroundColor: theme.whiteBackground,
-      borderRadius: Radii.lg,
-      paddingVertical: 20,
-      paddingHorizontal: 20,
-      borderWidth: 1,
-      borderColor: theme.grayBorder,
-      alignItems: "center",
-      shadowColor: theme.darkText,
-      shadowOffset: { width: 0, height: 6 },
-      shadowOpacity: 0.12,
-      shadowRadius: 14,
-      elevation: 3,
-    },
-    errorIconWrap: {
-      width: 64,
-      height: 64,
-      borderRadius: Radii.full,
-      backgroundColor: theme.mutedText,
-      alignItems: "center",
-      justifyContent: "center",
-      marginBottom: 12,
-    },
-    errorTitle: {
-      fontSize: 18,
-      fontWeight: "700",
-      color: theme.errorTitle,
-    },
-    errorSubtitle: {
-      fontSize: 13,
-      color: theme.errorSubtitle,
-      textAlign: "center",
-      marginTop: 8,
-      lineHeight: 18,
-    },
-    errorActions: {
-      width: "100%",
-      marginTop: 18,
-      flexDirection: "row",
-      justifyContent: "center",
-      gap: 10,
-    },
-    errorPrimaryBtn: {
-      backgroundColor: theme.errorBg,
-      display: "flex",
-      flexDirection: "row",
-      gap: 8,
-      alignContent: "center",
-      justifyContent: "center",
-      borderRadius: Radii.sm,
-      width: "45%",
-      alignItems: "center",
-    },
-    errorPrimaryText: {
-      color: theme.errorTitle,
-      fontSize: 14,
-      fontWeight: "500",
-    },
-    errorSecondaryBtn: {
-      backgroundColor: theme.whiteBackground,
-      paddingVertical: 12,
-      borderRadius: Radii.sm,
-      alignItems: "center",
-      width: "50%",
-      display: "flex",
-      alignContent: "center",
-      justifyContent: "center",
-      flexDirection: "row",
-      gap: 8,
-    },
-    errorSecondaryText: {
-      color: theme.errorSubtitle,
-      fontSize: 14,
-      fontWeight: "500",
     },
     button: {
       backgroundColor: theme.primary,
