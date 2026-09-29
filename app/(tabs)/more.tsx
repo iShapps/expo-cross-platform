@@ -7,6 +7,7 @@ import Header from "@/components/Header";
 import { Colors, Radii } from "@/constants/theme";
 import { useConfigSettings } from "@/data-store/config-store";
 import { useProfileData } from "@/data-store/use-account-store";
+import { useTenantStore } from "@/data-store/use-tenant-store";
 import { User } from "@/data-types/auth";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useFirstVisitTour } from "@/hooks/use-first-visit-tour";
@@ -39,6 +40,7 @@ export default function More() {
   const queryClient = useQueryClient();
   const profileStore = useProfileData();
   const userDetails = profileStore.userDetails;
+  const organizationName = useTenantStore((state) => state.tenant?.name);
   const hcp = userDetails?.hcp;
   const [optimisticValue, setOptimisticValue] = useState<boolean | null>(null);
   const isAvailable =
@@ -213,6 +215,33 @@ export default function More() {
           text="Manage your profile details, browse the facilities you work with, and adjust app settings here."
         >
           <WalkthroughableView style={styles.linksSection}>
+            <Pressable
+              onPress={() => router.push("/(main)/switch-organization")}
+              style={styles.profileLinks}
+            >
+              <View style={styles.profileContainer}>
+                <MaterialCommunityIcons
+                  name="domain"
+                  size={24}
+                  color={theme.primary}
+                />
+                <Text style={styles.rowText}>Organization</Text>
+              </View>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                <Text
+                  style={styles.rowValueText}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
+                  {organizationName ?? "—"}
+                </Text>
+                <MaterialCommunityIcons
+                  name="chevron-right"
+                  size={24}
+                  color={theme.primary}
+                />
+              </View>
+            </Pressable>
             <Pressable
               onPress={() => router.push("/(main)/account")}
               style={styles.profileLinks}
@@ -406,6 +435,11 @@ const getStyles = (theme: typeof Colors.light) =>
     },
     rowText: {
       color: theme.primaryText,
+    },
+    rowValueText: {
+      color: theme.secondaryText,
+      fontSize: 13,
+      maxWidth: 140,
     },
     avatarFallback: {
       fontSize: 22,

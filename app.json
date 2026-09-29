@@ -4,7 +4,7 @@
     "slug": "ishapps",
     "version": "2.9.5",
     "orientation": "portrait",
-    "icon": "./assets/images/smhealth.png",
+    "icon": "./assets/images/ishapps_icon_green_ios.png",
     "scheme": "ishapps",
     "userInterfaceStyle": "automatic",
     "ios": {
@@ -35,9 +35,8 @@
       "versionCode": 33,
       "adaptiveIcon": {
         "backgroundColor": "#ffffff",
-        "foregroundImage": "./assets/images/smhealth.png",
-        "backgroundImage": "./assets/images/smhealth.png",
-        "monochromeImage": "./assets/images/smhealth.png"
+        "foregroundImage": "./assets/images/ishapps_icon_green.png",
+        "monochromeImage": "./assets/images/ishapps_icon_green.png"
       },
       "predictiveBackGestureEnabled": false,
       "softwareKeyboardLayoutMode": "pan",
@@ -112,7 +111,8 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/smhealth.png",
+          "image": "./assets/images/ishapps_green.png",
+          "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",
           "dark": {

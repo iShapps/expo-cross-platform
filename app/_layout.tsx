@@ -1,4 +1,5 @@
 import { useSettingsStore } from "@/data-store/use-settings-store";
+import { useTenantStore } from "@/data-store/use-tenant-store";
 import { useTourStore } from "@/data-store/use-tour-store";
 import { useOneSignal } from "@/hooks/use-one-signal";
 import { useOTAUpdate } from "@/hooks/use-ota-update";
@@ -160,19 +161,30 @@ function AppLifecycleHooks() {
 function RootNavigator() {
   const { session, user, isLoading } = useSession();
   const pathname = usePathname();
+  const hasTenant = !!useTenantStore((state) => state.tenant);
   // Registration status/user data hasn't settled yet (hydrating or a login
   // is actively resolving)
   const needsOnboarding = !!getOnboardingRouteParams(user);
   const needsPasswordReset = needsForcedPasswordReset(user);
   const canEnterMainApp =
-    !!session && !isLoading && !needsOnboarding && !needsPasswordReset;
+    hasTenant &&
+    !!session &&
+    !isLoading &&
+    !needsOnboarding &&
+    !needsPasswordReset;
   // A login is actively resolving (setSession fires before the registration
   // status check finishes, while isLoading/authLoading is still true)
-  const canEnterAuthGroup = !session || isLoading;
+  const canEnterAuthGroup = hasTenant && (!session || isLoading);
 
   return (
     <>
       <Stack>
+        <Stack.Protected guard={!hasTenant}>
+          <Stack.Screen
+            name="tenant-code"
+            options={{ headerShown: false, gestureEnabled: false }}
+          />
+        </Stack.Protected>
         <Stack.Protected guard={canEnterMainApp}>
           <Stack.Screen options={{ headerShown: false }} name="(tabs)" />
         </Stack.Protected>

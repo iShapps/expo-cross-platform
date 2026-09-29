@@ -5,6 +5,7 @@ import {
   NotificationCardSkeleton,
 } from "@/components/skeletons";
 import { useProfileData } from "@/data-store/use-account-store";
+import { useTenantStore } from "@/data-store/use-tenant-store";
 import { DashboardResponse } from "@/data-types/dashboard";
 import { useLocation } from "@/hooks/use-location";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
@@ -53,6 +54,7 @@ export default function HomeScreen() {
   const styles = getStyles(theme);
   const profileStore = useProfileData();
   const userDetails = profileStore.userDetails;
+  const organizationName = useTenantStore((state) => state.tenant?.name);
   const queryClient = useQueryClient();
   const configSettings = useConfigSettings();
 
@@ -290,15 +292,13 @@ export default function HomeScreen() {
             >
               <Text style={styles.headerTitle}>{userDetails?.name}</Text>
               <View style={{ display: "flex", flexDirection: "row", gap: 5 }}>
-                <FontAwesome6 name="briefcase" size={16} color="#FFC107" />
+                <FontAwesome6 name="building" size={16} color="#FFC107" />
                 <Text
                   style={styles.headerSubtitle}
                   numberOfLines={2}
                   ellipsizeMode="tail"
                 >
-                  {userDetails?.hcp?.hcp_professions
-                    ?.map((prfession) => prfession?.profession?.name ?? "—")
-                    .join(" | ") ?? "—"}
+                  {organizationName ?? "—"}
                 </Text>
               </View>
             </View>
