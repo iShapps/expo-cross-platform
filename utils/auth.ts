@@ -29,9 +29,4 @@ export const removeToken = async (): Promise<void> => {
   }
 };
 
-export const getAvatarImageSource = (hcp: Hcp, imagePath: string) => {
-  if (!hcp?.image) return undefined;
-  return `${imagePath}${encodeURIComponent(
-    `${hcp.hcp_prefix}${hcp.id}`,
-  )}/image/${hcp.image}`;
-};
+export const getAvatarImageSource = (hcp: Hcp) => hcp?.image_url ?? undefined;

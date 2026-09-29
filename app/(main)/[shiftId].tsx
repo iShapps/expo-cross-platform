@@ -108,7 +108,10 @@ const formatTimeWithAmPm = (time: string | null, baseDate?: Date) => {
   }
 
   if (!parsed) return trimmed;
-  return `${formatDate(parsed)} ${formatClock(parsed.getHours(), parsed.getMinutes())}`;
+  return `${formatDate(parsed)} ${formatClock(
+    parsed.getHours(),
+    parsed.getMinutes(),
+  )}`;
 };
 
 const TimelineItem = ({
@@ -133,13 +136,19 @@ const TimelineItem = ({
       <View style={styles.timelineIconColumn}>
         {!isFirst && (
           <View
-            style={[styles.timelineLine, { backgroundColor: fg, top: 0, bottom: "50%" }]}
+            style={[
+              styles.timelineLine,
+              { backgroundColor: fg, top: 0, bottom: "50%" },
+            ]}
           />
         )}
         <IconBadge icon={icon.name} tone={icon.tone} size={40} />
         {!isLast && (
           <View
-            style={[styles.timelineLine, { backgroundColor: fg, top: "50%", bottom: 0 }]}
+            style={[
+              styles.timelineLine,
+              { backgroundColor: fg, top: "50%", bottom: 0 },
+            ]}
           />
         )}
       </View>
@@ -532,23 +541,22 @@ export default function ShiftDetails() {
   const startDate = new Date(shift?.start_time);
   const endDate = new Date(shift?.end_time);
 
-
   const statusLabel =
     shift?.shift_status === "0"
       ? "Pending"
       : shift?.shift_status === "1"
-        ? "Scheduled"
-        : shift?.shift_status === "2"
-          ? "Running"
-          : shift?.shift_status === "3"
-            ? "Cancelled"
-            : shift?.shift_status === "4"
-              ? "Completed"
-              : shift?.shift_status === "5"
-                ? "Transferred"
-                : shift?.shift_status === "6"
-                  ? "Past"
-                  : "-";
+      ? "Scheduled"
+      : shift?.shift_status === "2"
+      ? "Running"
+      : shift?.shift_status === "3"
+      ? "Cancelled"
+      : shift?.shift_status === "4"
+      ? "Completed"
+      : shift?.shift_status === "5"
+      ? "Transferred"
+      : shift?.shift_status === "6"
+      ? "Past"
+      : "-";
   const statusTone: Record<string, Tone> = {
     Pending: "warning",
     Scheduled: "blue",
@@ -618,15 +626,32 @@ export default function ShiftDetails() {
                     }
                   />
                 )}
-                <Chip label={statusLabel} tone={statusTone[statusLabel] ?? "neutral"} />
+                <Chip
+                  label={statusLabel}
+                  tone={statusTone[statusLabel] ?? "neutral"}
+                />
               </View>
 
-              <View style={[styles.directions, { borderTopColor: colors.border }]}>
-                <Icon name="navigate-outline" size={18} color={colors.primaryStrong} />
-                <AppText variant="subhead" color="primaryStrong" style={styles.flex}>
+              <View
+                style={[styles.directions, { borderTopColor: colors.border }]}
+              >
+                <Icon
+                  name="navigate-outline"
+                  size={18}
+                  color={colors.primaryStrong}
+                />
+                <AppText
+                  variant="subhead"
+                  color="primaryStrong"
+                  style={styles.flex}
+                >
                   Get directions
                 </AppText>
-                <Icon name="chevron-forward" size={18} color={colors.textTertiary} />
+                <Icon
+                  name="chevron-forward"
+                  size={18}
+                  color={colors.textTertiary}
+                />
               </View>
             </PressableCard>
           </WalkthroughableView>
@@ -637,14 +662,21 @@ export default function ShiftDetails() {
           <AppText variant="overline" color="textTertiary">
             When
           </AppText>
-          <AppText variant="title2">{format(startDate, "EEEE, d MMM yyyy")}</AppText>
+          <AppText variant="title2">
+            {format(startDate, "EEEE, d MMM yyyy")}
+          </AppText>
           <View style={styles.whenRow}>
             <Icon name="time-outline" size={18} color={colors.primaryStrong} />
             <AppText variant="bodyMedium" style={styles.flex}>
               {timeOf(startDate)} – {timeOf(endDate)}
             </AppText>
             {!!shift?.hours && (
-              <View style={[styles.hoursChip, { backgroundColor: colors.primarySoft }]}>
+              <View
+                style={[
+                  styles.hoursChip,
+                  { backgroundColor: colors.primarySoft },
+                ]}
+              >
                 <AppText variant="caption" color="primaryStrong">
                   {shift.hours} hrs
                 </AppText>
@@ -654,7 +686,11 @@ export default function ShiftDetails() {
         </Card>
 
         {/* Details */}
-        <AppText variant="overline" color="textTertiary" style={styles.sectionLabel}>
+        <AppText
+          variant="overline"
+          color="textTertiary"
+          style={styles.sectionLabel}
+        >
           Details
         </AppText>
         <Card radius={Radius.xl} padding={Space.md} style={styles.infoCard}>
@@ -668,8 +704,8 @@ export default function ShiftDetails() {
               shift?.is_sleepover_shift
                 ? "Sleepover"
                 : shift?.shift_type
-                  ? shift.shift_type.replace(/\b\w/g, (c) => c.toUpperCase())
-                  : "—"
+                ? shift.shift_type.replace(/\b\w/g, (c) => c.toUpperCase())
+                : "—"
             }
           />
           <InfoRow label="Status" value={statusLabel} />
@@ -680,7 +716,11 @@ export default function ShiftDetails() {
         </Card>
 
         {/* Notes */}
-        <AppText variant="overline" color="textTertiary" style={styles.sectionLabel}>
+        <AppText
+          variant="overline"
+          color="textTertiary"
+          style={styles.sectionLabel}
+        >
           Notes
         </AppText>
         <Card radius={Radius.xl} padding={Space.lg}>
@@ -694,7 +734,11 @@ export default function ShiftDetails() {
 
         {isSleepover && (
           <>
-            <AppText variant="overline" color="textTertiary" style={styles.sectionLabel}>
+            <AppText
+              variant="overline"
+              color="textTertiary"
+              style={styles.sectionLabel}
+            >
               Sleepover timeline
             </AppText>
             <Card radius={Radius.xl} padding={Space.lg}>
@@ -777,7 +821,7 @@ export default function ShiftDetails() {
                       }
                     }}
                     disabled={isBusy}
-                    bgColor={colors.gradient[0]}
+                    tone="primary"
                     processing={isAccepting}
                     completed={acceptShiftMutation.isSuccess}
                   />
@@ -802,7 +846,7 @@ export default function ShiftDetails() {
                     }
                   }}
                   disabled={isBusy}
-                  bgColor={colors.gradient[0]}
+                  tone="primary"
                   processing={isAccepting}
                   completed={acceptShiftTransferMutation.isSuccess}
                 />
@@ -826,7 +870,7 @@ export default function ShiftDetails() {
                     }
                   }}
                   disabled={isBusy}
-                  bgColor={colors.gradient[0]}
+                  tone="primary"
                   processing={isStarting}
                   completed={startShiftMutation.isSuccess}
                 />
@@ -843,7 +887,7 @@ export default function ShiftDetails() {
                   }
                 }}
                 disabled={isBusy}
-                bgColor={colors.danger}
+                tone="danger"
                 processing={isEnding}
                 completed={endShiftMutation.isSuccess}
               />
@@ -865,12 +909,12 @@ export default function ShiftDetails() {
               {isAccepting
                 ? "Accepting shift..."
                 : isStarting
-                  ? "Starting shift..."
-                  : isEnding
-                    ? "Ending shift..."
-                    : isAcceptingTransfer
-                      ? "Accepting shift transfer..."
-                      : "Processing shift action..."}
+                ? "Starting shift..."
+                : isEnding
+                ? "Ending shift..."
+                : isAcceptingTransfer
+                ? "Accepting shift transfer..."
+                : "Processing shift action..."}
             </AppText>
           </View>
         </View>

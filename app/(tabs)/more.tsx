@@ -14,7 +14,6 @@ import {
 } from "@/components/design";
 import TabsHeader from "@/components/shared/tabs-header";
 import { Radius, Space } from "@/constants/design";
-import { useConfigSettings } from "@/data-store/config-store";
 import { useProfileData } from "@/data-store/use-account-store";
 import { useTenantStore } from "@/data-store/use-tenant-store";
 import { User } from "@/data-types/auth";
@@ -33,7 +32,6 @@ const WalkthroughableView = walkthroughable(View);
 
 export default function More() {
   const { signOut } = useSession();
-  const configSettings = useConfigSettings();
   const queryClient = useQueryClient();
   const profileStore = useProfileData();
   const userDetails = profileStore.userDetails;
@@ -116,10 +114,6 @@ export default function More() {
     });
   };
 
-  const avatarImageSource = `${configSettings?.configSettings?.image_path?.hcp_path}${encodeURIComponent(
-    `${userDetails?.hcp?.hcp_prefix}${userDetails?.hcp?.id}`,
-  )}/image/${userDetails?.hcp?.image}`;
-
   const { colors } = useAppTheme();
   const professions = userDetails?.hcp?.hcp_professions ?? [];
 
@@ -143,7 +137,7 @@ export default function More() {
         <Card radius={Radius.xl} padding={Space.lg} raised style={styles.profileCard}>
           <Avatar
             name={userDetails?.name}
-            uri={userDetails?.hcp && userDetails?.hcp.image ? avatarImageSource : null}
+            uri={userDetails?.hcp?.image_url ?? null}
             size={64}
           />
           <View style={styles.profileInfo}>
