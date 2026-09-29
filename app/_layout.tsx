@@ -1,6 +1,7 @@
 import { useSettingsStore } from "@/data-store/use-settings-store";
 import { useTenantStore } from "@/data-store/use-tenant-store";
 import { useTourStore } from "@/data-store/use-tour-store";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useOneSignal } from "@/hooks/use-one-signal";
 import { useOTAUpdate } from "@/hooks/use-ota-update";
 import { usePermissionMonitor } from "@/hooks/use-permission-monitor";
@@ -75,6 +76,8 @@ const queryClient = new QueryClient();
 export default Sentry.wrap(function Root() {
   incrementRootRenderCount();
   const [isHydrated, setIsHydrated] = useState(false);
+
+  const colorScheme = useColorScheme();
   // Design-system font (constants/design.ts → FontFamily). The splash screen
   // stays up until it's ready; on a load error we render with system fonts.
   const [fontsLoaded, fontError] = useFonts({
@@ -158,7 +161,7 @@ export default Sentry.wrap(function Root() {
           </SessionProvider>
         </QueryClientProvider>
       </CopilotProvider>
-      <StatusBar style="auto" />
+      <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
     </GestureHandlerRootView>
   );
 });

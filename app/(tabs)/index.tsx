@@ -11,10 +11,7 @@ import {
   type IconName,
 } from "@/components/design";
 import { NotificationCard } from "@/components/notification-card";
-import {
-  NotificationCardSkeleton,
-  SkeletonBase,
-} from "@/components/skeletons";
+import { NotificationCardSkeleton, SkeletonBase } from "@/components/skeletons";
 import { useProfileData } from "@/data-store/use-account-store";
 import { useTenantStore } from "@/data-store/use-tenant-store";
 import { DashboardResponse } from "@/data-types/dashboard";
@@ -232,8 +229,8 @@ export default function HomeScreen() {
   const formattedCutoffDay = cutoffDayRaw
     ? cutoffDayRaw.charAt(0).toUpperCase() + cutoffDayRaw.slice(1).toLowerCase()
     : periodEnd
-      ? format(new Date(periodEnd), "dd MMM")
-      : null;
+    ? format(new Date(periodEnd), "dd MMM")
+    : null;
 
   const payrunDisclaimer = formattedCutoffDay
     ? `Only shifts completed by ${formattedCutoffTime} on ${formattedCutoffDay} are included.`
@@ -255,7 +252,6 @@ export default function HomeScreen() {
     }
   };
 
-
   // ─── Presentation only below this line ──────────────────────────────────
 
   const hour = new Date().getHours();
@@ -269,12 +265,11 @@ export default function HomeScreen() {
       )
     : undefined;
 
-  // The hero is green, so the status bar content is light while Home is focused.
   useFocusEffect(
     useCallback(() => {
       setStatusBarStyle("light");
-      return () => setStatusBarStyle("auto");
-    }, []),
+      return () => setStatusBarStyle(isDark ? "light" : "dark");
+    }, [isDark]),
   );
 
   // A solid bar fades in behind the status bar once the hero scrolls away.
@@ -345,11 +340,7 @@ export default function HomeScreen() {
               <AppText variant="footnote" style={styles.onHeroMuted}>
                 {greeting},
               </AppText>
-              <AppText
-                variant="title2"
-                style={styles.onHero}
-                numberOfLines={1}
-              >
+              <AppText variant="title2" style={styles.onHero} numberOfLines={1}>
                 {firstName}
               </AppText>
             </View>
@@ -373,11 +364,7 @@ export default function HomeScreen() {
 
           <View style={styles.orgPill}>
             <Icon name="business-outline" size={14} color={colors.onHero} />
-            <AppText
-              variant="caption"
-              style={styles.onHero}
-              numberOfLines={1}
-            >
+            <AppText variant="caption" style={styles.onHero} numberOfLines={1}>
               {organizationName ?? "—"}
             </AppText>
           </View>
@@ -403,7 +390,11 @@ export default function HomeScreen() {
             </View>
             {!!payrunDisclaimer && !dashboardLoading && (
               <View style={styles.payrunFooter}>
-                <Icon name="alarm-outline" size={14} color={colors.onHeroMuted} />
+                <Icon
+                  name="alarm-outline"
+                  size={14}
+                  color={colors.onHeroMuted}
+                />
                 <AppText
                   variant="caption"
                   style={[styles.onHeroMuted, styles.payrunDisclaimer]}
@@ -449,7 +440,11 @@ export default function HomeScreen() {
                   {stat.value}
                 </AppText>
               )}
-              <AppText variant="subhead" color="textSecondary" numberOfLines={1}>
+              <AppText
+                variant="subhead"
+                color="textSecondary"
+                numberOfLines={1}
+              >
                 {stat.label}
               </AppText>
             </PressableCard>
