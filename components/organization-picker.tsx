@@ -1,120 +1,73 @@
-import { Colors, Radii } from "@/constants/theme";
+import { AppText, Icon, OrgLogo } from "@/components/design";
+import { Radius, Space } from "@/constants/design";
 import { TenantSummary } from "@/data-types/tenancy";
-import { Ionicons } from "@expo/vector-icons";
-import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-
-function getOrgInitials(name: string | null): string {
-  const words = (name ?? "").trim().split(/\s+/).filter(Boolean);
-  if (words.length === 0) return "?";
-  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
-  return (words[0].charAt(0) + words[1].charAt(0)).toUpperCase();
-}
+import { useAppTheme } from "@/hooks/use-app-theme";
+import { Pressable, StyleSheet, View } from "react-native";
 
 export function OrganizationPicker({
   tenants,
   selectedTenantId,
   onSelect,
   disabled,
-  theme,
 }: {
   tenants: TenantSummary[];
   selectedTenantId: string | null;
   onSelect: (tenant: TenantSummary) => void;
   disabled?: boolean;
-  theme: typeof Colors.light;
 }) {
-  const styles = getStyles(theme);
+  const { colors } = useAppTheme();
 
   return (
-    <View style={styles.orgList}>
+    <View style={styles.orgList} accessibilityRole="radiogroup">
       {tenants.map((tenant) => {
         const isSelected = tenant.tenantId === selectedTenantId;
         return (
-          <TouchableOpacity
+          <Pressable
             key={tenant.tenantId}
-            style={[
+            accessibilityRole="radio"
+            accessibilityState={{ checked: isSelected, disabled: !!disabled }}
+            style={({ pressed }) => [
               styles.orgRow,
-              isSelected && {
-                borderColor: theme.primary,
-                backgroundColor: theme.heroBg,
+              {
+                backgroundColor: isSelected ? colors.primarySoft : colors.surface,
+                borderColor: isSelected ? colors.primary : colors.border,
+                opacity: pressed ? 0.85 : 1,
               },
             ]}
             onPress={() => onSelect(tenant)}
             disabled={disabled}
           >
-            {tenant.logoUrl ? (
-              <Image
-                source={{ uri: tenant.logoUrl }}
-                style={styles.orgLogo}
-                resizeMode="contain"
-              />
-            ) : (
-              <View style={styles.orgLogoFallback}>
-                <Text style={styles.orgLogoFallbackText}>
-                  {getOrgInitials(tenant.name)}
-                </Text>
-              </View>
-            )}
-            <Text style={styles.orgName} numberOfLines={1}>
+            <OrgLogo name={tenant.name} uri={tenant.logoUrl} size={44} />
+            <AppText variant="headline" numberOfLines={2} style={styles.orgName}>
               {tenant.name ?? "Untitled organization"}
-            </Text>
-            {isSelected ? (
-              <Ionicons
-                name="checkmark-circle"
-                size={22}
-                color={theme.primary}
-              />
-            ) : (
-              <Ionicons
-                name="ellipse-outline"
-                size={22}
-                color={theme.greyBorder}
-              />
-            )}
-          </TouchableOpacity>
+            </AppText>
+            <Icon
+              name={isSelected ? "checkmark-circle" : "ellipse-outline"}
+              size={24}
+              color={isSelected ? colors.primaryStrong : colors.borderStrong}
+            />
+          </Pressable>
         );
       })}
     </View>
   );
 }
 
-const getStyles = (theme: typeof Colors.light) =>
-  StyleSheet.create({
-    orgList: {
-      gap: 10,
-    },
-    orgRow: {
-      borderWidth: 1,
-      borderColor: theme.greyBorder,
-      borderRadius: Radii.sm,
-      paddingHorizontal: 14,
-      paddingVertical: 12,
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 12,
-    },
-    orgLogo: {
-      width: 36,
-      height: 36,
-      borderRadius: Radii.xs,
-    },
-    orgLogoFallback: {
-      width: 36,
-      height: 36,
-      borderRadius: 18,
-      backgroundColor: theme.primary,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    orgLogoFallbackText: {
-      color: theme.white,
-      fontSize: 13,
-      fontWeight: "700",
-    },
-    orgName: {
-      flex: 1,
-      fontSize: 15,
-      fontWeight: "700",
-      color: theme.primaryText,
-    },
-  });
+const styles = StyleSheet.create({
+  orgList: {
+    gap: Space.sm,
+  },
+  orgRow: {
+    minHeight: 72,
+    borderWidth: 1.5,
+    borderRadius: Radius.lg,
+    paddingHorizontal: Space.md,
+    paddingVertical: Space.sm,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Space.sm,
+  },
+  orgName: {
+    flex: 1,
+  },
+});

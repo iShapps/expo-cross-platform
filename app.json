@@ -35,8 +35,8 @@
       "versionCode": 33,
       "adaptiveIcon": {
         "backgroundColor": "#ffffff",
-        "foregroundImage": "./assets/images/ishapps_icon_green.png",
-        "monochromeImage": "./assets/images/ishapps_icon_green.png"
+        "foregroundImage": "./assets/images/ishapps_icon_green_android.png",
+        "monochromeImage": "./assets/images/ishapps_icon_green_android.png"
       },
       "predictiveBackGestureEnabled": false,
       "softwareKeyboardLayoutMode": "pan",

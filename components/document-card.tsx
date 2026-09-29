@@ -1,18 +1,11 @@
+import { AppText, Chip, Icon, IconBadge, PressableCard, type IconName } from "@/components/design";
+import { Radius, Space, type Tone } from "@/constants/design";
 import { IDocument } from "@/data-types/documents";
-import { useColorScheme } from "@/hooks/use-color-scheme";
-import AntDesign from "@expo/vector-icons/AntDesign";
-import FontAwesome from "@expo/vector-icons/FontAwesome";
-import Fontisto from "@expo/vector-icons/Fontisto";
-import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-
-import React from "react";
-
-import { Pressable, StyleSheet, Text, View } from "react-native";
-
-import { Colors, Radii } from "@/constants/theme";
+import { useAppTheme } from "@/hooks/use-app-theme";
 import { formatMediumDate, isExpired } from "@/utils/date-time";
 import { useRouter } from "expo-router";
+import React from "react";
+import { StyleSheet, View } from "react-native";
 
 interface DocumentCardProps {
   document: IDocument;
@@ -20,102 +13,33 @@ interface DocumentCardProps {
 
 const PENDING_APPROVAL_STATUSES = ["pending", "pending-reapproval"];
 
+/** Icon for a document, picked from its name (same rules as before, Ionicons only). */
+export function documentIcon(name: string): IconName {
+  const docName = name.toLowerCase();
+  if (docName.includes("ain qualification")) return "id-card-outline";
+  if (docName.includes("other qualification")) return "ribbon-outline";
+  if (docName.includes("working with children")) return "people-outline";
+  if (docName.includes("manual handling")) return "accessibility-outline";
+  if (docName.includes("passport") || docName.includes("medicare")) return "card-outline";
+  if (docName.includes("police clearance")) return "shield-checkmark-outline";
+  if (docName.includes("drivers license")) return "car-outline";
+  if (docName.includes("influenza vaccine")) return "medkit-outline";
+  return "document-text-outline";
+}
+
 const DocumentCard: React.FC<DocumentCardProps> = ({ document }) => {
   const expired = isExpired(document.expiry_date);
   const pendingApproval = PENDING_APPROVAL_STATUSES.includes(
     document.document_approval,
   );
-  let colorScheme = useColorScheme();
-  if (!colorScheme) colorScheme = "light";
-  const theme = Colors[colorScheme];
-  const styles = getStyles(theme);
-
+  const { colors } = useAppTheme();
   const router = useRouter();
-  // Dynamic icon selection based on document name
-  let iconComponent = (
-    <MaterialCommunityIcons
-      name="file-document-multiple-outline"
-      size={38}
-      color={expired ? "#e53935" : "#aaa"}
-      style={styles.icon}
-    />
-  );
-  const docName = document.document.name.toLowerCase();
-  if (docName.includes("ain qualification")) {
-    iconComponent = (
-      <AntDesign
-        name="idcard"
-        size={38}
-        color={expired ? "#e53935" : "#aaa"}
-        style={styles.icon}
-      />
-    );
-  } else if (docName.includes("other qualification")) {
-    iconComponent = (
-      <MaterialCommunityIcons
-        name="certificate-outline"
-        size={38}
-        color={expired ? "#e53935" : "#aaa"}
-        style={styles.icon}
-      />
-    );
-  } else if (docName.includes("working with children")) {
-    iconComponent = (
-      <MaterialCommunityIcons
-        name="file-document-multiple-outline"
-        size={38}
-        color={expired ? "#e53935" : "#aaa"}
-        style={styles.icon}
-      />
-    );
-  } else if (docName.includes("manual handling")) {
-    iconComponent = (
-      <MaterialCommunityIcons
-        name="file-document-multiple-outline"
-        size={38}
-        color={expired ? "#e53935" : "#aaa"}
-        style={styles.icon}
-      />
-    );
-  } else if (docName.includes("passport") || docName.includes("medicare")) {
-    iconComponent = (
-      <Fontisto
-        name="passport-alt"
-        size={38}
-        color={expired ? "#e53935" : "#aaa"}
-        style={styles.icon}
-      />
-    );
-  } else if (docName.includes("police clearance")) {
-    iconComponent = (
-      <MaterialCommunityIcons
-        name="badge-account-outline"
-        size={38}
-        color={expired ? "#e53935" : "#aaa"}
-        style={styles.icon}
-      />
-    );
-  } else if (docName.includes("drivers license")) {
-    iconComponent = (
-      <FontAwesome
-        name="drivers-license-o"
-        size={38}
-        color={expired ? "#e53935" : "#aaa"}
-        style={styles.icon}
-      />
-    );
-  } else if (docName.includes("influenza vaccine")) {
-    iconComponent = (
-      <Fontisto
-        name="injection-syringe"
-        size={38}
-        color={expired ? "#e53935" : "#aaa"}
-        style={styles.icon}
-      />
-    );
-  }
+
+  const tone: Tone = expired ? "danger" : pendingApproval ? "warning" : "primary";
+  const isActive = document.document.status === "active";
+
   return (
-    <Pressable
+    <PressableCard
       onPress={() => {
         router.push({
           pathname: "/(main)/document-details",
@@ -123,202 +47,94 @@ const DocumentCard: React.FC<DocumentCardProps> = ({ document }) => {
         });
       }}
       hitSlop={8}
-      style={[styles.card, expired && styles.expiredCard]}
+      accessibilityRole="button"
+      radius={Radius.lg}
+      padding={Space.md}
+      style={[
+        styles.card,
+        expired && { borderColor: colors.danger, backgroundColor: colors.dangerSoft },
+      ]}
     >
-      {expired ? (
-        <View style={[styles.statusPill, styles.statusPillDanger]}>
-          <Text style={[styles.statusPillText, styles.statusPillTextDanger]}>
-            Expired
-          </Text>
-        </View>
-      ) : pendingApproval ? (
-        <View style={[styles.statusPill, styles.statusPillPending]}>
-          <Text style={[styles.statusPillText, styles.statusPillTextPending]}>
-            Pending Approval
-          </Text>
-        </View>
-      ) : null}
-      <View style={styles.iconWrapper}>
-        {iconComponent}
+      <View>
+        <IconBadge icon={documentIcon(document.document.name)} tone={tone} size={48} />
         <View
+          accessibilityLabel={isActive ? "Active" : "Inactive"}
           style={[
             styles.statusDot,
-            document.document.status === "active"
-              ? styles.statusDotActive
-              : styles.statusDotInactive,
+            {
+              backgroundColor: isActive ? colors.primary : colors.danger,
+              borderColor: expired ? colors.dangerSoft : colors.surface,
+            },
           ]}
         />
       </View>
+
       <View style={styles.infoColumn}>
-        <Text style={[styles.createdAt, expired && styles.errorText]}>
+        <AppText variant="headline" color={expired ? "danger" : "text"} numberOfLines={2}>
+          {document.document.name}
+        </AppText>
+        <AppText variant="footnote" color={expired ? "danger" : "textSecondary"}>
           {expired
             ? `Expired on ${formatMediumDate(document.expiry_date)}`
             : `Uploaded on ${formatMediumDate(document.created_at)}`}
-        </Text>
-        <View style={styles.nameRow}>
-          <Text
-            style={[styles.name, expired && styles.errorText]}
-            numberOfLines={1}
-          >
-            {document.document.name}
-          </Text>
-        </View>
-        <View style={styles.metaRow}>
-          <Text style={[styles.metaText, expired && styles.errorText]}>
-            {document.document.mandatory_status === "yes"
-              ? "Mandatory"
-              : "Optional"}
-          </Text>
-          <Text style={styles.dot}>•</Text>
-          <Text style={[styles.metaText, expired && styles.errorText]}>
-            {document.document.expiry_date_mandatory === "yes"
-              ? "Expiry required"
-              : "No expiry"}
-          </Text>
+        </AppText>
+        <View style={styles.chipRow}>
+          {expired ? (
+            <Chip label="Expired" tone="danger" icon="alert-circle-outline" />
+          ) : pendingApproval ? (
+            <Chip label="Pending approval" tone="warning" icon="hourglass-outline" />
+          ) : null}
+          <Chip
+            label={document.document.mandatory_status === "yes" ? "Mandatory" : "Optional"}
+          />
+          <Chip
+            label={
+              document.document.expiry_date_mandatory === "yes"
+                ? "Expiry required"
+                : "No expiry"
+            }
+          />
         </View>
       </View>
-      <View style={styles.moreIconBtn}>
-        <MaterialIcons
-          name="more-horiz"
-          size={26}
-          color={expired ? theme.danger : theme.primary}
-        />
-      </View>
-    </Pressable>
+
+      <Icon
+        name="chevron-forward"
+        size={18}
+        color={expired ? colors.danger : colors.textTertiary}
+        style={styles.chevron}
+      />
+    </PressableCard>
   );
 };
 
 export default DocumentCard;
 
-const PENDING_AMBER = "#f59e0b";
-
-const getStyles = (theme: typeof Colors.light) =>
-  StyleSheet.create({
-    statusPill: {
-      position: "absolute",
-      top: 6,
-      right: 6,
-      zIndex: 3,
-      paddingHorizontal: 8,
-      paddingVertical: 3,
-      borderRadius: Radii.full,
-      borderWidth: 1,
-    },
-    statusPillDanger: {
-      backgroundColor: theme.danger + "22",
-      borderColor: theme.danger,
-    },
-    statusPillPending: {
-      backgroundColor: PENDING_AMBER + "22",
-      borderColor: PENDING_AMBER,
-    },
-    statusPillText: {
-      fontSize: 10,
-      fontWeight: "700",
-    },
-    statusPillTextDanger: {
-      color: theme.danger,
-    },
-    statusPillTextPending: {
-      color: PENDING_AMBER,
-    },
-    card: {
-      flexDirection: "row",
-      alignItems: "center",
-      backgroundColor: theme.whiteBackground,
-      borderRadius: Radii.sm,
-      padding: 5,
-      borderColor: theme.greyBorder,
-      borderWidth: 1,
-      gap: 0,
-    },
-    expiredCard: {
-      borderColor: theme.danger,
-      backgroundColor: theme.errorBg,
-    },
-    iconWrapper: {
-      position: "relative",
-      marginRight: 16,
-      marginLeft: 2,
-      width: 44,
-      height: 44,
-      justifyContent: "center",
-      alignItems: "center",
-    },
-    icon: {
-      zIndex: 1,
-    },
-    statusDot: {
-      position: "absolute",
-      top: 2,
-      right: 2,
-      width: 10,
-      height: 10,
-      borderRadius: Radii.full,
-      borderWidth: 1.5,
-      borderColor: theme.whiteBackground,
-      zIndex: 2,
-    },
-    statusDotActive: {
-      backgroundColor: theme.primary,
-    },
-    statusDotInactive: {
-      backgroundColor: theme.danger,
-    },
-    infoColumn: {
-      flex: 1,
-      flexDirection: "column",
-      justifyContent: "center",
-    },
-    createdAt: {
-      fontSize: 11,
-      color: theme.secondaryText,
-      marginBottom: 2,
-      marginLeft: 2,
-    },
-    nameRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      marginBottom: 3,
-      gap: 8,
-    },
-    name: {
-      fontSize: 15,
-      fontWeight: "600",
-      color: theme.darkText,
-      flexShrink: 1,
-      marginRight: 8,
-      letterSpacing: 0.2,
-    },
-    moreIconBtn: {
-      marginLeft: 8,
-      padding: 4,
-      borderRadius: Radii.full,
-      alignSelf: "center",
-    },
-    metaRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      marginTop: 2,
-      gap: 4,
-    },
-    metaText: {
-      fontSize: 11,
-      color: theme.secondaryText,
-      fontWeight: "500",
-    },
-    dot: {
-      fontSize: 10,
-      color: theme.secondaryText,
-      marginHorizontal: 3,
-      marginTop: -1,
-    },
-    expiredText: {
-      color: theme.danger,
-      fontWeight: "bold",
-    },
-
-    errorText: {
-      color: "red",
-    },
-  });
+const styles = StyleSheet.create({
+  card: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: Space.sm,
+  },
+  statusDot: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    width: 12,
+    height: 12,
+    borderRadius: Radius.full,
+    borderWidth: 2,
+  },
+  infoColumn: {
+    flex: 1,
+    gap: 2,
+  },
+  chipRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: Space.xxs + 2,
+    marginTop: Space.xs,
+  },
+  chevron: {
+    alignSelf: "center",
+  },
+});

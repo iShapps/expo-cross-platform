@@ -3,25 +3,21 @@ import {
   getGenaralStatementDocuments,
   getProfessionDocuments,
 } from "@/api-queries/documents";
+import { EmptyState, SegmentedTabs } from "@/components/design";
 import DocumentCard from "@/components/document-card";
 import TabsHeader from "@/components/shared/tabs-header";
 import { DocumentCardSkeleton } from "@/components/skeletons";
-import { Colors, Radii } from "@/constants/theme";
+import { Space } from "@/constants/design";
 import { IDocument } from "@/data-types/documents";
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useAppTheme } from "@/hooks/use-app-theme";
 import { useFirstVisitTour } from "@/hooks/use-first-visit-tour";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import { useIsFocused } from "@react-navigation/native";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useCallback, useRef, useState } from "react";
 import {
   FlatList,
-  Pressable,
   ScrollView,
   StyleSheet,
-  Text,
-  TouchableOpacity,
   useWindowDimensions,
   View,
 } from "react-native";
@@ -118,17 +114,15 @@ export default function DocumentsScreen() {
     [screenWidth, scrollTabIntoView],
   );
 
-  let colorScheme = useColorScheme();
-  if (!colorScheme) colorScheme = "light";
-  const theme = Colors[colorScheme];
-  const styles = getStyles(theme);
 
   const isFocused = useIsFocused();
 
   useFirstVisitTour("documents", isFocused && !generalQuery.isLoading);
 
+  const { colors } = useAppTheme();
+
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <TabsHeader title="My documents" />
       <View style={styles.container}>
         <CopilotStep
@@ -137,59 +131,18 @@ export default function DocumentsScreen() {
           active={isFocused}
           text="Documents are grouped into General, Professional, and Others — switch tabs to see what's required in each category."
         >
-          <WalkthroughableView>
-            <ScrollView
-              ref={tabScrollRef}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.tabsRow}
-            >
-              {documentTabs.map((status, index) => {
-                const isActive = activeStatus === status;
-                return (
-                  <Pressable
-                    key={status}
-                    onPress={() => handleTabPress(index)}
-                    style={styles.tabButton}
-                    android_ripple={{ color: "#ccc" }}
-                    onLayout={(e) => {
-                      tabOffsetsRef.current[index] = e.nativeEvent.layout.x;
-                      tabWidthsRef.current[index] = e.nativeEvent.layout.width;
-                    }}
-                  >
-                    <Text
-                      style={[
-                        styles.tabText,
-                        isActive && styles.tabTextActive,
-                      ]}
-                    >
-                      {status}
-                    </Text>
-                    <View
-                      style={[
-                        styles.tabUnderline,
-                        isActive && styles.tabUnderlineActive,
-                      ]}
-                    />
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
+          <WalkthroughableView style={styles.tabsWrap}>
+            <SegmentedTabs
+              tabs={documentTabs}
+              activeIndex={documentTabs.indexOf(activeStatus)}
+              onTabPress={handleTabPress}
+              onTabLayout={(index, layout) => {
+                tabOffsetsRef.current[index] = layout.x;
+                tabWidthsRef.current[index] = layout.width;
+              }}
+            />
           </WalkthroughableView>
         </CopilotStep>
-        {/* <FlatList
-          // style={{ flex: 1 }}
-          data={sample_payruns}
-          renderItem={({ item }) => <PayrunCardBase payrun={item} />}
-          keyExtractor={(item) => item.id}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{
-            paddingBottom: 120,
-            paddingTop: 10,
-            flexGrow: 1,
-            gap: 10,
-          }}
-        /> */}
 
         {/* Horizontal paging ScrollView for tab content */}
         <ScrollView
@@ -202,9 +155,11 @@ export default function DocumentsScreen() {
           onScrollBeginDrag={() => {}} // prevent flicker
         >
           {documentTabs.map((status, index) => (
+            // Page width must stay screenWidth - 16 (as before); the inner
+            // padding brings the cards to the 20pt page gutter.
             <View
               key={status}
-              style={{ width: screenWidth - 16, paddingHorizontal: 4 }}
+              style={{ width: screenWidth - 16, paddingHorizontal: 12 }}
             >
               {(() => {
                 let isLoading = false;
@@ -277,12 +232,7 @@ export default function DocumentsScreen() {
                       renderItem={() => <DocumentCardSkeleton />}
                       keyExtractor={(_, idx) => `skeleton-${idx}`}
                       showsVerticalScrollIndicator={false}
-                      contentContainerStyle={{
-                        paddingBottom: 120,
-                        paddingTop: 10,
-                        minHeight: screenHeight,
-                        gap: 10,
-                      }}
+                      contentContainerStyle={listContent(screenHeight)}
                       refreshing={isRefetching && !isFetchingNextPage}
                       onRefresh={handlePullToRefresh}
                     />
@@ -291,85 +241,18 @@ export default function DocumentsScreen() {
 
                 if (isError) {
                   return (
-                    <View
-                      style={{
-                        // flex: 1,
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <MaterialCommunityIcons
-                        name="folder"
-                        size={72}
-                        color={theme.danger}
-                        style={{ marginBottom: 16 }}
-                      />
-                      <Text
-                        style={{
-                          fontSize: 20,
-                          fontWeight: "700",
-                          color: theme.danger,
-                          marginBottom: 8,
-                        }}
-                      >
-                        Error Loading Documents
-                      </Text>
-                      <Text
-                        style={{
-                          fontSize: 15,
-                          color: theme.secondaryText,
-                          textAlign: "center",
-                          maxWidth: 260,
-                          marginBottom: 12,
-                        }}
-                      >
-                        Something went wrong while fetching{" "}
-                        <Text style={{ textTransform: "lowercase" }}>
-                          {status}
-                        </Text>{" "}
-                        documents. Please pull to refresh or try again later. (
-                        {shiftError instanceof Error && (
-                          <Text
-                            style={{
-                              fontSize: 13,
-                              color: theme.secondaryText,
-                              textAlign: "center",
-                            }}
-                          >
-                            {shiftError.message}
-                          </Text>
-                        )}
-                        )
-                      </Text>
-                      <TouchableOpacity
-                        onPress={handlePullToRefresh}
-                        style={{
-                          backgroundColor: "#FBF2F2",
-                          paddingHorizontal: 24,
-                          paddingVertical: 10,
-                          borderRadius: Radii.full,
-                          flexDirection: "row",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          gap: 8,
-                        }}
-                      >
-                        <FontAwesome6
-                          name="rotate-left"
-                          size={20}
-                          color="#71797E"
-                        />
-                        <Text
-                          style={{
-                            color: "#71797E",
-                            fontSize: 16,
-                            fontWeight: "700",
-                          }}
-                        >
-                          Retry
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
+                    <EmptyState
+                      icon="cloud-offline-outline"
+                      tone="danger"
+                      title="Couldn't load documents"
+                      message={
+                        `Something went wrong while fetching ${status.toLowerCase()} documents. Pull to refresh or try again later.` +
+                        (shiftError instanceof Error ? `\n(${shiftError.message})` : "")
+                      }
+                      actionLabel="Retry"
+                      onAction={handlePullToRefresh}
+                      style={{ marginTop: screenHeight * 0.1 }}
+                    />
                   );
                 }
 
@@ -396,67 +279,26 @@ export default function DocumentsScreen() {
                       item.id?.toString?.() || String(item.id)
                     }
                     showsVerticalScrollIndicator={false}
-                    contentContainerStyle={{
-                      paddingBottom: 120,
-                      paddingTop: 10,
-                      minHeight: screenHeight,
-                      gap: 10,
-                    }}
+                    contentContainerStyle={listContent(screenHeight)}
                     refreshing={isRefetching && !isFetchingNextPage}
                     onRefresh={handlePullToRefresh}
                     onEndReached={handleLoadMore}
                     onEndReachedThreshold={0.6}
                     ListFooterComponent={
                       isFetchingNextPage ? (
-                        <View style={{ gap: 10, paddingTop: 10 }}>
+                        <View style={styles.footer}>
                           <DocumentCardSkeleton />
                           <DocumentCardSkeleton />
                         </View>
                       ) : null
                     }
                     ListEmptyComponent={
-                      <View
-                        style={{
-                          flex: 1,
-                          alignItems: "center",
-                          top: screenHeight * 0.2,
-                        }}
-                      >
-                        <MaterialCommunityIcons
-                          name="folder"
-                          size={72}
-                          color={theme.grayBorder}
-                          style={{ marginBottom: 16 }}
-                        />
-                        <Text
-                          style={{
-                            fontSize: 20,
-                            fontWeight: "700",
-                            color: theme.primary,
-                            marginBottom: 8,
-                          }}
-                        >
-                          No Documets Yet
-                        </Text>
-                        <Text
-                          style={{
-                            fontSize: 15,
-                            color: theme.secondaryText,
-                            textAlign: "center",
-                            maxWidth: 260,
-                          }}
-                        >
-                          You have no{" "}
-                          <Text
-                            style={{
-                              textTransform: "lowercase",
-                            }}
-                          >
-                            {status}
-                          </Text>{" "}
-                          documents for this category at the moment.
-                        </Text>
-                      </View>
+                      <EmptyState
+                        icon="folder-open-outline"
+                        title="No documents yet"
+                        message={`You have no ${status.toLowerCase()} documents for this category at the moment.`}
+                        style={{ marginTop: screenHeight * 0.1 }}
+                      />
                     }
                   />
                 );
@@ -469,57 +311,27 @@ export default function DocumentsScreen() {
   );
 }
 
-const getStyles = (theme: typeof Colors.light) =>
-  StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: theme.safeAreaBg,
-      paddingHorizontal: 8,
-    },
-    safeArea: {
-      flex: 1,
-      backgroundColor: theme.background,
-    },
-    title: {
-      fontSize: 18,
-      fontWeight: "700",
-      color: theme.white,
-    },
-    underline: {
-      height: 3,
-      width: 56,
-      borderRadius: Radii.full,
-      backgroundColor: theme.activeText,
-      opacity: 0.85,
-      marginTop: 6,
-    },
-    tabsRow: {
-      flexDirection: "row",
-      gap: 8,
-      paddingBottom: 2,
-      paddingTop: 10,
-    },
-    tabButton: {
-      paddingVertical: 6,
-      paddingHorizontal: 6,
-      alignItems: "center",
-    },
-    tabText: {
-      fontSize: 14,
-      fontWeight: "600",
-      color: theme.secondaryText,
-    },
-    tabTextActive: {
-      color: theme.primary,
-    },
-    tabUnderline: {
-      height: 2,
-      width: "100%",
-      borderRadius: Radii.full,
-      backgroundColor: "transparent",
-      marginTop: 6,
-    },
-    tabUnderlineActive: {
-      backgroundColor: theme.primary,
-    },
-  });
+const listContent = (screenHeight: number) => ({
+  paddingBottom: 120,
+  paddingTop: Space.md,
+  minHeight: screenHeight,
+  gap: Space.sm,
+});
+
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
+  container: {
+    flex: 1,
+    // Keep at 8: the pages above are screenWidth - 2 × this wide.
+    paddingHorizontal: 8,
+  },
+  tabsWrap: {
+    paddingHorizontal: 12,
+  },
+  footer: {
+    gap: Space.sm,
+    paddingTop: Space.sm,
+  },
+});

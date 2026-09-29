@@ -1,8 +1,16 @@
-import { Colors, Radii } from "@/constants/theme";
+import {
+  AppButton,
+  AppText,
+  AuthLayout,
+  IconButton,
+  OrgLogo,
+  TextField,
+} from "@/components/design";
+import { Space, Touch } from "@/constants/design";
 import { useSettingsStore } from "@/data-store/use-settings-store";
 import { useTenantStore } from "@/data-store/use-tenant-store";
 import LoginCredentials from "@/data-types/auth";
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useAppTheme } from "@/hooks/use-app-theme";
 import { useFirstVisitTour } from "@/hooks/use-first-visit-tour";
 import {
   ensureOneSignalSubscriptionId,
@@ -19,33 +27,16 @@ import {
   getLoginCredentials,
   saveLoginCredentials,
 } from "@/utils/secure-login-credentials";
-import { AntDesign, Entypo, FontAwesome6, Ionicons } from "@expo/vector-icons";
 import { useIsFocused } from "@react-navigation/native";
 import * as Sentry from "@sentry/react-native";
 import { Checkbox } from "expo-checkbox";
 import * as Device from "expo-device";
-import { Image } from "expo-image";
 import { Link, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import {
-  Alert,
-  Animated,
-  Easing,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Alert, Platform, Pressable, StyleSheet, View } from "react-native";
 import { CopilotStep, walkthroughable } from "react-native-copilot";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSession } from "../ctx";
 
-const FORGOT_PASSWORD_TEXT_SAFE = "#3D7A00";
 const WalkthroughableView = walkthroughable(View);
 
 const backfillDeviceId = async (credentials: {
@@ -71,11 +62,9 @@ const backfillDeviceId = async (credentials: {
 };
 
 export default function Login() {
-  const colorScheme = useColorScheme() || "light";
-  const theme = Colors[colorScheme];
-  const styles = getStyles(theme);
-
-  const insets = useSafeAreaInsets();
+  const { colors } = useAppTheme();
+  const organizationName = useTenantStore((state) => state.tenant?.name);
+  const organizationLogoUrl = useTenantStore((state) => state.tenant?.logoUrl);
   const router = useRouter();
 
   const isFocused = useIsFocused();
@@ -91,7 +80,6 @@ export default function Login() {
   const [email, setEmail] = useState(params.email ?? "");
   const [password, setPassword] = useState("");
   const [isTermsChecked, setIsTermsChecked] = useState(true);
-  const [showPassword, setShowPassword] = useState(false);
   const { signIn, isLoading } = useSession();
   const [isSubmittingLogin, setIsSubmittingLogin] = useState(false);
   const isLoginBusy = isLoading || isSubmittingLogin;
@@ -103,7 +91,6 @@ export default function Login() {
     (state) => state.biometricsEnabled,
   );
 
-  const spinAnim = useRef(new Animated.Value(0)).current;
   const isMountedRef = useRef(true);
   const loginInFlightRef = useRef(false);
 
@@ -112,22 +99,6 @@ export default function Login() {
       isMountedRef.current = false;
     };
   }, []);
-
-  useEffect(() => {
-    if (isLoginBusy) {
-      Animated.loop(
-        Animated.timing(spinAnim, {
-          toValue: 1,
-          duration: 800,
-          easing: Easing.linear,
-          useNativeDriver: true,
-        }),
-      ).start();
-    } else {
-      spinAnim.stopAnimation();
-      spinAnim.setValue(0);
-    }
-  }, [isLoginBusy, spinAnim]);
 
   // Check for biometric support on mount
   useEffect(() => {
@@ -337,417 +308,188 @@ export default function Login() {
     }
   };
 
+
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={styles.container}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 24}
+    <AuthLayout
+      identity={
+        organizationName || organizationLogoUrl ? (
+          <OrgLogo name={organizationName} uri={organizationLogoUrl} size={64} />
+        ) : undefined
+      }
+      title="Welcome back"
+      subtitle={
+        organizationName
+          ? `Sign in to ${organizationName} to manage your shifts.`
+          : "Sign in to securely access your account and manage your shifts anytime."
+      }
     >
-      <ScrollView
-        contentContainerStyle={{
-          flexGrow: 1,
-          paddingBottom: insets.bottom + 40,
-        }}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-        keyboardDismissMode="on-drag"
-      >
-        <View
-          style={{
-            backgroundColor: theme.background,
-            height: 350,
-            justifyContent: "flex-start",
-            alignItems: "center",
-          }}
-        >
-          <Image
-            source={require("@/assets/images/careworker2.jpg")}
-            style={{ width: "100%", height: "100%", opacity: 0.5 }}
-            contentFit="cover"
+      <View style={styles.form}>
+        <View style={styles.fieldGroup}>
+          <TextField
+            label="Email address"
+            icon="mail-outline"
+            value={email}
+            inputMode="email"
+            autoComplete="email"
+            clearButtonMode="while-editing"
+            autoFocus={!emailPrefilled}
+            editable={!emailPrefilled}
+            clearTextOnFocus={false}
+            enterKeyHint="next"
+            placeholder="johnwilliams@gmail.com"
+            onChangeText={setEmail}
+            accessory={
+              biometricSupported && biometricAllowed && biometricsEnabled ? (
+                <IconButton
+                  icon={Platform.OS === "ios" ? "scan-outline" : "finger-print"}
+                  accessibilityLabel="Sign in with biometrics"
+                  variant="plain"
+                  iconColor={colors.primaryStrong}
+                  onPress={handleBiometricLogin}
+                />
+              ) : undefined
+            }
           />
+          {emailPrefilled && (
+            <Pressable
+              accessibilityRole="button"
+              hitSlop={8}
+              style={styles.inlineLink}
+              onPress={() => {
+                useTenantStore.getState().clearTenant();
+                router.replace("/tenant-code");
+              }}
+            >
+              <AppText variant="subhead" color="primaryStrong">
+                Not you? Use a different email
+              </AppText>
+            </Pressable>
+          )}
         </View>
 
-        <View style={styles.bottomContainer}>
-          <View style={{ marginBottom: 20, marginTop: 10 }}>
-            <Text
-              style={{
-                fontSize: 28,
-                color: theme.primaryText,
-                fontWeight: "700",
-                marginBottom: 10,
-              }}
-            >
-              Login
-            </Text>
-            <Text
-              style={{
-                fontSize: 14,
-                color: theme.secondaryText,
-              }}
-            >
-              Login to securely access your account and manage your shifts
-              anytime.
-            </Text>
-          </View>
+        <TextField
+          label="Password"
+          icon="lock-closed-outline"
+          secure
+          value={password}
+          keyboardType="default"
+          enterKeyHint="done"
+          clearButtonMode="while-editing"
+          autoComplete="password"
+          autoFocus={emailPrefilled}
+          clearTextOnFocus={false}
+          onChangeText={setPassword}
+          placeholder="••••••••"
+        />
 
-          <View style={styles.inputGroup}>
-            <Text style={email ? styles.labelFilled : styles.label}>
-              Email Address
-            </Text>
-            <View
-              style={
-                password
-                  ? styles.passwordInputGroupFilled
-                  : styles.passwordInputGroup
-              }
-            >
-              <TextInput
-                value={email}
-                inputMode="email"
-                autoComplete="email"
-                clearButtonMode="while-editing"
-                autoFocus={!emailPrefilled}
-                editable={!emailPrefilled}
-                clearTextOnFocus={false}
-                cursorColor={theme.primaryText}
-                enterKeyHint="next"
-                placeholder="johnwilliams@gmail.com"
-                onChangeText={setEmail}
-                placeholderTextColor={theme.secondaryText}
-                style={{
-                  flex: 1,
-                  color: emailPrefilled
-                    ? theme.secondaryText
-                    : theme.primaryText,
-                }}
-              />
-              {biometricSupported && biometricAllowed && biometricsEnabled && (
-                <Pressable onPress={handleBiometricLogin}>
-                  {Platform.OS === "ios" ? (
-                    <View style={styles.iconContainer}>
-                      <Ionicons
-                        name="scan-outline"
-                        size={30}
-                        color={theme.secondaryText}
-                      />
-                      <FontAwesome6
-                        name="face-kiss"
-                        size={10}
-                        color={theme.secondaryText}
-                        style={styles.overlayIcon}
-                      />
-                    </View>
-                  ) : (
-                    <Ionicons
-                      name="finger-print"
-                      size={24}
-                      color={theme.secondaryText}
-                    />
-                  )}
-                </Pressable>
-              )}
-            </View>
-            {emailPrefilled && (
-              <TouchableOpacity
-                onPress={() => {
-                  useTenantStore.getState().clearTenant();
-                  router.replace("/tenant-code");
-                }}
-                style={{ marginTop: 6 }}
+        <CopilotStep
+          name="login-forgot-password"
+          order={1}
+          active={isFocused}
+          text="Forgot your password? Tap here to reset it via email."
+        >
+          <WalkthroughableView style={styles.forgotWrap}>
+            <Link href="/(open)/forgot-password" asChild>
+              <Pressable
+                accessibilityRole="link"
+                hitSlop={8}
+                style={styles.inlineLink}
               >
-                <Text
-                  style={{
-                    color: theme.secondaryText,
-                    fontSize: 12,
-                    textDecorationLine: "underline",
-                  }}
-                >
-                  Not you? Use a different email
-                </Text>
-              </TouchableOpacity>
-            )}
-          </View>
+                <AppText variant="subhead" color="primaryStrong">
+                  Forgot password?
+                </AppText>
+              </Pressable>
+            </Link>
+          </WalkthroughableView>
+        </CopilotStep>
 
-          <View style={styles.inputGroup}>
-            <Text style={password ? styles.labelFilled : styles.label}>
-              Password
-            </Text>
-            <View
-              style={
-                password
-                  ? styles.passwordInputGroupFilled
-                  : styles.passwordInputGroup
-              }
-            >
-              <TextInput
-                value={password}
-                cursorColor={theme.primaryText}
-                keyboardType="default"
-                enterKeyHint="done"
-                clearButtonMode="while-editing"
-                autoComplete="password"
-                autoFocus={emailPrefilled}
-                clearTextOnFocus={false}
-                onChangeText={setPassword}
-                placeholder="••••••••"
-                placeholderTextColor={theme.secondaryText}
-                secureTextEntry={!showPassword}
-                style={{
-                  flex: 1,
-                  color: theme.primaryText,
-                }}
-              />
-
-              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                {showPassword ? (
-                  <Entypo name="eye" size={20} color={theme.secondaryText} />
-                ) : (
-                  <Entypo
-                    name="eye-with-line"
-                    size={20}
-                    color={theme.secondaryText}
-                  />
-                )}
-              </TouchableOpacity>
-            </View>
-          </View>
-          <CopilotStep
-            name="login-forgot-password"
-            order={1}
-            active={isFocused}
-            text="Forgot your password? Tap here to reset it via email."
+        <View style={styles.termsRow}>
+          {/* 22pt box with a 44pt tap area */}
+          <Pressable
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: isTermsChecked }}
+            accessibilityLabel="I agree to the terms and conditions and privacy policy"
+            hitSlop={11}
+            onPress={() => setIsTermsChecked(!isTermsChecked)}
           >
-            <WalkthroughableView>
-              <Link
-                href="/(open)/forgot-password"
-                style={{ paddingVertical: 10, paddingHorizontal: 4 }}
-              >
-                <Text
-                  style={{
-                    color:
-                      colorScheme === "light"
-                        ? FORGOT_PASSWORD_TEXT_SAFE
-                        : theme.activeText,
-                    textAlign: "right",
-                    textDecorationLine: "underline",
-                    fontWeight: "600",
-                  }}
-                >
-                  Forgot Password?
-                </Text>
-              </Link>
-            </WalkthroughableView>
-          </CopilotStep>
-
-          <View style={styles.optionsRow}>
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-              }}
-            >
-              <Checkbox
-                style={styles.checkbox}
-                value={isTermsChecked}
-                onValueChange={setIsTermsChecked}
-                color={isTermsChecked ? theme.activeText : undefined}
-              />
-              <Text style={[styles.remember, { color: theme.tertiaryText }]}>
-                I agree to the
-                <Link href="https://smarthealthcaresolutions.com.au/terms-of-use">
-                  <Text
-                    style={{
-                      color: theme.activeText,
-                      textDecorationLine: "underline",
-                    }}
-                  >
-                    {" "}
-                    terms and conditions{" "}
-                  </Text>
-                </Link>
-                &amp;
-                <Link href="https://smarthealthcaresolutions.com.au/privacy-policy">
-                  <Text
-                    style={{
-                      color: theme.activeText,
-                      textDecorationLine: "underline",
-                    }}
-                  >
-                    {" "}
-                    privacy policy
-                  </Text>
-                </Link>
-              </Text>
-            </View>
-          </View>
-          <CopilotStep
-            name="login-sign-in"
-            order={2}
-            active={isFocused}
-            text="Enter your email and password, then tap here to sign in."
-          >
-            <WalkthroughableView>
-              <TouchableOpacity
-                style={[
-                  styles.button,
-                  isLoginBusy && { opacity: 0.6 },
-                  {
-                    backgroundColor: theme.activeText,
-                    marginBottom: insets.bottom > 0 ? 0 : 8,
-                  },
-                ]}
-                onPress={handleLogin}
-                disabled={isLoginBusy}
-              >
-                {isLoginBusy && (
-                  <Animated.View
-                    style={{
-                      marginRight: 10,
-                      transform: [
-                        {
-                          rotate: spinAnim.interpolate({
-                            inputRange: [0, 1],
-                            outputRange: ["0deg", "360deg"],
-                          }),
-                        },
-                      ],
-                    }}
-                  >
-                    <AntDesign
-                      name="loading-3-quarters"
-                      size={20}
-                      color={theme.white}
-                    />
-                  </Animated.View>
-                )}
-                <Text style={[styles.buttonText, { color: theme.white }]}>
-                  {isLoginBusy ? "signing you in..." : "Sign in"}
-                </Text>
-              </TouchableOpacity>
-            </WalkthroughableView>
-          </CopilotStep>
+            <Checkbox
+              style={styles.checkbox}
+              value={isTermsChecked}
+              onValueChange={setIsTermsChecked}
+              color={isTermsChecked ? colors.primary : colors.borderStrong}
+            />
+          </Pressable>
+          <AppText variant="footnote" color="textSecondary" style={styles.termsText}>
+            I agree to the{" "}
+            <Link href="https://smarthealthcaresolutions.com.au/terms-of-use">
+              <AppText variant="footnote" color="primaryStrong" style={styles.underline}>
+                terms and conditions
+              </AppText>
+            </Link>{" "}
+            &amp;{" "}
+            <Link href="https://smarthealthcaresolutions.com.au/privacy-policy">
+              <AppText variant="footnote" color="primaryStrong" style={styles.underline}>
+                privacy policy
+              </AppText>
+            </Link>
+          </AppText>
         </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+
+        <CopilotStep
+          name="login-sign-in"
+          order={2}
+          active={isFocused}
+          text="Enter your email and password, then tap here to sign in."
+        >
+          <WalkthroughableView>
+            <AppButton
+              title="Sign in"
+              icon="arrow-forward"
+              iconPosition="right"
+              loading={isLoginBusy}
+              loadingTitle="Signing you in…"
+              onPress={handleLogin}
+              disabled={isLoginBusy}
+              fullWidth
+            />
+          </WalkthroughableView>
+        </CopilotStep>
+      </View>
+    </AuthLayout>
   );
 }
 
-const getStyles = (theme: typeof Colors.light) =>
-  StyleSheet.create({
-    container: {
-      flex: 1,
-      display: "flex",
-      flexDirection: "column",
-      backgroundColor: theme.whiteBackground,
-    },
-    bottomContainer: {
-      width: "100%",
-      flexGrow: 1,
-      // height: "50%", // Remove fixed height to allow content to grow
-      backgroundColor: theme.whiteBackground,
-      paddingVertical: 20,
-      paddingHorizontal: 20,
-      borderTopRightRadius: Radii.lg,
-      borderTopLeftRadius: Radii.lg,
-      marginTop: -30,
-    },
-    iconContainer: {
-      width: 30,
-      height: 30,
-      justifyContent: "center",
-      alignItems: "center",
-    },
-    overlayIcon: {
-      position: "absolute",
-      top: "50%",
-      left: "50%",
-      transform: [{ translateX: -5 }, { translateY: -5 }],
-    },
-    image: {
-      width: 120,
-      height: 120,
-      alignSelf: "center",
-      marginBottom: 16,
-    },
-    inputGroup: {
-      marginBottom: 16,
-    },
-    passwordInputGroup: {
-      display: "flex",
-      flexDirection: "row",
-      justifyContent: "space-between",
-      borderBottomWidth: 1,
-      borderBottomColor: theme.secondaryText,
-      paddingVertical: 8,
-      fontSize: 16,
-      gap: 8,
-    },
-    passwordInputGroupFilled: {
-      display: "flex",
-      flexDirection: "row",
-      justifyContent: "space-between",
-      borderBottomWidth: 1,
-      borderBottomColor: theme.primary,
-      paddingVertical: 8,
-      fontSize: 16,
-      gap: 8,
-    },
-    label: {
-      fontSize: 14,
-      color: theme.primaryText,
-      fontWeight: "700",
-      marginBottom: 6,
-    },
-    labelFilled: {
-      fontSize: 14,
-      color: theme.primary,
-      fontWeight: "700",
-      marginBottom: 6,
-    },
-    input: {
-      borderBottomWidth: 1,
-      borderBottomColor: theme.secondaryText,
-      paddingVertical: 8,
-      fontSize: 16,
-    },
-    inputFilled: {
-      borderBottomWidth: 1,
-      borderBottomColor: theme.primary,
-      paddingVertical: 8,
-      fontSize: 16,
-    },
-    optionsRow: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      marginVertical: 16,
-    },
-    remember: {
-      color: theme.secondaryText,
-      fontSize: 14,
-    },
-    button: {
-      backgroundColor: theme.primary,
-      paddingVertical: 10,
-      borderRadius: Radii.sm,
-      alignItems: "center",
-      flexDirection: "row",
-      justifyContent: "center",
-      marginTop: 6,
-    },
-    buttonText: {
-      color: theme.white,
-      fontSize: 16,
-      fontWeight: "400",
-    },
-    footer: {
-      marginTop: 20,
-      color: theme.secondaryText,
-    },
-    signup: {
-      color: theme.primary,
-      fontWeight: "700",
-    },
-    checkbox: {
-      margin: 4,
-    },
-  });
+const styles = StyleSheet.create({
+  form: {
+    gap: Space.md,
+  },
+  fieldGroup: {
+    gap: Space.xxs,
+  },
+  inlineLink: {
+    minHeight: Touch.min,
+    justifyContent: "center",
+    alignSelf: "flex-start",
+  },
+  forgotWrap: {
+    alignSelf: "flex-end",
+    marginTop: -Space.xs,
+  },
+  termsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Space.sm,
+    minHeight: Touch.min,
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 7,
+  },
+  termsText: {
+    flex: 1,
+  },
+  underline: {
+    textDecorationLine: "underline",
+  },
+});

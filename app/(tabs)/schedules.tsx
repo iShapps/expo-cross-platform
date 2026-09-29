@@ -6,17 +6,15 @@ import {
   postScheduledShifts,
   postTransferredShifts,
 } from "@/api-queries/post-pending-shifts";
+import { EmptyState, IconButton, SegmentedTabs } from "@/components/design";
 import { ShiftCardBase } from "@/components/pay-run";
 import TabsHeader from "@/components/shared/tabs-header";
 import { ShiftCardBaseSkeleton } from "@/components/skeletons/payrun-card-base-skeleton";
-import { Colors, Radii } from "@/constants/theme";
+import { Space } from "@/constants/design";
 import { useProfileData } from "@/data-store/use-account-store";
 import { IShift } from "@/data-types/shifts";
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useAppTheme } from "@/hooks/use-app-theme";
 import { useFirstVisitTour } from "@/hooks/use-first-visit-tour";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
-import Ionicons from "@expo/vector-icons/Ionicons";
 import { useIsFocused } from "@react-navigation/native";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
@@ -29,11 +27,8 @@ import React, {
 } from "react";
 import {
   FlatList,
-  Pressable,
   ScrollView,
   StyleSheet,
-  Text,
-  TouchableOpacity,
   useWindowDimensions,
   View,
 } from "react-native";
@@ -223,11 +218,6 @@ export default function Schedules() {
     [screenWidth, scrollTabIntoView, statusTabs],
   );
 
-  let colorScheme = useColorScheme();
-  if (!colorScheme) colorScheme = "light";
-  const theme = Colors[colorScheme];
-  const styles = getStyles(theme);
-
   const profileStore = useProfileData();
 
   const scheduledShifts =
@@ -245,8 +235,11 @@ export default function Schedules() {
 
   useFirstVisitTour("myShifts", isFocused && !runningQuery.isLoading);
 
+  const { colors } = useAppTheme();
+  const hasDateFilter = !!startDate || !!endDate;
+
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <TabsHeader
         title="Schedule"
         right={
@@ -257,20 +250,16 @@ export default function Schedules() {
             text="Filter by date range to find shifts on a specific day or week."
           >
             <WalkthroughableView>
-              <Pressable
+              <IconButton
+                icon="calendar-outline"
+                accessibilityLabel={hasDateFilter ? "Filter by date (active)" : "Filter by date"}
+                badge={hasDateFilter}
                 onPress={() =>
                   router.push({
                     pathname: "/date-sheet",
                   })
                 }
-                style={{ paddingRight: 18 }}
-              >
-                <Ionicons
-                  name="calendar-outline"
-                  size={24}
-                  color={theme.whiteText}
-                />
-              </Pressable>
+              />
             </WalkthroughableView>
           </CopilotStep>
         }
@@ -282,59 +271,20 @@ export default function Schedules() {
           active={isFocused}
           text="Running, Scheduled, Pending Approval, Approved, Cancelled, and Transferred — track every stage of your shifts here."
         >
-          <WalkthroughableView>
-            <ScrollView
-              ref={tabScrollRef}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.tabsRow}
-            >
-              {statusTabs.map((status, index) => {
-                const isActive = activeStatus === status;
-                return (
-                  <Pressable
-                    key={status}
-                    onPress={() => handleTabPress(index)}
-                    style={styles.tabButton}
-                    android_ripple={{ color: theme.grayBorder }}
-                    onLayout={(e) => {
-                      tabOffsetsRef.current[index] = e.nativeEvent.layout.x;
-                      tabWidthsRef.current[index] = e.nativeEvent.layout.width;
-                    }}
-                  >
-                    <Text
-                      style={[
-                        styles.tabText,
-                        isActive && styles.tabTextActive,
-                      ]}
-                    >
-                      {status}
-                    </Text>
-                    <View
-                      style={[
-                        styles.tabUnderline,
-                        isActive && styles.tabUnderlineActive,
-                      ]}
-                    />
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
+          <WalkthroughableView style={styles.tabsWrap}>
+            <SegmentedTabs
+              scrollable
+              scrollRef={tabScrollRef}
+              tabs={statusTabs}
+              activeIndex={statusTabs.indexOf(activeStatus)}
+              onTabPress={handleTabPress}
+              onTabLayout={(index, layout) => {
+                tabOffsetsRef.current[index] = layout.x;
+                tabWidthsRef.current[index] = layout.width;
+              }}
+            />
           </WalkthroughableView>
         </CopilotStep>
-        {/* <FlatList
-          // style={{ flex: 1 }}
-          data={sample_payruns}
-          renderItem={({ item }) => <PayrunCardBase payrun={item} />}
-          keyExtractor={(item) => item.id}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{
-            paddingBottom: 120,
-            paddingTop: 10,
-            flexGrow: 1,
-            gap: 10,
-          }}
-        /> */}
 
         {/* Horizontal paging ScrollView for tab content */}
         <ScrollView
@@ -347,9 +297,11 @@ export default function Schedules() {
           onScrollBeginDrag={() => {}} // prevent flicker
         >
           {statusTabs.map((status, index) => (
+            // Page width must stay screenWidth - 16 (the paging maths above);
+            // the inner padding brings the cards to the 20pt page gutter.
             <View
               key={status}
-              style={{ width: screenWidth - 16, paddingHorizontal: 4 }}
+              style={{ width: screenWidth - 16, paddingHorizontal: 12 }}
             >
               {(() => {
                 let isLoading = false;
@@ -467,12 +419,7 @@ export default function Schedules() {
                       renderItem={() => <ShiftCardBaseSkeleton />}
                       keyExtractor={(_, idx) => `skeleton-${idx}`}
                       showsVerticalScrollIndicator={false}
-                      contentContainerStyle={{
-                        paddingBottom: 120,
-                        paddingTop: 10,
-                        minHeight: screenHeight,
-                        gap: 10,
-                      }}
+                      contentContainerStyle={styles.listContent(screenHeight)}
                       refreshing={isRefetching && !isFetchingNextPage}
                       onRefresh={handlePullToRefresh}
                     />
@@ -481,85 +428,18 @@ export default function Schedules() {
 
                 if (isError) {
                   return (
-                    <View
-                      style={{
-                        // flex: 1,
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <MaterialCommunityIcons
-                        name="alert-circle-outline"
-                        size={72}
-                        color={theme.danger}
-                        style={{ marginBottom: 16 }}
-                      />
-                      <Text
-                        style={{
-                          fontSize: 20,
-                          fontWeight: "700",
-                          color: theme.danger,
-                          marginBottom: 8,
-                        }}
-                      >
-                        Error Loading Shifts
-                      </Text>
-                      <Text
-                        style={{
-                          fontSize: 15,
-                          color: theme.tertiaryText,
-                          textAlign: "center",
-                          maxWidth: 260,
-                          marginBottom: 12,
-                        }}
-                      >
-                        Something went wrong while fetching{" "}
-                        <Text style={{ textTransform: "lowercase" }}>
-                          {status}
-                        </Text>{" "}
-                        shifts. Please pull to refresh or try again later. (
-                        {shiftError instanceof Error && (
-                          <Text
-                            style={{
-                              fontSize: 13,
-                              color: theme.tertiaryText,
-                              textAlign: "center",
-                            }}
-                          >
-                            {shiftError.message}
-                          </Text>
-                        )}
-                        )
-                      </Text>
-                      <TouchableOpacity
-                        onPress={handlePullToRefresh}
-                        style={{
-                          backgroundColor: theme.mutedText,
-                          paddingHorizontal: 24,
-                          paddingVertical: 10,
-                          borderRadius: Radii.full,
-                          flexDirection: "row",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          gap: 8,
-                        }}
-                      >
-                        <FontAwesome6
-                          name="rotate-left"
-                          size={20}
-                          color={theme.secondaryText}
-                        />
-                        <Text
-                          style={{
-                            color: theme.secondaryText,
-                            fontSize: 16,
-                            fontWeight: "700",
-                          }}
-                        >
-                          Retry
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
+                    <EmptyState
+                      icon="cloud-offline-outline"
+                      tone="danger"
+                      title="Couldn't load shifts"
+                      message={
+                        `Something went wrong while fetching ${status.toLowerCase()} shifts. Pull to refresh or try again later.` +
+                        (shiftError instanceof Error ? `\n(${shiftError.message})` : "")
+                      }
+                      actionLabel="Retry"
+                      onAction={handlePullToRefresh}
+                      style={{ marginTop: screenHeight * 0.1 }}
+                    />
                   );
                 }
                 return (
@@ -585,68 +465,26 @@ export default function Schedules() {
                       item.id?.toString?.() || String(item.id)
                     }
                     showsVerticalScrollIndicator={false}
-                    contentContainerStyle={{
-                      paddingBottom: 120,
-                      paddingTop: 10,
-                      minHeight: screenHeight,
-                      gap: 10,
-                    }}
+                    contentContainerStyle={styles.listContent(screenHeight)}
                     refreshing={isRefetching && !isFetchingNextPage}
                     onRefresh={handlePullToRefresh}
                     onEndReached={handleLoadMore}
                     onEndReachedThreshold={0.6}
                     ListFooterComponent={
                       isFetchingNextPage ? (
-                        <View style={{ gap: 10, paddingTop: 10 }}>
+                        <View style={styles.footer}>
                           <ShiftCardBaseSkeleton />
                           <ShiftCardBaseSkeleton />
                         </View>
                       ) : null
                     }
                     ListEmptyComponent={
-                      <View
-                        style={{
-                          flex: 1,
-                          alignItems: "center",
-                          top: screenHeight * 0.2,
-                        }}
-                      >
-                        <MaterialCommunityIcons
-                          name="calendar-remove-outline"
-                          size={72}
-                          color={theme.grayBorder}
-                          style={{ marginBottom: 16 }}
-                        />
-                        <Text
-                          style={{
-                            fontSize: 20,
-                            fontWeight: "700",
-                            color: theme.primary,
-                            marginBottom: 8,
-                          }}
-                        >
-                          No Shifts Yet
-                        </Text>
-                        <Text
-                          style={{
-                            fontSize: 15,
-                            color: theme.secondaryText,
-                            textAlign: "center",
-                            maxWidth: 260,
-                          }}
-                        >
-                          You have no{" "}
-                          <Text
-                            style={{
-                              textTransform: "lowercase",
-                            }}
-                          >
-                            {status}
-                          </Text>{" "}
-                          shifts for this category at the moment. Check back
-                          later or explore other tabs!
-                        </Text>
-                      </View>
+                      <EmptyState
+                        icon={EMPTY_ICONS[status] ?? "calendar-outline"}
+                        title={`No ${status.toLowerCase()} shifts`}
+                        message={`You have no ${status.toLowerCase()} shifts at the moment. Check back later or explore other tabs.`}
+                        style={{ marginTop: screenHeight * 0.1 }}
+                      />
                     }
                   />
                 );
@@ -659,57 +497,37 @@ export default function Schedules() {
   );
 }
 
-const getStyles = (theme: typeof Colors.light) =>
-  StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: theme.safeAreaBg,
-      paddingHorizontal: 8,
-    },
+const EMPTY_ICONS: Record<string, React.ComponentProps<typeof EmptyState>["icon"]> = {
+  Running: "play-circle-outline",
+  Scheduled: "calendar-outline",
+  "Pending Approval": "hourglass-outline",
+  Approved: "checkmark-done-outline",
+  Cancelled: "close-circle-outline",
+  Transferred: "swap-horizontal-outline",
+};
+
+const styles = {
+  ...StyleSheet.create({
     safeArea: {
       flex: 1,
-      backgroundColor: theme.background,
     },
-    title: {
-      fontSize: 18,
-      fontWeight: "700",
-      color: theme.white,
+    container: {
+      flex: 1,
+      // Keep at 8: the paging width above is screenWidth - 2 × this.
+      paddingHorizontal: 8,
     },
-    underline: {
-      height: 3,
-      width: 56,
-      borderRadius: Radii.full,
-      backgroundColor: theme.activeText,
-      opacity: 0.85,
-      marginTop: 6,
+    tabsWrap: {
+      paddingHorizontal: 12,
     },
-    tabsRow: {
-      flexDirection: "row",
-      gap: 8,
-      paddingBottom: 2,
-      paddingTop: 10,
+    footer: {
+      gap: Space.sm,
+      paddingTop: Space.sm,
     },
-    tabButton: {
-      paddingVertical: 6,
-      paddingHorizontal: 6,
-      alignItems: "center",
-    },
-    tabText: {
-      fontSize: 14,
-      fontWeight: "600",
-      color: theme.secondaryText,
-    },
-    tabTextActive: {
-      color: theme.primary,
-    },
-    tabUnderline: {
-      height: 2,
-      width: "100%",
-      borderRadius: Radii.full,
-      backgroundColor: "transparent",
-      marginTop: 6,
-    },
-    tabUnderlineActive: {
-      backgroundColor: theme.primary,
-    },
-  });
+  }),
+  listContent: (screenHeight: number) => ({
+    paddingBottom: 120,
+    paddingTop: Space.md,
+    minHeight: screenHeight,
+    gap: Space.sm,
+  }),
+};

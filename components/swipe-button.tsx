@@ -1,3 +1,4 @@
+import { FontFamily } from "@/constants/design";
 import { Radii } from "@/constants/theme";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect } from "react";
@@ -204,10 +205,10 @@ const styles = StyleSheet.create({
   label: {
     position: "absolute",
     alignSelf: "center",
-    fontSize: 15,
-    fontWeight: "700",
+    fontFamily: FontFamily.semibold,
+    fontSize: 16,
     color: "#fff",
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
     textAlign: "center",
   },
 });

@@ -1,22 +1,19 @@
 import { postPendingShifts } from "@/api-queries/post-pending-shifts";
+import { EmptyState, SegmentedTabs } from "@/components/design";
 import { ShiftCardBase } from "@/components/pay-run";
 import { ShiftCardBaseSkeleton } from "@/components/skeletons";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 
 import TabsHeader from "@/components/shared/tabs-header";
-import { Colors, Radii } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import { Space } from "@/constants/design";
+import { useAppTheme } from "@/hooks/use-app-theme";
 import { useFirstVisitTour } from "@/hooks/use-first-visit-tour";
 import { useFocusEffect, useIsFocused } from "@react-navigation/native";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import React, { useCallback, useRef, useState } from "react";
 import {
   FlatList,
-  Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   useWindowDimensions,
   View,
 } from "react-native";
@@ -100,11 +97,6 @@ export default function Shifts() {
       fetchNextPage();
     }
   };
-  let colorScheme = useColorScheme();
-  if (!colorScheme) colorScheme = "light";
-  const theme = Colors[colorScheme];
-
-  const styles = getStyles(theme);
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const contentPageWidth = screenWidth - 20;
 
@@ -149,8 +141,11 @@ export default function Shifts() {
     [contentPageWidth, scrollTabIntoView],
   );
 
+
+  const { colors } = useAppTheme();
+
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <TabsHeader title="Shifts" />
       <View style={styles.container}>
         <CopilotStep
@@ -159,44 +154,16 @@ export default function Shifts() {
           active={isFocused}
           text='"Available" is open shifts you can accept. "Transfers" is shifts other HCPs are offering to you directly.'
         >
-          <WalkthroughableView>
-            <ScrollView
-              ref={tabScrollRef}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.tabsRow}
-            >
-              {STATUS_TABS.map((status, index) => {
-                const isActive = activeStatus === status;
-                return (
-                  <Pressable
-                    key={status}
-                    onPress={() => handleTabPress(index)}
-                    style={styles.tabButton}
-                    android_ripple={{ color: theme.grayBorder }}
-                    onLayout={(e) => {
-                      tabOffsetsRef.current[index] = e.nativeEvent.layout.x;
-                      tabWidthsRef.current[index] = e.nativeEvent.layout.width;
-                    }}
-                  >
-                    <Text
-                      style={[
-                        styles.tabText,
-                        isActive && styles.tabTextActive,
-                      ]}
-                    >
-                      {status}
-                    </Text>
-                    <View
-                      style={[
-                        styles.tabUnderline,
-                        isActive && styles.tabUnderlineActive,
-                      ]}
-                    />
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
+          <WalkthroughableView style={styles.tabsWrap}>
+            <SegmentedTabs
+              tabs={STATUS_TABS}
+              activeIndex={STATUS_TABS.indexOf(activeStatus)}
+              onTabPress={handleTabPress}
+              onTabLayout={(index, layout) => {
+                tabOffsetsRef.current[index] = layout.x;
+                tabWidthsRef.current[index] = layout.width;
+              }}
+            />
           </WalkthroughableView>
         </CopilotStep>
 
@@ -214,9 +181,11 @@ export default function Shifts() {
             const tabData = status === "Available" ? shifts : transferShifts;
 
             return (
+              // Page width must stay screenWidth - 20 (the paging maths above);
+              // the inner padding brings the cards to the 20pt page gutter.
               <View
                 key={status}
-                style={{ width: screenWidth - 20, paddingHorizontal: 4 }}
+                style={{ width: screenWidth - 20, paddingHorizontal: 10 }}
               >
                 <FlatList
                   data={showSkeletonLoading ? [...Array(6)] : tabData}
@@ -247,10 +216,10 @@ export default function Shifts() {
                   showsVerticalScrollIndicator={false}
                   contentContainerStyle={{
                     paddingBottom: 120,
-                    paddingTop: 10,
+                    paddingTop: Space.md,
                     flexGrow: 1,
                     minHeight: screenHeight,
-                    gap: 10,
+                    gap: Space.sm,
                   }}
                   refreshing={false}
                   onRefresh={handlePullToRefresh}
@@ -259,7 +228,7 @@ export default function Shifts() {
                   nestedScrollEnabled
                   ListFooterComponent={
                     !showSkeletonLoading && isFetchingNextPage ? (
-                      <View style={{ gap: 10, paddingTop: 10 }}>
+                      <View style={styles.footer}>
                         <ShiftCardBaseSkeleton />
                         <ShiftCardBaseSkeleton />
                       </View>
@@ -267,41 +236,12 @@ export default function Shifts() {
                   }
                   ListEmptyComponent={
                     !showSkeletonLoading && !isError && tabData.length === 0 ? (
-                      <View
-                        style={{
-                          flex: 1,
-                          alignItems: "center",
-                          top: screenHeight * 0.2,
-                        }}
-                      >
-                        <MaterialCommunityIcons
-                          name="calendar-remove-outline"
-                          size={72}
-                          color={theme.grayBorder}
-                          style={{ marginBottom: 16 }}
-                        />
-                        <Text
-                          style={{
-                            fontSize: 20,
-                            fontWeight: "700",
-                            color: theme.primary,
-                            marginBottom: 8,
-                          }}
-                        >
-                          No shifts {status.toLowerCase()} yet
-                        </Text>
-                        <Text
-                          style={{
-                            fontSize: 15,
-                            color: theme.secondaryText,
-                            textAlign: "center",
-                            maxWidth: 260,
-                          }}
-                        >
-                          There are no shifts {status.toLowerCase()} at the
-                          moment. Pull to refresh or check back later.
-                        </Text>
-                      </View>
+                      <EmptyState
+                        icon={status === "Available" ? "briefcase-outline" : "swap-horizontal-outline"}
+                        title={`No shifts ${status.toLowerCase()} yet`}
+                        message={`There are no shifts ${status.toLowerCase()} at the moment. Pull to refresh or check back later.`}
+                        style={{ marginTop: screenHeight * 0.1 }}
+                      />
                     ) : null
                   }
                 />
@@ -310,86 +250,18 @@ export default function Shifts() {
           })}
         </ScrollView>
         {isError && !showSkeletonLoading && (
-          <View
-            style={{
-              // flex: 1,
-              justifyContent: "center",
-              alignItems: "center",
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-            }}
-          >
-            <MaterialCommunityIcons
-              name="alert-circle-outline"
-              size={72}
-              color={theme.danger}
-              style={{ marginBottom: 16 }}
+          <View style={[styles.errorOverlay, { backgroundColor: colors.background }]}>
+            <EmptyState
+              icon="cloud-offline-outline"
+              tone="danger"
+              title="Couldn't load shifts"
+              message={
+                "Something went wrong while fetching shifts. Pull to refresh or try again later." +
+                (shiftError instanceof Error ? `\n(${shiftError.message})` : "")
+              }
+              actionLabel="Retry"
+              onAction={handlePullToRefresh}
             />
-            <Text
-              style={{
-                fontSize: 20,
-                fontWeight: "700",
-                color: theme.danger,
-                marginBottom: 8,
-              }}
-            >
-              Error Loading Shifts
-            </Text>
-            <Text
-              style={{
-                fontSize: 15,
-                color: theme.secondaryText,
-                textAlign: "center",
-                maxWidth: 260,
-                marginBottom: 12,
-              }}
-            >
-              Something went wrong while fetching shifts. Please pull to refresh
-              or try again later. (
-              {shiftError instanceof Error && (
-                <Text
-                  style={{
-                    fontSize: 13,
-                    color: theme.secondaryText,
-                    textAlign: "center",
-                  }}
-                >
-                  {shiftError.message}
-                </Text>
-              )}
-              )
-            </Text>
-            <Pressable
-              onPress={handlePullToRefresh}
-              style={{
-                backgroundColor: theme.mutedText,
-                paddingHorizontal: 24,
-                paddingVertical: 10,
-                borderRadius: Radii.full,
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 8,
-              }}
-            >
-              <FontAwesome6
-                name="rotate-left"
-                size={20}
-                color={theme.secondaryText}
-              />
-              <Text
-                style={{
-                  color: theme.secondaryText,
-                  fontSize: 16,
-                  fontWeight: "700",
-                }}
-              >
-                Retry
-              </Text>
-            </Pressable>
           </View>
         )}
       </View>
@@ -397,57 +269,25 @@ export default function Shifts() {
   );
 }
 
-const getStyles = (theme: typeof Colors.light) =>
-  StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: theme.safeAreaBg,
-      paddingHorizontal: 10,
-    },
-    safeArea: {
-      flex: 1,
-      backgroundColor: theme.background,
-    },
-    title: {
-      fontSize: 18,
-      fontWeight: "700",
-      color: theme.white,
-    },
-    underline: {
-      height: 3,
-      width: 56,
-      borderRadius: Radii.full,
-      backgroundColor: theme.activeText,
-      opacity: 0.85,
-      marginTop: 6,
-    },
-    tabsRow: {
-      flexDirection: "row",
-      gap: 8,
-      paddingBottom: 2,
-      paddingTop: 10,
-    },
-    tabButton: {
-      paddingVertical: 6,
-      paddingHorizontal: 6,
-      alignItems: "center",
-    },
-    tabText: {
-      fontSize: 14,
-      fontWeight: "600",
-      color: theme.secondaryText,
-    },
-    tabTextActive: {
-      color: theme.primary,
-    },
-    tabUnderline: {
-      height: 2,
-      width: "100%",
-      borderRadius: Radii.full,
-      backgroundColor: "transparent",
-      marginTop: 6,
-    },
-    tabUnderlineActive: {
-      backgroundColor: theme.primary,
-    },
-  });
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
+  container: {
+    flex: 1,
+    // Keep at 10: the paging width above is screenWidth - 2 × this.
+    paddingHorizontal: 10,
+  },
+  tabsWrap: {
+    paddingHorizontal: 10,
+  },
+  footer: {
+    gap: Space.sm,
+    paddingTop: Space.sm,
+  },
+  errorOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+});

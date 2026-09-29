@@ -1,37 +1,37 @@
 import { sendTestNotification } from "@/api-actions/notifications";
 import { useSession } from "@/app/ctx";
-import Header from "@/components/Header";
-import { Colors, Radii } from "@/constants/theme";
+import {
+  AppButton,
+  AppSwitch,
+  AppText,
+  Icon,
+  ListGroup,
+  ListRow,
+  ScreenHeader,
+  SegmentedTabs,
+} from "@/components/design";
+import { Radius, Space } from "@/constants/design";
 import { useSettingsStore } from "@/data-store/use-settings-store";
 import { useTenantStore } from "@/data-store/use-tenant-store";
 import { useTourStore } from "@/data-store/use-tour-store";
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useAppTheme } from "@/hooks/use-app-theme";
 import { useFirstVisitTour } from "@/hooks/use-first-visit-tour";
 import { useOneSignalSubscriptionStatus } from "@/hooks/use-one-signal";
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useIsFocused } from "@react-navigation/native";
 import * as Application from "expo-application";
 import { router } from "expo-router";
 import React, { useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  Pressable,
-  StyleSheet,
-  Switch,
-  Text,
-  View,
-} from "react-native";
+import { Alert, ScrollView, StyleSheet, View } from "react-native";
 import { CopilotStep, walkthroughable } from "react-native-copilot";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const WalkthroughableView = walkthroughable(View);
 
+const THEME_OPTIONS = ["light", "dark", "system"] as const;
+const THEME_LABELS = ["Light", "Dark", "System"];
+
 export default function SettingsScreen() {
-  let colorScheme = useColorScheme();
-  if (!colorScheme) colorScheme = "light";
-  const appTheme = Colors[colorScheme];
-  const styles = getStyles(appTheme);
+  const { colors } = useAppTheme();
   const { isChecking, isSetup, refresh } = useOneSignalSubscriptionStatus();
   const { retryNotificationSetup, user, signOut } = useSession();
   const [isRetryingNotifications, setIsRetryingNotifications] = useState(false);
@@ -156,419 +156,188 @@ export default function SettingsScreen() {
     }
   };
 
+  const pushNotSetUp = (!isChecking && !isSetup) || !hcp?.device_id;
+
   return (
-    <SafeAreaView edges={["top"]} style={styles.safeArea}>
-      <Header title="Settings" onBack={() => router.back()} />
-      <View style={{ flex: 1 }}>
-        <View style={styles.linksContainer}>
-          <Text style={styles.sectionHeader}>App permissions</Text>
-          <CopilotStep
-            name="settings-overview"
-            order={1}
-            active={isFocused}
-            text="Manage device permissions, theme, biometric login, and replay the app tour from here."
-          >
-            <WalkthroughableView style={styles.settingsWrap}>
-              {/* Location Access */}
-              <View style={styles.settingCard}>
-                <View style={styles.settingIconWrap}>
-                  <Ionicons
-                    name="location-sharp"
-                    size={22}
-                    color={appTheme.activeText}
-                  />
-                </View>
-                <View style={styles.settingTextWrap}>
-                  <Text style={styles.settingTitle}>Location Access</Text>
-                  <Text style={styles.settingDesc}>
-                    Allow app to access your location for better experience.
-                  </Text>
-                </View>
-                <Switch
-                  value={locationEnabled}
-                  onValueChange={setLocation}
-                  thumbColor={appTheme.white}
-                  trackColor={{ false: "gray", true: appTheme.primary }}
-                />
-              </View>
+    <SafeAreaView edges={["top"]} style={[styles.safeArea, { backgroundColor: colors.background }]}>
+      <ScreenHeader title="Settings" onBack={() => router.back()} />
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <CopilotStep
+          name="settings-overview"
+          order={1}
+          active={isFocused}
+          text="Manage device permissions, theme, biometric login, and replay the app tour from here."
+        >
+          <WalkthroughableView style={styles.groups}>
+            <ListGroup title="App permissions">
+              <ListRow
+                icon="location-outline"
+                title="Location access"
+                subtitle="Allow app to access your location for better experience."
+                right={<AppSwitch value={locationEnabled} onValueChange={setLocation} />}
+              />
 
-              {/* Notifications */}
-              <View style={styles.settingCardMain}>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: 12,
-                  }}
-                >
-                  <View style={styles.settingIconWrap}>
-                    <Ionicons
-                      name="notifications"
-                      size={22}
-                      color={appTheme.activeText}
-                    />
-                  </View>
-                  <View style={styles.settingTextWrap}>
-                    <Text style={styles.settingTitle}>Notifications</Text>
-                    <Text style={styles.settingDesc}>
-                      Enable push notifications for important updates.
-                    </Text>
-                  </View>
-                  <Switch
-                    value={notificationsEnabled}
-                    onValueChange={setNotifications}
-                    thumbColor={appTheme.white}
-                    trackColor={{ false: "gray", true: appTheme.primary }}
-                  />
-                </View>
-
-                <View
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 3,
-                  }}
-                >
-                  {((!isChecking && !isSetup) || !hcp?.device_id) && (
-                    <Text style={styles.settingError}>
+              <ListRow
+                icon="notifications-outline"
+                title="Notifications"
+                subtitle="Enable push notifications for important updates."
+                right={<AppSwitch value={notificationsEnabled} onValueChange={setNotifications} />}
+                isLast
+              />
+              <View style={[styles.rowExtra, { borderBottomColor: colors.border }]}>
+                {pushNotSetUp && (
+                  <View style={[styles.warning, { backgroundColor: colors.dangerSoft }]}>
+                    <Icon name="alert-circle-outline" size={16} color={colors.danger} />
+                    <AppText variant="footnote" color="danger" style={styles.flex}>
                       Push notifications are not set up on this device.
-                    </Text>
+                    </AppText>
+                  </View>
+                )}
+                <View style={styles.buttonRow}>
+                  {pushNotSetUp && (
+                    <AppButton
+                      title="Retry setup"
+                      icon="refresh"
+                      variant="secondary"
+                      size="compact"
+                      onPress={handleRetryNotificationsSetup}
+                      loading={isRetryingNotifications}
+                      disabled={isRetryingNotifications}
+                      style={styles.flex}
+                    />
                   )}
-                  <View
-                    style={{
-                      display: "flex",
-                      flexDirection: "row",
-                      justifyContent: "space-between",
-                      width: "100%",
-                      gap: 10,
-                    }}
+                  <CopilotStep
+                    name="settings-test-notification"
+                    order={2}
+                    active={isFocused}
+                    text="Send yourself a test notification to confirm push notifications are actually reaching this device."
                   >
-                    {((!isChecking && !isSetup) || !hcp?.device_id) && (
-                      <Pressable
-                        onPress={handleRetryNotificationsSetup}
-                        disabled={isRetryingNotifications}
-                        style={({ pressed }) => [
-                          styles.retryButton,
-                          pressed && styles.retryButtonPressed,
-                          isRetryingNotifications && styles.retryButtonDisabled,
-                        ]}
-                      >
-                        {isRetryingNotifications ? (
-                          <ActivityIndicator
-                            size="small"
-                            color={appTheme.white}
-                          />
-                        ) : (
-                          <Text style={styles.retryButtonText}>
-                            Retry notifications setup
-                          </Text>
-                        )}
-                      </Pressable>
-                    )}
-                    <CopilotStep
-                      name="settings-test-notification"
-                      order={2}
-                      active={isFocused}
-                      text="Send yourself a test notification to confirm push notifications are actually reaching this device."
-                    >
-                      <WalkthroughableView>
-                        <Pressable
-                          onPress={handleTestPushNotifications}
-                          disabled={isTestingNotifications}
-                          style={({ pressed }) => [
-                            styles.retryButton,
-                            pressed && styles.retryButtonPressed,
-                            isTestingNotifications &&
-                              styles.retryButtonDisabled,
-                          ]}
-                        >
-                          {isTestingNotifications ? (
-                            <ActivityIndicator
-                              size="small"
-                              color={appTheme.white}
-                            />
-                          ) : (
-                            <Text style={styles.retryButtonText}>
-                              Test push notifications
-                            </Text>
-                          )}
-                        </Pressable>
-                      </WalkthroughableView>
-                    </CopilotStep>
-                  </View>
+                    <WalkthroughableView style={styles.flex}>
+                      <AppButton
+                        title="Send test notification"
+                        icon="paper-plane-outline"
+                        variant="outline"
+                        size="compact"
+                        onPress={handleTestPushNotifications}
+                        loading={isTestingNotifications}
+                        disabled={isTestingNotifications}
+                        fullWidth
+                      />
+                    </WalkthroughableView>
+                  </CopilotStep>
                 </View>
               </View>
 
-              {/* Calendar & Reminders */}
-              <View style={styles.settingCard}>
-                <View style={styles.settingIconWrap}>
-                  <Ionicons
-                    name="calendar"
-                    size={22}
-                    color={appTheme.activeText}
-                  />
-                </View>
-                <View style={styles.settingTextWrap}>
-                  <Text style={styles.settingTitle}>Calendar & Reminders</Text>
-                  <Text style={styles.settingDesc}>
-                    Allow app to add shifts to your calendar with reminders.
-                  </Text>
-                </View>
-                <Switch
-                  value={calendarEnabled}
-                  onValueChange={setCalendar}
-                  thumbColor={appTheme.white}
-                  trackColor={{ false: "gray", true: appTheme.primary }}
+              <ListRow
+                icon="calendar-outline"
+                title="Calendar & reminders"
+                subtitle="Allow app to add shifts to your calendar with reminders."
+                right={<AppSwitch value={calendarEnabled} onValueChange={setCalendar} />}
+                isLast
+              />
+            </ListGroup>
+
+            <ListGroup title="Appearance">
+              <ListRow
+                icon="contrast-outline"
+                title="Theme"
+                subtitle="Choose how the app looks."
+                isLast
+              />
+              <View style={styles.rowExtraLast}>
+                <SegmentedTabs
+                  tabs={THEME_LABELS}
+                  activeIndex={Math.max(0, THEME_OPTIONS.indexOf(theme))}
+                  onTabPress={(index) => setTheme(THEME_OPTIONS[index])}
                 />
               </View>
+            </ListGroup>
 
-              {/* Theme */}
-              <View style={styles.settingCard}>
-                <View style={styles.settingIconWrap}>
-                  <MaterialCommunityIcons
-                    name="theme-light-dark"
-                    size={22}
-                    color={appTheme.activeText}
-                  />
-                </View>
-                <View style={styles.settingTextWrap}>
-                  <Text style={styles.settingTitle}>Theme</Text>
-                  <Text style={styles.settingDesc}>
-                    Toggle between Light and Dark theme for the app.
-                  </Text>
-                </View>
-                <Switch
-                  value={theme === "dark"}
-                  onValueChange={(value) => setTheme(value ? "dark" : "light")}
-                  thumbColor={appTheme.white}
-                  trackColor={{
-                    false: "gray",
-                    true: appTheme.primary,
-                  }}
-                />
-              </View>
+            <ListGroup title="Security">
+              <ListRow
+                icon="finger-print-outline"
+                title="Biometric authentication"
+                subtitle="Enable biometric authentication for added security."
+                right={<AppSwitch value={biometricsEnabled} onValueChange={setBiometrics} />}
+                isLast
+              />
+            </ListGroup>
 
-              {/* Biometrics */}
-              <View style={styles.settingCard}>
-                <View style={styles.settingIconWrap}>
-                  <Ionicons
-                    name="finger-print"
-                    size={22}
-                    color={appTheme.activeText}
-                  />
-                </View>
-                <View style={styles.settingTextWrap}>
-                  <Text style={styles.settingTitle}>
-                    Biometric Authentication
-                  </Text>
-                  <Text style={styles.settingDesc}>
-                    Enable biometric authentication for added security.
-                  </Text>
-                </View>
-                <Switch
-                  value={biometricsEnabled}
-                  onValueChange={setBiometrics}
-                  thumbColor={appTheme.white}
-                  trackColor={{ false: "gray", true: appTheme.primary }}
-                />
-              </View>
-
-              {/* Dev-only: clear the persisted organization to retest sign-in */}
-              {__DEV__ && (
-                <Pressable
-                  style={styles.settingCard}
+            {/* Dev-only: clear the persisted organization to retest sign-in */}
+            {__DEV__ && (
+              <ListGroup title="Developer">
+                <ListRow
+                  icon="trash-outline"
+                  title="Clear organization (Dev)"
+                  subtitle="Sign out and forget the stored organization to retest the sign-in flow from scratch."
+                  destructive
                   onPress={handleClearOrganization}
-                >
-                  <View style={styles.settingIconWrap}>
-                    <Ionicons
-                      name="trash-outline"
-                      size={22}
-                      color={appTheme.danger}
-                    />
-                  </View>
-                  <View style={styles.settingTextWrap}>
-                    <Text style={styles.settingTitle}>
-                      Clear organization (Dev)
-                    </Text>
-                    <Text style={styles.settingDesc}>
-                      Sign out and forget the stored organization to retest
-                      the sign-in flow from scratch.
-                    </Text>
-                  </View>
-                  <Ionicons
-                    name="chevron-forward"
-                    size={20}
-                    color={appTheme.secondaryText}
-                  />
-                </Pressable>
-              )}
+                  isLast
+                />
+              </ListGroup>
+            )}
 
-              {/* Replay app tour */}
-              {false && (
-                <Pressable
-                  style={styles.settingCard}
+            {/* Replay app tour */}
+            {false && (
+              <ListGroup>
+                <ListRow
+                  icon="school-outline"
+                  title="Replay app tour"
+                  subtitle="See the guided walkthrough of the dashboard, shifts, my shifts, documents, and more again."
                   onPress={handleReplayTour}
-                >
-                  <View style={styles.settingIconWrap}>
-                    <Ionicons
-                      name="school-outline"
-                      size={22}
-                      color={appTheme.activeText}
-                    />
-                  </View>
-                  <View style={styles.settingTextWrap}>
-                    <Text style={styles.settingTitle}>Replay app tour</Text>
-                    <Text style={styles.settingDesc}>
-                      See the guided walkthrough of the dashboard, shifts, my
-                      shifts, documents, and more again.
-                    </Text>
-                  </View>
-                  <Ionicons
-                    name="chevron-forward"
-                    size={20}
-                    color={appTheme.secondaryText}
-                  />
-                </Pressable>
-              )}
-            </WalkthroughableView>
-          </CopilotStep>
-        </View>
+                  isLast
+                />
+              </ListGroup>
+            )}
+          </WalkthroughableView>
+        </CopilotStep>
+
         {/* App Version Footer */}
-        <View style={styles.versionContainer}>
-          <Text style={styles.versionText}>v{appVersion}</Text>
-        </View>
-      </View>
+        <AppText variant="caption" color="textTertiary" align="center" style={styles.version}>
+          iShapps v{appVersion}
+        </AppText>
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
-const getStyles = (appTheme: typeof Colors.light) =>
-  StyleSheet.create({
-    safeArea: {
-      flex: 1,
-      backgroundColor: appTheme.background,
-    },
-    linksContainer: {
-      display: "flex",
-      flexDirection: "column",
-      gap: 8,
-      width: "100%",
-      backgroundColor: appTheme.whiteBackground,
-      flex: 1,
-      paddingHorizontal: 10,
-      paddingTop: 24,
-      shadowColor: appTheme.shadow,
-      shadowOpacity: 0.08,
-      shadowRadius: 12,
-      elevation: 2,
-    },
-    sectionHeader: {
-      fontSize: 15,
-      fontWeight: "700",
-      color: appTheme.tertiaryText,
-      marginLeft: 2,
-    },
-    settingsWrap: {
-      display: "flex",
-      flexDirection: "column",
-      gap: 5,
-      width: "100%",
-      marginVertical: 5,
-      backgroundColor: appTheme.whiteBackground,
-      borderWidth: 1,
-      borderColor: appTheme.divider,
-      borderRadius: Radii.md,
-    },
-    settingCardMain: {
-      flexDirection: "column",
-      backgroundColor: appTheme.whiteBackground,
-      borderRadius: Radii.sm,
-      padding: 10,
-      marginBottom: 2,
-      shadowColor: appTheme.shadow,
-      shadowOpacity: 0.06,
-      shadowRadius: 8,
-      elevation: 1,
-      gap: 12,
-      borderBottomWidth: 1,
-      borderColor: appTheme.greyBorder,
-    },
-    settingCard: {
-      flexDirection: "row",
-      alignItems: "center",
-      backgroundColor: appTheme.whiteBackground,
-      borderRadius: Radii.sm,
-      padding: 10,
-      marginBottom: 2,
-      shadowColor: appTheme.shadow,
-      shadowOpacity: 0.06,
-      shadowRadius: 8,
-      elevation: 1,
-      gap: 12,
-      borderBottomWidth: 1,
-      borderColor: appTheme.greyBorder,
-    },
-    settingIconWrap: {
-      width: 38,
-      height: 38,
-      borderRadius: Radii.full,
-      backgroundColor: appTheme.heroBg,
-      alignItems: "center",
-      justifyContent: "center",
-      marginRight: 8,
-    },
-    settingTextWrap: {
-      flex: 1,
-      flexDirection: "column",
-      gap: 2,
-    },
-    settingTitle: {
-      fontSize: 15,
-      fontWeight: "700",
-      color: appTheme.settingTitle,
-    },
-    settingDesc: {
-      fontSize: 12,
-      color: appTheme.secondaryText,
-    },
-    settingError: {
-      fontSize: 11,
-      color: appTheme.danger,
-      fontWeight: "400",
-      marginTop: 2,
-    },
-    notificationSetupWrap: {
-      gap: 8,
-      marginTop: 2,
-      alignItems: "flex-start",
-    },
-    retryButton: {
-      minHeight: 34,
-      paddingHorizontal: 12,
-      borderRadius: Radii.sm,
-      backgroundColor: appTheme.primary,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    retryButtonPressed: {
-      opacity: 0.82,
-    },
-    retryButtonDisabled: {
-      opacity: 0.65,
-    },
-    retryButtonText: {
-      fontSize: 12,
-      fontWeight: "400",
-      color: appTheme.white,
-    },
-    versionContainer: {
-      alignItems: "center",
-      paddingVertical: 16,
-      backgroundColor: appTheme.whiteBackground,
-    },
-
-    versionText: {
-      fontSize: 12,
-      color: appTheme.secondaryText,
-    },
-  });
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
+  flex: {
+    flex: 1,
+  },
+  content: {
+    paddingHorizontal: Space.gutter,
+    paddingTop: Space.xs,
+    paddingBottom: Space.xxl,
+  },
+  groups: {
+    gap: Space.lg,
+  },
+  rowExtra: {
+    paddingHorizontal: Space.md,
+    paddingBottom: Space.md,
+    gap: Space.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  rowExtraLast: {
+    paddingHorizontal: Space.md,
+    paddingBottom: Space.md,
+  },
+  warning: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Space.xs,
+    padding: Space.sm,
+    borderRadius: Radius.sm,
+  },
+  buttonRow: {
+    flexDirection: "row",
+    gap: Space.xs,
+  },
+  version: {
+    marginTop: Space.xl,
+  },
+});
