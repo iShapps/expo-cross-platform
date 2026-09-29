@@ -1,7 +1,17 @@
 import { PersistedTenant, TenantSummary } from "@/data-types/tenancy";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
-import { createJSONStorage, persist } from "zustand/middleware";
+import { createJSONStorage, persist, StateStorage } from "zustand/middleware";
+
+const hasRealStorageEnvironment =
+  (typeof navigator !== "undefined" && navigator.product === "ReactNative") ||
+  (typeof window !== "undefined" && typeof window.document !== "undefined");
+
+const noopStorage: StateStorage = {
+  getItem: async () => null,
+  setItem: async () => {},
+  removeItem: async () => {},
+};
 
 interface TenantStoreType {
   tenant: PersistedTenant | null;
@@ -32,7 +42,9 @@ export const useTenantStore = create<TenantStoreType>()(
     }),
     {
       name: "ishapps-tenant-data",
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createJSONStorage(() =>
+        hasRealStorageEnvironment ? AsyncStorage : noopStorage,
+      ),
       version: 1,
       migrate: (persistedState) => {
         const tenant = (persistedState as { tenant?: unknown } | undefined)
