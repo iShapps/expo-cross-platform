@@ -14,6 +14,14 @@ import {
   incrementProviderUnmount,
   incrementRootRenderCount,
 } from "@/utils/runtime-diagnostics";
+import {
+  Outfit_400Regular,
+  Outfit_500Medium,
+  Outfit_600SemiBold,
+  Outfit_700Bold,
+  Outfit_800ExtraBold,
+  useFonts,
+} from "@expo-google-fonts/outfit";
 import * as Sentry from "@sentry/react-native";
 import {
   focusManager,
@@ -67,6 +75,15 @@ const queryClient = new QueryClient();
 export default Sentry.wrap(function Root() {
   incrementRootRenderCount();
   const [isHydrated, setIsHydrated] = useState(false);
+  // Design-system font (constants/design.ts → FontFamily). The splash screen
+  // stays up until it's ready; on a load error we render with system fonts.
+  const [fontsLoaded, fontError] = useFonts({
+    Outfit_400Regular,
+    Outfit_500Medium,
+    Outfit_600SemiBold,
+    Outfit_700Bold,
+    Outfit_800ExtraBold,
+  });
 
   useEffect(() => {
     if (Platform.OS === "web") return;
@@ -115,6 +132,8 @@ export default Sentry.wrap(function Root() {
       cancelled = true;
     };
   }, []);
+
+  if (!fontsLoaded && !fontError) return null;
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

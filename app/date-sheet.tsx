@@ -1,7 +1,14 @@
-import { Colors, Radii } from "@/constants/theme";
+import { AppButton, AppText, Icon } from "@/components/design";
+import {
+  FontFamily,
+  Radius,
+  Space,
+  Touch,
+  Type,
+  type AppColors,
+} from "@/constants/design";
 import { useProfileData } from "@/data-store/use-account-store";
-import { useColorScheme } from "@/hooks/use-color-scheme";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useAppTheme } from "@/hooks/use-app-theme";
 import { router } from "expo-router";
 import React, { useMemo, useRef, useState } from "react";
 import {
@@ -12,9 +19,9 @@ import {
   Pressable,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const MIN_YEAR = 2021;
 const MONTH_NAMES = [
@@ -64,10 +71,9 @@ export default function DateSelectorScreen() {
   const setStartDate = useProfileData((s) => s.setStartDate);
   const setEndDate = useProfileData((s) => s.setEndDate);
 
-  let colorScheme = useColorScheme();
-  if (!colorScheme) colorScheme = "light";
-  const theme = Colors[colorScheme];
-  const styles = getStyles(theme);
+  const { colors } = useAppTheme();
+  const styles = getStyles(colors);
+  const insets = useSafeAreaInsets();
 
   const today = startOfDay(new Date());
   const [viewYear, setViewYear] = useState(today.getFullYear());
@@ -188,46 +194,47 @@ export default function DateSelectorScreen() {
         <Pressable
           style={StyleSheet.absoluteFill}
           onPress={() => router.back()}
+          accessibilityLabel="Close"
         />
 
         <Animated.View
-          style={[styles.sheet, { transform: [{ translateY: sheetY }] }]}
+          style={[
+            styles.sheet,
+            { paddingBottom: insets.bottom + Space.lg, transform: [{ translateY: sheetY }] },
+          ]}
           {...panResponder.panHandlers}
         >
           <View style={styles.handle} />
 
-          <Text style={styles.title}>Select Date Range</Text>
+          <AppText variant="title3" align="center" style={styles.title}>
+            Select date range
+          </AppText>
 
           <View style={styles.pillRow}>
             <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ selected: picking === "start" }}
               style={[styles.pill, picking === "start" && styles.pillActive]}
               onPress={() => setPicking("start")}
             >
               <Text style={styles.pillLabel}>FROM</Text>
-              <Text
-                style={[styles.pillValue, !selStart && styles.pillPlaceholder]}
-              >
+              <Text style={[styles.pillValue, !selStart && styles.pillPlaceholder]}>
                 {selStart ? formatDisplay(selStart) : "Start date"}
               </Text>
             </Pressable>
 
-            <MaterialCommunityIcons
-              name="arrow-right"
-              size={18}
-              color={theme.secondaryText}
-              style={styles.pillArrow}
-            />
+            <Icon name="arrow-forward" size={18} color={colors.textTertiary} />
 
             <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ selected: picking === "end" }}
               style={[styles.pill, picking === "end" && styles.pillActive]}
               onPress={() => {
                 if (selStart) setPicking("end");
               }}
             >
               <Text style={styles.pillLabel}>TO</Text>
-              <Text
-                style={[styles.pillValue, !selEnd && styles.pillPlaceholder]}
-              >
+              <Text style={[styles.pillValue, !selEnd && styles.pillPlaceholder]}>
                 {selEnd ? formatDisplay(selEnd) : "End date"}
               </Text>
             </Pressable>
@@ -237,30 +244,34 @@ export default function DateSelectorScreen() {
             <Pressable
               onPress={prevMonth}
               disabled={!canGoBack}
-              hitSlop={12}
+              hitSlop={4}
+              accessibilityRole="button"
+              accessibilityLabel="Previous month"
               style={[styles.navBtn, !canGoBack && styles.navBtnDisabled]}
             >
-              <MaterialCommunityIcons
-                name="chevron-left"
-                size={22}
-                color={canGoBack ? theme.primary : theme.secondaryText}
+              <Icon
+                name="chevron-back"
+                size={20}
+                color={canGoBack ? colors.primaryStrong : colors.textTertiary}
               />
             </Pressable>
 
-            <Text style={styles.monthLabel}>
+            <AppText variant="headline">
               {MONTH_NAMES[viewMonth]} {viewYear}
-            </Text>
+            </AppText>
 
             <Pressable
               onPress={nextMonth}
               disabled={!canGoForward}
-              hitSlop={12}
+              hitSlop={4}
+              accessibilityRole="button"
+              accessibilityLabel="Next month"
               style={[styles.navBtn, !canGoForward && styles.navBtnDisabled]}
             >
-              <MaterialCommunityIcons
-                name="chevron-right"
-                size={22}
-                color={canGoForward ? theme.primary : theme.secondaryText}
+              <Icon
+                name="chevron-forward"
+                size={20}
+                color={canGoForward ? colors.primaryStrong : colors.textTertiary}
               />
             </Pressable>
           </View>
@@ -320,24 +331,26 @@ export default function DateSelectorScreen() {
             })}
           </View>
 
-          <Text style={styles.hint}>
+          <AppText variant="footnote" color="textSecondary" align="center" style={styles.hint}>
             {picking === "start"
               ? "Tap to select a start date"
               : "Now tap an end date"}
-          </Text>
+          </AppText>
 
           <View style={styles.actions}>
-            <TouchableOpacity style={styles.clearBtn} onPress={handleClear}>
-              <Text style={styles.clearBtnText}>Clear</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.applyBtn, !canApply && styles.applyBtnDisabled]}
+            <AppButton
+              title="Clear"
+              variant="outline"
+              onPress={handleClear}
+              style={styles.clearBtn}
+            />
+            <AppButton
+              title="Apply"
+              icon="checkmark"
               onPress={handleApply}
               disabled={!canApply}
-              activeOpacity={0.85}
-            >
-              <Text style={styles.applyBtnText}>Apply</Text>
-            </TouchableOpacity>
+              style={styles.applyBtn}
+            />
           </View>
         </Animated.View>
       </KeyboardAvoidingView>
@@ -347,7 +360,7 @@ export default function DateSelectorScreen() {
 
 const CELL_SIZE = 44;
 
-const getStyles = (theme: typeof Colors.light) =>
+const getStyles = (colors: AppColors) =>
   StyleSheet.create({
     safeArea: {
       flex: 1,
@@ -356,105 +369,86 @@ const getStyles = (theme: typeof Colors.light) =>
     container: {
       flex: 1,
       justifyContent: "flex-end",
-      backgroundColor: "rgba(0,0,0,0.45)",
+      backgroundColor: colors.overlay,
     },
     sheet: {
-      backgroundColor: theme.whiteBackground,
-      borderTopLeftRadius: Radii.lg,
-      borderTopRightRadius: Radii.lg,
-      padding: 20,
-      paddingHorizontal: 10,
-      paddingBottom: 36,
+      backgroundColor: colors.surface,
+      borderTopLeftRadius: Radius.xxl,
+      borderTopRightRadius: Radius.xxl,
+      paddingTop: Space.sm,
+      paddingHorizontal: Space.md,
     },
-
     handle: {
       alignSelf: "center",
       width: 40,
-      height: 4,
-      borderRadius: Radii.xs,
-      backgroundColor: theme.grayBorder,
-      marginBottom: 16,
+      height: 5,
+      borderRadius: Radius.full,
+      backgroundColor: colors.borderStrong,
+      marginBottom: Space.md,
     },
-
     title: {
-      fontSize: 18,
-      fontWeight: "700",
-      color: theme.primaryText,
-      textAlign: "center",
-      marginBottom: 16,
+      marginBottom: Space.md,
     },
-
     pillRow: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 8,
-      marginBottom: 20,
+      gap: Space.xs,
+      marginBottom: Space.lg,
     },
     pill: {
       flex: 1,
-      borderWidth: 1,
-      borderColor: theme.secondaryText,
-      borderRadius: Radii.sm,
-      padding: 10,
+      minHeight: Touch.button,
+      borderWidth: 1.5,
+      borderColor: colors.surfaceMuted,
+      backgroundColor: colors.surfaceMuted,
+      borderRadius: Radius.md,
+      paddingHorizontal: Space.sm,
+      paddingVertical: Space.xs,
+      justifyContent: "center",
     },
     pillActive: {
-      borderColor: theme.primary,
-      backgroundColor: `${theme.primary}12`,
+      borderColor: colors.primary,
+      backgroundColor: colors.primarySoft,
     },
     pillLabel: {
-      fontSize: 10,
-      fontWeight: "700",
-      letterSpacing: 0.8,
-      color: theme.secondaryText,
-      marginBottom: 3,
+      ...Type.overline,
+      color: colors.textTertiary,
+      marginBottom: 2,
     },
     pillValue: {
-      fontSize: 13,
-      fontWeight: "600",
-      color: theme.primaryText,
+      ...Type.subhead,
+      color: colors.text,
     },
     pillPlaceholder: {
-      color: theme.secondaryText,
-      fontWeight: "400",
+      fontFamily: FontFamily.regular,
+      color: colors.textTertiary,
     },
-    pillArrow: {
-      marginTop: 10,
-    },
-
     monthNav: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
-      marginBottom: 10,
+      marginBottom: Space.xs,
     },
     navBtn: {
-      width: 34,
-      height: 34,
-      borderRadius: Radii.full,
+      width: Touch.min,
+      height: Touch.min,
+      borderRadius: Radius.full,
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: theme.safeAreaBg ?? "#f5f5f5",
+      backgroundColor: colors.surfaceMuted,
     },
-    navBtnDisabled: { opacity: 0.35 },
-    monthLabel: {
-      fontSize: 15,
-      fontWeight: "700",
-      color: theme.primaryText,
-    },
-
+    navBtnDisabled: { opacity: 0.4 },
     dayLabelsRow: {
       flexDirection: "row",
-      marginBottom: 4,
+      marginBottom: Space.xxs,
     },
     dayLabel: {
+      ...Type.caption,
       flex: 1,
       textAlign: "center",
-      fontSize: 11,
-      fontWeight: "600",
-      color: theme.secondaryText,
-      paddingVertical: 4,
+      color: colors.textTertiary,
+      paddingVertical: Space.xxs,
     },
-
     grid: {
       flexDirection: "row",
       flexWrap: "wrap",
@@ -466,82 +460,53 @@ const getStyles = (theme: typeof Colors.light) =>
       justifyContent: "center",
     },
     cellInRange: {
-      backgroundColor: `${theme.primary}18`,
+      backgroundColor: colors.primarySoft,
     },
     cellRangeLeft: {
       borderTopLeftRadius: CELL_SIZE / 2,
       borderBottomLeftRadius: CELL_SIZE / 2,
-      backgroundColor: `${theme.primary}18`,
+      backgroundColor: colors.primarySoft,
     },
     cellRangeRight: {
       borderTopRightRadius: CELL_SIZE / 2,
       borderBottomRightRadius: CELL_SIZE / 2,
-      backgroundColor: `${theme.primary}18`,
+      backgroundColor: colors.primarySoft,
     },
     dayCircle: {
-      width: 36,
-      height: 36,
-      borderRadius: Radii.full,
+      width: 40,
+      height: 40,
+      borderRadius: Radius.full,
       alignItems: "center",
       justifyContent: "center",
     },
     dayCircleSelected: {
-      backgroundColor: theme.primary,
+      backgroundColor: colors.primary,
     },
     dayText: {
-      fontSize: 13,
-      fontWeight: "500",
-      color: theme.primaryText,
+      fontFamily: FontFamily.medium,
+      fontSize: 15,
+      color: colors.text,
     },
-    dayTextDisabled: { color: theme.greyBorder },
-    dayTextInRange: { color: theme.primary, fontWeight: "600" },
-    dayTextSelected: { color: "#fff", fontWeight: "700" },
-    dayTextToday: { color: theme.primary, fontWeight: "700" },
+    dayTextDisabled: { color: colors.borderStrong },
+    dayTextInRange: { color: colors.primaryStrong, fontFamily: FontFamily.semibold },
+    dayTextSelected: { color: colors.textOnPrimary, fontFamily: FontFamily.bold },
+    dayTextToday: { color: colors.primaryStrong, fontFamily: FontFamily.bold },
     todayDot: {
       position: "absolute",
-      bottom: 2,
+      bottom: 4,
       width: 4,
       height: 4,
-      borderRadius: Radii.full,
-      backgroundColor: theme.primary,
+      borderRadius: Radius.full,
+      backgroundColor: colors.primary,
     },
-
     hint: {
-      textAlign: "center",
-      fontSize: 12,
-      color: theme.secondaryText,
-      marginTop: 8,
-      marginBottom: 16,
+      marginTop: Space.xs,
+      marginBottom: Space.md,
     },
-
     actions: {
       flexDirection: "row",
-      gap: 10,
+      gap: Space.sm,
     },
-    clearBtn: {
-      flex: 1,
-      paddingVertical: 14,
-      borderRadius: Radii.full,
-      alignItems: "center",
-      borderWidth: 1.5,
-      borderColor: theme.greyBorder,
-    },
-    clearBtnText: {
-      fontSize: 14,
-      fontWeight: "600",
-      color: theme.secondaryText,
-    },
-    applyBtn: {
-      flex: 2,
-      paddingVertical: 14,
-      borderRadius: Radii.full,
-      alignItems: "center",
-      backgroundColor: theme.primary,
-    },
-    applyBtnDisabled: { opacity: 0.45 },
-    applyBtnText: {
-      fontSize: 14,
-      fontWeight: "700",
-      color: "#fff",
-    },
+    clearBtn: { flex: 1 },
+    applyBtn: { flex: 2 },
   });

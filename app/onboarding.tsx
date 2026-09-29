@@ -9,10 +9,19 @@ import {
   submitProfessionalDetails,
   uploadDocument,
 } from "@/api-queries/onboarding";
+import { AppButton, AppText, Icon, IconBadge } from "@/components/design";
 import { DocumentPreviewModal } from "@/components/document-preview-modal";
-import { Colors, Radii } from "@/constants/theme";
+import {
+  elevation,
+  FontFamily,
+  Radius,
+  Space,
+  Touch,
+  Type,
+  type AppColors,
+} from "@/constants/design";
 import { RegistrationStatusResponse } from "@/data-types/auth";
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useAppTheme } from "@/hooks/use-app-theme";
 import {
   getRegistrationStatus,
   resolveOnboardingStep,
@@ -20,13 +29,12 @@ import {
 } from "@/utils/auth-api";
 import { FileTooLargeError } from "@/utils/compress-file";
 import { pickDocument } from "@/utils/file-pickers";
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   Animated,
   Easing,
@@ -38,7 +46,6 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   useWindowDimensions,
   View,
 } from "react-native";
@@ -49,14 +56,6 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import { useSession } from "./ctx";
-
-const TEXT_SAFE_PRIMARY = "#3D7A00";
-const TEXT_SAFE_DANGER = "#C93C2E";
-
-const SURFACE_TINT = "#F2F9E9";
-const SURFACE_TINT_DEEP = "#E6F3D4";
-const ACCENT_BORDER = "#CFE8A8";
-const UPLOAD_BOX_BG = "#F5F5F5";
 
 type OnboardingStepId = 1 | 2 | 3 | 4 | 5;
 
@@ -262,9 +261,8 @@ function formatDateInput(value: string, options?: { maxYear?: number }) {
 }
 
 export default function OnboardingScreen() {
-  const colorScheme = useColorScheme() || "light";
-  const theme = Colors[colorScheme];
-  const styles = getStyles(theme);
+  const { colors: theme, isDark } = useAppTheme();
+  const styles = getStyles(theme, isDark);
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ hcpId?: string; screen?: string }>();
   const { user, updateHcp, signOut } = useSession();
@@ -988,6 +986,8 @@ export default function OnboardingScreen() {
     }
   };
 
+  const isBusy = isSubmittingStep || isCheckingStatus;
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <KeyboardAvoidingView
@@ -996,13 +996,17 @@ export default function OnboardingScreen() {
       >
         <View style={styles.header}>
           <View style={styles.headerTopRow}>
-            <View>
-              <Text style={styles.kicker}>Self onboarding</Text>
-              <Text style={styles.title}>Complete your registration</Text>
+            <View style={styles.flex}>
+              <AppText variant="overline" color="primaryStrong">
+                Self onboarding
+              </AppText>
+              <AppText variant="title2">Complete your registration</AppText>
             </View>
-            <Text style={styles.progressPillText}>
-              Step {activeIndex + 1} of {visibleSteps.length}
-            </Text>
+            <View style={styles.progressPill}>
+              <AppText variant="caption" color="primaryStrong">
+                Step {activeIndex + 1} of {visibleSteps.length}
+              </AppText>
+            </View>
           </View>
           <View style={styles.stepTrackerRow}>
             {visibleSteps.map((step, index) => (
@@ -1028,21 +1032,17 @@ export default function OnboardingScreen() {
         >
           <Animated.View style={[styles.stepAnimatedContent, stepAnimStyle]}>
             <View style={styles.heroPanel}>
-              <View style={styles.heroIcon}>
-                <Ionicons
-                  name={activeStepMeta.icon}
-                  size={24}
-                  color={theme.white}
-                />
-              </View>
-              <View style={styles.heroText}>
-                <Text style={styles.heroEyebrow}>{activeStepMeta.eyebrow}</Text>
-                <Text style={styles.heroTitle}>{activeStepMeta.title}</Text>
+              <IconBadge icon={activeStepMeta.icon} tone="primary" size={52} />
+              <View style={styles.flex}>
+                <AppText variant="overline" color="textTertiary">
+                  {activeStepMeta.eyebrow}
+                </AppText>
+                <AppText variant="title3">{activeStepMeta.title}</AppText>
               </View>
             </View>
 
             {activeStep === 1 && (
-              <View style={styles.formSection}>
+              <View style={styles.formCard}>
                 <TwoColumn>
                   <Field
                     label="First Name"
@@ -1124,21 +1124,25 @@ export default function OnboardingScreen() {
             )}
 
             {activeStep === 2 && (
-              <View style={styles.formSection}>
+              <View style={styles.formCard}>
                 {isLoadingStates && (
                   <View style={styles.noticeBox}>
-                    <Ionicons name="sync" size={18} color={theme.primary} />
-                    <Text style={styles.noticeText}>Loading states...</Text>
+                    <Icon name="sync" size={18} color={theme.primaryStrong} />
+                    <AppText variant="footnote" color="primaryStrong">
+                      Loading states...
+                    </AppText>
                   </View>
                 )}
                 {statesError && (
                   <View style={styles.errorBox}>
-                    <Ionicons
+                    <Icon
                       name="alert-circle-outline"
                       size={18}
                       color={theme.danger}
                     />
-                    <Text style={styles.errorText}>{statesError}</Text>
+                    <AppText variant="footnote" color="danger" style={styles.flex}>
+                      {statesError}
+                    </AppText>
                   </View>
                 )}
                 <DropdownField
@@ -1221,7 +1225,7 @@ export default function OnboardingScreen() {
             )}
 
             {activeStep === 3 && (
-              <View style={styles.formSection}>
+              <View style={styles.formCard}>
                 <Field
                   label="Tax File Number"
                   value={professionalDetails.tfnNumber}
@@ -1249,18 +1253,6 @@ export default function OnboardingScreen() {
                   styles={styles}
                   theme={theme}
                 />
-                {/* <Field
-                label="ABN Number"
-                value={professionalDetails.abn_number}
-                onChangeText={(v) =>
-                  setProfessionalDetails((c) => ({
-                    ...c,
-                    abn_number: v,
-                  }))
-                }
-                styles={styles}
-                theme={theme}
-              /> */}
                 <UploadBox
                   label="CV"
                   file={professionalDetails.cv}
@@ -1329,7 +1321,7 @@ export default function OnboardingScreen() {
           </Animated.View>
         </ScrollView>
 
-        <View style={[styles.footer]}>
+        <View style={styles.footer}>
           {activeStep === 1 ? (
             <View style={styles.stepDotsRow}>
               {visibleSteps.map((step) => (
@@ -1343,59 +1335,33 @@ export default function OnboardingScreen() {
               ))}
             </View>
           ) : (
-            <Pressable
-              style={({ pressed }) => [
-                styles.secondaryButton,
-                Platform.OS === "ios" && pressed && { opacity: 0.6 },
-              ]}
-              android_ripple={{ color: theme.heroBorder }}
+            <AppButton
+              title="Back"
+              variant="outline"
+              icon="arrow-back"
               onPress={() => {
                 if (Platform.OS === "ios") {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 }
                 handleBack();
               }}
-            >
-              <MaterialCommunityIcons
-                name="arrow-left-thin"
-                size={24}
-                color={TEXT_SAFE_PRIMARY}
-              />
-              <Text style={styles.secondaryButtonText}>Back</Text>
-            </Pressable>
+              style={styles.footerButton}
+            />
           )}
-          <Pressable
-            style={({ pressed }) => [
-              styles.primaryButton,
-              (isSubmittingStep || isCheckingStatus) && { opacity: 0.7 },
-              Platform.OS === "ios" &&
-                pressed &&
-                !(isSubmittingStep || isCheckingStatus) && { opacity: 0.85 },
-            ]}
-            android_ripple={{ color: "rgba(255,255,255,0.25)" }}
+          <AppButton
+            title={activeStep === 5 ? "Submit" : "Next"}
+            icon={activeStep === 5 ? "checkmark" : "arrow-forward"}
+            iconPosition="right"
+            loading={isBusy}
+            disabled={isBusy}
             onPress={() => {
               if (Platform.OS === "ios") {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               }
               void handleNext();
             }}
-            disabled={isSubmittingStep || isCheckingStatus}
-          >
-            {isSubmittingStep || isCheckingStatus ? (
-              <ActivityIndicator size="small" color={theme.white} />
-            ) : (
-              <>
-                <Text style={styles.primaryButtonText}>
-                  {activeStep === 5 ? "Submit" : "Next"}
-                </Text>
-                <MaterialCommunityIcons
-                  name="arrow-right-thin"
-                  size={24}
-                  color={theme.white}
-                />
-              </>
-            )}
-          </Pressable>
+            style={styles.footerButton}
+          />
         </View>
 
         <DocumentPreviewModal
@@ -1431,22 +1397,26 @@ export default function OnboardingScreen() {
             colors={["#70C601", "#FFD700", "#FF6B6B", "#4ECDC4", "#45B7D1"]}
           />
           <View style={styles.successCard}>
-            <Text style={styles.successEmoji}>🎉</Text>
-            <Text style={styles.successTitle}>Welcome to iShapps!</Text>
-            <Text style={styles.successBody}>
+            <IconBadge icon="sparkles-outline" tone="primary" size={80} />
+            <AppText variant="title2" align="center">
+              Welcome to iShapps!
+            </AppText>
+            <AppText variant="callout" color="textSecondary" align="center">
               Your registration is complete. Your account is pending approval —
               you will be notified once it has been reviewed.
-            </Text>
-            <TouchableOpacity
-              style={[styles.primaryButton, { marginTop: 8 }]}
+            </AppText>
+            <AppButton
+              title="Get started"
+              icon="arrow-forward"
+              iconPosition="right"
+              fullWidth
+              style={styles.successButton}
               onPress={() => {
                 void signOut().then(() => {
                   router.replace("/(open)/login");
                 });
               }}
-            >
-              <Text style={styles.primaryButtonText}>Get started</Text>
-            </TouchableOpacity>
+            />
           </View>
           <View style={{ height: screenHeight * 0.1 }} />
         </View>
@@ -1602,8 +1572,10 @@ function Field({
   maxLength?: number;
   required?: boolean;
   styles: ReturnType<typeof getStyles>;
-  theme: typeof Colors.light;
+  theme: AppColors;
 }) {
+  const [focused, setFocused] = useState(false);
+
   return (
     <View style={styles.field}>
       <Text style={styles.fieldLabel}>
@@ -1613,24 +1585,32 @@ function Field({
       <View
         style={[
           styles.inputShell,
+          focused && styles.inputShellFocused,
           multiline && styles.textAreaShell,
           error && styles.inputShellError,
-          editable === false && { opacity: 0.6 },
+          editable === false && styles.inputShellDisabled,
         ]}
       >
         <TextInput
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder || label}
-          placeholderTextColor={theme.secondaryText}
+          placeholderTextColor={theme.textTertiary}
           keyboardType={keyboardType}
           secureTextEntry={secureTextEntry}
           multiline={multiline}
           editable={editable}
           maxLength={maxLength}
           textAlignVertical={multiline ? "top" : "center"}
-          style={[styles.input, multiline && styles.textArea]}
+          style={[
+            styles.input,
+            multiline && styles.textArea,
+            editable === false && { color: theme.textSecondary },
+          ]}
           cursorColor={theme.primary}
+          selectionColor={theme.primary}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
         />
         {rightAccessory}
       </View>
@@ -1655,7 +1635,7 @@ function AddressAutocomplete({
     postCode: string;
   }) => void;
   styles: ReturnType<typeof getStyles>;
-  theme: typeof Colors.light;
+  theme: AppColors;
 }) {
   const PLACES_KEY = process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY ?? "";
 
@@ -1716,47 +1696,50 @@ function AddressAutocomplete({
             width: "100%",
           },
           inputContainer: {
-            minHeight: 42,
-            borderWidth: 1,
-            borderColor: theme.greyBorder,
-            borderRadius: Radii.sm,
-            backgroundColor: theme.whiteBackground,
-            paddingHorizontal: 10,
+            minHeight: Touch.button,
+            borderWidth: 1.5,
+            borderColor: theme.surfaceMuted,
+            borderRadius: Radius.md,
+            backgroundColor: theme.surfaceMuted,
+            paddingHorizontal: Space.md,
           },
           input: {
-            color: theme.primaryText,
-            fontSize: 12,
+            color: theme.text,
+            fontFamily: FontFamily.regular,
+            fontSize: 16,
           },
           suggestionsContainer: {
-            backgroundColor: theme.whiteBackground,
+            backgroundColor: theme.surface,
             borderWidth: 1,
-            borderColor: theme.greyBorder,
-            borderRadius: Radii.sm,
-            marginTop: 4,
+            borderColor: theme.border,
+            borderRadius: Radius.md,
+            marginTop: Space.xxs,
             maxHeight: 250,
             overflow: "hidden",
           },
           suggestionItem: {
-            paddingHorizontal: 12,
-            paddingVertical: 10,
-            borderBottomWidth: 1,
-            borderBottomColor: theme.greyBorder,
+            paddingHorizontal: Space.md,
+            paddingVertical: Space.sm,
+            borderBottomWidth: StyleSheet.hairlineWidth,
+            borderBottomColor: theme.border,
           },
           suggestionText: {
             main: {
-              fontSize: 14,
-              color: theme.primaryText,
+              fontFamily: FontFamily.medium,
+              fontSize: 15,
+              color: theme.text,
             },
             secondary: {
-              fontSize: 12,
-              color: theme.secondaryText,
+              fontFamily: FontFamily.regular,
+              fontSize: 13,
+              color: theme.textSecondary,
             },
           },
           loadingIndicator: {
-            color: theme.secondaryText,
+            color: theme.textSecondary,
           },
           placeholder: {
-            color: theme.secondaryText,
+            color: theme.textTertiary,
           },
         }}
       />
@@ -1781,7 +1764,7 @@ function DropdownField({
   placeholder?: string;
   disabled?: boolean;
   styles: ReturnType<typeof getStyles>;
-  theme: typeof Colors.light;
+  theme: AppColors;
 }) {
   const [visible, setVisible] = useState(false);
 
@@ -1790,17 +1773,19 @@ function DropdownField({
       <Text style={styles.fieldLabel}>{label}</Text>
       <Pressable
         onPress={() => !disabled && setVisible(true)}
-        style={[styles.dropdownTrigger, disabled && { opacity: 0.5 }]}
+        accessibilityRole="button"
+        style={[styles.inputShell, styles.dropdownTrigger, disabled && { opacity: 0.5 }]}
       >
         <Text
           style={[
             styles.dropdownValue,
-            !value && { color: theme.secondaryText },
+            !value && { color: theme.textTertiary },
           ]}
+          numberOfLines={1}
         >
           {value || placeholder || `Select ${label.toLowerCase()}`}
         </Text>
-        <Ionicons name="chevron-down" size={18} color={theme.secondaryText} />
+        <Icon name="chevron-down" size={18} color={theme.textTertiary} />
       </Pressable>
       <Modal
         visible={visible}
@@ -1814,39 +1799,41 @@ function DropdownField({
         >
           <View style={styles.dropdownSheet}>
             <Text style={styles.dropdownTitle}>{label}</Text>
-            {options.map((option) => {
-              const selected = option.name === value;
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {options.map((option) => {
+                const selected = option.name === value;
 
-              return (
-                <Pressable
-                  key={option.id}
-                  onPress={() => {
-                    onChange(option.id, option.name);
-                    setVisible(false);
-                  }}
-                  style={[
-                    styles.dropdownOption,
-                    selected && styles.dropdownOptionActive,
-                  ]}
-                >
-                  <Text
+                return (
+                  <Pressable
+                    key={option.id}
+                    onPress={() => {
+                      onChange(option.id, option.name);
+                      setVisible(false);
+                    }}
                     style={[
-                      styles.dropdownOptionText,
-                      selected && styles.dropdownOptionTextActive,
+                      styles.dropdownOption,
+                      selected && styles.dropdownOptionActive,
                     ]}
                   >
-                    {option.name}
-                  </Text>
-                  {selected && (
-                    <Ionicons
-                      name="checkmark"
-                      size={18}
-                      color={theme.primary}
-                    />
-                  )}
-                </Pressable>
-              );
-            })}
+                    <Text
+                      style={[
+                        styles.dropdownOptionText,
+                        selected && styles.dropdownOptionTextActive,
+                      ]}
+                    >
+                      {option.name}
+                    </Text>
+                    {selected && (
+                      <Icon
+                        name="checkmark-circle"
+                        size={20}
+                        color={theme.primaryStrong}
+                      />
+                    )}
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
           </View>
         </Pressable>
       </Modal>
@@ -1879,11 +1866,12 @@ function OptionGrid({
             <Pressable
               key={option}
               onPress={() => onChange(option)}
+              accessibilityRole={variant === "radio" ? "radio" : "button"}
+              accessibilityState={{ selected, checked: selected }}
               style={[
                 styles.optionChip,
                 variant === "radio" && styles.radioOption,
                 selected && styles.optionChipActive,
-                variant === "radio" && selected && styles.radioOptionActive,
               ]}
             >
               {variant === "radio" && (
@@ -1938,7 +1926,7 @@ function DocumentRequirementList({
   ) => void;
   onPreview: (requirement: DocumentRequirement, file: UploadedFile) => void;
   styles: ReturnType<typeof getStyles>;
-  theme: typeof Colors.light;
+  theme: AppColors;
 }) {
   return (
     <View style={styles.formSection}>
@@ -1947,29 +1935,20 @@ function DocumentRequirementList({
 
         return (
           <View key={requirement.id} style={styles.documentCard}>
-            <View style={styles.documentHeader}>
-              <View style={styles.documentTitleRow}>
-                <View style={styles.documentIcon}>
-                  <MaterialCommunityIcons
-                    name="file-document-outline"
-                    size={20}
-                    color={theme.secondaryText}
-                  />
-                </View>
-                <View style={styles.documentTitleBlock}>
-                  <Text style={styles.documentName}>{requirement.name}</Text>
-                  <Text style={styles.documentMeta}>
-                    {requirement.requiresExpiry
-                      ? "Expiry date required"
-                      : "No expiry required"}
-                  </Text>
-                </View>
+            <View style={styles.documentTitleRow}>
+              <IconBadge
+                icon={value?.file ? "checkmark-done-outline" : "document-text-outline"}
+                tone={value?.file ? "success" : "neutral"}
+                size={40}
+              />
+              <View style={styles.flex}>
+                <Text style={styles.documentName}>{requirement.name}</Text>
+                <Text style={styles.documentMeta}>
+                  {requirement.requiresExpiry
+                    ? "Expiry date required"
+                    : "No expiry required"}
+                </Text>
               </View>
-              {/* {requirement.mandatory && (
-                <View style={styles.mandatoryBadge}>
-                  <Text style={styles.mandatoryBadgeText}>Mandatory</Text>
-                </View>
-              )} */}
             </View>
             <UploadBox
               label="File"
@@ -2026,7 +2005,7 @@ function UploadBox({
   onPreview: () => void;
   error?: string;
   styles: ReturnType<typeof getStyles>;
-  theme: typeof Colors.light;
+  theme: AppColors;
 }) {
   return (
     <View style={styles.field}>
@@ -2036,20 +2015,19 @@ function UploadBox({
       </Text>
       <Pressable
         onPress={file ? onPreview : onPick}
+        accessibilityRole="button"
         style={[
           styles.uploadBox,
           file && styles.uploadBoxFilled,
           error && styles.uploadBoxError,
         ]}
       >
-        <View style={styles.uploadIcon}>
-          <Ionicons
-            name={file ? "document-attach-outline" : "cloud-upload-outline"}
-            size={24}
-            color={theme.primary}
-          />
-        </View>
-        <View style={styles.uploadTextBlock}>
+        <IconBadge
+          icon={file ? "document-attach-outline" : "cloud-upload-outline"}
+          tone="primary"
+          size={44}
+        />
+        <View style={styles.flex}>
           <Text style={styles.uploadTitle} numberOfLines={1}>
             {file?.name ?? "Upload document"}
           </Text>
@@ -2057,16 +2035,19 @@ function UploadBox({
             {file ? "Tap to preview or replace" : "PDF, image, or document"}
           </Text>
         </View>
-        <TouchableOpacity
+        <Pressable
           onPress={file ? onPick : onPick}
+          accessibilityRole="button"
+          accessibilityLabel={file ? "Replace file" : "Choose file"}
+          hitSlop={6}
           style={styles.uploadAction}
         >
-          <Ionicons
+          <Icon
             name={file ? "refresh" : "add"}
-            size={18}
-            color={theme.white}
+            size={20}
+            color={theme.textOnPrimary}
           />
-        </TouchableOpacity>
+        </Pressable>
       </Pressable>
       {error && <Text style={styles.fieldError}>{error}</Text>}
     </View>
@@ -2080,112 +2061,48 @@ const fieldStyles = StyleSheet.create({
   },
 });
 
-const getStyles = (theme: typeof Colors.light) =>
+const getStyles = (theme: AppColors, isDark: boolean) =>
   StyleSheet.create({
     safeArea: {
       flex: 1,
-
-      backgroundColor: theme.whiteBackground,
-    },
-    successOverlay: {
-      flex: 1,
-      backgroundColor: "rgba(0,0,0,0.6)",
-      alignItems: "center",
-      justifyContent: "center",
-      padding: 24,
-    },
-    successCard: {
-      backgroundColor: theme.whiteBackground,
-      borderRadius: Radii.lg,
-      padding: 32,
-      alignItems: "center",
-      width: "100%",
-      gap: 12,
-    },
-    successEmoji: {
-      fontSize: 56,
-    },
-    successTitle: {
-      fontSize: 24,
-      fontWeight: "700",
-      color: theme.primaryText,
-      textAlign: "center",
-    },
-    successBody: {
-      fontSize: 14,
-      color: theme.secondaryText,
-      textAlign: "center",
-      lineHeight: 22,
-    },
-    statusCheckLoader: {
-      flex: 1,
-      alignItems: "center",
-      justifyContent: "center",
-      gap: 16,
-    },
-    statusCheckLoaderText: {
-      color: theme.secondaryText,
-      fontSize: 14,
+      backgroundColor: theme.background,
     },
     keyboardAvoidingView: {
       flex: 1,
     },
-    header: {
-      paddingHorizontal: 10,
-      paddingTop: 10,
-      paddingBottom: 12,
-      backgroundColor: theme.whiteBackground,
+    flex: {
+      flex: 1,
+    },
 
-      borderBottomWidth: 2,
-      borderBottomColor: ACCENT_BORDER,
+    // Header
+    header: {
+      paddingHorizontal: Space.gutter,
+      paddingTop: Space.sm,
+      paddingBottom: Space.md,
+      gap: Space.md,
+      backgroundColor: theme.background,
       zIndex: 1,
     },
     headerTopRow: {
       flexDirection: "row",
-      justifyContent: "space-between",
       alignItems: "flex-start",
-      gap: 12,
-    },
-    kicker: {
-      color: TEXT_SAFE_PRIMARY,
-      fontSize: 10,
-      fontWeight: "800",
-      textTransform: "uppercase",
-    },
-    title: {
-      color: theme.primaryText,
-      fontSize: 20,
-      fontWeight: "700",
-      marginTop: 4,
+      gap: Space.sm,
     },
     progressPill: {
-      minWidth: 54,
-      height: 36,
-      paddingHorizontal: 12,
-      borderRadius: Radii.full,
-      backgroundColor: theme.heroBg,
-      alignItems: "center",
-      justifyContent: "center",
-      borderWidth: 1,
-      borderColor: theme.heroBorder,
-    },
-    progressPillText: {
-      color: TEXT_SAFE_PRIMARY,
-      fontWeight: "800",
-      fontSize: 10,
-      textTransform: "uppercase",
+      paddingHorizontal: Space.sm,
+      paddingVertical: 6,
+      borderRadius: Radius.full,
+      backgroundColor: theme.primarySoft,
     },
     stepTrackerRow: {
       flexDirection: "row",
       gap: 6,
-      marginTop: 10,
     },
     stepSegment: {
       flex: 1,
-      height: 5,
-      borderRadius: Radii.xs,
-
-      backgroundColor: SURFACE_TINT_DEEP,
+      height: 6,
+      borderRadius: Radius.full,
+      backgroundColor: theme.surfaceSunken,
     },
     stepSegmentDone: {
       backgroundColor: theme.primary,
@@ -2194,509 +2111,322 @@ const getStyles = (theme: typeof Colors.light) =>
       backgroundColor: theme.primary,
       opacity: 0.55,
     },
-    stepper: {
-      gap: 10,
-      paddingTop: 14,
-    },
-    stepPill: {
-      flexDirection: "row",
-      alignItems: "center",
-      width: 190,
-      padding: 10,
-      borderRadius: Radii.full,
-      backgroundColor: theme.whiteBackground,
-      borderWidth: 1,
-      borderColor: theme.greyBorder,
-      gap: 10,
-    },
-    stepPillActive: {
-      borderColor: theme.primary,
-      backgroundColor: theme.heroBg,
-    },
-    stepPillComplete: {
-      borderColor: theme.heroBorder,
-    },
-    stepIcon: {
-      width: 34,
-      height: 34,
-      borderRadius: Radii.sm,
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: theme.heroBg,
-    },
-    stepIconActive: {
-      backgroundColor: theme.primary,
-    },
-    stepIconComplete: {
-      backgroundColor: theme.primary,
-    },
-    stepTextBlock: {
-      flex: 1,
-      minWidth: 0,
-    },
-    stepEyebrow: {
-      color: theme.secondaryText,
-      fontSize: 11,
-      fontWeight: "700",
-    },
-    stepEyebrowActive: {
-      color: theme.primary,
-    },
-    stepTitle: {
-      color: theme.primaryText,
-      fontSize: 13,
-      fontWeight: "800",
-      marginTop: 2,
-    },
-    stepTitleActive: {
-      color: theme.primaryText,
-    },
+
+    // Content
     content: {
-      padding: 10,
-      gap: 14,
+      paddingHorizontal: Space.gutter,
+      paddingTop: Space.xs,
+      gap: Space.md,
       flexGrow: 1,
-      backgroundColor: SURFACE_TINT,
     },
     stepAnimatedContent: {
-      gap: 14,
+      gap: Space.md,
     },
     heroPanel: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 10,
-      padding: 8,
-      borderRadius: Radii.md,
-      backgroundColor: theme.heroBg,
+      gap: Space.sm,
+      paddingVertical: Space.xs,
+    },
+    formCard: {
+      gap: Space.md,
+      padding: Space.lg,
+      borderRadius: Radius.xl,
       borderWidth: 1,
-      borderColor: theme.heroBorder,
+      borderColor: theme.border,
+      backgroundColor: theme.surface,
+      ...elevation(theme, isDark, 1),
     },
-    heroIcon: {
-      width: 48,
-      height: 48,
-      borderRadius: Radii.sm,
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: theme.primary,
-    },
-    heroText: {
-      flex: 1,
-    },
-    heroEyebrow: {
-      color: TEXT_SAFE_PRIMARY,
-      fontWeight: "800",
-      fontSize: 9,
-      textTransform: "uppercase",
-    },
-    heroTitle: {
-      color: theme.primaryText,
-      fontSize: 18,
-      fontWeight: "700",
-      marginTop: 2,
-    },
-    stepDotsRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
-      gap: 4,
-      paddingVertical: 2,
-    },
-    stepDot: {
-      width: 16,
-      height: 4,
-      borderRadius: Radii.full,
-      backgroundColor: theme.heroBorder,
-    },
-    stepDotActive: {
-      backgroundColor: theme.primary,
+    formSection: {
+      gap: Space.md,
     },
     noticeBox: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 8,
-      padding: 12,
-      borderRadius: Radii.sm,
-      backgroundColor: theme.heroBg,
-      borderWidth: 1,
-      borderColor: theme.heroBorder,
-    },
-    noticeText: {
-      flex: 1,
-      color: theme.primaryText,
-      fontSize: 13,
-      fontWeight: "700",
+      gap: Space.xs,
+      padding: Space.sm,
+      borderRadius: Radius.sm,
+      backgroundColor: theme.primarySoft,
     },
     errorBox: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 8,
-      padding: 12,
-      borderRadius: Radii.sm,
-      backgroundColor: theme.errorBg,
-      borderWidth: 1,
-      borderColor: theme.danger,
+      gap: Space.xs,
+      padding: Space.sm,
+      borderRadius: Radius.sm,
+      backgroundColor: theme.dangerSoft,
     },
-    errorText: {
-      flex: 1,
-      color: theme.errorTitle,
-      fontSize: 13,
-      fontWeight: "700",
-    },
-    formSection: {
-      gap: 14,
-    },
+
+    // Fields
     field: {
       flex: 1,
-      gap: 7,
+      gap: Space.xs,
     },
     fieldLabel: {
-      color: theme.primaryText,
-      fontSize: 13,
-      fontWeight: "700",
+      ...Type.subhead,
+      color: theme.text,
+    },
+    requiredAsterisk: {
+      color: theme.danger,
     },
     inputShell: {
-      minHeight: 42,
-      borderWidth: 1,
-      borderColor: ACCENT_BORDER,
-      borderRadius: Radii.sm,
-      backgroundColor: theme.whiteBackground,
-      paddingHorizontal: 10,
+      minHeight: Touch.button,
       flexDirection: "row",
       alignItems: "center",
-      gap: 10,
+      gap: Space.xs,
+      borderWidth: 1.5,
+      borderColor: theme.surfaceMuted,
+      borderRadius: Radius.md,
+      backgroundColor: theme.surfaceMuted,
+      paddingHorizontal: Space.md,
+    },
+    inputShellFocused: {
+      borderColor: theme.primary,
+      backgroundColor: theme.surface,
     },
     inputShellError: {
       borderColor: theme.danger,
     },
-    fieldError: {
-      color: TEXT_SAFE_DANGER,
-      fontSize: 12,
-      fontWeight: "700",
-    },
-    requiredAsterisk: {
-      color: TEXT_SAFE_DANGER,
-      fontWeight: "700",
+    inputShellDisabled: {
+      opacity: 0.7,
     },
     textAreaShell: {
-      minHeight: 116,
-      paddingVertical: 12,
+      minHeight: 112,
       alignItems: "flex-start",
+      paddingVertical: Space.sm,
     },
     input: {
       flex: 1,
-      color: theme.primaryText,
-      fontSize: 15,
-      minWidth: 0,
+      alignSelf: "stretch",
+      fontFamily: FontFamily.regular,
+      fontSize: 16,
+      color: theme.text,
+      paddingVertical: 0,
     },
     textArea: {
-      minHeight: 90,
+      minHeight: 88,
     },
+    fieldError: {
+      ...Type.footnote,
+      color: theme.danger,
+    },
+
+    // Dropdown
     dropdownTrigger: {
-      minHeight: 42,
-      borderWidth: 1,
-      borderColor: ACCENT_BORDER,
-      borderRadius: Radii.sm,
-      backgroundColor: theme.whiteBackground,
-      paddingHorizontal: 10,
-      flexDirection: "row",
-      alignItems: "center",
       justifyContent: "space-between",
-      gap: 10,
     },
     dropdownValue: {
       flex: 1,
-      color: theme.primaryText,
-      fontSize: 14,
-      fontWeight: "600",
+      fontFamily: FontFamily.regular,
+      fontSize: 16,
+      color: theme.text,
     },
     dropdownBackdrop: {
       flex: 1,
-      backgroundColor: "rgba(0,0,0,0.35)",
-      justifyContent: "flex-end",
+      backgroundColor: theme.overlay,
+      justifyContent: "center",
+      padding: Space.gutter,
     },
     dropdownSheet: {
-      backgroundColor: theme.whiteBackground,
-      borderTopLeftRadius: Radii.lg,
-      borderTopRightRadius: Radii.lg,
-      paddingHorizontal: 12,
-      paddingTop: 18,
-      paddingBottom: 24,
-      gap: 4,
+      maxHeight: "70%",
+      backgroundColor: theme.surface,
+      borderRadius: Radius.xxl,
+      padding: Space.md,
+      gap: Space.xs,
     },
     dropdownTitle: {
-      color: theme.primaryText,
-      fontSize: 18,
-      fontWeight: "800",
-      marginBottom: 8,
+      ...Type.title3,
+      color: theme.text,
+      paddingHorizontal: Space.xs,
+      paddingVertical: Space.xs,
     },
     dropdownOption: {
-      minHeight: 35,
-      borderRadius: Radii.sm,
-      paddingHorizontal: 8,
+      minHeight: Touch.min + 4,
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
-      gap: 12,
+      paddingHorizontal: Space.sm,
+      borderRadius: Radius.md,
     },
     dropdownOptionActive: {
-      backgroundColor: theme.heroBg,
+      backgroundColor: theme.primarySoft,
     },
     dropdownOptionText: {
-      flex: 1,
-      color: theme.primaryText,
-      fontSize: 14,
-      fontWeight: "600",
+      ...Type.body,
+      color: theme.text,
     },
     dropdownOptionTextActive: {
-      color: TEXT_SAFE_PRIMARY,
-      fontWeight: "600",
+      fontFamily: FontFamily.semibold,
+      color: theme.primaryStrong,
     },
+
+    // Options (gender)
     optionGrid: {
       flexDirection: "row",
       flexWrap: "wrap",
-      gap: 8,
+      gap: Space.xs,
     },
     optionChip: {
-      minHeight: 42,
-      paddingHorizontal: 14,
-      borderRadius: Radii.sm,
-      borderWidth: 1,
-      borderColor: ACCENT_BORDER,
-      backgroundColor: theme.whiteBackground,
-      alignItems: "center",
-      justifyContent: "center",
+      minHeight: Touch.min,
       flexDirection: "row",
-      gap: 8,
+      alignItems: "center",
+      gap: Space.xs,
+      paddingHorizontal: Space.md,
+      borderRadius: Radius.full,
+      borderWidth: 1.5,
+      borderColor: theme.surfaceMuted,
+      backgroundColor: theme.surfaceMuted,
     },
     radioOption: {
-      justifyContent: "flex-start",
-      borderWidth: 0,
-      backgroundColor: "transparent",
-      paddingHorizontal: 0,
+      paddingLeft: Space.sm,
     },
-    radioOptionActive: {
-      backgroundColor: "transparent",
+    optionChipActive: {
+      borderColor: theme.primary,
+      backgroundColor: theme.primarySoft,
+    },
+    optionChipText: {
+      ...Type.subhead,
+      color: theme.textSecondary,
+    },
+    optionChipTextActive: {
+      color: theme.primaryStrong,
     },
     radioOuter: {
-      width: 18,
-      height: 18,
-      borderRadius: Radii.full,
+      width: 20,
+      height: 20,
+      borderRadius: Radius.full,
       borderWidth: 2,
-      borderColor: theme.grayBorder,
+      borderColor: theme.borderStrong,
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: theme.whiteBackground,
     },
     radioOuterActive: {
       borderColor: theme.primary,
     },
     radioInner: {
-      width: 8,
-      height: 8,
-      borderRadius: Radii.full,
+      width: 10,
+      height: 10,
+      borderRadius: Radius.full,
       backgroundColor: theme.primary,
     },
-    optionChipActive: {
-      borderColor: theme.primary,
-      backgroundColor: theme.heroBg,
-    },
-    optionChipText: {
-      color: theme.secondaryText,
-      fontWeight: "700",
-      fontSize: 13,
-    },
-    optionChipTextActive: {
-      color: TEXT_SAFE_PRIMARY,
-    },
-    uploadBox: {
-      minHeight: 76,
-      borderRadius: Radii.sm,
+
+    // Documents
+    documentCard: {
+      gap: Space.md,
+      padding: Space.lg,
+      borderRadius: Radius.xl,
       borderWidth: 1,
-      borderStyle: "dashed",
-      borderColor: theme.heroBorder,
-      backgroundColor: UPLOAD_BOX_BG,
+      borderColor: theme.border,
+      backgroundColor: theme.surface,
+      ...elevation(theme, isDark, 1),
+    },
+    documentTitleRow: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 12,
-      padding: 12,
+      gap: Space.sm,
+    },
+    documentName: {
+      ...Type.headline,
+      color: theme.text,
+    },
+    documentMeta: {
+      ...Type.footnote,
+      color: theme.textSecondary,
+    },
+    uploadBox: {
+      minHeight: 72,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: Space.sm,
+      padding: Space.sm,
+      borderRadius: Radius.lg,
+      borderWidth: 1.5,
+      borderStyle: "dashed",
+      borderColor: theme.borderStrong,
+      backgroundColor: theme.surfaceMuted,
     },
     uploadBoxFilled: {
       borderStyle: "solid",
       borderColor: theme.primary,
-      backgroundColor: UPLOAD_BOX_BG,
+      backgroundColor: theme.primarySoft,
     },
     uploadBoxError: {
       borderColor: theme.danger,
     },
-    uploadIcon: {
-      width: 44,
-      height: 44,
-      borderRadius: Radii.sm,
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: theme.heroBg,
-    },
-    uploadTextBlock: {
-      flex: 1,
-      minWidth: 0,
-    },
     uploadTitle: {
-      color: "#666666",
-      fontWeight: "800",
-      fontSize: 14,
+      ...Type.subhead,
+      color: theme.text,
     },
     uploadSubtitle: {
-      color: "#666666",
-      fontSize: 12,
-      marginTop: 3,
+      ...Type.caption,
+      color: theme.textSecondary,
     },
     uploadAction: {
-      width: 34,
-      height: 34,
-      borderRadius: Radii.sm,
+      width: 38,
+      height: 38,
+      borderRadius: Radius.full,
       alignItems: "center",
       justifyContent: "center",
       backgroundColor: theme.primary,
     },
-    documentCard: {
-      gap: 14,
-      borderRadius: Radii.md,
-      borderWidth: 1,
-      borderColor: ACCENT_BORDER,
-      backgroundColor: theme.whiteBackground,
-      padding: 10,
-      ...Platform.select({
-        ios: {
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.06,
-          shadowRadius: 6,
-        },
-        android: {
-          elevation: 2,
-        },
-      }),
-    },
-    documentHeader: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "flex-start",
-      gap: 12,
-    },
-    documentTitleRow: {
-      flex: 1,
-      minWidth: 0,
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 10,
-    },
-    documentIcon: {
-      width: 40,
-      height: 40,
-      borderRadius: Radii.sm,
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: theme.greyBorder,
-    },
-    documentTitleBlock: {
-      flex: 1,
-      minWidth: 0,
-    },
-    documentName: {
-      color: theme.primaryText,
-      fontSize: 15,
-      fontWeight: "800",
-    },
-    documentMeta: {
-      color: theme.secondaryText,
-      fontSize: 12,
-      marginTop: 3,
-    },
-    mandatoryBadge: {
-      minHeight: 20,
-      paddingHorizontal: 8,
-      borderRadius: Radii.full,
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: theme.heroIconBg,
-    },
-    mandatoryBadgeText: {
-      color: theme.primary,
-      fontSize: 11,
-      fontWeight: "600",
-    },
+
+    // Footer
     footer: {
       position: "absolute",
       left: 0,
       right: 0,
       bottom: 0,
       flexDirection: "row",
+      alignItems: "center",
       justifyContent: "space-between",
-      gap: 12,
-      paddingHorizontal: 10,
-      paddingTop: 14,
-      backgroundColor: theme.whiteBackground,
-      borderTopWidth: 1,
-      borderTopColor: ACCENT_BORDER,
+      gap: Space.sm,
+      paddingHorizontal: Space.gutter,
+      paddingTop: Space.sm,
+      paddingBottom: Space.sm,
+      backgroundColor: theme.surface,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: theme.border,
     },
-    primaryButton: {
-      borderRadius: Radii.md,
-      height: Platform.OS === "ios" ? 44 : 48,
-      minWidth: Platform.OS === "ios" ? undefined : 64,
-      paddingHorizontal: 24,
-      alignItems: "center",
-      justifyContent: "center",
-      flexDirection: "row",
-      gap: 8,
-      backgroundColor: theme.primary,
-      overflow: "hidden",
-      ...(Platform.OS === "android" ? { elevation: 2 } : null),
-    },
-    primaryButtonText: {
-      color: theme.white,
-      fontSize: 15,
-      fontWeight: Platform.OS === "ios" ? "600" : "700",
-    },
-    secondaryButton: {
-      borderRadius: Radii.md,
-      height: Platform.OS === "ios" ? 44 : 48,
-      minWidth: Platform.OS === "ios" ? undefined : 64,
-      paddingHorizontal: 24,
-      alignItems: "center",
-      justifyContent: "center",
-      flexDirection: "row",
-      gap: 6,
-      backgroundColor: theme.heroBg,
-      borderWidth: 1,
-      borderColor: theme.heroBorder,
-      overflow: "hidden",
-    },
-    secondaryButtonText: {
-      color: TEXT_SAFE_PRIMARY,
-      fontSize: 15,
-      fontWeight: Platform.OS === "ios" ? "600" : "700",
-    },
-    hidden: {
-      opacity: 0,
-    },
-    suggestionList: {
-      borderWidth: 1,
-      borderColor: theme.greyBorder,
-      borderRadius: Radii.sm,
-      marginTop: 4,
-      backgroundColor: theme.whiteBackground,
-      overflow: "hidden",
-    },
-    suggestionItem: {
-      flexDirection: "row" as const,
-      alignItems: "center" as const,
-      paddingHorizontal: 12,
-      paddingVertical: 10,
-      borderBottomWidth: 1,
-      borderBottomColor: theme.greyBorder,
-    },
-    suggestionText: {
+    footerButton: {
       flex: 1,
-      fontSize: 14,
-      color: theme.primaryText,
+    },
+    stepDotsRow: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+    },
+    stepDot: {
+      width: 8,
+      height: 8,
+      borderRadius: Radius.full,
+      backgroundColor: theme.surfaceSunken,
+    },
+    stepDotActive: {
+      width: 24,
+      backgroundColor: theme.primary,
+    },
+
+    // Success
+    successOverlay: {
+      flex: 1,
+      backgroundColor: theme.overlay,
+      alignItems: "center",
+      justifyContent: "center",
+      padding: Space.xl,
+    },
+    successCard: {
+      width: "100%",
+      maxWidth: 420,
+      backgroundColor: theme.surface,
+      borderRadius: Radius.xxl,
+      padding: Space.xl,
+      paddingTop: Space.xxl,
+      alignItems: "center",
+      gap: Space.sm,
+    },
+    successButton: {
+      marginTop: Space.sm,
     },
   });
+

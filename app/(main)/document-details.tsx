@@ -1,20 +1,29 @@
+import {
+  AppButton,
+  AppText,
+  Card,
+  Chip,
+  EmptyState,
+  IconBadge,
+  InfoRow,
+  ScreenHeader,
+  TextField,
+} from "@/components/design";
+import { documentIcon } from "@/components/document-card";
+import { Radius, Space, type Tone } from "@/constants/design";
+import { useAppTheme } from "@/hooks/use-app-theme";
 import { FileTooLargeError } from "@/utils/compress-file";
 import { formatMediumDate, isExpired } from "@/utils/date-time";
 import { pickDocument } from "@/utils/file-pickers";
 import { error } from "@/utils/logger";
-import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   Modal,
-  Pressable,
   ScrollView,
   StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -26,14 +35,11 @@ import {
   getProfessionDocuments,
   startBackgroundDocumentUpload,
 } from "../../api-queries/documents";
-import Header from "../../components/Header";
 import {
   DocumentPreviewModal,
   PreviewFile,
 } from "../../components/document-preview-modal";
-import { Colors, Radii } from "../../constants/theme";
 import { IDocument } from "../../data-types/documents";
-import { useColorScheme } from "../../hooks/use-color-scheme";
 
 function extensionToMimeType(ext?: string): string | undefined {
   switch ((ext ?? "").toLowerCase()) {
@@ -102,10 +108,7 @@ const DocumentDetails = () => {
   const cancelUploadRef = useRef<(() => Promise<void>) | null>(null);
   const isPickingDocumentRef = useRef(false);
 
-  let colorScheme = useColorScheme();
-  if (!colorScheme) colorScheme = "light";
-  const theme = Colors[colorScheme];
-  const styles = getStyles(theme);
+  const { colors } = useAppTheme();
 
   const router = useRouter();
   useEffect(() => {
@@ -307,291 +310,160 @@ const DocumentDetails = () => {
     await cancelUploadRef.current?.();
   };
 
+  const goBack = () => router.canGoBack() && router.back();
+
   if (loading) {
     return (
-      <SafeAreaView
-        edges={["top"]}
-        style={{ flex: 1, backgroundColor: theme.background }}
-      >
-        <View
-          style={[
-            styles.errorScreen,
-            { backgroundColor: theme.whiteBackground },
-          ]}
-        >
-          <View
-            style={[
-              styles.errorCard,
-              { backgroundColor: theme.whiteBackground },
-            ]}
-          >
-            <View
-              style={[
-                styles.errorIconWrap,
-                { backgroundColor: theme.mutedText },
-              ]}
-            >
-              <Ionicons
-                name="document-text-outline"
-                size={34}
-                color={theme.primary}
-              />
-            </View>
-            <Text style={[styles.errorTitle, { color: theme.primaryText }]}>
-              Loading document...
-            </Text>
-          </View>
+      <SafeAreaView edges={["top"]} style={[styles.safeArea, { backgroundColor: colors.background }]}>
+        <ScreenHeader title="Document" onBack={goBack} />
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <AppText variant="callout" color="textSecondary">
+            Loading document…
+          </AppText>
         </View>
       </SafeAreaView>
     );
   }
   if (!document) {
     return (
-      <SafeAreaView
-        edges={["top"]}
-        style={{ flex: 1, backgroundColor: theme.background }}
-      >
-        <Header
-          title="Document Details"
-          onBack={() => router.canGoBack() && router.back()}
-        />
-        <View
-          style={[
-            styles.errorScreen,
-            { backgroundColor: theme.whiteBackground },
-          ]}
-        >
-          <View
-            style={[
-              styles.errorCard,
-              { backgroundColor: theme.whiteBackground },
-            ]}
-          >
-            <View
-              style={[
-                styles.errorIconWrap,
-                { backgroundColor: theme.mutedText },
-              ]}
-            >
-              <Ionicons
-                name="alert-circle-outline"
-                size={34}
-                color={theme.danger}
-              />
-            </View>
-            <Text style={[styles.errorTitle, { color: theme.primaryText }]}>
-              Document not found.
-            </Text>
-            <Pressable
-              style={[
-                styles.errorSecondaryBtn,
-                {
-                  backgroundColor: theme.whiteBackground,
-                },
-              ]}
-              onPress={() => router.canGoBack() && router.back()}
-            >
-              <Ionicons
-                name="return-up-back"
-                size={18}
-                color={theme.errorSubtitle}
-              />
-              <Text
-                style={[
-                  styles.errorSecondaryText,
-                  { color: theme.errorSubtitle },
-                ]}
-              >
-                Go back
-              </Text>
-            </Pressable>
-          </View>
+      <SafeAreaView edges={["top"]} style={[styles.safeArea, { backgroundColor: colors.background }]}>
+        <ScreenHeader title="Document details" onBack={goBack} />
+        <View style={styles.centered}>
+          <EmptyState
+            icon="alert-circle-outline"
+            tone="danger"
+            title="Document not found."
+            message="It may have been removed or replaced."
+            actionLabel="Go back"
+            onAction={goBack}
+          />
         </View>
       </SafeAreaView>
     );
   }
 
   const expired = isExpired(document.expiry_date);
+  const isActive = document.document.status === "active";
+  const statusLabel = expired ? "Expired" : isActive ? "Active" : "Inactive";
+  const statusTone: Tone = expired || !isActive ? "danger" : "success";
+  const approval = document.document_approval ?? "";
+  const approvalLabel = approval
+    ? approval.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+    : "—";
+  const approvalTone: Tone =
+    approval === "approved" || approval === "reapproved"
+      ? "success"
+      : approval.startsWith("pending")
+        ? "warning"
+        : "danger";
+  const capitalize = (value?: string | null) =>
+    value ? value.charAt(0).toUpperCase() + value.slice(1) : "—";
+
   return (
-    <SafeAreaView
-      edges={["top"]}
-      style={{ flex: 1, backgroundColor: theme.background }}
-    >
-      <Header
-        title={document.document.name}
-        onBack={() => router.canGoBack() && router.back()}
-      />
-      <ScrollView
-        contentContainerStyle={[
-          styles.content,
-          { backgroundColor: theme.whiteBackground },
-        ]}
-        showsVerticalScrollIndicator={false}
-      >
-        <View
+    <SafeAreaView edges={["top"]} style={[styles.safeArea, { backgroundColor: colors.background }]}>
+      <ScreenHeader title={document.document.name} onBack={goBack} />
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Summary */}
+        <Card
+          radius={Radius.xl}
+          padding={Space.lg}
+          raised
           style={[
-            styles.sectionCard,
-            { marginTop: 16 },
-            expired && {
-              borderColor: theme.danger,
-              backgroundColor: theme.danger + "10",
-            },
+            styles.summary,
+            expired && { borderColor: colors.danger, backgroundColor: colors.dangerSoft },
           ]}
         >
-          <View style={styles.statusRow}>
-            <View
-              style={[
-                styles.statusChip,
-                expired
-                  ? {
-                      backgroundColor: theme.danger + "22",
-                      borderColor: theme.danger,
-                    }
-                  : document.document.status === "active"
-                  ? {
-                      backgroundColor: theme.primary + "22",
-                      borderColor: theme.primary,
-                    }
-                  : {
-                      backgroundColor: theme.danger + "22",
-                      borderColor: theme.danger,
-                    },
-              ]}
-            >
-              <Text
-                style={[
-                  styles.statusChipText,
-                  {
-                    color: expired
-                      ? theme.danger
-                      : document.document.status === "active"
-                      ? theme.primary
-                      : theme.danger,
-                  },
-                ]}
-              >
-                {expired
-                  ? "Expired"
-                  : document.document.status === "active"
-                  ? "Active"
-                  : "Inactive"}
-              </Text>
-            </View>
+          <IconBadge
+            icon={documentIcon(document.document.name)}
+            tone={expired ? "danger" : approvalTone === "warning" ? "warning" : "primary"}
+            size={56}
+          />
+          <AppText variant="title3" color={expired ? "danger" : "text"}>
+            {document.document.name}
+          </AppText>
+          <AppText variant="footnote" color="textSecondary" numberOfLines={1}>
+            {document.document_name}
+          </AppText>
+          <View style={styles.chipRow}>
+            <Chip label={statusLabel} tone={statusTone} />
+            <Chip label={approvalLabel} tone={approvalTone} />
           </View>
-          <Text style={styles.sectionTitle}>Document Info</Text>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Name</Text>
-            <Text style={styles.detailValue}>{document.document.name}</Text>
-          </View>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>File</Text>
-            <Text style={styles.detailValue}>{document.document_name}</Text>
-          </View>
-          {document.document.expiry_date_mandatory === "yes" && (
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Expiry Date</Text>
-              <Text
-                style={[styles.detailValue, expired && { color: theme.danger }]}
-              >
-                {formatMediumDate(document.expiry_date)}
-              </Text>
-            </View>
-          )}
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Approval Status</Text>
-            <Text
-              style={[
-                styles.detailValue,
-                {
-                  color:
-                    document.document_approval === "approved"
-                      ? theme.primary
-                      : theme.danger,
-                },
-              ]}
-            >
-              {document.document_approval}{" "}
-            </Text>
-          </View>
-        </View>
-        <View
-          style={[
-            styles.sectionCard,
-            expired && {
-              borderColor: theme.danger,
-              backgroundColor: theme.danger + "10",
-            },
-          ]}
-        >
-          <Text style={styles.sectionTitle}>Meta</Text>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Type</Text>
-            <Text style={styles.detailValue}>{document.document.doc_type}</Text>
-          </View>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Mandatory</Text>
-            <Text style={styles.detailValue}>
-              {document.document.mandatory_status}
-            </Text>
-          </View>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Status</Text>
-            <Text
-              style={[styles.detailValue, expired && { color: theme.danger }]}
-            >
-              {expired ? "expired" : document.document.status}
-            </Text>
-          </View>
-        </View>
+        </Card>
 
         {isUploading && (
-          <View style={styles.uploadBanner}>
-            <View style={styles.uploadBannerHeader}>
-              <Text style={styles.uploadBannerText}>
+          <Card radius={Radius.lg} padding={Space.md} style={styles.uploadCard}>
+            <View style={styles.uploadHeader}>
+              <AppText variant="subhead" style={styles.flex}>
                 Uploading new file
                 {uploadProgress != null ? ` — ${uploadProgress}%` : "…"}
-              </Text>
-              <TouchableOpacity onPress={handleCancelUpload}>
-                <Text style={styles.uploadBannerCancel}>Cancel</Text>
-              </TouchableOpacity>
+              </AppText>
+              <AppButton
+                title="Cancel"
+                variant="danger"
+                size="compact"
+                onPress={handleCancelUpload}
+              />
             </View>
-            <View style={styles.uploadProgressTrack}>
+            <View style={[styles.progressTrack, { backgroundColor: colors.surfaceMuted }]}>
               <View
                 style={[
-                  styles.uploadProgressFill,
-                  { width: `${uploadProgress ?? 8}%` },
+                  styles.progressFill,
+                  { width: `${uploadProgress ?? 8}%`, backgroundColor: colors.primary },
                 ]}
               />
             </View>
-          </View>
+          </Card>
         )}
 
+        {/* Actions */}
         <View style={styles.actions}>
-          <TouchableOpacity
-            style={[styles.button, styles.previewActionButton]}
+          <AppButton
+            title="Preview"
+            variant="outline"
+            icon="eye-outline"
             onPress={handlePreview}
+            loading={isPreviewLoading}
             disabled={isPreviewLoading || isUploading}
-          >
-            {isPreviewLoading ? (
-              <ActivityIndicator size="small" color={theme.primary} />
-            ) : (
-              <Ionicons name="eye-outline" size={18} color={theme.primary} />
-            )}
-            <Text style={styles.previewActionButtonText}>Preview</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.button}
+            style={styles.flex}
+          />
+          <AppButton
+            title="Re-upload"
+            icon="cloud-upload-outline"
             onPress={handleReplace}
             disabled={isUploading}
-          >
-            <Ionicons
-              name="cloud-upload-outline"
-              size={18}
-              color={theme.whiteText}
-            />
-            <Text style={styles.buttonText}>Re Upload</Text>
-          </TouchableOpacity>
+            style={styles.flex}
+          />
         </View>
+
+        {/* Details */}
+        <AppText variant="overline" color="textTertiary" style={styles.sectionLabel}>
+          Document info
+        </AppText>
+        <Card radius={Radius.xl} padding={Space.md} style={styles.infoCard}>
+          <InfoRow label="Name" value={document.document.name} />
+          <InfoRow label="File" value={document.document_name} />
+          {document.document.expiry_date_mandatory === "yes" && (
+            <InfoRow
+              label="Expiry date"
+              value={formatMediumDate(document.expiry_date)}
+              valueColor={expired ? "danger" : "text"}
+            />
+          )}
+          <InfoRow
+            label="Approval status"
+            value={approvalLabel}
+            valueColor={approval === "approved" ? "primaryStrong" : "danger"}
+          />
+          <InfoRow label="Type" value={capitalize(document.document.doc_type)} />
+          <InfoRow label="Mandatory" value={capitalize(document.document.mandatory_status)} />
+          <InfoRow
+            label="Status"
+            value={expired ? "Expired" : capitalize(document.document.status)}
+            valueColor={expired ? "danger" : "text"}
+            isLast
+          />
+        </Card>
       </ScrollView>
 
       <DocumentPreviewModal
@@ -619,54 +491,40 @@ const DocumentDetails = () => {
         animationType="fade"
         onRequestClose={() => setPendingFile(null)}
       >
-        <View style={styles.expiryBackdrop}>
-          <View
-            style={[
-              styles.expiryCard,
-              { backgroundColor: theme.whiteBackground },
-            ]}
-          >
-            <Text style={[styles.sectionTitle, { marginBottom: 4 }]}>
+        <View style={[styles.backdrop, { backgroundColor: colors.overlay }]}>
+          <View style={[styles.dialog, { backgroundColor: colors.surface }]}>
+            <IconBadge icon="calendar-outline" tone="primary" size={56} />
+            <AppText variant="title3" align="center">
               Expiry date required
-            </Text>
-            <Text style={[styles.detailLabel, { marginBottom: 12 }]}>
+            </AppText>
+            <AppText variant="callout" color="textSecondary" align="center">
               This document needs an expiry date to be submitted.
-            </Text>
-            <TextInput
+            </AppText>
+            <TextField
               value={expiryDraft}
               onChangeText={(value) => {
                 setExpiryDraft(formatDateInput(value));
                 setExpiryError(null);
               }}
               placeholder="YYYY-MM-DD"
-              placeholderTextColor={theme.secondaryText}
               keyboardType="number-pad"
               maxLength={10}
-              style={[styles.input, { borderColor: theme.grayBorder }]}
+              icon="calendar-outline"
+              error={expiryError}
+              containerStyle={styles.dialogField}
             />
-            {expiryError && (
-              <Text
-                style={[
-                  styles.detailLabel,
-                  { color: theme.danger, marginTop: 6 },
-                ]}
-              >
-                {expiryError}
-              </Text>
-            )}
-            <View style={[styles.actions, { marginTop: 16 }]}>
-              <TouchableOpacity
-                style={[styles.button, styles.cancelButton]}
+            <View style={styles.actions}>
+              <AppButton
+                title="Cancel"
+                variant="outline"
                 onPress={() => setPendingFile(null)}
-              >
-                <Text style={styles.buttonText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.button}
+                style={styles.flex}
+              />
+              <AppButton
+                title="Next"
                 onPress={confirmReplacementWithExpiry}
-              >
-                <Text style={styles.buttonText}>Next</Text>
-              </TouchableOpacity>
+                style={styles.flex}
+              />
             </View>
           </View>
         </View>
@@ -693,215 +551,84 @@ const DocumentDetails = () => {
   );
 };
 
-const getStyles = (theme: typeof Colors.light) =>
-  StyleSheet.create({
-    content: {
-      flex: 1,
-      paddingBottom: 80,
-      backgroundColor: theme.whiteBackground,
-      paddingHorizontal: 10,
-    },
-    sectionCard: {
-      marginTop: 12,
-      borderRadius: Radii.md,
-      padding: 14,
-      borderWidth: 1,
-      borderColor: theme.divider,
-      backgroundColor: theme.whiteBackground,
-      marginBottom: 8,
-    },
-    sectionTitle: {
-      fontSize: 13,
-      fontWeight: "700",
-      color: theme.tertiaryText,
-      marginBottom: 10,
-      textTransform: "uppercase",
-      letterSpacing: 0.4,
-    },
-    detailRow: {
-      paddingVertical: 8,
-      borderBottomWidth: 1,
-      borderBottomColor: theme.divider,
-    },
-    detailLabel: {
-      fontSize: 12,
-      color: theme.secondaryText,
-    },
-    detailValue: {
-      fontSize: 14,
-      fontWeight: "500",
-      color: theme.tertiaryText,
-      marginTop: 4,
-      textTransform: "capitalize",
-    },
-    input: {
-      fontSize: 14,
-      fontWeight: "500",
-      color: theme.tertiaryText,
-      marginTop: 4,
-      borderBottomWidth: 1,
-      borderColor: theme.grayBorder,
-      paddingVertical: 2,
-      paddingHorizontal: 0,
-      minWidth: 120,
-    },
-    actions: {
-      flexDirection: "row",
-      gap: 10,
-      justifyContent: "flex-end",
-    },
-    button: {
-      display: "flex",
-      flexDirection: "row",
-      alignItems: "center",
-      paddingHorizontal: 20,
-      paddingVertical: 8,
-      borderRadius: Radii.sm,
-      backgroundColor: theme.primary,
-    },
-    cancelButton: {
-      backgroundColor: theme.danger,
-    },
-    buttonText: {
-      color: theme.whiteText,
-      marginLeft: 8,
-      fontSize: 14,
-    },
-    previewActionButton: {
-      backgroundColor: theme.whiteBackground,
-      borderWidth: 1,
-      borderColor: theme.primary,
-    },
-    previewActionButtonText: {
-      color: theme.primary,
-      marginLeft: 8,
-      fontSize: 14,
-    },
-    uploadBanner: {
-      marginTop: 12,
-      marginBottom: 4,
-      padding: 12,
-      borderRadius: Radii.sm,
-      borderWidth: 1,
-      borderColor: theme.heroBorder,
-      backgroundColor: theme.heroBg,
-      gap: 8,
-    },
-    uploadBannerHeader: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-    },
-    uploadBannerText: {
-      fontSize: 13,
-      fontWeight: "600",
-      color: theme.primaryText,
-    },
-    uploadBannerCancel: {
-      fontSize: 13,
-      fontWeight: "700",
-      color: theme.danger,
-    },
-    uploadProgressTrack: {
-      height: 6,
-      borderRadius: Radii.xs,
-      backgroundColor: theme.grayBorder,
-      overflow: "hidden",
-    },
-    uploadProgressFill: {
-      height: "100%",
-      borderRadius: Radii.xs,
-      backgroundColor: theme.primary,
-    },
-    expiryBackdrop: {
-      flex: 1,
-      backgroundColor: "rgba(0,0,0,0.42)",
-      alignItems: "center",
-      justifyContent: "center",
-      padding: 20,
-    },
-    expiryCard: {
-      width: "100%",
-      maxWidth: 420,
-      borderRadius: Radii.lg,
-      padding: 18,
-      borderWidth: 1,
-      borderColor: theme.grayBorder,
-    },
-    errorScreen: {
-      flex: 1,
-      backgroundColor: theme.whiteBackground,
-      alignItems: "center",
-      justifyContent: "center",
-      padding: 16,
-    },
-    errorCard: {
-      width: "100%",
-      maxWidth: 420,
-      backgroundColor: theme.whiteBackground,
-      borderRadius: Radii.lg,
-      paddingVertical: 20,
-      paddingHorizontal: 20,
-      borderWidth: 1,
-      borderColor: theme.grayBorder,
-      alignItems: "center",
-      shadowColor: theme.darkText,
-      shadowOffset: { width: 0, height: 6 },
-      shadowOpacity: 0.12,
-      shadowRadius: 14,
-      elevation: 3,
-    },
-    errorIconWrap: {
-      width: 64,
-      height: 64,
-      borderRadius: Radii.full,
-      backgroundColor: theme.mutedText,
-      alignItems: "center",
-      justifyContent: "center",
-      marginBottom: 12,
-    },
-    errorTitle: {
-      fontSize: 18,
-      fontWeight: "700",
-      color: theme.errorTitle,
-    },
-    errorSecondaryBtn: {
-      backgroundColor: theme.whiteBackground,
-      paddingVertical: 12,
-      borderRadius: Radii.sm,
-      alignItems: "center",
-      width: "50%",
-      display: "flex",
-      alignContent: "center",
-      justifyContent: "center",
-      flexDirection: "row",
-      gap: 8,
-    },
-    errorSecondaryText: {
-      color: theme.errorSubtitle,
-      fontSize: 14,
-      fontWeight: "500",
-    },
-    statusRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      marginBottom: 8,
-      gap: 8,
-    },
-    statusChip: {
-      paddingHorizontal: 14,
-      paddingVertical: 4,
-      borderRadius: Radii.full,
-      borderWidth: 1.5,
-      alignSelf: "flex-start",
-      marginBottom: 2,
-    },
-    statusChipText: {
-      fontSize: 13,
-      fontWeight: "700",
-      textTransform: "uppercase",
-      letterSpacing: 0.5,
-    },
-  });
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
+  flex: {
+    flex: 1,
+  },
+  centered: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Space.sm,
+    padding: Space.gutter,
+  },
+  content: {
+    paddingHorizontal: Space.gutter,
+    paddingTop: Space.xs,
+    paddingBottom: 80,
+    gap: Space.md,
+  },
+  summary: {
+    alignItems: "center",
+    gap: Space.xs,
+  },
+  chipRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    gap: Space.xs,
+    marginTop: Space.xs,
+  },
+  uploadCard: {
+    gap: Space.sm,
+  },
+  uploadHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Space.sm,
+  },
+  progressTrack: {
+    height: 8,
+    borderRadius: Radius.full,
+    overflow: "hidden",
+  },
+  progressFill: {
+    height: "100%",
+    borderRadius: Radius.full,
+  },
+  actions: {
+    flexDirection: "row",
+    gap: Space.sm,
+  },
+  sectionLabel: {
+    marginTop: Space.xs,
+    marginBottom: -Space.xs,
+    paddingHorizontal: Space.xxs,
+  },
+  infoCard: {
+    paddingVertical: Space.xxs,
+  },
+  backdrop: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: Space.gutter,
+  },
+  dialog: {
+    width: "100%",
+    maxWidth: 420,
+    borderRadius: Radius.xxl,
+    padding: Space.xl,
+    alignItems: "center",
+    gap: Space.sm,
+  },
+  dialogField: {
+    alignSelf: "stretch",
+    marginVertical: Space.xs,
+  },
+});
 
 export default DocumentDetails;

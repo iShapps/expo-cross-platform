@@ -2,31 +2,27 @@ import {
   resolveTenantsByEmail,
   TenancyQueryError,
 } from "@/api-queries/tenancy";
-import Header from "@/components/Header";
+import {
+  AppButton,
+  AppText,
+  EmptyState,
+  ScreenHeader,
+} from "@/components/design";
 import { OrganizationPicker } from "@/components/organization-picker";
-import { Colors, Radii } from "@/constants/theme";
+import { Space } from "@/constants/design";
 import { useProfileData } from "@/data-store/use-account-store";
 import { useTenantStore } from "@/data-store/use-tenant-store";
 import { TenantSummary } from "@/data-types/tenancy";
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useAppTheme } from "@/hooks/use-app-theme";
 import { stopBackgroundTracking } from "@/task-services/locationTask";
-import { Ionicons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function SwitchOrganization() {
-  const colorScheme = useColorScheme() || "light";
-  const theme = Colors[colorScheme];
-  const styles = getStyles(theme);
+  const { colors } = useAppTheme();
   const queryClient = useQueryClient();
   const profileStore = useProfileData();
 
@@ -87,100 +83,64 @@ export default function SwitchOrganization() {
   };
 
   return (
-    <SafeAreaView edges={["top"]} style={styles.safeArea}>
-      <Header title="Switch Organization" onBack={() => router.back()} />
+    <SafeAreaView edges={["top"]} style={[styles.safeArea, { backgroundColor: colors.background }]}>
+      <ScreenHeader title="Switch organization" onBack={() => router.back()} />
 
-      <View style={styles.content}>
-        {isLoading ? (
-          <View style={styles.centered}>
-            <ActivityIndicator color={theme.primary} />
-          </View>
-        ) : error ? (
-          <View style={styles.centered}>
-            <Ionicons
-              name="alert-circle-outline"
-              size={40}
-              color={theme.secondaryText}
-            />
-            <Text style={styles.messageText}>{error}</Text>
-          </View>
-        ) : !hasOtherOrganizations ? (
-          <View style={styles.centered}>
-            <Ionicons
-              name="business-outline"
-              size={40}
-              color={theme.secondaryText}
-            />
-            <Text style={styles.messageText}>
-              You don&apos;t have access to any other organizations yet.
-            </Text>
-          </View>
-        ) : (
-          <>
-            <Text style={styles.subtitle}>
-              Choose which organization to switch to.
-            </Text>
+      {isLoading ? (
+        <View style={styles.centered}>
+          <ActivityIndicator color={colors.primary} />
+        </View>
+      ) : error ? (
+        <View style={styles.centered}>
+          <EmptyState icon="alert-circle-outline" tone="danger" title="Couldn't load organizations" message={error} />
+        </View>
+      ) : !hasOtherOrganizations ? (
+        <View style={styles.centered}>
+          <EmptyState
+            icon="business-outline"
+            title="Just one organization"
+            message="You don't have access to any other organizations yet."
+          />
+        </View>
+      ) : (
+        <ScrollView contentContainerStyle={styles.content}>
+          <AppText variant="callout" color="textSecondary">
+            Choose which organization to switch to.
+          </AppText>
 
-            <OrganizationPicker
-              tenants={tenants}
-              selectedTenantId={selectedTenantId}
-              onSelect={(tenant) => setSelectedTenantId(tenant.tenantId)}
-              theme={theme}
-            />
+          <OrganizationPicker
+            tenants={tenants}
+            selectedTenantId={selectedTenantId}
+            onSelect={(tenant) => setSelectedTenantId(tenant.tenantId)}
+          />
 
-            {!selectionUnchanged && (
-              <TouchableOpacity style={styles.button} onPress={handleSwitch}>
-                <Text style={styles.buttonText}>Switch Organization</Text>
-              </TouchableOpacity>
-            )}
-          </>
-        )}
-      </View>
+          {!selectionUnchanged && (
+            <AppButton
+              title="Switch organization"
+              icon="swap-horizontal"
+              onPress={handleSwitch}
+              fullWidth
+            />
+          )}
+        </ScrollView>
+      )}
     </SafeAreaView>
   );
 }
 
-const getStyles = (theme: typeof Colors.light) =>
-  StyleSheet.create({
-    safeArea: {
-      flex: 1,
-      backgroundColor: theme.background,
-    },
-    content: {
-      flex: 1,
-      backgroundColor: theme.whiteBackground,
-      padding: 20,
-      gap: 16,
-    },
-    centered: {
-      flex: 1,
-      alignItems: "center",
-      justifyContent: "center",
-      gap: 12,
-      paddingHorizontal: 24,
-    },
-    messageText: {
-      fontSize: 14,
-      color: theme.secondaryText,
-      textAlign: "center",
-      lineHeight: 20,
-    },
-    subtitle: {
-      fontSize: 13,
-      color: theme.secondaryText,
-      lineHeight: 19,
-    },
-    button: {
-      backgroundColor: theme.primary,
-      borderRadius: Radii.sm,
-      paddingVertical: 14,
-      alignItems: "center",
-      justifyContent: "center",
-      marginTop: 8,
-    },
-    buttonText: {
-      color: theme.white,
-      fontSize: 15,
-      fontWeight: "700",
-    },
-  });
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
+  content: {
+    paddingHorizontal: Space.gutter,
+    paddingTop: Space.xs,
+    paddingBottom: Space.xxl,
+    gap: Space.md,
+  },
+  centered: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+});

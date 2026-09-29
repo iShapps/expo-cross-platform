@@ -7,25 +7,40 @@ import {
   postStartShift,
 } from "@/api-queries/post-pending-shifts";
 import { postShiftDetails } from "@/api-queries/shifts";
-import Header from "@/components/Header";
+import {
+  AppText,
+  Card,
+  Chip,
+  Icon,
+  IconBadge,
+  InfoRow,
+  PressableCard,
+  ScreenHeader,
+  type IconName,
+} from "@/components/design";
 import { ShiftType, ShiftTypePill } from "@/components/shift-type-pill";
 import { ShiftDetailsSkeleton } from "@/components/skeletons";
 import { SwipeButton } from "@/components/swipe-button";
-import { Colors, Radii } from "@/constants/theme";
+import {
+  elevation,
+  Radius,
+  Space,
+  toneColors,
+  type Tone,
+} from "@/constants/design";
 import { useProfileData } from "@/data-store/use-account-store";
 import { IShift } from "@/data-types/shifts";
+import { useAppTheme } from "@/hooks/use-app-theme";
 import { useCalendarAndReminders } from "@/hooks/use-calendar-and-reminders";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useFirstVisitTour } from "@/hooks/use-first-visit-tour";
 import { useLiveActivity } from "@/hooks/use-live-activity";
 import { useLocation } from "@/hooks/use-location";
-import { formatMediumDate } from "@/utils/date-time";
 import { shiftToCalendarEvent } from "@/utils/shift-calendar-utils";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useIsFocused } from "@react-navigation/native";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { format } from "date-fns";
 import { BlurView } from "expo-blur";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useRef } from "react";
@@ -34,10 +49,8 @@ import {
   Alert,
   Linking,
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   View,
 } from "react-native";
 import { CopilotStep, walkthroughable } from "react-native-copilot";
@@ -45,25 +58,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 const WalkthroughableView = walkthroughable(View);
 
-const iconMap: Record<string, { name: string; bg: string; color: string }> = {
-  "Afternoon start": {
-    name: "white-balance-sunny",
-    bg: "#FFF7E6",
-    color: "#FFB300",
-  },
-  "Afternoon end": {
-    name: "white-balance-sunny",
-    bg: "#FFF7E6",
-    color: "#FFB300",
-  },
-  "Night start": { name: "weather-night", bg: "#E6E8FF", color: "#5C6BC0" },
-  "Night end": { name: "weather-night", bg: "#E6E8FF", color: "#5C6BC0" },
-  "Morning start": {
-    name: "weather-sunset-up",
-    bg: "#FFFDE7",
-    color: "#FFD600",
-  },
-  "Morning end": { name: "weather-sunset-up", bg: "#FFFDE7", color: "#FFD600" },
+const iconMap: Record<string, { name: IconName; tone: Tone }> = {
+  "Afternoon start": { name: "sunny-outline", tone: "amber" },
+  "Afternoon end": { name: "sunny-outline", tone: "amber" },
+  "Night start": { name: "moon-outline", tone: "violet" },
+  "Night end": { name: "moon-outline", tone: "violet" },
+  "Morning start": { name: "partly-sunny-outline", tone: "blue" },
+  "Morning end": { name: "partly-sunny-outline", tone: "blue" },
 };
 
 const formatTimeWithAmPm = (time: string | null, baseDate?: Date) => {
@@ -123,63 +124,30 @@ const TimelineItem = ({
   isFirst?: boolean;
   isLast?: boolean;
 }) => {
-  const icon = iconMap[label] || {
-    name: "circle",
-    bg: "#F0F0F0",
-    color: "#70C601",
-  };
+  const { colors } = useAppTheme();
+  const icon = iconMap[label] || { name: "ellipse-outline", tone: "primary" };
+  const { fg } = toneColors(colors, icon.tone);
 
-  const colorScheme = useColorScheme();
-  const theme = Colors[colorScheme ?? "light"];
-  const styles = getStyles(theme);
   return (
     <View style={styles.timelineItemWrap}>
       <View style={styles.timelineIconColumn}>
         {!isFirst && (
           <View
-            style={[
-              styles.timelineLine,
-              {
-                backgroundColor: icon.color,
-                opacity: 0.35,
-                top: 0,
-                bottom: "50%",
-              },
-            ]}
+            style={[styles.timelineLine, { backgroundColor: fg, top: 0, bottom: "50%" }]}
           />
         )}
-        <View
-          style={[
-            styles.timelineDot,
-            { backgroundColor: icon.bg, borderColor: icon.color },
-          ]}
-        >
-          <MaterialCommunityIcons
-            name={icon.name as any}
-            size={18}
-            color={icon.color}
-          />
-        </View>
-        {/* Vertical line below */}
+        <IconBadge icon={icon.name} tone={icon.tone} size={40} />
         {!isLast && (
           <View
-            style={[
-              styles.timelineLine,
-              {
-                backgroundColor: icon.color,
-                opacity: 0.35,
-                top: "50%",
-                bottom: 0,
-              },
-            ]}
+            style={[styles.timelineLine, { backgroundColor: fg, top: "50%", bottom: 0 }]}
           />
         )}
       </View>
       <View style={styles.timelineContent}>
-        <Text style={styles.timelineLabel}>{label}</Text>
-        <Text style={styles.timelineTime}>
+        <AppText variant="subhead">{label}</AppText>
+        <AppText variant="footnote" color="textSecondary">
           {formatTimeWithAmPm(time, baseDate)}
-        </Text>
+        </AppText>
       </View>
     </View>
   );
@@ -533,9 +501,7 @@ export default function ShiftDetails() {
   //   }
   // }, [shift?.id]);
 
-  const colorScheme = useColorScheme();
-  const theme = Colors[colorScheme ?? "light"];
-  const styles = getStyles(theme);
+  const { colors, isDark } = useAppTheme();
 
   const hasDetailsError = !isLoading && (isError || !shift || isRefetchError);
 
@@ -565,23 +531,50 @@ export default function ShiftDetails() {
   const isSleepover = Boolean(shift?.is_sleepover_shift);
   const startDate = new Date(shift?.start_time);
   const endDate = new Date(shift?.end_time);
+
+
+  const statusLabel =
+    shift?.shift_status === "0"
+      ? "Pending"
+      : shift?.shift_status === "1"
+        ? "Scheduled"
+        : shift?.shift_status === "2"
+          ? "Running"
+          : shift?.shift_status === "3"
+            ? "Cancelled"
+            : shift?.shift_status === "4"
+              ? "Completed"
+              : shift?.shift_status === "5"
+                ? "Transferred"
+                : shift?.shift_status === "6"
+                  ? "Past"
+                  : "-";
+  const statusTone: Record<string, Tone> = {
+    Pending: "warning",
+    Scheduled: "blue",
+    Running: "primary",
+    Cancelled: "danger",
+    Completed: "success",
+    Transferred: "violet",
+  };
+  const timeOf = (date: Date) =>
+    date.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+
   return (
     <SafeAreaView
       edges={["top"]}
-      style={{
-        flex: 1,
-        backgroundColor: theme.background,
-      }}
+      style={[styles.safeArea, { backgroundColor: colors.background }]}
     >
-      <Header
-        title="Shift Details"
+      <ScreenHeader
+        title="Shift details"
         onBack={() => router.canGoBack() && router.back()}
       />
       <ScrollView
-        contentContainerStyle={[
-          styles.content,
-          { backgroundColor: theme.whiteBackground },
-        ]}
+        contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
         <CopilotStep
@@ -591,206 +584,120 @@ export default function ShiftDetails() {
           text="Tap the address to open it in Maps and get directions."
         >
           <WalkthroughableView>
-            <Pressable
+            <PressableCard
               onPress={openMaps}
-              style={[
-                styles.heroCard,
-                {
-                  backgroundColor: theme.heroBg,
-                  borderColor: theme.heroBorder,
-                },
-              ]}
+              accessibilityRole="button"
+              accessibilityHint="Opens the address in Maps"
+              radius={Radius.xl}
+              padding={Space.lg}
+              raised
+              style={styles.heroCard}
             >
-              <View
-                style={[
-                  styles.heroIconWrap,
-                  {
-                    backgroundColor: theme.heroIconBg,
-                  },
-                ]}
-              >
-                <MaterialCommunityIcons
-                  name="office-building-marker"
-                  size={32}
-                  color={theme.primary}
-                />
-              </View>
-              <View style={styles.heroContent}>
-                <Text style={[styles.heroName, { color: theme.primaryText }]}>
-                  {shift?.facility?.name ?? "—"}
-                </Text>
-                <Text
-                  style={[styles.heroMeta, { color: theme.secondaryText }]}
-                >
-                  {shift?.facility?.address ?? "—"}
-                </Text>
-                <Text
-                  style={[styles.heroMeta, { color: theme.secondaryText }]}
-                >
-                  {shift?.state?.name ?? "—"}
-                </Text>
-                <View style={styles.chipRow}>
-                  {shift?.shift_type && (
-                    <ShiftTypePill
-                      type={
-                        shift?.is_sleepover_shift
-                          ? "sleepover"
-                          : (shift?.shift_type as ShiftType)
-                      }
-                    />
-                  )}
+              <View style={styles.heroRow}>
+                <IconBadge icon="business-outline" tone="primary" size={52} />
+                <View style={styles.heroText}>
+                  <AppText variant="title3">
+                    {shift?.facility?.name ?? "—"}
+                  </AppText>
+                  <AppText variant="footnote" color="textSecondary">
+                    {shift?.facility?.address ?? "—"}
+                  </AppText>
+                  <AppText variant="caption" color="textTertiary">
+                    {shift?.state?.name ?? "—"}
+                  </AppText>
                 </View>
               </View>
-            </Pressable>
+
+              <View style={styles.chipRow}>
+                {shift?.shift_type && (
+                  <ShiftTypePill
+                    type={
+                      shift?.is_sleepover_shift
+                        ? "sleepover"
+                        : (shift?.shift_type as ShiftType)
+                    }
+                  />
+                )}
+                <Chip label={statusLabel} tone={statusTone[statusLabel] ?? "neutral"} />
+              </View>
+
+              <View style={[styles.directions, { borderTopColor: colors.border }]}>
+                <Icon name="navigate-outline" size={18} color={colors.primaryStrong} />
+                <AppText variant="subhead" color="primaryStrong" style={styles.flex}>
+                  Get directions
+                </AppText>
+                <Icon name="chevron-forward" size={18} color={colors.textTertiary} />
+              </View>
+            </PressableCard>
           </WalkthroughableView>
         </CopilotStep>
-        {/* show transfer button for shifts accepted but not started */}
-        {/* {[1].includes(shiftStatus) && (
-          <View
-            style={{
-              display: "flex",
-              flexDirection: "row",
-              justifyContent: "flex-start",
-            }}
+
+        {/* When */}
+        <Card radius={Radius.xl} padding={Space.lg} style={styles.whenCard}>
+          <AppText variant="overline" color="textTertiary">
+            When
+          </AppText>
+          <AppText variant="title2">{format(startDate, "EEEE, d MMM yyyy")}</AppText>
+          <View style={styles.whenRow}>
+            <Icon name="time-outline" size={18} color={colors.primaryStrong} />
+            <AppText variant="bodyMedium" style={styles.flex}>
+              {timeOf(startDate)} – {timeOf(endDate)}
+            </AppText>
+            {!!shift?.hours && (
+              <View style={[styles.hoursChip, { backgroundColor: colors.primarySoft }]}>
+                <AppText variant="caption" color="primaryStrong">
+                  {shift.hours} hrs
+                </AppText>
+              </View>
+            )}
+          </View>
+        </Card>
+
+        {/* Details */}
+        <AppText variant="overline" color="textTertiary" style={styles.sectionLabel}>
+          Details
+        </AppText>
+        <Card radius={Radius.xl} padding={Space.md} style={styles.infoCard}>
+          <InfoRow
+            label="Shift ID"
+            value={`${shift?.shift_prefix ?? "-"}${shift?.id ?? "—"}`}
+          />
+          <InfoRow
+            label="Type"
+            value={
+              shift?.is_sleepover_shift
+                ? "Sleepover"
+                : shift?.shift_type
+                  ? shift.shift_type.replace(/\b\w/g, (c) => c.toUpperCase())
+                  : "—"
+            }
+          />
+          <InfoRow label="Status" value={statusLabel} />
+          <InfoRow label="Profession" value={shift?.profession?.name ?? "—"} />
+          <InfoRow label="Category" value={shift?.category?.name ?? "—"} />
+          <InfoRow label="Level" value={shift?.level?.name ?? "—"} />
+          <InfoRow label="Total hours" value={shift?.hours ?? "—"} isLast />
+        </Card>
+
+        {/* Notes */}
+        <AppText variant="overline" color="textTertiary" style={styles.sectionLabel}>
+          Notes
+        </AppText>
+        <Card radius={Radius.xl} padding={Space.lg}>
+          <AppText
+            variant="callout"
+            color={shift?.notes ? "text" : "textTertiary"}
           >
-            <Pressable
-              style={[styles.button, { backgroundColor: theme.activeText }]}
-              onPress={() =>
-                router.push(`/(main)/transfer-shift?shiftId=${shift?.id}`)
-              }
-            >
-              <MaterialIcons
-                name="transfer-within-a-station"
-                size={18}
-                color={theme.whiteText}
-              />
-              <Text style={styles.buttonText}>Transfer shift</Text>
-            </Pressable>
-          </View>
-        )} */}
-
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Shift Info</Text>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>ID</Text>
-            <Text style={styles.detailValue}>
-              {shift?.shift_prefix ?? "-"}
-              {shift?.id ?? "—"}
-            </Text>
-          </View>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Date</Text>
-            <Text style={styles.detailValue}>
-              {formatMediumDate(startDate)}
-            </Text>
-          </View>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Time</Text>
-            <Text style={styles.detailValue}>
-              {startDate.toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-                hour12: true,
-              })}{" "}
-              -{" "}
-              {endDate.toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-                hour12: true,
-              })}
-            </Text>
-          </View>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Type</Text>
-
-            <Text
-              style={{ ...styles.detailValue, textTransform: "capitalize" }}
-            >
-              {shift?.is_sleepover_shift ? "Sleepover" : shift?.shift_type}
-            </Text>
-          </View>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Status</Text>
-            <Text
-              style={{ ...styles.detailValue, textTransform: "capitalize" }}
-            >
-              {shift?.shift_status === "0"
-                ? "Pending"
-                : shift?.shift_status === "1"
-                  ? "Scheduled"
-                  : shift?.shift_status === "2"
-                    ? "Running"
-                    : shift?.shift_status === "3"
-                      ? "Cancelled"
-                      : shift?.shift_status === "4"
-                        ? "Completed"
-                        : shift?.shift_status === "5"
-                          ? "Transferred"
-                          : shift?.shift_status === "6"
-                            ? "Past"
-                            : "-"}
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Profession</Text>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Profession</Text>
-            <Text style={styles.detailValue}>
-              {shift?.profession?.name ?? "—"}
-            </Text>
-          </View>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Category</Text>
-            <Text style={styles.detailValue}>
-              {shift?.category?.name ?? "—"}
-            </Text>
-          </View>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Level</Text>
-            <Text style={styles.detailValue}>{shift?.level?.name ?? "—"}</Text>
-          </View>
-        </View>
-
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Hours</Text>
-          {/* <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Rate per hour</Text>
-            <Text style={styles.detailValue}>${shift?.hcp_per_rate}</Text>
-          </View> */}
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Total Hours</Text>
-            <Text style={styles.detailValue}>{shift?.hours}</Text>
-          </View>
-          {/* <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Amount</Text>
-            <Text style={styles.detailValue}>${shift?.hcp_amount}</Text>
-          </View> */}
-          {/* <Text
-            style={{
-              fontSize: 11,
-              color: "#818589",
-              marginTop: 6,
-              fontStyle: "italic",
-            }}
-          >
-            All amounts are tax inclusive.
-          </Text> */}
-        </View>
-
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>NOTES</Text>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}></Text>
-            <Text style={styles.detailValue}>{shift?.notes ?? "—"}</Text>
-          </View>
-        </View>
+            {shift?.notes ?? "No notes for this shift."}
+          </AppText>
+        </Card>
 
         {isSleepover && (
-          <View style={styles.sectionCard}>
-            <Text style={styles.sectionTitle}>Sleepover Timeline</Text>
-            <View style={styles.timelineContainer}>
+          <>
+            <AppText variant="overline" color="textTertiary" style={styles.sectionLabel}>
+              Sleepover timeline
+            </AppText>
+            <Card radius={Radius.xl} padding={Space.lg}>
               <TimelineItem
                 label="Afternoon start"
                 time={shift?.sleepover_afternoon_start_time}
@@ -823,8 +730,8 @@ export default function ShiftDetails() {
                 baseDate={startDate}
                 isLast
               />
-            </View>
-          </View>
+            </Card>
+          </>
         )}
       </ScrollView>
 
@@ -838,15 +745,16 @@ export default function ShiftDetails() {
           onChange={undefined}
           index={0}
           snapPoints={[110]}
-          backgroundStyle={{
-            backgroundColor: theme.heroBorder,
-            // borderTopWidth: 3,
-            // borderTopColor: colorScheme === "dark" ? "#FFD966" : "#70C601",
-            // borderTopLeftRadius: 15,
-            // borderTopRightRadius: 15,
-          }}
+          backgroundStyle={[
+            styles.sheetBackground,
+            {
+              backgroundColor: colors.surface,
+              borderColor: colors.border,
+            },
+            elevation(colors, isDark, 2),
+          ]}
           handleIndicatorStyle={{
-            backgroundColor: theme.primary,
+            backgroundColor: colors.borderStrong,
           }}
         >
           <BottomSheetView style={styles.contentContainer}>
@@ -869,7 +777,7 @@ export default function ShiftDetails() {
                       }
                     }}
                     disabled={isBusy}
-                    bgColor={theme.primary}
+                    bgColor={colors.gradient[0]}
                     processing={isAccepting}
                     completed={acceptShiftMutation.isSuccess}
                   />
@@ -894,7 +802,7 @@ export default function ShiftDetails() {
                     }
                   }}
                   disabled={isBusy}
-                  bgColor={theme.primary}
+                  bgColor={colors.gradient[0]}
                   processing={isAccepting}
                   completed={acceptShiftTransferMutation.isSuccess}
                 />
@@ -918,7 +826,7 @@ export default function ShiftDetails() {
                     }
                   }}
                   disabled={isBusy}
-                  bgColor={theme.primary}
+                  bgColor={colors.gradient[0]}
                   processing={isStarting}
                   completed={startShiftMutation.isSuccess}
                 />
@@ -935,7 +843,7 @@ export default function ShiftDetails() {
                   }
                 }}
                 disabled={isBusy}
-                bgColor={theme.danger}
+                bgColor={colors.danger}
                 processing={isEnding}
                 completed={endShiftMutation.isSuccess}
               />
@@ -947,13 +855,13 @@ export default function ShiftDetails() {
       {isBusy && (
         <View style={styles.busyOverlay} pointerEvents="auto">
           <BlurView
-            intensity={45}
-            tint="dark"
+            intensity={40}
+            tint={isDark ? "dark" : "light"}
             style={StyleSheet.absoluteFill}
           />
-          <View style={styles.busyCard}>
-            <ActivityIndicator size="large" color={theme.white} />
-            <Text style={styles.busyText}>
+          <View style={[styles.busyCard, { backgroundColor: colors.surface }]}>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <AppText variant="headline" align="center">
               {isAccepting
                 ? "Accepting shift..."
                 : isStarting
@@ -963,7 +871,7 @@ export default function ShiftDetails() {
                     : isAcceptingTransfer
                       ? "Accepting shift transfer..."
                       : "Processing shift action..."}
-            </Text>
+            </AppText>
           </View>
         </View>
       )}
@@ -971,193 +879,116 @@ export default function ShiftDetails() {
   );
 }
 
-const getStyles = (theme: typeof Colors.light) =>
-  StyleSheet.create({
-    contentContainer: {
-      height: 110,
-      width: "100%",
-      alignItems: "center",
-      justifyContent: "center",
-      paddingBottom: 50,
-    },
-
-    content: {
-      paddingBottom: 140,
-      backgroundColor: theme.whiteBackground,
-      paddingHorizontal: 10,
-      // flex: 1,
-    },
-
-    heroCard: {
-      marginTop: 8,
-      backgroundColor: theme.heroBg,
-      borderRadius: Radii.md,
-      padding: 10,
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 12,
-      borderWidth: 1,
-      borderColor: theme.heroBorder,
-      marginBottom: 12,
-    },
-    heroIconWrap: {
-      height: 64,
-      width: 64,
-      borderRadius: Radii.sm,
-      backgroundColor: theme.heroIconBg,
-      alignItems: "center",
-      justifyContent: "center",
-      overflow: "hidden",
-    },
-    heroContent: {
-      flex: 1,
-    },
-    heroName: {
-      fontSize: 16,
-      fontWeight: "700",
-      color: theme.primaryText,
-    },
-    heroMeta: {
-      fontSize: 12,
-      color: theme.secondaryText,
-      marginTop: 2,
-    },
-    sectionCard: {
-      marginTop: 12,
-      borderRadius: Radii.md,
-      padding: 14,
-      borderWidth: 1,
-      borderColor: theme.divider,
-      backgroundColor: theme.whiteBackground,
-      marginBottom: 8,
-    },
-    sectionTitle: {
-      fontSize: 13,
-      fontWeight: "700",
-      color: theme.primary,
-      marginBottom: 10,
-      textTransform: "uppercase",
-      letterSpacing: 0.4,
-    },
-    detailRow: {
-      paddingVertical: 8,
-      borderBottomWidth: 1,
-      borderBottomColor: theme.divider,
-    },
-    detailLabel: {
-      fontSize: 12,
-      color: theme.secondaryText,
-    },
-    detailValue: {
-      fontSize: 14,
-      fontWeight: "600",
-      color: theme.tertiaryText,
-      marginTop: 4,
-    },
-    chipRow: {
-      flexDirection: "row",
-      gap: 8,
-      marginTop: 10,
-      marginBottom: -8,
-    },
-    timelineContainer: {
-      marginTop: 8,
-      paddingLeft: 18,
-    },
-    timelineItemWrap: {
-      flexDirection: "row",
-      alignItems: "flex-start",
-      minHeight: 75,
-    },
-    timelineIconColumn: {
-      width: 36,
-      alignItems: "center",
-      position: "relative",
-      minHeight: 75,
-      justifyContent: "flex-start",
-    },
-    timelineLine: {
-      position: "absolute",
-      left: "50%",
-      transform: [{ translateX: -1.5 }],
-      width: 2,
-      borderRadius: Radii.xs,
-      backgroundColor: theme.grayBorder,
-      zIndex: 0,
-      height: "50%",
-    },
-    timelineDot: {
-      width: 40,
-      height: 40,
-      borderRadius: Radii.full,
-      alignItems: "center",
-      justifyContent: "center",
-      zIndex: 1,
-      borderWidth: 1,
-      borderColor: theme.white,
-      shadowColor: theme.shadow,
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.08,
-      shadowRadius: 2,
-      elevation: 2,
-    },
-    timelineContent: {
-      flex: 1,
-      marginLeft: 8,
-      flexDirection: "column",
-      justifyContent: "center",
-    },
-    timelineLabel: {
-      fontSize: 13,
-      color: theme.tertiaryText,
-      fontWeight: "400",
-      textTransform: "capitalize",
-    },
-    timelineTime: {
-      fontSize: 13,
-      color: theme.secondaryText,
-      fontWeight: "300",
-      textTransform: "capitalize",
-    },
-    button: {
-      backgroundColor: theme.primary,
-      borderRadius: Radii.sm,
-      paddingHorizontal: 16,
-      paddingVertical: 9,
-      display: "flex",
-      gap: 8,
-      alignItems: "center",
-      flexDirection: "row",
-      justifyContent: "center",
-    },
-    buttonText: {
-      color: theme.white,
-      fontSize: 13,
-      fontWeight: "400",
-    },
-    busyOverlay: {
-      ...StyleSheet.absoluteFillObject,
-      zIndex: 999,
-      elevation: 999,
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: "rgba(10, 16, 26, 0.2)",
-    },
-    busyCard: {
-      minWidth: 220,
-      paddingHorizontal: 18,
-      paddingVertical: 16,
-      borderRadius: Radii.md,
-      backgroundColor: "rgba(0, 0, 0, 0.45)",
-      borderWidth: 1,
-      borderColor: "rgba(255, 255, 255, 0.25)",
-      alignItems: "center",
-      gap: 12,
-    },
-    busyText: {
-      color: theme.white,
-      fontSize: 14,
-      fontWeight: "600",
-      textAlign: "center",
-    },
-  });
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
+  flex: {
+    flex: 1,
+  },
+  // Keep the sheet's content box as before: the swipe button is laid out for it.
+  contentContainer: {
+    height: 110,
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingBottom: 50,
+  },
+  sheetBackground: {
+    borderTopLeftRadius: Radius.xxl,
+    borderTopRightRadius: Radius.xxl,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  content: {
+    paddingHorizontal: Space.gutter,
+    paddingTop: Space.xs,
+    paddingBottom: 160,
+    gap: Space.md,
+  },
+  heroCard: {
+    gap: Space.md,
+  },
+  heroRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Space.sm,
+  },
+  heroText: {
+    flex: 1,
+    gap: 2,
+  },
+  chipRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: Space.xs,
+  },
+  directions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Space.xs,
+    paddingTop: Space.sm,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    minHeight: 32,
+  },
+  whenCard: {
+    gap: Space.xs,
+  },
+  whenRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Space.xs,
+    marginTop: Space.xxs,
+  },
+  hoursChip: {
+    paddingHorizontal: Space.sm,
+    paddingVertical: 4,
+    borderRadius: Radius.full,
+  },
+  sectionLabel: {
+    marginTop: Space.xs,
+    marginBottom: -Space.xs,
+    paddingHorizontal: Space.xxs,
+  },
+  infoCard: {
+    paddingVertical: Space.xxs,
+  },
+  timelineItemWrap: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    minHeight: 64,
+  },
+  timelineIconColumn: {
+    width: 40,
+    alignItems: "center",
+    position: "relative",
+    minHeight: 64,
+  },
+  timelineLine: {
+    position: "absolute",
+    left: 19,
+    width: 2,
+    opacity: 0.3,
+    borderRadius: Radius.xs,
+  },
+  timelineContent: {
+    flex: 1,
+    marginLeft: Space.sm,
+    paddingTop: 2,
+    gap: 2,
+  },
+  busyOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 999,
+    elevation: 999,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  busyCard: {
+    minWidth: 220,
+    paddingHorizontal: Space.xl,
+    paddingVertical: Space.lg,
+    borderRadius: Radius.xl,
+    alignItems: "center",
+    gap: Space.sm,
+  },
+});

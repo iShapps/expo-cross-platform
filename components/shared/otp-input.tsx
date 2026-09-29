@@ -1,4 +1,5 @@
-import { Radii } from "@/constants/theme";
+import { FontFamily, Radius } from "@/constants/design";
+import { useAppTheme } from "@/hooks/use-app-theme";
 import React, {
     forwardRef,
     useEffect,
@@ -48,6 +49,7 @@ export const OTPInput = forwardRef<OTPInputRef, OTPInputProps>(
     },
     ref,
   ) => {
+    const { colors } = useAppTheme();
     const [otp, setOtp] = useState<string[]>(Array(length).fill(""));
     const [focusedIndex, setFocusedIndex] = useState<number>(
       autoFocus ? 0 : -1,
@@ -192,6 +194,22 @@ export const OTPInput = forwardRef<OTPInputRef, OTPInputProps>(
       setFocusedIndex(-1);
     };
 
+    const themed = {
+      input: {
+        borderColor: colors.surfaceMuted,
+        backgroundColor: colors.surfaceMuted,
+        color: colors.text,
+      },
+      focused: {
+        borderColor: colors.primary,
+        backgroundColor: colors.surface,
+      },
+      filled: {
+        borderColor: colors.primary,
+        backgroundColor: colors.primarySoft,
+      },
+    };
+
     return (
       <View style={[styles.container, containerStyle]}>
         {otp.map((digit, index) => (
@@ -200,12 +218,14 @@ export const OTPInput = forwardRef<OTPInputRef, OTPInputProps>(
             ref={(element) => {
               inputRefs.current[index] = element;
             }}
+            selectionColor={colors.primary}
             style={[
               styles.input,
+              themed.input,
               inputStyle,
-              focusedIndex === index && styles.focusedInput,
+              focusedIndex === index && themed.focused,
               focusedIndex === index && focusedInputStyle,
-              digit !== "" && styles.filledInput,
+              digit !== "" && themed.filled,
               digit !== "" && filledInputStyle,
             ]}
             value={digit}
@@ -261,27 +281,17 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    gap: 12,
+    gap: 6,
   },
   input: {
-    width: 46,
-    height: 46,
-    borderWidth: 2,
-    borderColor: "#E0E0E0",
-    borderRadius: Radii.sm,
+    // 6 × 44 + 5 × 6 = 294pt: fits a phone-width dialog.
+    width: 44,
+    height: 56,
+    borderWidth: 1.5,
+    borderRadius: Radius.md,
     textAlign: "center",
+    fontFamily: FontFamily.semibold,
     fontSize: 24,
-    fontWeight: "600",
-    color: "#000",
-    backgroundColor: "#F9F9F9",
-  },
-  focusedInput: {
-    borderColor: "#999",
-    backgroundColor: "#FFF",
-  },
-  filledInput: {
-    borderColor: "#4CAF50",
-    backgroundColor: "#FFF",
   },
 });
 

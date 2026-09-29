@@ -1,84 +1,30 @@
-import { Colors, Radii } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import { Card } from "@/components/design";
+import { Radius, Space } from "@/constants/design";
 import React from "react";
 import { StyleSheet, View } from "react-native";
 import { SkeletonBase } from "./skeleton-base";
 
-export const NotificationCardSkeleton: React.FC = () => {
-  let colorScheme = useColorScheme();
-  if (!colorScheme) colorScheme = "light";
-  const theme = Colors[colorScheme];
-  const styles = getStyles(theme);
-
-  return (
-    <View style={styles.card}>
-      <View style={styles.iconContainer}>
-        <SkeletonBase width={40} height={40} borderRadius={Radii.full} />
-      </View>
-      <View style={styles.content}>
-        <SkeletonBase
-          width="70%"
-          height={14}
-          borderRadius={Radii.xs}
-          style={styles.title}
-        />
-        <SkeletonBase
-          width="100%"
-          height={12}
-          borderRadius={Radii.xs}
-          style={styles.message}
-        />
-        <SkeletonBase width="50%" height={11} borderRadius={Radii.xs} />
-      </View>
-      <View style={styles.detailHint}>
-        <SkeletonBase width={20} height={20} borderRadius={Radii.xs} />
-      </View>
+/** Placeholder matching NotificationCard's layout. */
+export const NotificationCardSkeleton: React.FC = () => (
+  <Card style={styles.card}>
+    <SkeletonBase width={44} height={44} borderRadius={Radius.full} />
+    <View style={styles.content}>
+      <SkeletonBase width="65%" height={16} borderRadius={Radius.xs} />
+      <SkeletonBase width="95%" height={13} borderRadius={Radius.xs} />
+      <SkeletonBase width="35%" height={12} borderRadius={Radius.xs} />
     </View>
-  );
-};
+  </Card>
+);
 
-const getStyles = (theme: typeof Colors.light) =>
-  StyleSheet.create({
-    card: {
-      backgroundColor: theme.whiteBackground,
-      borderRadius: Radii.sm,
-      padding: 12,
-      marginBottom: 4,
-      flexDirection: "row",
-      alignItems: "flex-start",
-      shadowColor: "#000",
-      shadowOffset: {
-        width: 0,
-        height: 1,
-      },
-      shadowOpacity: 0.05,
-      shadowRadius: 2,
-      elevation: 2,
-      borderWidth: 1,
-      borderColor: theme.greyBorder,
-    },
-    iconContainer: {
-      width: 40,
-      height: 40,
-      borderRadius: Radii.full,
-      justifyContent: "center",
-      alignItems: "center",
-      marginRight: 12,
-      backgroundColor: theme.greyBorder,
-    },
-    content: {
-      flex: 1,
-      gap: 4,
-    },
-    title: {
-      marginBottom: 4,
-    },
-    message: {
-      marginBottom: 4,
-    },
-    detailHint: {
-      alignSelf: "flex-start",
-      marginLeft: 8,
-      marginTop: 2,
-    },
-  });
+const styles = StyleSheet.create({
+  card: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: Space.sm,
+  },
+  content: {
+    flex: 1,
+    gap: Space.xs,
+    paddingTop: 2,
+  },
+});

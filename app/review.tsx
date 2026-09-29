@@ -1,26 +1,23 @@
 import { isAuthError } from "@/api-actions/error-utils";
 import { rateShift } from "@/api-queries/profile";
-import { Colors, Radii } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
-import { AntDesign } from "@expo/vector-icons";
-import SimpleLineIcons from "@expo/vector-icons/SimpleLineIcons";
+import { AppButton, AppText, Icon } from "@/components/design";
+import { FontFamily, Radius, Space, Touch, type AppColors } from "@/constants/design";
+import { useAppTheme } from "@/hooks/use-app-theme";
 import { useMutation } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   Alert,
   Animated,
-  Easing,
   KeyboardAvoidingView,
   PanResponder,
   Platform,
   Pressable,
   StyleSheet,
-  Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const STAR_COUNT = 5;
 
@@ -31,10 +28,9 @@ export default function ReviewScreen() {
   const category_id = Number(params.category_id);
   const profession_id = Number(params.profession_id);
 
-  let colorScheme = useColorScheme();
-  if (!colorScheme) colorScheme = "light";
-  const theme = Colors[colorScheme];
-  const styles = getStyles(theme);
+  const { colors } = useAppTheme();
+  const styles = getStyles(colors);
+  const insets = useSafeAreaInsets();
 
   const [rating, setRating] = useState(0);
   const [review, setReview] = useState("");
@@ -106,23 +102,6 @@ export default function ReviewScreen() {
     }),
   ).current;
 
-  const spinAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    if (shiftRatingMutation.isPending) {
-      Animated.loop(
-        Animated.timing(spinAnim, {
-          toValue: 1,
-          duration: 800,
-          easing: Easing.linear,
-          useNativeDriver: true,
-        }),
-      ).start();
-    } else {
-      spinAnim.stopAnimation();
-      spinAnim.setValue(0);
-    }
-  }, [shiftRatingMutation.isPending, spinAnim]);
   const hasRequiredParams =
     shift_id && facility_id && category_id && profession_id;
   return (
@@ -134,14 +113,21 @@ export default function ReviewScreen() {
         <Pressable
           style={StyleSheet.absoluteFill}
           onPress={() => router.back()}
+          accessibilityLabel="Close"
         />
 
         {/* Sheet */}
         <Animated.View
-          style={[styles.sheet, { transform: [{ translateY: sheetY }] }]}
+          style={[
+            styles.sheet,
+            { paddingBottom: insets.bottom + Space.lg, transform: [{ translateY: sheetY }] },
+          ]}
           {...panResponder.panHandlers}
         >
-          <Text style={styles.title}>How was your shift?</Text>
+          <View style={styles.handle} />
+          <AppText variant="title2" align="center">
+            How was your shift?
+          </AppText>
 
           {/* Stars */}
           <View style={styles.starsRow}>
@@ -152,11 +138,14 @@ export default function ReviewScreen() {
                   key={i}
                   onPress={() => handleStarPress(i)}
                   hitSlop={10}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${i + 1} star${i ? "s" : ""}`}
+                  style={styles.star}
                 >
-                  <SimpleLineIcons
-                    name="star"
-                    size={42}
-                    color={selected ? theme.primary : theme.greyBorder}
+                  <Icon
+                    name={selected ? "star" : "star-outline"}
+                    size={38}
+                    color={selected ? colors.amber : colors.borderStrong}
                   />
                 </Pressable>
               );
@@ -165,7 +154,7 @@ export default function ReviewScreen() {
 
           {/* Optional hint like Bolt */}
           {rating > 0 && (
-            <Text style={styles.ratingText}>
+            <AppText variant="subhead" color="textSecondary" align="center">
               {rating <= 2
                 ? "Not great"
                 : rating === 3
@@ -173,151 +162,93 @@ export default function ReviewScreen() {
                   : rating === 4
                     ? "Good"
                     : "Excellent"}
-            </Text>
+            </AppText>
           )}
 
           {/* Input */}
           <TextInput
             style={styles.input}
             placeholder="Write a review (optional)..."
-            placeholderTextColor={theme.secondaryText}
+            placeholderTextColor={colors.textTertiary}
+            selectionColor={colors.primary}
             value={review}
             onChangeText={setReview}
             multiline
             maxLength={300}
           />
 
-          <Pressable
+          <AppButton
+            title="Submit review"
             onPress={submitReview}
+            loading={shiftRatingMutation.isPending}
+            loadingTitle="Submitting review..."
             disabled={
               shiftRatingMutation.isPending ||
               !hasRequiredParams ||
               rating === 0
             }
-            style={[
-              styles.button,
-              shiftRatingMutation.isPending && { opacity: 0.5 },
-            ]}
-          >
-            {shiftRatingMutation.isPending && (
-              <Animated.View
-                style={{
-                  marginRight: 10,
-                  transform: [
-                    {
-                      rotate: spinAnim.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: ["0deg", "360deg"],
-                      }),
-                    },
-                  ],
-                }}
-              >
-                <AntDesign
-                  name="loading-3-quarters"
-                  size={20}
-                  color={theme.white}
-                />
-              </Animated.View>
-            )}
-            <Text style={styles.buttonText}>
-              {shiftRatingMutation.isPending
-                ? "Submitting review..."
-                : "Submit review"}
-            </Text>
-          </Pressable>
+            fullWidth
+          />
 
           {/* Skip */}
-          <TouchableOpacity onPress={() => router.back()}>
-            <Text style={styles.skip}>Skip</Text>
-          </TouchableOpacity>
+          <AppButton title="Skip" variant="ghost" onPress={() => router.back()} fullWidth />
         </Animated.View>
       </KeyboardAvoidingView>
     </View>
   );
 }
 
-const getStyles = (theme: typeof Colors.light) =>
+const getStyles = (colors: AppColors) =>
   StyleSheet.create({
     safeArea: {
       flex: 1,
       backgroundColor: "transparent",
     },
-
     container: {
       flex: 1,
       justifyContent: "flex-end",
-      backgroundColor: "rgba(0, 0, 0, 0.45)",
+      backgroundColor: colors.overlay,
     },
-
     sheet: {
-      backgroundColor: theme.whiteBackground,
-      borderTopLeftRadius: Radii.lg,
-      borderTopRightRadius: Radii.lg,
-      padding: 20,
-      paddingBottom: 30,
+      backgroundColor: colors.surface,
+      borderTopLeftRadius: Radius.xxl,
+      borderTopRightRadius: Radius.xxl,
+      paddingHorizontal: Space.gutter,
+      paddingTop: Space.sm,
+      gap: Space.sm,
     },
-
-    title: {
-      fontSize: 20,
-      fontWeight: "700",
-      color: theme.primaryText,
-      textAlign: "center",
-      marginBottom: 20,
+    handle: {
+      alignSelf: "center",
+      width: 40,
+      height: 5,
+      borderRadius: Radius.full,
+      backgroundColor: colors.borderStrong,
+      marginBottom: Space.sm,
     },
-
     starsRow: {
       flexDirection: "row",
       justifyContent: "center",
-      marginBottom: 12,
-      gap: 12,
+      gap: Space.xxs,
+      marginVertical: Space.xs,
     },
-
-    ratingText: {
-      textAlign: "center",
-      fontSize: 14,
-      color: theme.secondaryText,
-      marginBottom: 12,
-    },
-
-    input: {
-      width: "100%",
-      minHeight: 80,
-      borderRadius: Radii.md,
-      borderWidth: 1,
-      borderColor: theme.greyBorder,
-      backgroundColor: theme.whiteBackground,
-      color: theme.primaryText,
-      fontSize: 14,
-      padding: 12,
-      marginBottom: 16,
-      textAlignVertical: "top",
-    },
-
-    button: {
-      width: "100%",
-      backgroundColor: theme.primary,
-      borderRadius: Radii.full,
-      paddingVertical: 14,
+    star: {
+      width: Touch.min + 4,
+      height: Touch.min + 4,
       alignItems: "center",
       justifyContent: "center",
-      marginBottom: 12,
-      display: "flex",
-      flexDirection: "row",
     },
-
-    buttonDisabled: {
-      opacity: 0.5,
-    },
-
-    buttonText: {
-      color: theme.white,
+    input: {
+      width: "100%",
+      minHeight: 96,
+      borderRadius: Radius.md,
+      borderWidth: 1.5,
+      borderColor: colors.surfaceMuted,
+      backgroundColor: colors.surfaceMuted,
+      color: colors.text,
+      fontFamily: FontFamily.regular,
       fontSize: 16,
-    },
-
-    skip: {
-      textAlign: "center",
-      color: theme.secondaryText,
-      fontSize: 14,
+      padding: Space.md,
+      marginVertical: Space.xs,
+      textAlignVertical: "top",
     },
   });
