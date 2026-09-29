@@ -1,5 +1,6 @@
 import { Colors, Radii } from "@/constants/theme";
 import { useSettingsStore } from "@/data-store/use-settings-store";
+import { useTenantStore } from "@/data-store/use-tenant-store";
 import LoginCredentials from "@/data-types/auth";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useFirstVisitTour } from "@/hooks/use-first-visit-tour";
@@ -24,7 +25,7 @@ import * as Sentry from "@sentry/react-native";
 import { Checkbox } from "expo-checkbox";
 import * as Device from "expo-device";
 import { Image } from "expo-image";
-import { Link } from "expo-router";
+import { Link, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
   Alert,
@@ -75,12 +76,19 @@ export default function Login() {
   const styles = getStyles(theme);
 
   const insets = useSafeAreaInsets();
+  const router = useRouter();
 
   const isFocused = useIsFocused();
 
   useFirstVisitTour("login", isFocused);
 
-  const [email, setEmail] = useState("");
+  // Set when arriving from the tenant resolution screen,
+  // which already looked up the organization for this email — lock it so a
+  // manual edit here can't silently drift from the tenant we already picked.
+  const params = useLocalSearchParams<{ email?: string }>();
+  const emailPrefilled = !!params.email;
+
+  const [email, setEmail] = useState(params.email ?? "");
   const [password, setPassword] = useState("");
   const [isTermsChecked, setIsTermsChecked] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
@@ -398,7 +406,8 @@ export default function Login() {
                 inputMode="email"
                 autoComplete="email"
                 clearButtonMode="while-editing"
-                autoFocus={true}
+                autoFocus={!emailPrefilled}
+                editable={!emailPrefilled}
                 clearTextOnFocus={false}
                 cursorColor={theme.primaryText}
                 enterKeyHint="next"
@@ -407,7 +416,9 @@ export default function Login() {
                 placeholderTextColor={theme.secondaryText}
                 style={{
                   flex: 1,
-                  color: theme.primaryText,
+                  color: emailPrefilled
+                    ? theme.secondaryText
+                    : theme.primaryText,
                 }}
               />
               {biometricSupported && biometricAllowed && biometricsEnabled && (
@@ -436,6 +447,25 @@ export default function Login() {
                 </Pressable>
               )}
             </View>
+            {emailPrefilled && (
+              <TouchableOpacity
+                onPress={() => {
+                  useTenantStore.getState().clearTenant();
+                  router.replace("/tenant-code");
+                }}
+                style={{ marginTop: 6 }}
+              >
+                <Text
+                  style={{
+                    color: theme.secondaryText,
+                    fontSize: 12,
+                    textDecorationLine: "underline",
+                  }}
+                >
+                  Not you? Use a different email
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
 
           <View style={styles.inputGroup}>
@@ -456,6 +486,7 @@ export default function Login() {
                 enterKeyHint="done"
                 clearButtonMode="while-editing"
                 autoComplete="password"
+                autoFocus={emailPrefilled}
                 clearTextOnFocus={false}
                 onChangeText={setPassword}
                 placeholder="••••••••"

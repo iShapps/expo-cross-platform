@@ -17,14 +17,18 @@ type ChatTurn = { role?: string; text?: string };
 // must not be callable by anyone who isn't a signed-in app user. Re-validates
 // the caller's existing SmartHealth bearer token against the app's own
 // authenticated "me" endpoint rather than duplicating any backend logic here.
+// The backend is multi-tenant and resolves the tenant purely from the
+// X-Tenant-Code header, so that has to be forwarded too — without it the
+// backend can't identify a tenant at all and "me" fails for every caller.
 async function isAuthorized(request: Request): Promise<boolean> {
   const authHeader = request.headers.get("authorization");
+  const tenantHeader = request.headers.get("x-tenant-code");
   const apiBaseUrl = process.env.EXPO_PUBLIC_API_URL;
-  if (!authHeader || !apiBaseUrl) return false;
+  if (!authHeader || !tenantHeader || !apiBaseUrl) return false;
 
   try {
-    const res = await fetch(`${apiBaseUrl.replace(/\/$/, "")}/v2/auth/me`, {
-      headers: { Authorization: authHeader },
+    const res = await fetch(`${apiBaseUrl.replace(/\/$/, "")}/auth/me`, {
+      headers: { Authorization: authHeader, "X-Tenant-Code": tenantHeader },
     });
     return res.ok;
   } catch {

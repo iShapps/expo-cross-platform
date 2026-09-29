@@ -3,6 +3,7 @@ import { useSession } from "@/app/ctx";
 import Header from "@/components/Header";
 import { Colors, Radii } from "@/constants/theme";
 import { useSettingsStore } from "@/data-store/use-settings-store";
+import { useTenantStore } from "@/data-store/use-tenant-store";
 import { useTourStore } from "@/data-store/use-tour-store";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useFirstVisitTour } from "@/hooks/use-first-visit-tour";
@@ -32,7 +33,7 @@ export default function SettingsScreen() {
   const appTheme = Colors[colorScheme];
   const styles = getStyles(appTheme);
   const { isChecking, isSetup, refresh } = useOneSignalSubscriptionStatus();
-  const { retryNotificationSetup, user } = useSession();
+  const { retryNotificationSetup, user, signOut } = useSession();
   const [isRetryingNotifications, setIsRetryingNotifications] = useState(false);
   const [isTestingNotifications, setIsTestingNotifications] = useState(false);
   const hcp = user;
@@ -58,6 +59,24 @@ export default function SettingsScreen() {
   useFirstVisitTour("settings", isFocused);
 
   const appVersion = `${Application.nativeApplicationVersion} (${Application.nativeBuildVersion})`;
+
+  const handleClearOrganization = () => {
+    Alert.alert(
+      "Clear organization? (Dev)",
+      "This signs you out and forgets the currently stored organization, so you can retest the sign-in flow from scratch.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Clear",
+          style: "destructive",
+          onPress: async () => {
+            await signOut();
+            useTenantStore.getState().clearTenant();
+          },
+        },
+      ],
+    );
+  };
 
   const handleReplayTour = () => {
     Alert.alert(
@@ -353,6 +372,36 @@ export default function SettingsScreen() {
                   trackColor={{ false: "gray", true: appTheme.primary }}
                 />
               </View>
+
+              {/* Dev-only: clear the persisted organization to retest sign-in */}
+              {__DEV__ && (
+                <Pressable
+                  style={styles.settingCard}
+                  onPress={handleClearOrganization}
+                >
+                  <View style={styles.settingIconWrap}>
+                    <Ionicons
+                      name="trash-outline"
+                      size={22}
+                      color={appTheme.danger}
+                    />
+                  </View>
+                  <View style={styles.settingTextWrap}>
+                    <Text style={styles.settingTitle}>
+                      Clear organization (Dev)
+                    </Text>
+                    <Text style={styles.settingDesc}>
+                      Sign out and forget the stored organization to retest
+                      the sign-in flow from scratch.
+                    </Text>
+                  </View>
+                  <Ionicons
+                    name="chevron-forward"
+                    size={20}
+                    color={appTheme.secondaryText}
+                  />
+                </Pressable>
+              )}
 
               {/* Replay app tour */}
               {false && (

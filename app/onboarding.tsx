@@ -827,7 +827,7 @@ export default function OnboardingScreen() {
       } catch (err) {
         console.log("[ONB_ERROR]", err);
         logApiErrorToSentry(err, {
-          endpoint: "/v2/registration/personal-details",
+          endpoint: "/registration/personal-details",
           method: "PATCH",
         });
         Alert.alert(
@@ -870,7 +870,7 @@ export default function OnboardingScreen() {
         setActiveStep(freshData ? resolveOnboardingStep(freshData) : 4);
       } catch (err) {
         logApiErrorToSentry(err, {
-          endpoint: "/v2/registration/professional-details",
+          endpoint: "/registration/professional-details",
           method: "PATCH",
         });
         Alert.alert(
@@ -960,7 +960,7 @@ export default function OnboardingScreen() {
         }
       } catch (err) {
         logApiErrorToSentry(err, {
-          endpoint: "/v2/registration/documents",
+          endpoint: "/registration/documents",
           method: "POST",
         });
         Alert.alert(

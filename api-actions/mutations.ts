@@ -5,6 +5,7 @@ import {
   notifyAuthExpired,
 } from "@/api-actions/error-utils";
 import { TokenStorage } from "@/utils/auth-api";
+import { getTenantHeaders } from "@/utils/tenant-header";
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 const API_TIMEOUT = 30000;
@@ -35,7 +36,10 @@ async function authorizedMutation<Req, Res>(
   validateResponse?: (data: unknown) => data is Res,
 ): Promise<Res> {
   const token = await TokenStorage.getToken();
-  const headers: Record<string, unknown> = { ...customHeaders };
+  const headers: Record<string, unknown> = {
+    ...getTenantHeaders(),
+    ...customHeaders,
+  };
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
   try {
