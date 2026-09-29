@@ -35,15 +35,21 @@ const FADE = 96;
  * sitting directly on the page. Scrolls with the keyboard like the screens
  * it replaced.
  */
-export function AuthLayout({ title, subtitle, identity, badge, children }: Props) {
-  const { colors } = useAppTheme();
+export function AuthLayout({
+  title,
+  subtitle,
+  identity,
+  badge,
+  children,
+}: Props) {
+  const { colors, isDark } = useAppTheme();
   const insets = useSafeAreaInsets();
 
   useFocusEffect(
     useCallback(() => {
       setStatusBarStyle("light");
-      return () => setStatusBarStyle("auto");
-    }, []),
+      return () => setStatusBarStyle(isDark ? "light" : "dark");
+    }, [isDark]),
   );
 
   // Brand green in both schemes; the fade ends in fully transparent brand
@@ -62,13 +68,18 @@ export function AuthLayout({ title, subtitle, identity, badge, children }: Props
       keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 24}
     >
       <ScrollView
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + Space.lg }]}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: insets.bottom + Space.lg },
+        ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         keyboardDismissMode="on-drag"
         bounces={false}
       >
-        <View style={[styles.band, { height: bandHeight, paddingTop: logoTop }]}>
+        <View
+          style={[styles.band, { height: bandHeight, paddingTop: logoTop }]}
+        >
           <GradientFill
             colors={[brand, brand, "rgba(112,198,1,0)"]}
             locations={[0, solidHeight / bandHeight, 1]}

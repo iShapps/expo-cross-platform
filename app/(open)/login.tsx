@@ -1,4 +1,8 @@
 import {
+  resolveTenantsByEmail,
+  TenancyQueryError,
+} from "@/api-queries/tenancy";
+import {
   AppButton,
   AppText,
   AuthLayout,
@@ -6,10 +10,12 @@ import {
   OrgLogo,
   TextField,
 } from "@/components/design";
+import { OrganizationPicker } from "@/components/organization-picker";
 import { Space, Touch } from "@/constants/design";
 import { useSettingsStore } from "@/data-store/use-settings-store";
 import { useTenantStore } from "@/data-store/use-tenant-store";
 import LoginCredentials from "@/data-types/auth";
+import { TenantSummary } from "@/data-types/tenancy";
 import { useAppTheme } from "@/hooks/use-app-theme";
 import { useFirstVisitTour } from "@/hooks/use-first-visit-tour";
 import {
@@ -65,6 +71,8 @@ export default function Login() {
   const { colors } = useAppTheme();
   const organizationName = useTenantStore((state) => state.tenant?.name);
   const organizationLogoUrl = useTenantStore((state) => state.tenant?.logoUrl);
+  const persistedTenantEmail = useTenantStore((state) => state.tenant?.email);
+  const hasPersistedTenant = useTenantStore((state) => !!state.tenant);
   const router = useRouter();
 
   const isFocused = useIsFocused();
@@ -83,6 +91,16 @@ export default function Login() {
   const { signIn, isLoading } = useSession();
   const [isSubmittingLogin, setIsSubmittingLogin] = useState(false);
   const isLoginBusy = isLoading || isSubmittingLogin;
+
+  const [orgSwitcherOpen, setOrgSwitcherOpen] = useState(false);
+  const [isLoadingOrgs, setIsLoadingOrgs] = useState(false);
+  const [switchableTenants, setSwitchableTenants] = useState<TenantSummary[]>(
+    [],
+  );
+  const [switchSelectedTenantId, setSwitchSelectedTenantId] = useState<
+    string | null
+  >(null);
+  const [switchLookupEmail, setSwitchLookupEmail] = useState("");
 
   const [biometricSupported, setBiometricSupported] = useState(false);
   const [biometricAllowed, setBiometricAllowed] = useState(false);
@@ -308,12 +326,94 @@ export default function Login() {
     }
   };
 
+  const handleOpenOrgSwitcher = async () => {
+    const lookupEmail = email.trim() || persistedTenantEmail || "";
+    if (!lookupEmail || isLoadingOrgs) return;
+
+    setIsLoadingOrgs(true);
+    try {
+      const matches = await resolveTenantsByEmail(lookupEmail);
+
+      if (matches.length <= 1) {
+        Alert.alert(
+          "Just one organization",
+          "You don't have access to any other organizations yet.",
+        );
+        return;
+      }
+
+      setSwitchableTenants(matches);
+      setSwitchSelectedTenantId(
+        useTenantStore.getState().tenant?.tenantId ?? matches[0].tenantId,
+      );
+      setSwitchLookupEmail(lookupEmail);
+      setOrgSwitcherOpen(true);
+    } catch (err) {
+      Alert.alert(
+        "Error",
+        err instanceof TenancyQueryError
+          ? err.message
+          : "Could not load your organizations. Please try again.",
+      );
+    } finally {
+      setIsLoadingOrgs(false);
+    }
+  };
+
+  const handleConfirmOrgSwitch = () => {
+    const chosen = switchableTenants.find(
+      (t) => t.tenantId === switchSelectedTenantId,
+    );
+    if (!chosen) return;
+    setPassword("");
+    setEmail(switchLookupEmail);
+    useTenantStore.getState().setTenant(chosen, switchLookupEmail);
+    setOrgSwitcherOpen(false);
+  };
+
+  if (orgSwitcherOpen) {
+    return (
+      <AuthLayout
+        title="Choose an organization"
+        subtitle={`${switchLookupEmail} belongs to more than one organization.`}
+      >
+        <View style={styles.form}>
+          <OrganizationPicker
+            tenants={switchableTenants}
+            selectedTenantId={switchSelectedTenantId}
+            onSelect={(tenant) => setSwitchSelectedTenantId(tenant.tenantId)}
+          />
+
+          <View style={styles.actions}>
+            <AppButton
+              title="Continue"
+              icon="arrow-forward"
+              iconPosition="right"
+              onPress={handleConfirmOrgSwitch}
+              fullWidth
+            />
+            <AppButton
+              title="Cancel"
+              variant="ghost"
+              icon="arrow-back"
+              onPress={() => setOrgSwitcherOpen(false)}
+              fullWidth
+            />
+          </View>
+        </View>
+      </AuthLayout>
+    );
+  }
 
   return (
     <AuthLayout
       identity={
         organizationName || organizationLogoUrl ? (
-          <OrgLogo name={organizationName} uri={organizationLogoUrl} size={64} />
+          <OrgLogo
+            name={organizationName}
+            uri={organizationLogoUrl}
+            size={64}
+          />
         ) : undefined
       }
       title="Welcome back"
@@ -350,20 +450,39 @@ export default function Login() {
               ) : undefined
             }
           />
-          {emailPrefilled && (
-            <Pressable
-              accessibilityRole="button"
-              hitSlop={8}
-              style={styles.inlineLink}
-              onPress={() => {
-                useTenantStore.getState().clearTenant();
-                router.replace("/tenant-code");
-              }}
-            >
-              <AppText variant="subhead" color="primaryStrong">
-                Not you? Use a different email
-              </AppText>
-            </Pressable>
+          {(hasPersistedTenant || emailPrefilled) && (
+            <View style={styles.prefilledActions}>
+              {hasPersistedTenant && (
+                <Pressable
+                  accessibilityRole="button"
+                  hitSlop={8}
+                  style={styles.inlineLink}
+                  disabled={isLoadingOrgs}
+                  onPress={handleOpenOrgSwitcher}
+                >
+                  <AppText variant="subhead" color="primaryStrong">
+                    {isLoadingOrgs
+                      ? "Loading organizations…"
+                      : "Switch organization"}
+                  </AppText>
+                </Pressable>
+              )}
+              {emailPrefilled && (
+                <Pressable
+                  accessibilityRole="button"
+                  hitSlop={8}
+                  style={styles.inlineLink}
+                  onPress={() => {
+                    useTenantStore.getState().clearTenant();
+                    router.replace("/tenant-code");
+                  }}
+                >
+                  <AppText variant="subhead" color="textSecondary">
+                    Not you? Use a different email
+                  </AppText>
+                </Pressable>
+              )}
+            </View>
           )}
         </View>
 
@@ -419,16 +538,28 @@ export default function Login() {
               color={isTermsChecked ? colors.primary : colors.borderStrong}
             />
           </Pressable>
-          <AppText variant="footnote" color="textSecondary" style={styles.termsText}>
+          <AppText
+            variant="footnote"
+            color="textSecondary"
+            style={styles.termsText}
+          >
             I agree to the{" "}
             <Link href="https://smarthealthcaresolutions.com.au/terms-of-use">
-              <AppText variant="footnote" color="primaryStrong" style={styles.underline}>
+              <AppText
+                variant="footnote"
+                color="primaryStrong"
+                style={styles.underline}
+              >
                 terms and conditions
               </AppText>
             </Link>{" "}
             &amp;{" "}
             <Link href="https://smarthealthcaresolutions.com.au/privacy-policy">
-              <AppText variant="footnote" color="primaryStrong" style={styles.underline}>
+              <AppText
+                variant="footnote"
+                color="primaryStrong"
+                style={styles.underline}
+              >
                 privacy policy
               </AppText>
             </Link>
@@ -466,10 +597,18 @@ const styles = StyleSheet.create({
   fieldGroup: {
     gap: Space.xxs,
   },
+  prefilledActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Space.md,
+  },
   inlineLink: {
     minHeight: Touch.min,
     justifyContent: "center",
     alignSelf: "flex-start",
+  },
+  actions: {
+    gap: Space.xs,
   },
   forgotWrap: {
     alignSelf: "flex-end",
