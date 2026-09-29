@@ -36,7 +36,6 @@ import {
   type AppColors,
   type Tone,
 } from "@/constants/design";
-import { useConfigSettings } from "@/data-store/config-store";
 import { User } from "@/data-types/auth";
 import { useAppTheme } from "@/hooks/use-app-theme";
 import { useFirstVisitTour } from "@/hooks/use-first-visit-tour";
@@ -62,7 +61,6 @@ export default function HomeScreen() {
   const userDetails = profileStore.userDetails;
   const organizationName = useTenantStore((state) => state.tenant?.name);
   const queryClient = useQueryClient();
-  const configSettings = useConfigSettings();
 
   const {
     data: dashboard,
@@ -259,10 +257,7 @@ export default function HomeScreen() {
     hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
   const firstName = userDetails?.name?.trim().split(/\s+/)[0] ?? "there";
   const avatarUri = userDetails?.hcp
-    ? getAvatarImageSource(
-        userDetails.hcp,
-        configSettings?.configSettings?.image_path?.hcp_path ?? "",
-      )
+    ? getAvatarImageSource(userDetails.hcp)
     : undefined;
 
   useFocusEffect(
