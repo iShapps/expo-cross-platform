@@ -294,7 +294,7 @@ export default function SettingsScreen() {
 
         {/* App Version Footer */}
         <AppText variant="caption" color="textTertiary" align="center" style={styles.version}>
-          iShapps v{appVersion}
+          iShapps Workforce v{appVersion}
         </AppText>
       </ScrollView>
     </SafeAreaView>

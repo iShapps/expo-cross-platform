@@ -79,13 +79,18 @@ export default function Login() {
 
   useFirstVisitTour("login", isFocused);
 
-  // Set when arriving from the tenant resolution screen,
-  // which already looked up the organization for this email — lock it so a
-  // manual edit here can't silently drift from the tenant we already picked.
+  // params.email is set when arriving from the tenant resolution screen,
+  // which already looked up the organization for this email. persistedTenantEmail
+  // covers the other case with a known email: a returning user who logged out
+  // but still has a tenant persisted — prefill it rather than making them
+  // retype it, and lock it the same way for the same reason: a manual edit
+  // here can't silently drift from the tenant already picked/persisted
+  // without going through "Not you?" to resolve it properly.
   const params = useLocalSearchParams<{ email?: string }>();
-  const emailPrefilled = !!params.email;
+  const knownEmail = params.email ?? persistedTenantEmail ?? "";
+  const emailLocked = !!knownEmail;
 
-  const [email, setEmail] = useState(params.email ?? "");
+  const [email, setEmail] = useState(knownEmail);
   const [password, setPassword] = useState("");
   const [isTermsChecked, setIsTermsChecked] = useState(true);
   const { signIn, isLoading } = useSession();
@@ -432,8 +437,8 @@ export default function Login() {
             inputMode="email"
             autoComplete="email"
             clearButtonMode="while-editing"
-            autoFocus={!emailPrefilled}
-            editable={!emailPrefilled}
+            autoFocus={!emailLocked}
+            editable={!emailLocked}
             clearTextOnFocus={false}
             enterKeyHint="next"
             placeholder="johnwilliams@gmail.com"
@@ -450,24 +455,22 @@ export default function Login() {
               ) : undefined
             }
           />
-          {(hasPersistedTenant || emailPrefilled) && (
+          {hasPersistedTenant && (
             <View style={styles.prefilledActions}>
-              {hasPersistedTenant && (
-                <Pressable
-                  accessibilityRole="button"
-                  hitSlop={8}
-                  style={styles.inlineLink}
-                  disabled={isLoadingOrgs}
-                  onPress={handleOpenOrgSwitcher}
-                >
-                  <AppText variant="subhead" color="primaryStrong">
-                    {isLoadingOrgs
-                      ? "Loading organizations…"
-                      : "Switch organization"}
-                  </AppText>
-                </Pressable>
-              )}
-              {emailPrefilled && (
+              <Pressable
+                accessibilityRole="button"
+                hitSlop={8}
+                style={styles.inlineLink}
+                disabled={isLoadingOrgs}
+                onPress={handleOpenOrgSwitcher}
+              >
+                <AppText variant="subhead" color="primaryStrong">
+                  {isLoadingOrgs
+                    ? "Loading organizations…"
+                    : "Switch organization"}
+                </AppText>
+              </Pressable>
+              {emailLocked && (
                 <Pressable
                   accessibilityRole="button"
                   hitSlop={8}
@@ -495,7 +498,7 @@ export default function Login() {
           enterKeyHint="done"
           clearButtonMode="while-editing"
           autoComplete="password"
-          autoFocus={emailPrefilled}
+          autoFocus={emailLocked}
           clearTextOnFocus={false}
           onChangeText={setPassword}
           placeholder="••••••••"

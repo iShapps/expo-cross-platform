@@ -68,6 +68,8 @@ export interface NotificationAdditionalData {
   hcp_id: number | null;
   swap_request_id: number | null;
   document_type: string | null;
+  tenant_id?: string;
+  tenant_name?: string | null;
 }
 
 export interface AppNotification {

@@ -32,7 +32,7 @@ function nextMessageId(): string {
 const GREETING: AssistantMessage = {
   id: "greeting",
   role: "assistant",
-  text: "Hi! I'm the iShapps support assistant. Ask me how to do something in the app, or a question about iShapps and Smart Healthcare Solutions.",
+  text: "Hi! I'm the iShapps Workforce support assistant. Ask me how to do something in the app, or a question about iShapps Workforce and Smart Healthcare Solutions.",
 };
 
 export default function SupportChatScreen() {

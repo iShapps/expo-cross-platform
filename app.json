@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "iShapps",
+    "name": "iShapps Workforce",
     "slug": "ishapps",
-    "version": "2.9.5",
+    "version": "3.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/ishapps_icon_green_ios.png",
     "scheme": "ishapps",

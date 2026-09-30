@@ -6,6 +6,7 @@ import {
   Icon,
   IconBadge,
   IconButton,
+  OrgLogo,
   PressableCard,
   SectionHeader,
   type IconName,
@@ -60,6 +61,7 @@ export default function HomeScreen() {
   const profileStore = useProfileData();
   const userDetails = profileStore.userDetails;
   const organizationName = useTenantStore((state) => state.tenant?.name);
+  const organizationLogoUrl = useTenantStore((state) => state.tenant?.logoUrl);
   const queryClient = useQueryClient();
 
   const {
@@ -358,7 +360,18 @@ export default function HomeScreen() {
           </View>
 
           <View style={styles.orgPill}>
-            <Icon name="business-outline" size={14} color={colors.onHero} />
+            {organizationLogoUrl ? (
+              // Only for a real logo — OrgLogo's own no-image fallback tile
+              // is brand-green, which would nearly disappear against this
+              // same-toned hero. The plain icon below covers that case.
+              <OrgLogo
+                name={organizationName}
+                uri={organizationLogoUrl}
+                size={16}
+              />
+            ) : (
+              <Icon name="business-outline" size={14} color={colors.onHero} />
+            )}
             <AppText variant="caption" style={styles.onHero} numberOfLines={1}>
               {organizationName ?? "—"}
             </AppText>
