@@ -1,7 +1,14 @@
 import { useSession } from "@/app/ctx";
+import { useProfileData } from "@/data-store/use-account-store";
 import { useSettingsStore } from "@/data-store/use-settings-store";
-import { AppNotification } from "@/data-types/notifications";
+import { useTenantStore } from "@/data-store/use-tenant-store";
+import {
+  AppNotification,
+  NotificationAdditionalData,
+} from "@/data-types/notifications";
+import { stopBackgroundTracking } from "@/task-services/locationTask";
 import { debug, error, warn } from "@/utils/logger";
+import { queryClient } from "@/utils/query-client";
 import {
   decrementOneSignalListeners,
   incrementOneSignalListeners,
@@ -11,6 +18,7 @@ import { waitForStableAppState } from "@/utils/wait-for-stable-app-state";
 import Constants from "expo-constants";
 import { router } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Alert } from "react-native";
 import {
   LogLevel,
   NotificationClickEvent,
@@ -48,26 +56,70 @@ const initializeOneSignal = () => {
   return true;
 };
 
+const navigateForNotification = (data: NotificationAdditionalData) => {
+  switch (data.notification_type) {
+    case "shifts":
+      router.navigate(`/${data.shift_id.toString()}`);
+      break;
+    case "documents":
+      router.navigate("/documents");
+      break;
+    case "test":
+      router.navigate("/notification-test");
+      break;
+    default:
+      router.navigate("/notifications");
+      break;
+  }
+};
+
+const switchTenantAndNavigate = async (data: NotificationAdditionalData) => {
+  const currentTenant = useTenantStore.getState().tenant;
+  if (!data.tenant_id || !currentTenant?.email) return;
+
+  await stopBackgroundTracking();
+  useProfileData.getState().clearDetails();
+  queryClient.clear();
+  useTenantStore.getState().setTenant(
+    {
+      tenantId: data.tenant_id,
+      name: data.tenant_name ?? null,
+      logoUrl: null,
+    },
+    currentTenant.email,
+  );
+
+  navigateForNotification(data);
+};
+
 const handleNotificationClick = (event: NotificationClickEvent) => {
   debug("Notification clicked:", event);
   const notification = extractNotification(event);
+  const data = notification?.additionalData;
 
-  if (notification?.additionalData) {
-    switch (notification.additionalData.notification_type) {
-      case "shifts":
-        router.navigate(`/${notification.additionalData.shift_id.toString()}`);
-        break;
-      case "documents":
-        router.navigate("/documents");
-        break;
-      case "test":
-        router.navigate("/notification-test");
-        break;
-      default:
-        router.navigate("/notifications");
-        break;
-    }
+  if (!data) return;
+
+  const currentTenant = useTenantStore.getState().tenant;
+
+  if (
+    data.tenant_id &&
+    currentTenant &&
+    data.tenant_id !== currentTenant.tenantId
+  ) {
+    Alert.alert(
+      "Different organization",
+      `This is for ${
+        data.tenant_name ?? "a different organization"
+      }. Switch organizations to view it?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Switch", onPress: () => void switchTenantAndNavigate(data) },
+      ],
+    );
+    return;
   }
+
+  navigateForNotification(data);
 };
 
 const handleForegroundNotification = (event: NotificationWillDisplayEvent) => {

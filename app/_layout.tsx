@@ -7,6 +7,7 @@ import { useOTAUpdate } from "@/hooks/use-ota-update";
 import { usePermissionMonitor } from "@/hooks/use-permission-monitor";
 import { useShiftWatcher } from "@/hooks/use-shift-watcher";
 import { debug } from "@/utils/logger";
+import { queryClient } from "@/utils/query-client";
 import {
   decrementAppStateListeners,
   incrementAppStateListeners,
@@ -24,11 +25,7 @@ import {
   useFonts,
 } from "@expo-google-fonts/outfit";
 import * as Sentry from "@sentry/react-native";
-import {
-  focusManager,
-  QueryClient,
-  QueryClientProvider,
-} from "@tanstack/react-query";
+import { focusManager, QueryClientProvider } from "@tanstack/react-query";
 import { SplashScreen, Stack, usePathname } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
@@ -71,7 +68,6 @@ if (!sentryGlobal.__ISHAPPS_SENTRY_INITIALIZED__) {
 }
 
 SplashScreen.preventAutoHideAsync();
-const queryClient = new QueryClient();
 
 export default Sentry.wrap(function Root() {
   incrementRootRenderCount();

@@ -1399,7 +1399,7 @@ export default function OnboardingScreen() {
           <View style={styles.successCard}>
             <IconBadge icon="sparkles-outline" tone="primary" size={80} />
             <AppText variant="title2" align="center">
-              Welcome to iShapps!
+              Welcome to iShapps Workforce!
             </AppText>
             <AppText variant="callout" color="textSecondary" align="center">
               Your registration is complete. Your account is pending approval —

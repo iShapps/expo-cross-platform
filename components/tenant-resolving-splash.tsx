@@ -69,7 +69,7 @@ export function TenantResolvingSplash() {
       <Animated.Image
         source={require("@/assets/images/ishapps_green.png")}
         resizeMode="contain"
-        accessibilityLabel="iShapps"
+        accessibilityLabel="iShapps Workforce"
         style={[styles.logo, { transform: [{ scale }], opacity }]}
       />
 

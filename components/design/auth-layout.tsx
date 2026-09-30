@@ -89,7 +89,7 @@ export function AuthLayout({
           <Image
             source={require("@/assets/images/ishapps_green.png")}
             resizeMode="contain"
-            accessibilityLabel="iShapps"
+            accessibilityLabel="iShapps Workforce"
             style={[styles.logo, { tintColor: colors.onHero }]}
           />
         </View>
@@ -113,7 +113,7 @@ export function AuthLayout({
           <View style={styles.spacer} />
 
           <AppText variant="caption" color="textTertiary" align="center">
-            iShapps · Workforce App
+            iShapps Workforce
           </AppText>
         </View>
       </ScrollView>

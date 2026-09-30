@@ -32,7 +32,7 @@ export function GlobalUpdateGate() {
           Update required
         </AppText>
         <AppText variant="callout" color="textSecondary" align="center">
-          A newer version of iShapps is required to continue. Please update your
+          A newer version of iShapps Workforce is required to continue. Please update your
           app from the {Platform.OS === "ios" ? "App Store" : "Play Store"}.
         </AppText>
         <View style={[styles.versions, { backgroundColor: colors.surfaceMuted }]}>
