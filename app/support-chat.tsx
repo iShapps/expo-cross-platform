@@ -1,7 +1,7 @@
 import { askAssistant, AssistantQueryError } from "@/api-queries/assistant";
-import { Colors, Radii } from "@/constants/theme";
+import { FontFamily, Radius, Space, Touch, Type, type AppColors } from "@/constants/design";
 import { AssistantMessage } from "@/data-types/assistant";
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useAppTheme } from "@/hooks/use-app-theme";
 import { matchLocalKnowledge } from "@/utils/assistant-intent-matcher";
 import { escalateToHumanSupport } from "@/utils/support-escalation";
 import { Ionicons } from "@expo/vector-icons";
@@ -32,16 +32,14 @@ function nextMessageId(): string {
 const GREETING: AssistantMessage = {
   id: "greeting",
   role: "assistant",
-  text: "Hi! I'm the iShapps support assistant. Ask me how to do something in the app, or a question about iShapps and Smart Healthcare Solutions.",
+  text: "Hi! I'm the iShapps Workforce support assistant. Ask me how to do something in the app, or a question about iShapps Workforce and Smart Healthcare Solutions.",
 };
 
 export default function SupportChatScreen() {
   const router = useRouter();
   const { user } = useSession();
 
-  let colorScheme = useColorScheme();
-  if (!colorScheme) colorScheme = "light";
-  const theme = Colors[colorScheme];
+  const { colors: theme } = useAppTheme();
   const styles = getStyles(theme);
 
   const [messages, setMessages] = useState<AssistantMessage[]>([GREETING]);
@@ -136,7 +134,7 @@ export default function SupportChatScreen() {
           style={styles.closeButton}
           hitSlop={8}
         >
-          <Ionicons name="close" size={20} color={theme.primaryText} />
+          <Ionicons name="close" size={20} color={theme.text} />
         </TouchableOpacity>
       </View>
 
@@ -171,7 +169,7 @@ export default function SupportChatScreen() {
 
         {isSending && (
           <View style={styles.typingRow}>
-            <ActivityIndicator size="small" color={theme.primary} />
+            <ActivityIndicator size="small" color={theme.primaryStrong} />
             <Text style={styles.typingText}>Thinking…</Text>
           </View>
         )}
@@ -181,7 +179,7 @@ export default function SupportChatScreen() {
             value={input}
             onChangeText={setInput}
             placeholder="Type your question…"
-            placeholderTextColor={theme.secondaryText}
+            placeholderTextColor={theme.textSecondary}
             style={styles.input}
             multiline
             editable={!isSending}
@@ -195,7 +193,7 @@ export default function SupportChatScreen() {
             onPress={handleSend}
             disabled={!input.trim() || isSending}
           >
-            <Ionicons name="arrow-up" size={18} color={theme.white} />
+            <Ionicons name="arrow-up" size={18} color={theme.textOnPrimary} />
           </TouchableOpacity>
         </View>
 
@@ -207,7 +205,7 @@ export default function SupportChatScreen() {
           <Ionicons
             name="person-outline"
             size={14}
-            color={theme.secondaryText}
+            color={theme.textSecondary}
           />
           <Text style={styles.humanSupportLinkText}>
             {isEscalating ? "Opening email…" : "Talk to a human instead"}
@@ -228,7 +226,7 @@ function MessageBubble({
 }: {
   message: AssistantMessage;
   styles: ReturnType<typeof getStyles>;
-  theme: typeof Colors.light;
+  theme: AppColors;
   onAction: () => void;
   onEscalate: () => void;
   isEscalating: boolean;
@@ -260,7 +258,7 @@ function MessageBubble({
           <Ionicons
             name="arrow-forward-circle-outline"
             size={16}
-            color={theme.primary}
+            color={theme.primaryStrong}
           />
           <Text style={styles.actionChipText}>{message.action.label}</Text>
         </TouchableOpacity>
@@ -272,7 +270,7 @@ function MessageBubble({
           onPress={onEscalate}
           disabled={isEscalating}
         >
-          <Ionicons name="mail-outline" size={16} color={theme.primary} />
+          <Ionicons name="mail-outline" size={16} color={theme.primaryStrong} />
           <Text style={styles.actionChipText}>
             {isEscalating ? "Opening email…" : "Contact human support"}
           </Text>
@@ -282,45 +280,44 @@ function MessageBubble({
   );
 }
 
-const getStyles = (theme: typeof Colors.light) =>
+const getStyles = (theme: AppColors) =>
   StyleSheet.create({
     safeArea: {
       flex: 1,
-      backgroundColor: theme.whiteBackground,
+      backgroundColor: theme.background,
     },
     header: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      borderBottomWidth: 1,
-      borderBottomColor: theme.divider,
+      paddingHorizontal: Space.gutter,
+      paddingVertical: Space.sm,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: theme.border,
+      backgroundColor: theme.surface,
     },
     headerTextBlock: {
       flex: 1,
     },
     headerTitle: {
-      fontSize: 18,
-      fontWeight: "800",
-      color: theme.primaryText,
+      ...Type.title3,
+      color: theme.text,
     },
     headerSubtitle: {
-      fontSize: 12,
-      color: theme.secondaryText,
-      marginTop: 2,
+      ...Type.footnote,
+      color: theme.textSecondary,
     },
     closeButton: {
-      width: 36,
-      height: 36,
-      borderRadius: Radii.full,
+      width: Touch.min,
+      height: Touch.min,
+      borderRadius: Radius.full,
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: theme.heroBg,
+      backgroundColor: theme.surfaceMuted,
     },
     messageList: {
-      padding: 16,
-      gap: 12,
+      padding: Space.md,
+      gap: Space.sm,
       flexGrow: 1,
     },
     bubbleRow: {
@@ -336,91 +333,90 @@ const getStyles = (theme: typeof Colors.light) =>
       alignItems: "flex-start",
     },
     bubble: {
-      borderRadius: Radii.sm,
-      paddingHorizontal: 14,
-      paddingVertical: 10,
+      borderRadius: Radius.lg,
+      paddingHorizontal: Space.md,
+      paddingVertical: Space.sm,
     },
     bubbleUser: {
       backgroundColor: theme.primary,
-      borderBottomRightRadius: Radii.xs,
+      borderBottomRightRadius: Radius.xs / 2,
     },
     bubbleAssistant: {
-      backgroundColor: theme.heroBg,
-      borderBottomLeftRadius: Radii.xs,
+      backgroundColor: theme.surface,
+      borderWidth: 1,
+      borderColor: theme.border,
+      borderBottomLeftRadius: Radius.xs / 2,
     },
     bubbleTextUser: {
-      color: theme.white,
-      fontSize: 14,
-      lineHeight: 20,
+      ...Type.callout,
+      color: theme.textOnPrimary,
     },
     bubbleTextAssistant: {
-      color: theme.primaryText,
-      fontSize: 14,
-      lineHeight: 20,
+      ...Type.callout,
+      color: theme.text,
     },
     actionChip: {
+      minHeight: 36,
       flexDirection: "row",
       alignItems: "center",
       gap: 6,
-      borderWidth: 1,
-      borderColor: theme.primary,
-      borderRadius: Radii.full,
-      paddingHorizontal: 12,
-      paddingVertical: 6,
+      borderRadius: Radius.full,
+      paddingHorizontal: Space.sm,
+      backgroundColor: theme.primarySoft,
     },
     actionChipText: {
-      color: theme.primary,
-      fontSize: 12,
-      fontWeight: "700",
+      ...Type.caption,
+      color: theme.primaryStrong,
     },
     typingRow: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 8,
-      paddingHorizontal: 16,
-      paddingBottom: 4,
+      gap: Space.xs,
+      paddingHorizontal: Space.md,
+      paddingBottom: Space.xxs,
     },
     typingText: {
-      fontSize: 12,
-      color: theme.secondaryText,
+      ...Type.caption,
+      color: theme.textSecondary,
     },
     inputRow: {
       flexDirection: "row",
       alignItems: "flex-end",
-      gap: 10,
-      paddingHorizontal: 16,
-      paddingTop: 8,
-      paddingBottom: 8,
+      gap: Space.xs,
+      paddingHorizontal: Space.md,
+      paddingVertical: Space.xs,
     },
     input: {
       flex: 1,
-      maxHeight: 100,
-      borderWidth: 1,
-      borderColor: theme.grayBorder,
-      borderRadius: Radii.full,
-      paddingHorizontal: 16,
-      paddingVertical: 10,
-      fontSize: 14,
-      color: theme.primaryText,
+      minHeight: Touch.min,
+      maxHeight: 110,
+      borderRadius: Radius.xl,
+      paddingHorizontal: Space.md,
+      paddingTop: 11,
+      paddingBottom: 11,
+      fontFamily: FontFamily.regular,
+      fontSize: 16,
+      color: theme.text,
+      backgroundColor: theme.surfaceMuted,
     },
     sendButton: {
-      width: 40,
-      height: 40,
-      borderRadius: Radii.full,
+      width: Touch.min,
+      height: Touch.min,
+      borderRadius: Radius.full,
       backgroundColor: theme.primary,
       alignItems: "center",
       justifyContent: "center",
     },
     humanSupportLink: {
+      minHeight: Touch.min,
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
       gap: 6,
-      paddingBottom: 10,
     },
     humanSupportLinkText: {
-      fontSize: 12,
-      color: theme.secondaryText,
+      ...Type.caption,
+      color: theme.textSecondary,
       textDecorationLine: "underline",
     },
   });

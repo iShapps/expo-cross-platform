@@ -1,46 +1,40 @@
 import { isAuthError } from "@/api-actions/error-utils";
 import { ApiMutationError } from "@/api-actions/mutations";
 import { changePassword } from "@/api-queries/profile";
-import { Colors, Radii } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
-import { AntDesign } from "@expo/vector-icons";
-import Entypo from "@expo/vector-icons/Entypo";
-import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import {
+  AppButton,
+  AppText,
+  Card,
+  Icon,
+  IconBadge,
+  TextField,
+} from "@/components/design";
+import { Radius, Space } from "@/constants/design";
+import { useAppTheme } from "@/hooks/use-app-theme";
 import { useMutation } from "@tanstack/react-query";
 import { BlurView } from "expo-blur";
 import { router } from "expo-router";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  Animated,
-  Easing,
   KeyboardAvoidingView,
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
-  Text,
-  TextInput,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useSession } from "./ctx";
 
 export default function ForcePasswordResetScreen() {
-  let colorScheme = useColorScheme();
-  if (!colorScheme) colorScheme = "light";
-  const theme = Colors[colorScheme];
-  const styles = getStyles(theme);
+  const { colors, isDark } = useAppTheme();
 
   const { signOut } = useSession();
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
   const changePasswordMutation = useMutation({
@@ -105,65 +99,11 @@ export default function ForcePasswordResetScreen() {
     newPassword !== confirmPassword ||
     newPassword === currentPassword;
 
-  const spinAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    if (changePasswordMutation.isPending) {
-      Animated.loop(
-        Animated.timing(spinAnim, {
-          toValue: 1,
-          duration: 800,
-          easing: Easing.linear,
-          useNativeDriver: true,
-        }),
-      ).start();
-    } else {
-      spinAnim.stopAnimation();
-      spinAnim.setValue(0);
-    }
-  }, [changePasswordMutation.isPending, spinAnim]);
-
-  const renderPasswordField = (
-    label: string,
-    value: string,
-    onChangeText: (value: string) => void,
-    visible: boolean,
-    onToggleVisible: () => void,
-  ) => (
-    <View style={styles.field}>
-      <Text style={styles.fieldLabel}>{label}</Text>
-      <View style={styles.inputShell}>
-        <MaterialCommunityIcons
-          name="lock-outline"
-          size={18}
-          color={theme.secondaryText}
-        />
-        <TextInput
-          value={value}
-          onChangeText={onChangeText}
-          secureTextEntry={!visible}
-          placeholder="••••••••"
-          placeholderTextColor={theme.secondaryText}
-          cursorColor={theme.primary}
-          style={styles.input}
-        />
-        <Pressable onPress={onToggleVisible} hitSlop={8}>
-          <Entypo
-            name="eye"
-            size={20}
-            color={visible ? theme.primary : theme.secondaryText}
-          />
-        </Pressable>
-      </View>
-    </View>
-  );
-
   return (
-    <SafeAreaView style={styles.safeArea} edges={["top"]}>
-      <View style={styles.header}>
-        <Text style={styles.kicker}>Security</Text>
-        <Text style={styles.title}>Change your password</Text>
-      </View>
+    <SafeAreaView
+      style={[styles.safeArea, { backgroundColor: colors.background }]}
+      edges={["top"]}
+    >
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{ flex: 1 }}
@@ -174,91 +114,77 @@ export default function ForcePasswordResetScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <View style={styles.heroPanel}>
-            <View style={styles.heroIcon}>
-              <MaterialCommunityIcons
-                name="shield-key-outline"
-                size={22}
-                color={theme.white}
-              />
-            </View>
-            <Text style={styles.heroText}>
+          <View style={styles.header}>
+            <IconBadge icon="shield-checkmark-outline" tone="primary" size={64} />
+            <AppText variant="overline" color="primaryStrong">
+              Security
+            </AppText>
+            <AppText variant="title1">Change your password</AppText>
+            <AppText variant="callout" color="textSecondary">
               For your security, you need to change your password before you can
               continue.
-            </Text>
+            </AppText>
           </View>
 
-          <View style={styles.formSection}>
-            {renderPasswordField(
-              "Current Password",
-              currentPassword,
-              setCurrentPassword,
-              showCurrentPassword,
-              () => setShowCurrentPassword(!showCurrentPassword),
-            )}
-            {renderPasswordField(
-              "New Password",
-              newPassword,
-              setNewPassword,
-              showNewPassword,
-              () => setShowNewPassword(!showNewPassword),
-            )}
-            {renderPasswordField(
-              "Confirm New Password",
-              confirmPassword,
-              setConfirmPassword,
-              showConfirmPassword,
-              () => setShowConfirmPassword(!showConfirmPassword),
+          <Card padding={Space.lg} style={styles.form}>
+            <TextField
+              label="Current password"
+              icon="lock-closed-outline"
+              secure
+              value={currentPassword}
+              onChangeText={setCurrentPassword}
+              placeholder="••••••••"
+            />
+            <TextField
+              label="New password"
+              icon="key-outline"
+              secure
+              value={newPassword}
+              onChangeText={setNewPassword}
+              placeholder="••••••••"
+            />
+            <TextField
+              label="Confirm new password"
+              icon="key-outline"
+              secure
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              placeholder="••••••••"
+            />
+
+            {formError && (
+              <View style={[styles.errorBox, { backgroundColor: colors.dangerSoft }]}>
+                <Icon name="alert-circle-outline" size={18} color={colors.danger} />
+                <AppText variant="footnote" color="danger" style={styles.errorText}>
+                  {formError}
+                </AppText>
+              </View>
             )}
 
-            {formError && <Text style={styles.errorText}>{formError}</Text>}
-
-            <Pressable
+            <AppButton
+              title="Update password"
               onPress={handleSubmit}
               disabled={isInvalid || changePasswordMutation.isPending}
-              style={[styles.primaryButton, isInvalid && { opacity: 0.5 }]}
-            >
-              {changePasswordMutation.isPending && (
-                <Animated.View
-                  style={{
-                    marginRight: 10,
-                    transform: [
-                      {
-                        rotate: spinAnim.interpolate({
-                          inputRange: [0, 1],
-                          outputRange: ["0deg", "360deg"],
-                        }),
-                      },
-                    ],
-                  }}
-                >
-                  <AntDesign
-                    name="loading-3-quarters"
-                    size={18}
-                    color={theme.white}
-                  />
-                </Animated.View>
-              )}
-              <Text style={styles.primaryButtonText}>
-                {changePasswordMutation.isPending
-                  ? "Changing password..."
-                  : "Update Password"}
-              </Text>
-            </Pressable>
-          </View>
+              loading={changePasswordMutation.isPending}
+              loadingTitle="Changing password…"
+              fullWidth
+            />
+          </Card>
         </ScrollView>
       </KeyboardAvoidingView>
 
       {changePasswordMutation.isPending && (
         <View style={styles.busyOverlay} pointerEvents="auto">
           <BlurView
-            intensity={45}
-            tint="dark"
+            intensity={40}
+            tint={isDark ? "dark" : "light"}
             style={StyleSheet.absoluteFill}
           />
-          <View style={styles.busyCard}>
-            <ActivityIndicator size="large" color={theme.white} />
-            <Text style={styles.busyText}>Changing password...</Text>
+          <View style={[styles.busyCard, { backgroundColor: colors.surface }]}>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <AppText variant="headline" align="center">
+              Changing password…
+            </AppText>
           </View>
         </View>
       )}
@@ -266,136 +192,46 @@ export default function ForcePasswordResetScreen() {
   );
 }
 
-const SURFACE_TINT = "#F2F9E9";
-const ACCENT_BORDER = "#CFE8A8";
-const TEXT_SAFE_PRIMARY = "#3D7A00";
-
-const getStyles = (theme: typeof Colors.light) =>
-  StyleSheet.create({
-    safeArea: {
-      flex: 1,
-      backgroundColor: theme.whiteBackground,
-    },
-    header: {
-      paddingHorizontal: 20,
-      paddingTop: 10,
-      paddingBottom: 14,
-      backgroundColor: theme.whiteBackground,
-      borderBottomWidth: 2,
-      borderBottomColor: ACCENT_BORDER,
-    },
-    kicker: {
-      color: TEXT_SAFE_PRIMARY,
-      fontSize: 10,
-      fontWeight: "800",
-      textTransform: "uppercase",
-    },
-    title: {
-      color: theme.primaryText,
-      fontSize: 20,
-      fontWeight: "700",
-      marginTop: 4,
-    },
-    scrollContent: {
-      flexGrow: 1,
-      padding: 16,
-      gap: 14,
-      backgroundColor: SURFACE_TINT,
-    },
-    heroPanel: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 10,
-      padding: 12,
-      borderRadius: Radii.md,
-      backgroundColor: theme.heroBg,
-      borderWidth: 1,
-      borderColor: theme.heroBorder,
-    },
-    heroIcon: {
-      width: 44,
-      height: 44,
-      borderRadius: Radii.sm,
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: theme.primary,
-    },
-    heroText: {
-      flex: 1,
-      color: theme.primaryText,
-      fontSize: 13,
-      fontWeight: "700",
-      lineHeight: 18,
-    },
-    formSection: {
-      gap: 14,
-    },
-    field: {
-      gap: 7,
-    },
-    fieldLabel: {
-      color: theme.primaryText,
-      fontSize: 13,
-      fontWeight: "700",
-    },
-    inputShell: {
-      minHeight: 42,
-      borderWidth: 1,
-      borderColor: ACCENT_BORDER,
-      borderRadius: Radii.sm,
-      backgroundColor: theme.whiteBackground,
-      paddingHorizontal: 10,
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 10,
-    },
-    input: {
-      flex: 1,
-      color: theme.primaryText,
-      fontSize: 15,
-    },
-    errorText: {
-      color: theme.danger,
-      fontSize: 13,
-    },
-    primaryButton: {
-      marginTop: 4,
-      backgroundColor: theme.primary,
-      borderRadius: Radii.sm,
-      paddingVertical: 13,
-      alignItems: "center",
-      display: "flex",
-      flexDirection: "row",
-      justifyContent: "center",
-    },
-    primaryButtonText: {
-      color: theme.white,
-      fontSize: 15,
-      fontWeight: "600",
-    },
-    busyOverlay: {
-      ...StyleSheet.absoluteFillObject,
-      zIndex: 999,
-      elevation: 999,
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: "rgba(10, 16, 26, 0.18)",
-    },
-    busyCard: {
-      minWidth: 220,
-      paddingHorizontal: 18,
-      paddingVertical: 16,
-      borderRadius: Radii.md,
-      alignItems: "center",
-      gap: 12,
-      backgroundColor: "rgba(0, 0, 0, 0.45)",
-      borderWidth: 1,
-      borderColor: "rgba(255, 255, 255, 0.25)",
-    },
-    busyText: {
-      color: theme.white,
-      fontSize: 14,
-      fontWeight: "600",
-      textAlign: "center",
-    },
-  });
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    padding: Space.gutter,
+    paddingTop: Space.xl,
+    gap: Space.xl,
+  },
+  header: {
+    gap: Space.xs,
+    alignItems: "flex-start",
+  },
+  form: {
+    gap: Space.md,
+  },
+  errorBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Space.xs,
+    padding: Space.sm,
+    borderRadius: Radius.sm,
+  },
+  errorText: {
+    flex: 1,
+  },
+  busyOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 999,
+    elevation: 999,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  busyCard: {
+    minWidth: 220,
+    paddingHorizontal: Space.xl,
+    paddingVertical: Space.lg,
+    borderRadius: Radius.xl,
+    alignItems: "center",
+    gap: Space.sm,
+  },
+});

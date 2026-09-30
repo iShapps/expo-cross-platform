@@ -1,16 +1,14 @@
-import { Colors, Radii } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { AppButton, AppText, IconBadge } from "@/components/design";
+import { Space } from "@/constants/design";
+import { useAppTheme } from "@/hooks/use-app-theme";
 import { router } from "expo-router";
 import React from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import ConfettiCannon from "react-native-confetti-cannon";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function NotificationTestScreen() {
-  const colorScheme = useColorScheme() ?? "light";
-  const theme = Colors[colorScheme];
-  const styles = getStyles(theme);
+  const { colors } = useAppTheme();
   const [confettiKey, setConfettiKey] = React.useState(0);
   const repeatTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -29,7 +27,7 @@ export default function NotificationTestScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <ConfettiCannon
         key={confettiKey}
         count={90}
@@ -41,99 +39,50 @@ export default function NotificationTestScreen() {
         onAnimationEnd={repeatConfetti}
       />
       <View style={styles.content}>
-        <View style={styles.checkOuter}>
-          <View style={styles.checkInner}>
-            <MaterialIcons name="verified" size={100} color={theme.primary} />
-          </View>
+        <View style={[styles.halo, { backgroundColor: colors.primarySoft }]}>
+          <IconBadge icon="checkmark-done" tone="primary" size={96} />
         </View>
 
-        <Text style={styles.title}>Notification test complete</Text>
-        <Text style={styles.subtitle}>
+        <AppText variant="title1" align="center">
+          Notification test complete
+        </AppText>
+        <AppText variant="body" color="textSecondary" align="center" style={styles.subtitle}>
           Your notifications are working correctly
-        </Text>
+        </AppText>
 
-        <Pressable
+        <AppButton
+          title="Go to dashboard"
+          icon="arrow-forward"
+          iconPosition="right"
           onPress={() => router.replace("/(tabs)")}
-          style={({ pressed }) => [
-            styles.button,
-            pressed && styles.buttonPressed,
-          ]}
-        >
-          <Text style={styles.buttonText}>Go to dashboard</Text>
-          <MaterialIcons name="arrow-right-alt" size={20} color={theme.white} />
-        </Pressable>
+        />
       </View>
     </SafeAreaView>
   );
 }
 
-const getStyles = (theme: typeof Colors.light) =>
-  StyleSheet.create({
-    safeArea: {
-      flex: 1,
-      backgroundColor: theme.safeAreaBg,
-    },
-    content: {
-      flex: 1,
-      alignItems: "center",
-      justifyContent: "center",
-      paddingHorizontal: 24,
-      paddingBottom: 24,
-    },
-    checkOuter: {
-      width: 132,
-      height: 132,
-      borderRadius: Radii.full,
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: `${theme.primary}1A`,
-      marginBottom: 28,
-    },
-    checkInner: {
-      width: 96,
-      height: 96,
-      borderRadius: Radii.full,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    title: {
-      fontSize: 24,
-      lineHeight: 30,
-      fontWeight: "800",
-      textAlign: "center",
-      color: theme.primaryText,
-      marginBottom: 10,
-    },
-    subtitle: {
-      maxWidth: 300,
-      fontSize: 16,
-      lineHeight: 23,
-      textAlign: "center",
-      color: theme.secondaryText,
-      marginBottom: 34,
-    },
-    button: {
-      paddingVertical: 10,
-      borderRadius: Radii.full,
-      paddingHorizontal: 20,
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
-      gap: 10,
-      backgroundColor: theme.primary,
-      shadowColor: theme.shadow ?? theme.primary,
-      shadowOffset: { width: 0, height: 10 },
-      shadowOpacity: 0.18,
-      shadowRadius: 18,
-      elevation: 4,
-    },
-    buttonPressed: {
-      opacity: 0.88,
-      transform: [{ scale: 0.99 }],
-    },
-    buttonText: {
-      fontSize: 14,
-      fontWeight: "500",
-      color: theme.white,
-    },
-  });
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
+  content: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: Space.xl,
+    paddingBottom: Space.xl,
+    gap: Space.sm,
+  },
+  halo: {
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: Space.lg,
+  },
+  subtitle: {
+    maxWidth: 300,
+    marginBottom: Space.xl,
+  },
+});

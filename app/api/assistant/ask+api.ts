@@ -1,15 +1,15 @@
 import Anthropic from "@anthropic-ai/sdk";
 
-const SYSTEM_PROMPT = `You are the in-app support assistant for iShapps, a mobile app used by healthcare professionals (HCPs) on the SmartHealth staffing platform to find and manage shifts, upload compliance documents, and manage their profile.
+const SYSTEM_PROMPT = `You are the in-app support assistant for iShapps Workforce, a mobile app used by healthcare professionals (HCPs) on the SmartHealth staffing platform to find and manage shifts, upload compliance documents, and manage their profile.
 
-Answer questions about iShapps and SmartHealth: how the platform works, shift booking, compliance documents, payments, and general healthcare-staffing questions relevant to the app.
+Answer questions about iShapps Workforce and SmartHealth: how the platform works, shift booking, compliance documents, payments, and general healthcare-staffing questions relevant to the app.
 
 Rules:
 - Do not give medical advice, clinical guidance, or diagnoses.
 - Do not invent specific account details, shift data, payment amounts, or document statuses you were not given — you have no access to the user's account.
 - If a question needs access to the user's account/data, or you are not confident in the answer, say so plainly and suggest contacting human support.
 - Keep answers short and conversational — 2 to 4 sentences, no headers or bullet lists unless truly needed.
-- If asked something entirely unrelated to iShapps, SmartHealth, or healthcare staffing, politely redirect to what you can help with.`;
+- If asked something entirely unrelated to iShapps Workforce, SmartHealth, or healthcare staffing, politely redirect to what you can help with.`;
 
 type ChatTurn = { role?: string; text?: string };
 
@@ -17,14 +17,18 @@ type ChatTurn = { role?: string; text?: string };
 // must not be callable by anyone who isn't a signed-in app user. Re-validates
 // the caller's existing SmartHealth bearer token against the app's own
 // authenticated "me" endpoint rather than duplicating any backend logic here.
+// The backend is multi-tenant and resolves the tenant purely from the
+// X-Tenant-Code header, so that has to be forwarded too — without it the
+// backend can't identify a tenant at all and "me" fails for every caller.
 async function isAuthorized(request: Request): Promise<boolean> {
   const authHeader = request.headers.get("authorization");
+  const tenantHeader = request.headers.get("x-tenant-code");
   const apiBaseUrl = process.env.EXPO_PUBLIC_API_URL;
-  if (!authHeader || !apiBaseUrl) return false;
+  if (!authHeader || !tenantHeader || !apiBaseUrl) return false;
 
   try {
-    const res = await fetch(`${apiBaseUrl.replace(/\/$/, "")}/v2/auth/me`, {
-      headers: { Authorization: authHeader },
+    const res = await fetch(`${apiBaseUrl.replace(/\/$/, "")}/auth/me`, {
+      headers: { Authorization: authHeader, "X-Tenant-Code": tenantHeader },
     });
     return res.ok;
   } catch {

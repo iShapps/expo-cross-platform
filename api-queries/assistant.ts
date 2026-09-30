@@ -1,4 +1,5 @@
 import { TokenStorage } from "@/utils/auth-api";
+import { getTenantHeaders } from "@/utils/tenant-header";
 
 // Base URL of this same Expo app's own API routes (see app/api/assistant/).
 // Native builds have no "same origin" to fall back to, so this must be set
@@ -46,6 +47,7 @@ export async function askAssistant(
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
+        ...getTenantHeaders(),
       },
       body: JSON.stringify({ message, history }),
       signal: controller.signal,

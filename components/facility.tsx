@@ -1,17 +1,9 @@
-import { Colors, Radii } from "@/constants/theme";
+import { AppText, Icon, IconBadge, PressableCard } from "@/components/design";
+import { Radius, Space } from "@/constants/design";
 import { IFacility } from "@/data-types/facilities";
-import { useColorScheme } from "@/hooks/use-color-scheme";
-import { Fontisto, MaterialCommunityIcons } from "@expo/vector-icons";
+import { useAppTheme } from "@/hooks/use-app-theme";
 import React from "react";
-import {
-  Alert,
-  Linking,
-  Platform,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Alert, Linking, Platform, StyleSheet, View } from "react-native";
 
 interface FacilityCardCardProps {
   facility: IFacility;
@@ -39,112 +31,59 @@ const FacilityCard: React.FC<FacilityCardCardProps> = ({ facility }) => {
     }
   };
 
-  const colorScheme = useColorScheme();
-  const theme = Colors[colorScheme ?? "light"];
-  const styles = getStyles(theme);
+  const { colors } = useAppTheme();
 
   return (
-    <Pressable
+    <PressableCard
       onPress={openMaps}
-      style={[
-        styles.heroCard,
-        {
-          backgroundColor: theme.heroBg,
-          borderColor: theme.heroBorder,
-        },
-      ]}
+      accessibilityRole="button"
+      accessibilityHint="Opens the address in Maps"
+      radius={Radius.lg}
+      padding={Space.md}
+      style={styles.card}
     >
-      <View style={styles.heroContent}>
-        <Text style={[styles.heroName, { color: theme.primaryText }]}>
-          {facility.name ?? "—"}
-        </Text>
-        {/* <View style={styles.heroText}>
-          <MaterialCommunityIcons
-            name="phone"
-            size={15}
-            color={theme.activeText}
-          />
-          <Text style={[styles.heroMeta, { color: theme.secondaryText }]}>
-            {facility.contact_person ?? "—"}
-            - {facility.contact_number ?? "—"}
-          </Text>
-        </View> */}
-
-        {/* <View style={styles.heroText}>
-          <MaterialCommunityIcons
-            name="email-newsletter"
-            size={15}
-            color={theme.activeText}
-          />
-          <Text style={[styles.heroMeta, { color: theme.secondaryText }]}>
-            {facility.post_code ?? "—"}
-          </Text>
-        </View> */}
-        <View style={styles.heroText}>
-          <MaterialCommunityIcons
-            name="map-marker-outline"
-            size={16}
-            color={theme.activeText}
-          />
-          <Text style={[styles.heroMeta, { color: theme.secondaryText }]}>
+      <IconBadge icon="business-outline" tone="primary" size={48} />
+      <View style={styles.content}>
+        <AppText variant="headline">{facility.name ?? "—"}</AppText>
+        <View style={styles.metaRow}>
+          <Icon name="location-outline" size={15} color={colors.textTertiary} />
+          <AppText variant="footnote" color="textSecondary" style={styles.flex}>
             {facility.address ?? "—"}
-          </Text>
+          </AppText>
         </View>
-        <View style={styles.heroText}>
-          <Fontisto name="world-o" size={12} color={theme.activeText} />
-          <Text style={[styles.heroMeta, { color: theme.secondaryText }]}>
+        <View style={styles.metaRow}>
+          <Icon name="globe-outline" size={15} color={colors.textTertiary} />
+          <AppText variant="footnote" color="textSecondary" style={styles.flex}>
             {facility.state?.name ?? "—"}
-          </Text>
+          </AppText>
         </View>
       </View>
-    </Pressable>
+      <Icon name="navigate-outline" size={20} color={colors.primaryStrong} style={styles.directions} />
+    </PressableCard>
   );
 };
 
 export default FacilityCard;
 
-const getStyles = (theme: typeof Colors.light) =>
-  StyleSheet.create({
-    heroCard: {
-      // marginTop: 4,
-      backgroundColor: theme.heroBg,
-      borderRadius: Radii.md,
-      padding: 10,
-      display: "flex",
-      flexDirection: "column",
-      gap: 12,
-      borderWidth: 1,
-      borderColor: theme.heroBorder,
-    },
-    heroText: {
-      display: "flex",
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 6,
-    },
-    heroIconWrap: {
-      height: 64,
-      width: 64,
-      borderRadius: Radii.sm,
-      backgroundColor: theme.heroIconBg,
-      alignItems: "center",
-      justifyContent: "center",
-      overflow: "hidden",
-    },
-    heroContent: {
-      flex: 1,
-      display: "flex",
-      flexDirection: "column",
-      gap: 5,
-    },
-    heroName: {
-      fontSize: 16,
-      fontWeight: "700",
-      color: theme.primaryText,
-    },
-    heroMeta: {
-      fontSize: 12,
-      color: theme.secondaryText,
-      marginTop: 2,
-    },
-  });
+const styles = StyleSheet.create({
+  card: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: Space.sm,
+  },
+  content: {
+    flex: 1,
+    gap: Space.xxs,
+  },
+  flex: {
+    flex: 1,
+  },
+  metaRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 6,
+  },
+  directions: {
+    alignSelf: "center",
+  },
+});

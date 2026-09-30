@@ -2,11 +2,27 @@ import { postResource } from "@/api-actions/mutations";
 import {
   IApprovedShiftResponse,
   IAvailableShiftResponse,
+  IPaginatedShiftsResponse,
   IShiftActionResponse,
   IShiftLocationParams,
   IShiftResponse,
 } from "@/data-types/shifts";
 import { error } from "@/utils/logger";
+
+const emptyShiftsPage = (page: number): IPaginatedShiftsResponse => ({
+  current_page: page,
+  data: [],
+  first_page_url: "",
+  from: 0,
+  last_page: page,
+  last_page_url: "",
+  next_page_url: "",
+  path: "",
+  per_page: 0,
+  prev_page_url: null,
+  to: 0,
+  total: 0,
+});
 
 // 0: pending
 // 1: scheduled
@@ -202,7 +218,7 @@ export async function postPendingApprovalShifts(
     status: response.status,
     message: response.message,
     data: {
-      shifts: response.data.shifts.completed_shifts,
+      shifts: response.data?.shifts?.completed_shifts ?? emptyShiftsPage(page),
     },
   };
 }
@@ -220,7 +236,7 @@ export async function postApprovedShifts(page = 1): Promise<IShiftResponse> {
     status: response.status,
     message: response.message,
     data: {
-      shifts: response.data.shifts.approved_shifts,
+      shifts: response.data?.shifts?.approved_shifts ?? emptyShiftsPage(page),
     },
   };
 }

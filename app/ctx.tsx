@@ -3,6 +3,7 @@ import {
   registerAuthExpiredHandler,
 } from "@/api-actions/error-utils";
 import { useProfileData } from "@/data-store/use-account-store";
+import { useTenantStore } from "@/data-store/use-tenant-store";
 import LoginCredentials, { Hcp, User } from "@/data-types/auth";
 import {
   ensureOneSignalSubscriptionId,
@@ -18,6 +19,7 @@ import {
   computeOnboardingStep,
   getRegistrationStatus,
   NetworkError,
+  TokenStorage,
 } from "@/utils/auth-api";
 import { debug, error } from "@/utils/logger";
 import {
@@ -25,14 +27,22 @@ import {
   incrementProviderUnmount,
 } from "@/utils/runtime-diagnostics";
 import {
+  clearLoginCredentials,
   getLoginCredentials,
   saveLoginCredentials,
 } from "@/utils/secure-login-credentials";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useQueryClient } from "@tanstack/react-query";
 import { usePathname, useRouter, useSegments } from "expo-router";
 import React, { useEffect } from "react";
 import { Alert } from "react-native";
 import { useStorageState } from "./useStorageState";
+
+// SecureStore (iOS Keychain) survives app uninstall/reinstall by design —
+// AsyncStorage does not. We use that difference to detect a genuine fresh
+// install and wipe any session left over in the Keychain from a previous
+// install, so reinstalling always starts from a clean, logged-out state.
+const FRESH_INSTALL_MARKER_KEY = "ishapps-has-launched";
 
 const AuthContext = React.createContext<{
   signIn: (
@@ -101,10 +111,14 @@ export function useProtectedRoute(
   const router = useRouter();
   debug("session", session);
 
+  const hasTenant = useTenantStore((state) => !!state.tenant);
+  const tenantHasHydrated = useTenantStore((state) => state.hasHydrated);
+
   const pathname = usePathname();
   const currentRoute = pathname === "/(open)/index";
   useEffect(() => {
     if (authLoading || isHydrating) return;
+    if (!tenantHasHydrated || !hasTenant) return;
 
     const inAuthGroup = segments[0] === "(open)";
     const inOnboarding = segments[0] === "onboarding";
@@ -141,7 +155,17 @@ export function useProtectedRoute(
       // completed)
       router.replace("/(tabs)");
     }
-  }, [authLoading, currentRoute, isHydrating, router, segments, session, user]);
+  }, [
+    authLoading,
+    currentRoute,
+    isHydrating,
+    router,
+    segments,
+    session,
+    user,
+    hasTenant,
+    tenantHasHydrated,
+  ]);
 }
 
 export function SessionProvider(props: React.PropsWithChildren) {
@@ -167,6 +191,35 @@ export function SessionProvider(props: React.PropsWithChildren) {
       incrementProviderUnmount("SessionProvider");
     };
   }, []);
+
+  // iOS Keychain (what SecureStore uses) survives app uninstall/reinstall by
+  // design — unlike AsyncStorage, which is deleted with the app. On a
+  // genuine fresh install, AsyncStorage's marker will be missing even though
+  // the Keychain may still hold a session/credentials from a previous
+  // install.
+  useEffect(() => {
+    (async () => {
+      try {
+        const hasLaunchedBefore = await AsyncStorage.getItem(
+          FRESH_INSTALL_MARKER_KEY,
+        );
+        if (hasLaunchedBefore) return;
+
+        setSession(null);
+        setUserJson(null);
+        await Promise.all([
+          TokenStorage.removeToken(),
+          clearLoginCredentials(),
+        ]);
+        await AsyncStorage.setItem(FRESH_INSTALL_MARKER_KEY, "1");
+        debug(
+          "[Session] Fresh install detected — cleared stale Keychain session",
+        );
+      } catch (err) {
+        error("[Session] Fresh-install session wipe failed:", err);
+      }
+    })();
+  }, [setSession, setUserJson]);
 
   const handleSignIn = async (credentials: LoginCredentials) => {
     setAuthLoading(true);

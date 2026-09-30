@@ -10,6 +10,10 @@ export default function MainLayout() {
       <Stack.Screen name="facilities" options={{ headerShown: false }} />
       <Stack.Screen name="interviews" options={{ headerShown: false }} />
       <Stack.Screen name="settings" options={{ headerShown: false }} />
+      <Stack.Screen
+        name="switch-organization"
+        options={{ headerShown: false }}
+      />
       <Stack.Screen name="change-password" options={{ headerShown: false }} />
       <Stack.Screen name="notifications" options={{ headerShown: false }} />
       <Stack.Screen name="notification-test" options={{ headerShown: false }} />

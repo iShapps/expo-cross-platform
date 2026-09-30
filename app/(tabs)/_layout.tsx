@@ -1,13 +1,10 @@
+import { Icon, type IconName } from "@/components/design";
 import { HapticTab } from "@/components/haptic-tab";
-import {
-  TabBarFAFiveWIcon,
-  TabBarFeatherIcon,
-  TabBarIMaterialIcon,
-  TabBarOctIcon,
-} from "@/components/ui/tab-bar-icon";
+import { FontFamily, Palette } from "@/constants/design";
 import { Radii } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useAppTheme } from "@/hooks/use-app-theme";
 import { useIsFetching } from "@tanstack/react-query";
+import { BlurView } from "expo-blur";
 import { Tabs } from "expo-router";
 import React from "react";
 import { Animated, Easing, Platform, StyleSheet, View } from "react-native";
@@ -63,76 +60,55 @@ const FetchingSnakeBar = () => {
   );
 };
 
+const tabIcon = (focusedName: IconName, name: IconName) =>
+  function TabIcon({ color, focused }: { color: string; focused: boolean }) {
+    return <Icon size={24} name={focused ? focusedName : name} color={color} />;
+  };
+
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
+  const { colors, isDark } = useAppTheme();
   const insets = useSafeAreaInsets();
-  const lightTabBar = {
-    activeTint: "#70C601",
-    inactiveTint: "#71797E",
-    iosBar: StyleSheet.create({
-      bar: {
-        backgroundColor: "#F8FFF0",
-        position: "absolute",
-        justifyContent: "center",
-        alignItems: "center",
-        borderTopColor: "#D3D3D3",
-      },
-    }),
-    androidBar: StyleSheet.create({
-      bar: {
-        backgroundColor: "#F8FFF0",
-        position: undefined,
-        height: 60,
-        paddingBottom: 8,
-        paddingTop: 8,
-        justifyContent: "center",
-        alignItems: "center",
-        borderTopColor: "#D3D3D3",
-      },
-    }),
-  };
-  const darkTabBar = {
-    activeTint: "#70C601",
-    inactiveTint: "#A0A4AB",
-    iosBar: StyleSheet.create({
-      bar: {
-        backgroundColor: "#232A2E",
-        position: "absolute",
-        justifyContent: "center",
-        alignItems: "center",
-        borderTopColor: "#36454F",
-      },
-    }),
-    androidBar: StyleSheet.create({
-      bar: {
-        backgroundColor: "#232A2E",
-        position: undefined,
-        height: 60,
-        paddingBottom: 8,
-        paddingTop: 8,
-        justifyContent: "center",
-        alignItems: "center",
-        borderTopColor: "#36454F",
-      },
-    }),
-  };
-  const tabBarTheme = colorScheme === "dark" ? darkTabBar : lightTabBar;
-  const androidTabBarStyle = {
-    ...tabBarTheme.androidBar.bar,
-    height: 60 + insets.bottom,
-    position: undefined,
-    paddingBottom: Math.max(insets.bottom, 8),
-  };
+
+  // iOS: translucent blurred bar floating over content (screens already pad
+  // their lists for it). Android: solid bar.
+  const tabBarStyle =
+    Platform.OS === "ios"
+      ? {
+          position: "absolute" as const,
+          backgroundColor: "transparent",
+          borderTopColor: colors.border,
+          borderTopWidth: StyleSheet.hairlineWidth,
+        }
+      : {
+          backgroundColor: colors.tabBar,
+          borderTopColor: colors.border,
+          borderTopWidth: StyleSheet.hairlineWidth,
+          elevation: 0,
+          height: 64 + insets.bottom,
+          paddingTop: 8,
+          paddingBottom: Math.max(insets.bottom, 8),
+        };
 
   return (
     <Tabs
       backBehavior="history"
       screenOptions={{
-        tabBarActiveTintColor: tabBarTheme.activeTint,
-        tabBarInactiveTintColor: tabBarTheme.inactiveTint,
-        tabBarStyle:
-          Platform.OS === "ios" ? tabBarTheme.iosBar.bar : androidTabBarStyle,
-        tabBarBackground: () => <FetchingSnakeBar />,
+        tabBarActiveTintColor: colors.primaryStrong,
+        tabBarInactiveTintColor: colors.tabInactive,
+        tabBarStyle,
+        tabBarLabelStyle: styles.tabLabel,
+        tabBarBackground: () => (
+          <>
+            {Platform.OS === "ios" && (
+              <BlurView
+                intensity={80}
+                tint={isDark ? "systemChromeMaterialDark" : "systemChromeMaterialLight"}
+                style={StyleSheet.absoluteFill}
+              />
+            )}
+            <FetchingSnakeBar />
+          </>
+        ),
         headerShown: false,
         tabBarButton: HapticTab,
       }}
@@ -141,44 +117,37 @@ export default function TabLayout() {
         name="index"
         options={{
           title: "Home",
-          tabBarIcon: ({ color }) => (
-            <TabBarOctIcon size={22} name="home-fill" color={color} />
-          ),
+          tabBarIcon: tabIcon("home", "home-outline"),
         }}
       />
       <Tabs.Screen
         name="shifts"
         options={{
           title: "Shifts",
-          tabBarIcon: ({ color }) => (
-            <TabBarFeatherIcon size={22} name="clock" color={color} />
-          ),
+          tabBarIcon: tabIcon("briefcase", "briefcase-outline"),
         }}
       />
       <Tabs.Screen
         name="schedules"
         options={{
           title: "My Shifts",
-          tabBarIcon: ({ color }) => (
-            <TabBarFAFiveWIcon size={22} name="calendar" color={color} />
-          ),
+          tabBarIcon: tabIcon("calendar", "calendar-outline"),
         }}
       />
       <Tabs.Screen
         name="documents"
         options={{
           title: "Documents",
-          tabBarIcon: ({ color }) => (
-            <TabBarIMaterialIcon size={22} name="receipt" color={color} />
-          ),
+          tabBarIcon: tabIcon("document-text", "document-text-outline"),
         }}
       />
       <Tabs.Screen
         name="more"
         options={{
           title: "More",
-          tabBarIcon: ({ color }) => (
-            <TabBarIMaterialIcon size={22} name="more-horiz" color={color} />
+          tabBarIcon: tabIcon(
+            "ellipsis-horizontal-circle",
+            "ellipsis-horizontal-circle-outline",
           ),
         }}
       />
@@ -201,7 +170,11 @@ const styles = StyleSheet.create({
     height: 2,
     width: 120,
     borderRadius: Radii.full,
-    backgroundColor: "#70C601",
+    backgroundColor: Palette.light.primary,
     opacity: 0.9,
+  },
+  tabLabel: {
+    fontFamily: FontFamily.medium,
+    fontSize: 11,
   },
 });

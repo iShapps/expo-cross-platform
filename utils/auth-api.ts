@@ -18,6 +18,7 @@ import LoginCredentials, {
   VerifyOTPSuccessResponse,
 } from "@/data-types/auth";
 import { error } from "@/utils/logger";
+import { getTenantHeaders } from "@/utils/tenant-header";
 import * as Sentry from "@sentry/react-native";
 import { Alert, Platform } from "react-native";
 
@@ -220,6 +221,7 @@ const postAuthResource = async <T>(
     endpoint,
     method: "POST",
     body: requestBody,
+    headers: getTenantHeaders(),
     timeoutMs: API_CONFIG.timeout,
     retryOnAndroidNetworkError: !isLoginEndpoint && endpoint !== "/logout",
   });
@@ -381,12 +383,12 @@ export const getRegistrationStatus = async (
   token: string,
   hcpId: number,
 ): Promise<RegistrationStatusResponse> => {
-  const endpoint = `/v2/hcps/${hcpId}/onboarding-status`;
+  const endpoint = `/hcps/${hcpId}/onboarding-status`;
   const { data } = await apiRequest<RegistrationStatusResponse>({
     url: `${API_CONFIG.baseURL}${endpoint}`,
     endpoint,
     method: "GET",
-    headers: { Authorization: `Bearer ${token}` },
+    headers: { ...getTenantHeaders(), Authorization: `Bearer ${token}` },
     timeoutMs: API_CONFIG.timeout,
   });
   console.log("REG_STATUS_DATA", data);
