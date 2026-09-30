@@ -6,6 +6,7 @@ import {
 } from "@/api-actions/error-utils";
 import { TokenStorage } from "@/utils/auth-api";
 import { error } from "@/utils/logger";
+import { getTenantHeaders } from "@/utils/tenant-header";
 // TODO: Implement proper typing for shift data and responses
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL;
@@ -27,7 +28,7 @@ export class ShiftApiError extends Error {
 async function authorizedJson(url: string, endpoint: string): Promise<unknown> {
   const token = await TokenStorage.getToken();
 
-  const headers: Record<string, unknown> = {};
+  const headers: Record<string, unknown> = { ...getTenantHeaders() };
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
   try {

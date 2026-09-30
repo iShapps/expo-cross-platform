@@ -17,6 +17,7 @@ export interface IProfileHcp {
   hcp_prefix: string;
   user_id: number;
   image: string | null;
+  image_url: string | null;
   first_name: string;
   last_name: string;
   contact_number: string;

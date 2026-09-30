@@ -1,106 +1,36 @@
-import { Colors, Radii } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import { Card } from "@/components/design";
+import { Radius, Space } from "@/constants/design";
 import React from "react";
 import { StyleSheet, View } from "react-native";
+import { SkeletonBase } from "./skeleton-base";
 
-export const DocumentCardSkeleton: React.FC = () => {
-  let colorScheme = useColorScheme();
-  if (!colorScheme) colorScheme = "light";
-  const theme = Colors[colorScheme];
-  const styles = getStyles(theme);
-
-  return (
-    <View style={styles.card}>
-      <View style={styles.iconSkeleton} />
-      <View style={styles.infoColumn}>
-        <View style={styles.lineSmall} />
-        <View style={styles.lineLargeRow}>
-          <View style={styles.lineLarge} />
-          <View style={styles.circleSkeleton} />
-        </View>
-        <View style={styles.lineSmallRow}>
-          <View style={styles.lineSmall} />
-          <View style={styles.dotSkeleton} />
-          <View style={styles.lineSmall} />
-        </View>
+/** Placeholder matching DocumentCard's layout. */
+export const DocumentCardSkeleton: React.FC = () => (
+  <Card radius={Radius.lg} padding={Space.md} style={styles.card}>
+    <SkeletonBase width={48} height={48} borderRadius={Radius.full} />
+    <View style={styles.info}>
+      <SkeletonBase width="75%" height={16} borderRadius={Radius.xs} />
+      <SkeletonBase width="45%" height={13} borderRadius={Radius.xs} />
+      <View style={styles.chips}>
+        <SkeletonBase width={70} height={22} borderRadius={Radius.full} />
+        <SkeletonBase width={90} height={22} borderRadius={Radius.full} />
       </View>
-      <View style={styles.moreIconSkeleton} />
     </View>
-  );
-};
+  </Card>
+);
 
-const getStyles = (theme: typeof Colors.light) =>
-  StyleSheet.create({
-    card: {
-      flexDirection: "row",
-      alignItems: "center",
-      backgroundColor: theme.whiteBackground,
-      borderRadius: Radii.sm,
-      padding: 5,
-      borderColor: theme.greyBorder,
-      borderWidth: 1,
-      minHeight: 56,
-    },
-    iconSkeleton: {
-      width: 44,
-      height: 44,
-      borderRadius: Radii.full,
-      backgroundColor: theme.greyBorder,
-      marginRight: 16,
-      marginLeft: 2,
-    },
-    infoColumn: {
-      flex: 1,
-      flexDirection: "column",
-      justifyContent: "center",
-    },
-    lineSmall: {
-      height: 10,
-      width: 80,
-      backgroundColor: theme.greyBorder,
-      borderRadius: Radii.xs,
-      marginBottom: 6,
-      marginLeft: 2,
-    },
-    lineLargeRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      marginBottom: 6,
-      gap: 8,
-    },
-    lineLarge: {
-      height: 16,
-      width: 120,
-      backgroundColor: theme.greyBorder,
-      borderRadius: Radii.xs,
-      marginRight: 8,
-    },
-    circleSkeleton: {
-      width: 24,
-      height: 24,
-      borderRadius: Radii.full,
-      backgroundColor: theme.greyBorder,
-    },
-    lineSmallRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      marginTop: 2,
-      gap: 4,
-    },
-    dotSkeleton: {
-      width: 8,
-      height: 8,
-      borderRadius: Radii.xs,
-      backgroundColor: theme.greyBorder,
-      marginHorizontal: 3,
-      marginTop: -1,
-    },
-    moreIconSkeleton: {
-      width: 26,
-      height: 26,
-      borderRadius: Radii.full,
-      backgroundColor: theme.greyBorder,
-      marginLeft: 8,
-      alignSelf: "flex-start",
-    },
-  });
+const styles = StyleSheet.create({
+  card: {
+    flexDirection: "row",
+    gap: Space.sm,
+  },
+  info: {
+    flex: 1,
+    gap: Space.xs,
+  },
+  chips: {
+    flexDirection: "row",
+    gap: Space.xs,
+    marginTop: Space.xxs,
+  },
+});

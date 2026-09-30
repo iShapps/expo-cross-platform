@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "iShapps",
+    "name": "iShapps Workforce",
     "slug": "ishapps",
-    "version": "2.9.5",
+    "version": "3.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/smhealth.png",
+    "icon": "./assets/images/ishapps_icon_green_ios.png",
     "scheme": "ishapps",
     "userInterfaceStyle": "automatic",
     "ios": {
@@ -35,9 +35,8 @@
       "versionCode": 33,
       "adaptiveIcon": {
         "backgroundColor": "#ffffff",
-        "foregroundImage": "./assets/images/smhealth.png",
-        "backgroundImage": "./assets/images/smhealth.png",
-        "monochromeImage": "./assets/images/smhealth.png"
+        "foregroundImage": "./assets/images/ishapps_icon_green_android.png",
+        "monochromeImage": "./assets/images/ishapps_icon_green_android.png"
       },
       "predictiveBackGestureEnabled": false,
       "softwareKeyboardLayoutMode": "pan",
@@ -97,6 +96,7 @@
         "expo-image-picker",
         {
           "photosPermission": "Allow $(PRODUCT_NAME) to access your photos to select images for document uploads.",
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera to take a profile photo.",
           "colors": {
             "cropToolbarColor": "#000000"
           },
@@ -112,7 +112,8 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/smhealth.png",
+          "image": "./assets/images/ishapps_green.png",
+          "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",
           "dark": {

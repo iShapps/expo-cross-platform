@@ -1,10 +1,10 @@
-import { Radii } from "@/constants/theme";
+import { AppText, Icon, IconBadge, PressableCard, type IconName } from "@/components/design";
+import { Radius, Space, type Tone } from "@/constants/design";
 import { INotification } from "@/data-types/notifications";
-import { useColorScheme } from "@/hooks/use-color-scheme";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useAppTheme } from "@/hooks/use-app-theme";
 import { Href, Link } from "expo-router";
 import React from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { formatMediumDateTime } from "../utils/date-time";
 
 interface NotificationCardProps {
@@ -14,39 +14,37 @@ interface NotificationCardProps {
 
 export const NotificationCard: React.FC<NotificationCardProps> = ({
   notification,
-  onPress,
 }) => {
-  let colorScheme = useColorScheme();
-  if (!colorScheme) colorScheme = "light";
-  const styles = getStyles(colorScheme);
+  const { colors } = useAppTheme();
 
-  const getNotificationIcon = () => {
+  const getNotificationIcon = (): IconName => {
     switch (notification.notification_type) {
       case "shifts":
-        return "calendar-plus";
+        return "calendar-outline";
       case "statement-details":
-        return "currency-usd"; // "receipt-long ";
+        return "cash-outline";
       case "documents":
-        return "file-document-arrow-right-outline";
+        return "document-text-outline";
       default:
-        return "bell";
+        return "notifications-outline";
     }
   };
 
-  const getNotificationColor = () => {
+  const getNotificationTone = (): Tone => {
     switch (notification.notification_type) {
       case "shifts":
-        return "#70C601";
+        return "primary";
       case "statement-details":
-        return "#4A90E2";
+        return "blue";
       case "documents":
-        return "#28A745";
+        return "violet";
       default:
-        return "#70C601";
+        return "primary";
     }
   };
 
   const timeFormatted = formatMediumDateTime(notification.created_at);
+  const isUnread = !notification.is_expired;
 
   const getHref = (): Href => {
     switch (notification.notification_type) {
@@ -65,119 +63,67 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
   };
   return (
     <Link href={getHref()} asChild>
-      <Pressable>
-        <View
-          style={[styles.card, !notification.is_expired && styles.unreadCard]}
-        >
-          <View
-            style={[
-              styles.iconContainer,
-              { backgroundColor: `${getNotificationColor()}20` },
-            ]}
-          >
-            <MaterialCommunityIcons
-              name={getNotificationIcon()}
-              size={24}
-              color={getNotificationColor()}
+      <PressableCard
+        accessibilityRole="link"
+        style={[
+          styles.card,
+          isUnread && { borderColor: colors.primarySoft },
+        ]}
+      >
+        <View>
+          <IconBadge icon={getNotificationIcon()} tone={getNotificationTone()} size={44} />
+          {isUnread && (
+            <View
+              style={[
+                styles.unreadDot,
+                { backgroundColor: colors.primary, borderColor: colors.surface },
+              ]}
             />
-            {!notification.is_expired && <View style={styles.unreadDot} />}
-          </View>
-
-          <View style={styles.content}>
-            <View style={styles.header}>
-              <Text style={styles.title}>{notification.title}</Text>
-            </View>
-            <Text style={styles.message} numberOfLines={2}>
-              {notification.message}
-            </Text>
-            <Text style={styles.time}>{timeFormatted}</Text>
-          </View>
-
-          <View style={styles.detailHint}>
-            <MaterialCommunityIcons
-              name="chevron-right"
-              size={20}
-              color="#C4C4C4"
-            />
-          </View>
+          )}
         </View>
-      </Pressable>
+
+        <View style={styles.content}>
+          <AppText variant="headline" numberOfLines={1}>
+            {notification.title}
+          </AppText>
+          <AppText variant="footnote" color="textSecondary" numberOfLines={2}>
+            {notification.message}
+          </AppText>
+          <AppText variant="caption" color="textTertiary" style={styles.time}>
+            {timeFormatted}
+          </AppText>
+        </View>
+
+        <Icon name="chevron-forward" size={18} color={colors.textTertiary} style={styles.chevron} />
+      </PressableCard>
     </Link>
   );
 };
 
-const getStyles = (colorScheme: string) =>
-  StyleSheet.create({
-    card: {
-      backgroundColor: colorScheme === "dark" ? "#232A2E" : "#fff",
-      borderRadius: Radii.sm,
-      padding: 12,
-      marginBottom: 4,
-      flexDirection: "row",
-      alignItems: "flex-start",
-      shadowColor: colorScheme === "dark" ? "#000" : "#000",
-      shadowOffset: {
-        width: 0,
-        height: 1,
-      },
-      shadowOpacity: 0.05,
-      shadowRadius: 2,
-      elevation: 2,
-      borderWidth: 1,
-      borderColor: colorScheme === "dark" ? "#36454F" : "#f0f0f0",
-    },
-    unreadCard: {
-      backgroundColor: colorScheme === "dark" ? "#36454F" : "#F8FFF0",
-      borderColor: colorScheme === "dark" ? "#f5ebcd" : "#70C601",
-    },
-    iconContainer: {
-      width: 40,
-      height: 40,
-      borderRadius: Radii.full,
-      justifyContent: "center",
-      alignItems: "center",
-      marginRight: 12,
-      position: "relative",
-      backgroundColor: colorScheme === "dark" ? "#36454F" : undefined,
-    },
-    content: {
-      flex: 1,
-    },
-    header: {
-      flexDirection: "row",
-      alignItems: "center",
-      marginBottom: 4,
-    },
-    title: {
-      fontSize: 14,
-      fontWeight: "600",
-      color: colorScheme === "dark" ? "#edebe3" : "#000",
-      flex: 1,
-    },
-    unreadDot: {
-      width: 8,
-      height: 8,
-      borderRadius: Radii.full,
-      backgroundColor: colorScheme === "dark" ? "#edebe3" : "#70C601",
-      position: "absolute",
-      top: -2,
-      right: -2,
-      borderWidth: 2,
-      borderColor: colorScheme === "dark" ? "#36454F" : "#fff",
-    },
-    message: {
-      fontSize: 13,
-      color: colorScheme === "dark" ? "#edebe3" : "#666",
-      lineHeight: 18,
-      marginBottom: 4,
-    },
-    time: {
-      fontSize: 11,
-      color: colorScheme === "dark" ? "#edebe3" : "#999",
-    },
-    detailHint: {
-      alignSelf: "flex-start",
-      marginLeft: 8,
-      marginTop: 2,
-    },
-  });
+const styles = StyleSheet.create({
+  card: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: Space.sm,
+    minHeight: 76,
+  },
+  unreadDot: {
+    position: "absolute",
+    top: -1,
+    right: -1,
+    width: 12,
+    height: 12,
+    borderRadius: Radius.full,
+    borderWidth: 2,
+  },
+  content: {
+    flex: 1,
+    gap: 2,
+  },
+  time: {
+    marginTop: Space.xxs,
+  },
+  chevron: {
+    alignSelf: "center",
+  },
+});

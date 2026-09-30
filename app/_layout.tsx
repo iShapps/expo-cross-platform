@@ -1,10 +1,13 @@
 import { useSettingsStore } from "@/data-store/use-settings-store";
+import { useTenantStore } from "@/data-store/use-tenant-store";
 import { useTourStore } from "@/data-store/use-tour-store";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useOneSignal } from "@/hooks/use-one-signal";
 import { useOTAUpdate } from "@/hooks/use-ota-update";
 import { usePermissionMonitor } from "@/hooks/use-permission-monitor";
 import { useShiftWatcher } from "@/hooks/use-shift-watcher";
 import { debug } from "@/utils/logger";
+import { queryClient } from "@/utils/query-client";
 import {
   decrementAppStateListeners,
   incrementAppStateListeners,
@@ -13,12 +16,16 @@ import {
   incrementProviderUnmount,
   incrementRootRenderCount,
 } from "@/utils/runtime-diagnostics";
-import * as Sentry from "@sentry/react-native";
 import {
-  focusManager,
-  QueryClient,
-  QueryClientProvider,
-} from "@tanstack/react-query";
+  Outfit_400Regular,
+  Outfit_500Medium,
+  Outfit_600SemiBold,
+  Outfit_700Bold,
+  Outfit_800ExtraBold,
+  useFonts,
+} from "@expo-google-fonts/outfit";
+import * as Sentry from "@sentry/react-native";
+import { focusManager, QueryClientProvider } from "@tanstack/react-query";
 import { SplashScreen, Stack, usePathname } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
@@ -61,11 +68,21 @@ if (!sentryGlobal.__ISHAPPS_SENTRY_INITIALIZED__) {
 }
 
 SplashScreen.preventAutoHideAsync();
-const queryClient = new QueryClient();
 
 export default Sentry.wrap(function Root() {
   incrementRootRenderCount();
   const [isHydrated, setIsHydrated] = useState(false);
+
+  const colorScheme = useColorScheme();
+  // Design-system font (constants/design.ts → FontFamily). The splash screen
+  // stays up until it's ready; on a load error we render with system fonts.
+  const [fontsLoaded, fontError] = useFonts({
+    Outfit_400Regular,
+    Outfit_500Medium,
+    Outfit_600SemiBold,
+    Outfit_700Bold,
+    Outfit_800ExtraBold,
+  });
 
   useEffect(() => {
     if (Platform.OS === "web") return;
@@ -115,6 +132,8 @@ export default Sentry.wrap(function Root() {
     };
   }, []);
 
+  if (!fontsLoaded && !fontError) return null;
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <CopilotProvider
@@ -138,7 +157,7 @@ export default Sentry.wrap(function Root() {
           </SessionProvider>
         </QueryClientProvider>
       </CopilotProvider>
-      <StatusBar style="auto" />
+      <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
     </GestureHandlerRootView>
   );
 });
@@ -160,19 +179,30 @@ function AppLifecycleHooks() {
 function RootNavigator() {
   const { session, user, isLoading } = useSession();
   const pathname = usePathname();
+  const hasTenant = !!useTenantStore((state) => state.tenant);
   // Registration status/user data hasn't settled yet (hydrating or a login
   // is actively resolving)
   const needsOnboarding = !!getOnboardingRouteParams(user);
   const needsPasswordReset = needsForcedPasswordReset(user);
   const canEnterMainApp =
-    !!session && !isLoading && !needsOnboarding && !needsPasswordReset;
+    hasTenant &&
+    !!session &&
+    !isLoading &&
+    !needsOnboarding &&
+    !needsPasswordReset;
   // A login is actively resolving (setSession fires before the registration
   // status check finishes, while isLoading/authLoading is still true)
-  const canEnterAuthGroup = !session || isLoading;
+  const canEnterAuthGroup = hasTenant && (!session || isLoading);
 
   return (
     <>
       <Stack>
+        <Stack.Protected guard={!hasTenant}>
+          <Stack.Screen
+            name="tenant-code"
+            options={{ headerShown: false, gestureEnabled: false }}
+          />
+        </Stack.Protected>
         <Stack.Protected guard={canEnterMainApp}>
           <Stack.Screen options={{ headerShown: false }} name="(tabs)" />
         </Stack.Protected>

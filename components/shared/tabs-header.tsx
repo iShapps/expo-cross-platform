@@ -1,43 +1,37 @@
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import { AppText } from "@/components/design";
+import { Space, Touch } from "@/constants/design";
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 
 interface TabsHeaderProps {
   title: string;
   right?: React.ReactNode;
 }
 
-const TabsHeader: React.FC<TabsHeaderProps> = ({ title, right }) => {
-  const colorScheme = useColorScheme();
-  const theme = Colors[colorScheme ?? "light"];
-  const styles = getStyles(theme);
-  return (
-    <View style={styles.header}>
-      <Text style={styles.title}>{title}</Text>
-      {right && right}
-    </View>
-  );
-};
+/** Large page title for the tab screens, on the page background. */
+const TabsHeader: React.FC<TabsHeaderProps> = ({ title, right }) => (
+  <View style={styles.header}>
+    <AppText variant="title1" accessibilityRole="header" style={styles.title}>
+      {title}
+    </AppText>
+    {right}
+  </View>
+);
 
-const getStyles = (theme: typeof Colors.light) =>
-  StyleSheet.create({
-    header: {
-      display: "flex",
-      flexDirection: "row",
-      justifyContent: "space-between",
-      gap: 4,
-      backgroundColor: theme.background,
-      width: "100%",
-      margin: 8,
-      paddingTop: 12,
-      paddingBottom: 8,
-    },
-    title: {
-      fontSize: 18,
-      fontWeight: "700",
-      color: theme.whiteText,
-    },
-  });
+const styles = StyleSheet.create({
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: Space.sm,
+    minHeight: Touch.min,
+    paddingHorizontal: Space.gutter,
+    paddingTop: Space.xs,
+    paddingBottom: Space.sm,
+  },
+  title: {
+    flexShrink: 1,
+  },
+});
 
 export default TabsHeader;

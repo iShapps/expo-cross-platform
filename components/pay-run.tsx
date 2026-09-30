@@ -1,11 +1,11 @@
-import { Colors, Radii } from "@/constants/theme";
+import { AppText, Icon, PressableCard } from "@/components/design";
+import { Radius, Space } from "@/constants/design";
 import { IShift } from "@/data-types/shifts";
-import { useColorScheme } from "@/hooks/use-color-scheme";
-import Ionicons from "@expo/vector-icons/Ionicons";
+import { useAppTheme } from "@/hooks/use-app-theme";
 import { differenceInMinutes, format } from "date-fns";
 import { Link } from "expo-router";
 import React from "react";
-import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { ShiftType, ShiftTypePill } from "./shift-type-pill";
 
 interface ShiftCardProps {
@@ -13,23 +13,18 @@ interface ShiftCardProps {
   onPress?: () => void;
 }
 
-export const ShiftCardBase: React.FC<ShiftCardProps> = ({ shift, onPress }) => {
+export const ShiftCardBase: React.FC<ShiftCardProps> = ({ shift }) => {
+  const { colors } = useAppTheme();
+
   const startDate = new Date(shift?.start_time);
   const endDate = new Date(shift?.end_time);
 
-  // Format: 10:30 pm to 04:30 am - 6:00Hrs
-  const startTime = format(startDate, "hh:mm a");
-  const endTime = format(endDate, "hh:mm a");
+  // e.g. "10:30 pm – 4:30 am" and "6h 00m"
+  const timeRange = `${format(startDate, "h:mm a")} – ${format(endDate, "h:mm a")}`;
   const totalMinutes = differenceInMinutes(endDate, startDate);
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
-  const duration = `${hours}:${minutes.toString().padStart(2, "0")}` + "Hrs";
-  const periodText = `${startTime} to ${endTime} (${duration})`;
-
-  let colorScheme = useColorScheme();
-  if (!colorScheme) colorScheme = "light";
-  const theme = Colors[colorScheme];
-  const styles = getStyles(theme);
+  const duration = `${hours}h ${minutes.toString().padStart(2, "0")}m`;
 
   return (
     <Link
@@ -39,210 +34,115 @@ export const ShiftCardBase: React.FC<ShiftCardProps> = ({ shift, onPress }) => {
       }}
       asChild
     >
-      <Pressable>
-        <View style={styles.card}>
-          <View style={styles.headerRow}>
-            {shift?.is_sleepover_shift ? (
-              <ShiftTypePill type="sleepover" />
-            ) : (
-              <ShiftTypePill type={shift?.shift_type as ShiftType} />
+      <PressableCard
+        accessibilityRole="link"
+        radius={Radius.lg}
+        padding={Space.md}
+        style={styles.card}
+      >
+        <View style={styles.topRow}>
+          <View style={[styles.dateTile, { backgroundColor: colors.primarySoft }]}>
+            <AppText variant="title2" color="primaryStrong" style={styles.dateDay}>
+              {format(startDate, "dd")}
+            </AppText>
+            <AppText variant="overline" color="primaryStrong">
+              {format(startDate, "MMM")}
+            </AppText>
+          </View>
+
+          <View style={styles.titleBlock}>
+            <AppText variant="caption" color="textTertiary">
+              {shift?.shift_prefix ?? "-"}
+              {shift?.id ?? "—"} · {format(startDate, "EEEE")}
+            </AppText>
+            <AppText variant="headline" numberOfLines={2}>
+              {shift?.facility?.name}
+            </AppText>
+            {!!shift?.profession?.name && (
+              <AppText variant="footnote" color="textSecondary" numberOfLines={1}>
+                {shift.profession.name}
+              </AppText>
             )}
           </View>
-          <View
-            style={{
-              flexDirection: "column",
-              alignItems: "center",
-              position: "relative",
-            }}
-          >
-            <View style={styles.dateCard}>
-              <Text
-                style={{
-                  ...styles.dateText,
-                  fontFamily: Platform.select({
-                    android: "Inter_300Light",
-                    ios: "Inter-Light",
-                  }),
-                }}
-              >
-                {format(shift?.start_time, "dd")}
-              </Text>
-              <Text
-                style={{
-                  ...styles.dateText,
-                  fontFamily: Platform.select({
-                    android: "Inter_300Light",
-                    ios: "Inter-Light",
-                  }),
-                }}
-              >
-                {format(shift?.start_time, "MMM")}
-              </Text>
-            </View>
-          </View>
-          <View style={styles.mainContent}>
-            <Text
-              style={{
-                fontSize: 12,
-                fontWeight: "bold",
-                // color: theme.primary,
-              }}
-            >
-              {shift?.shift_prefix ?? "-"}
-              {shift?.id ?? "—"}
-            </Text>
-            <Text
-              style={{
-                ...styles.title,
-                fontFamily: Platform.select({
-                  android: "Inter_600SemiBold",
-                  ios: "Inter-SemiBold",
-                }),
-              }}
-            >
-              {shift?.facility?.name}
-            </Text>
-            <Text
-              style={{
-                ...styles.categoryText,
-                fontFamily: Platform.select({
-                  android: "Inter_500Medium",
-                  ios: "Inter-Medium",
-                }),
-              }}
-            >
-              {shift?.profession?.name}
-              {/* {shift?.shift_status}{" "} */}
-              {/* {shift?.level?.name} */}
-            </Text>
-            <View
-              style={{
-                display: "flex",
-                flexDirection: "row",
-                alignItems: "center",
-                gap: 2,
-              }}
-            >
-              <Ionicons name="time-outline" size={18} color={theme.primary} />
-              <Text
-                style={{
-                  ...styles.periodText,
-                  fontFamily: Platform.select({
-                    android: "Inter_400Regular",
-                    ios: "Inter-Regular",
-                  }),
-                }}
-              >
-                {periodText}
-              </Text>
-            </View>
-            <View
-              style={{
-                display: "flex",
-                flexDirection: "row",
-                // alignItems: "center",
-                gap: 2,
-              }}
-            >
-              <Ionicons
-                name="location-outline"
-                size={18}
-                color={theme.primary}
-              />
-              <Text
-                style={{
-                  ...styles.locationText,
-                  fontFamily: Platform.select({
-                    android: "Inter_500Medium",
-                    ios: "Inter-Medium",
-                  }),
-                }}
-              >
-                {shift?.facility?.address}
-                {/* {shift?.address} */}
-              </Text>
-            </View>
+
+          <ShiftTypePill
+            type={
+              shift?.is_sleepover_shift
+                ? "sleepover"
+                : (shift?.shift_type as ShiftType)
+            }
+          />
+        </View>
+
+        <View style={[styles.divider, { backgroundColor: colors.border }]} />
+
+        <View style={styles.metaRow}>
+          <Icon name="time-outline" size={16} color={colors.primaryStrong} />
+          <AppText variant="subhead" style={styles.metaText} numberOfLines={1}>
+            {timeRange}
+          </AppText>
+          <View style={[styles.durationChip, { backgroundColor: colors.surfaceMuted }]}>
+            <AppText variant="caption" color="textSecondary">
+              {duration}
+            </AppText>
           </View>
         </View>
-      </Pressable>
+
+        {!!shift?.facility?.address && (
+          <View style={styles.metaRow}>
+            <Icon name="location-outline" size={16} color={colors.primaryStrong} />
+            <AppText
+              variant="footnote"
+              color="textSecondary"
+              style={styles.metaText}
+              numberOfLines={2}
+            >
+              {shift.facility.address}
+            </AppText>
+          </View>
+        )}
+      </PressableCard>
     </Link>
   );
 };
 
-const getStyles = (theme: typeof Colors.light) =>
-  StyleSheet.create({
-    card: {
-      backgroundColor: theme.whiteBackground,
-      borderRadius: Radii.sm,
-      padding: 8,
-      borderWidth: 1,
-      borderColor: theme.activeBorder,
-      display: "flex",
-      flexDirection: "row",
-      width: "100%",
-      alignItems: "flex-start",
-      justifyContent: "space-between",
-      gap: 14,
-      position: "relative",
-    },
-    mainContent: {
-      flex: 1,
-      display: "flex",
-      flexDirection: "column",
-      gap: 6,
-    },
-    headerRow: {
-      position: "absolute",
-      right: -3,
-      top: -8,
-      zIndex: 100,
-    },
-    title: {
-      fontSize: 14,
-      lineHeight: 20,
-      color: theme.secondaryText,
-    },
-    categoryText: {
-      fontSize: 12,
-      lineHeight: 18,
-      color: theme.secondaryText,
-    },
-    periodText: {
-      fontSize: 12,
-      lineHeight: 18,
-      color: theme.secondaryText,
-    },
-    locationText: {
-      fontSize: 13,
-      lineHeight: 18,
-      color: theme.secondaryText,
-      fontWeight: "600",
-    },
-    statusBadge: {
-      alignSelf: "flex-start",
-      paddingHorizontal: 12,
-      paddingVertical: 4,
-      borderRadius: Radii.full,
-    },
-    dateCard: {
-      backgroundColor: theme.background,
-      borderRadius: Radii.sm,
-      padding: 4,
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-      height: "auto",
-      width: 55,
-    },
-    dateText: {
-      fontSize: 17,
-      color: theme.statusText,
-      textAlign: "center",
-    },
-    statusText: {
-      color: theme.statusText,
-      fontSize: 12,
-      fontWeight: "600",
-    },
-  });
+const styles = StyleSheet.create({
+  card: {
+    gap: Space.sm,
+  },
+  topRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: Space.sm,
+  },
+  dateTile: {
+    width: 56,
+    height: 60,
+    borderRadius: Radius.md,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  dateDay: {
+    lineHeight: 26,
+  },
+  titleBlock: {
+    flex: 1,
+    gap: 2,
+  },
+  divider: {
+    height: StyleSheet.hairlineWidth,
+  },
+  metaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Space.xs,
+  },
+  metaText: {
+    flex: 1,
+  },
+  durationChip: {
+    paddingHorizontal: Space.xs,
+    paddingVertical: 3,
+    borderRadius: Radius.full,
+  },
+});

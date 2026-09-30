@@ -1,20 +1,16 @@
 import { getNotifications } from "@/api-queries/notifcations";
-import Header from "@/components/Header";
+import { EmptyState, ScreenHeader, SegmentedTabs } from "@/components/design";
 import { NotificationCard } from "@/components/notification-card";
 import { NotificationCardSkeleton } from "@/components/skeletons";
-import { Colors, Radii } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { Space } from "@/constants/design";
+import { useAppTheme } from "@/hooks/use-app-theme";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
   FlatList,
-  Pressable,
   ScrollView,
   StyleSheet,
-  Text,
-  TouchableOpacity,
   useWindowDimensions,
   View,
 } from "react-native";
@@ -114,15 +110,18 @@ export default function NotificationsScreen() {
     await refetch();
   };
 
-  let colorScheme = useColorScheme();
-  if (!colorScheme) colorScheme = "light";
-  const theme = Colors[colorScheme];
-  const styles = getStyles(theme, screenHeight);
+
+  const { colors } = useAppTheme();
+  const listContainer = {
+    minHeight: screenHeight,
+    paddingBottom: 120,
+    paddingTop: Space.md,
+    gap: Space.sm,
+  };
 
   return (
-    <SafeAreaView edges={["top"]} style={styles.safeArea}>
-      {/* Header */}
-      <Header title="Notifications" onBack={() => router.back()} />
+    <SafeAreaView edges={["top"]} style={[styles.safeArea, { backgroundColor: colors.background }]}>
+      <ScreenHeader title="Notifications" onBack={() => router.back()} />
 
       <View
         style={styles.container}
@@ -131,37 +130,18 @@ export default function NotificationsScreen() {
         }
       >
         {/* Tabs */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.tabsRow}
+        <View
+          style={styles.tabsWrap}
           onLayout={(event) =>
             setTabsRowHeight(event.nativeEvent.layout.height)
           }
         >
-          {tabTypes.map((tab, index) => {
-            const isActive = activeTab === tab;
-            return (
-              <TouchableOpacity
-                key={tab}
-                onPress={() => handleTabPress(index)}
-                style={styles.tabButton}
-              >
-                <Text
-                  style={[styles.tabText, isActive && styles.tabTextActive]}
-                >
-                  {tab}
-                </Text>
-                <View
-                  style={[
-                    styles.tabUnderline,
-                    isActive && styles.tabUnderlineActive,
-                  ]}
-                />
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
+          <SegmentedTabs
+            tabs={tabTypes}
+            activeIndex={activeTabIndex}
+            onTabPress={handleTabPress}
+          />
+        </View>
 
         <ScrollView
           ref={contentScrollRef}
@@ -174,10 +154,13 @@ export default function NotificationsScreen() {
           style={pageHeight ? { height: pageHeight } : { flex: 1 }}
         >
           {tabData.map((tabNotifications, index) => (
+            // Page width kept as before (screenWidth - 18); the inner padding
+            // brings the cards to the page gutter.
             <View
               key={tabTypes[index]}
               style={{
                 width: screenWidth - 18,
+                paddingHorizontal: 12,
                 ...(pageHeight ? { height: pageHeight } : { flex: 1 }),
               }}
             >
@@ -188,7 +171,7 @@ export default function NotificationsScreen() {
                   keyExtractor={(_, i) => `skeleton-${i}`}
                   refreshing={isFetchingNextPage}
                   onRefresh={handlePullToRefresh}
-                  contentContainerStyle={styles.listContainer}
+                  contentContainerStyle={listContainer}
                 />
               ) : (
                 <FlatList
@@ -204,13 +187,13 @@ export default function NotificationsScreen() {
                   onRefresh={handlePullToRefresh}
                   ListFooterComponent={
                     isFetchingNextPage ? (
-                      <View style={{ gap: 10, paddingTop: 10 }}>
+                      <View style={styles.footer}>
                         <NotificationCardSkeleton />
                         <NotificationCardSkeleton />
                       </View>
                     ) : null
                   }
-                  contentContainerStyle={styles.listContainer}
+                  contentContainerStyle={listContainer}
                 />
               )}
             </View>
@@ -219,139 +202,56 @@ export default function NotificationsScreen() {
 
         {!isLoading && tabData[activeTabIndex]?.length === 0 && (
           <View style={styles.emptyState} pointerEvents="none">
-            <MaterialCommunityIcons
-              name="broadcast-off"
-              size={72}
-              color={theme.grayBorder}
+            <EmptyState
+              icon="notifications-off-outline"
+              title="No notifications yet"
+              message={`You have no ${tabTypes[activeTabIndex].toLowerCase()} notifications at the moment.`}
             />
-            <Text
-              style={{
-                fontSize: 20,
-                fontWeight: "700",
-                color: theme.primary,
-                marginBottom: 8,
-              }}
-            >
-              No notifications yet
-            </Text>
-            <Text
-              style={{
-                fontSize: 15,
-                color: theme.secondaryText,
-                textAlign: "center",
-                maxWidth: 260,
-              }}
-            >
-              You have no{" "}
-              <Text style={{ textTransform: "lowercase" }}>
-                {tabTypes[activeTabIndex].toLowerCase()}
-              </Text>{" "}
-              notifications at the moment.
-            </Text>
+          </View>
+        )}
+
+        {/* Error Overlay */}
+        {isError && (
+          <View style={[styles.errorOverlay, { backgroundColor: colors.background }]}>
+            <EmptyState
+              icon="cloud-offline-outline"
+              tone="danger"
+              title="Couldn't load notifications"
+              message={error instanceof Error ? error.message : undefined}
+              actionLabel="Retry"
+              onAction={handlePullToRefresh}
+            />
           </View>
         )}
       </View>
-
-      {/* Error Overlay */}
-      {isError && (
-        <View style={styles.errorOverlay}>
-          <MaterialCommunityIcons
-            name="alert-circle-outline"
-            size={72}
-            color={theme.danger}
-          />
-          <Text style={styles.errorTitle}>Error Loading Notifications</Text>
-          <Pressable onPress={handlePullToRefresh} style={styles.retryButton}>
-            <Text style={{ color: theme.secondaryText, fontWeight: "700" }}>
-              Retry
-            </Text>
-          </Pressable>
-        </View>
-      )}
     </SafeAreaView>
   );
 }
 
-const getStyles = (theme: typeof Colors.light, screenHeight: number) =>
-  StyleSheet.create({
-    safeArea: {
-      flex: 1,
-      backgroundColor: theme.background,
-    },
-    container: {
-      flex: 1,
-      backgroundColor: theme.whiteBackground,
-      paddingHorizontal: 8,
-      display: "flex",
-      flexDirection: "column",
-    },
-    tabsRow: {
-      flexDirection: "row",
-      gap: 8,
-      paddingBottom: 5,
-      paddingTop: 15,
-    },
-    tabButton: {
-      alignItems: "center",
-    },
-    tabText: {
-      fontSize: 14,
-      fontWeight: "600",
-      color: theme.secondaryText,
-    },
-    tabTextActive: {
-      color: theme.activeText,
-    },
-    tabUnderline: {
-      height: 2,
-      width: "100%",
-      backgroundColor: "transparent",
-      marginTop: 6,
-      borderRadius: Radii.full,
-    },
-    tabUnderlineActive: {
-      backgroundColor: theme.activeText,
-    },
-    listContainer: {
-      minHeight: screenHeight,
-      paddingBottom: 120,
-      paddingTop: 10,
-      paddingHorizontal: 2,
-      gap: 4,
-    },
-    emptyState: {
-      ...StyleSheet.absoluteFillObject,
-      alignItems: "center",
-      justifyContent: "center",
-      paddingHorizontal: 24,
-    },
-    emptyTitle: {
-      fontSize: 18,
-      fontWeight: "700",
-      color: theme.activeText,
-      marginTop: 12,
-    },
-    errorOverlay: {
-      position: "absolute",
-      top: 0,
-      bottom: 0,
-      left: 0,
-      right: 0,
-      justifyContent: "center",
-      alignItems: "center",
-      backgroundColor: "rgba(0,0,0,0.05)",
-    },
-    errorTitle: {
-      fontSize: 18,
-      fontWeight: "700",
-      color: theme.errorTitle,
-      marginTop: 12,
-    },
-    retryButton: {
-      marginTop: 16,
-      paddingHorizontal: 24,
-      paddingVertical: 10,
-      backgroundColor: "#FBF2F2",
-      borderRadius: Radii.full,
-    },
-  });
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
+  container: {
+    flex: 1,
+    paddingHorizontal: 8,
+    flexDirection: "column",
+  },
+  tabsWrap: {
+    paddingHorizontal: 12,
+  },
+  footer: {
+    gap: Space.sm,
+    paddingTop: Space.sm,
+  },
+  emptyState: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  errorOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+});

@@ -7,6 +7,7 @@ import {
 import { postResource } from "@/api-actions/mutations";
 import { IDocumentsResponse } from "@/data-types/documents";
 import { TokenStorage } from "@/utils/auth-api";
+import { getTenantHeaders } from "@/utils/tenant-header";
 import {
   createUploadTask,
   FileSystemSessionType,
@@ -80,9 +81,9 @@ export async function getDocumentFileUrl(
   hcpId: number,
   documentHcpId: number,
 ): Promise<DocumentFileUrlResponse> {
-  const endpoint = `/v2/hcps/${hcpId}/documents/${documentHcpId}/url`;
+  const endpoint = `/hcps/${hcpId}/documents/${documentHcpId}/url`;
   const token = await TokenStorage.getToken();
-  const headers: Record<string, unknown> = {};
+  const headers: Record<string, unknown> = { ...getTenantHeaders() };
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
   try {
@@ -158,10 +159,13 @@ export async function startBackgroundDocumentUpload(
   payload: UpdateDocumentPayload,
   onProgress?: (progress: DocumentUploadProgress) => void,
 ): Promise<BackgroundDocumentUpload> {
-  const endpoint = `/v2/hcps/${payload.hcp_id}/documents`;
+  const endpoint = `/hcps/${payload.hcp_id}/documents`;
   const token = await TokenStorage.getToken();
 
-  const headers: Record<string, string> = { Accept: "application/json" };
+  const headers: Record<string, string> = {
+    Accept: "application/json",
+    ...getTenantHeaders(),
+  };
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
   const parameters: Record<string, string> = {

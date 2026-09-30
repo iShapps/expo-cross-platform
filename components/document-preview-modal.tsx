@@ -1,5 +1,5 @@
-import { Colors, Radii } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import { Radius, Space, Touch, Type, type AppColors } from "@/constants/design";
+import { useAppTheme } from "@/hooks/use-app-theme";
 import { Ionicons } from "@expo/vector-icons";
 import { PdfView } from "@kishannareshpal/expo-pdf";
 import { Directory, File, Paths } from "expo-file-system";
@@ -46,10 +46,16 @@ export function DocumentPreviewModal({
   onClose: () => void;
   actions?: DocumentPreviewAction[];
 }) {
-  let colorScheme = useColorScheme();
-  if (!colorScheme) colorScheme = "light";
-  const theme = Colors[colorScheme];
-  const styles = getStyles(theme, actions.length > 0);
+  const { colors } = useAppTheme();
+  // The colour names the markup below uses, mapped onto the design palette.
+  const theme = {
+    primary: colors.primary,
+    primaryText: colors.text,
+    secondaryText: colors.textSecondary,
+    white: colors.textOnPrimary,
+    danger: colors.danger,
+  };
+  const styles = getStyles(colors, actions.length > 0);
 
   const [loading, setLoading] = useState(false);
   const [pdfError, setPdfError] = useState(false);
@@ -279,60 +285,60 @@ export function DocumentPreviewModal({
   );
 }
 
-const getStyles = (theme: typeof Colors.light, hasActions: boolean) =>
+const getStyles = (colors: AppColors, hasActions: boolean) =>
   StyleSheet.create({
     modalBackdrop: {
       flex: 1,
-      backgroundColor: "rgba(0,0,0,0.42)",
+      backgroundColor: colors.overlay,
       justifyContent: "flex-end",
     },
     previewSheet: {
-      maxHeight: "86%",
-      borderTopLeftRadius: Radii.lg,
-      borderTopRightRadius: Radii.lg,
-      backgroundColor: theme.whiteBackground,
-      padding: 16,
-      gap: 14,
+      maxHeight: "88%",
+      borderTopLeftRadius: Radius.xxl,
+      borderTopRightRadius: Radius.xxl,
+      backgroundColor: colors.surface,
+      padding: Space.gutter,
+      paddingTop: Space.sm,
+      paddingBottom: Space.xl,
+      gap: Space.md,
     },
     previewHandle: {
       alignSelf: "center",
-      width: 44,
+      width: 40,
       height: 5,
-      borderRadius: Radii.xs,
-      backgroundColor: theme.grayBorder,
+      borderRadius: Radius.full,
+      backgroundColor: colors.borderStrong,
     },
     previewHeader: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
-      gap: 8,
+      gap: Space.sm,
     },
     previewTitle: {
-      color: theme.primaryText,
-      fontSize: 18,
-      fontWeight: "800",
+      ...Type.title3,
+      color: colors.text,
     },
     previewFileName: {
-      color: theme.secondaryText,
-      fontSize: 12,
-      marginTop: 3,
-      maxWidth: 260,
+      ...Type.footnote,
+      color: colors.textSecondary,
+      marginTop: 2,
     },
     iconButton: {
-      width: 40,
-      height: 40,
-      borderRadius: Radii.sm,
+      width: Touch.min,
+      height: Touch.min,
+      borderRadius: Radius.full,
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: theme.heroBg,
+      backgroundColor: colors.surfaceMuted,
     },
     previewFrame: {
-      height: 390,
-      borderRadius: Radii.sm,
+      height: 400,
+      borderRadius: Radius.lg,
       borderWidth: 1,
-      borderColor: theme.greyBorder,
+      borderColor: colors.border,
       overflow: "hidden",
-      backgroundColor: theme.heroBg,
+      backgroundColor: colors.surfaceMuted,
       alignItems: "center",
       justifyContent: "center",
     },
@@ -343,72 +349,69 @@ const getStyles = (theme: typeof Colors.light, hasActions: boolean) =>
     webView: {
       width: "100%",
       height: "100%",
-      backgroundColor: theme.whiteBackground,
+      backgroundColor: colors.surface,
     },
     previewFallback: {
-      color: theme.secondaryText,
-      fontWeight: "700",
+      ...Type.subhead,
+      color: colors.textSecondary,
       textAlign: "center",
-      marginTop: 8,
-      paddingHorizontal: 16,
+      marginTop: Space.xs,
+      paddingHorizontal: Space.md,
     },
     previewOpenFallback: {
       flex: 1,
       alignItems: "center",
       justifyContent: "center",
-      gap: 12,
-      padding: 16,
+      gap: Space.sm,
+      padding: Space.md,
     },
     openInViewerButton: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 6,
-      backgroundColor: theme.primary,
-      paddingHorizontal: 20,
-      paddingVertical: 10,
-      borderRadius: Radii.sm,
-      marginTop: 4,
+      gap: Space.xs,
+      backgroundColor: colors.primary,
+      paddingHorizontal: Space.lg,
+      minHeight: Touch.min,
+      borderRadius: Radius.full,
+      marginTop: Space.xxs,
     },
     openInViewerText: {
-      color: theme.white,
-      fontWeight: "700",
-      fontSize: 14,
+      ...Type.buttonCompact,
+      color: colors.textOnPrimary,
     },
     previewActions: {
       flexDirection: "row",
-      gap: 12,
+      gap: Space.sm,
     },
     actionButton: {
       flex: 1,
-      minHeight: 48,
-      borderRadius: Radii.sm,
+      minHeight: Touch.button,
+      borderRadius: Radius.full,
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
-      gap: 8,
+      gap: Space.xs,
     },
     actionButtonPrimary: {
-      backgroundColor: theme.primary,
+      backgroundColor: colors.primary,
     },
     actionButtonDanger: {
-      borderWidth: 1,
-      borderColor: theme.danger,
+      borderWidth: 1.5,
+      borderColor: colors.danger,
     },
     actionButtonText: {
-      fontSize: 14,
-      fontWeight: "800",
+      ...Type.button,
     },
     doneButton: {
       flex: 1,
-      minHeight: 48,
-      borderRadius: Radii.sm,
-      backgroundColor: hasActions ? theme.heroBg : theme.primary,
+      minHeight: Touch.button,
+      borderRadius: Radius.full,
+      backgroundColor: hasActions ? colors.surfaceMuted : colors.primary,
       alignItems: "center",
       justifyContent: "center",
     },
     doneButtonText: {
-      color: hasActions ? theme.primaryText : theme.white,
-      fontSize: 14,
-      fontWeight: "800",
+      ...Type.button,
+      color: hasActions ? colors.text : colors.textOnPrimary,
     },
   });

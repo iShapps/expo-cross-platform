@@ -6,6 +6,7 @@ import {
 } from "@/api-actions/error-utils";
 import { Hcp } from "@/data-types/auth";
 import { TokenStorage } from "@/utils/auth-api";
+import { getTenantHeaders } from "@/utils/tenant-header";
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 const API_TIMEOUT = 30000;
@@ -89,9 +90,9 @@ export async function getProfessionRequiredDocuments(
   professionId: number,
 ): Promise<ProfessionRequiredDocumentsResponse> {
   try {
-    const endpoint = `/v2/lookups/professions/${professionId}/required-documents`;
+    const endpoint = `/lookups/professions/${professionId}/required-documents`;
     const token = await TokenStorage.getToken();
-    const headers: Record<string, unknown> = {};
+    const headers: Record<string, unknown> = { ...getTenantHeaders() };
     if (token) headers["Authorization"] = `Bearer ${token}`;
 
     const { data } = await apiRequest<ProfessionRequiredDocumentsResponse>({
@@ -142,7 +143,7 @@ export async function getOnboardingHcp(
   try {
     const endpoint = `/hcps/${hcpId}`;
     const token = await TokenStorage.getToken();
-    const headers: Record<string, unknown> = {};
+    const headers: Record<string, unknown> = { ...getTenantHeaders() };
     if (token) headers["Authorization"] = `Bearer ${token}`;
 
     const { data } = await apiRequest<OnboardingHcpResponse>({
@@ -212,7 +213,7 @@ export async function getStates(): Promise<StatesResponse> {
   try {
     const endpoint = "/get-states";
     const token = await TokenStorage.getToken();
-    const headers: Record<string, unknown> = {};
+    const headers: Record<string, unknown> = { ...getTenantHeaders() };
     if (token) headers["Authorization"] = `Bearer ${token}`;
 
     const { data } = await apiRequest<StatesResponse>({
@@ -269,9 +270,12 @@ export async function submitPersonalDetails(
   hcpId: number,
   payload: PersonalDetailsPayload,
 ): Promise<PersonalDetailsResponse> {
-  const endpoint = `/v2/hcps/${hcpId}`;
+  const endpoint = `/hcps/${hcpId}`;
   const token = await TokenStorage.getToken();
-  const headers: Record<string, string> = { Accept: "application/json" };
+  const headers: Record<string, string> = {
+    Accept: "application/json",
+    ...getTenantHeaders(),
+  };
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
   const body = {
@@ -342,7 +346,7 @@ export type ProfessionalDetailsResponse = {
 export async function submitProfessionalDetails(
   payload: ProfessionalDetailsPayload,
 ): Promise<ProfessionalDetailsResponse> {
-  const endpoint = "/v2/registration/professional-details";
+  const endpoint = "/registration/professional-details";
   const token = await TokenStorage.getToken();
 
   const form = new FormData();
@@ -357,7 +361,10 @@ export async function submitProfessionalDetails(
     } as unknown as Blob);
   }
 
-  const headers: Record<string, string> = { Accept: "application/json" };
+  const headers: Record<string, string> = {
+    Accept: "application/json",
+    ...getTenantHeaders(),
+  };
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
   let response: Response;
@@ -410,7 +417,7 @@ export async function uploadDocument(
   hcpId: number,
   payload: DocumentUploadPayload,
 ): Promise<DocumentUploadResponse> {
-  const endpoint = `/v2/hcps/${hcpId}/documents`;
+  const endpoint = `/hcps/${hcpId}/documents`;
   const token = await TokenStorage.getToken();
 
   const form = new FormData();
@@ -424,7 +431,10 @@ export async function uploadDocument(
     form.append("expiry_date", payload.expiry_date);
   }
 
-  const headers: Record<string, string> = { Accept: "application/json" };
+  const headers: Record<string, string> = {
+    Accept: "application/json",
+    ...getTenantHeaders(),
+  };
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
   let response: Response;

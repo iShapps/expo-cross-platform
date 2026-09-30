@@ -1,10 +1,17 @@
-import { Radii } from "@/constants/theme";
 import { IShift } from "@/data-types/shifts";
 import React from "react";
 import { Voltra } from "voltra";
 
-const BG = "#111827";
-const BG_COMPACT = "#111827";
+// Live Activity palette — the design system's dark theme (constants/design.ts).
+// Live Activities render natively (SwiftUI), so they use the system font and
+// SF Symbols rather than Outfit / Ionicons.
+const BG = "#0D110F";
+const BRAND = "#7FD41A";
+const TEXT = "#EEF2EA";
+const TEXT_MUTED = "rgba(238,242,234,0.6)";
+const TEXT_FAINT = "rgba(238,242,234,0.45)";
+const TRACK = "rgba(255,255,255,0.14)";
+const HAIRLINE = "rgba(255,255,255,0.08)";
 
 export function buildVariants(shift: IShift, now: Date) {
   const shiftStart = new Date(shift.start_time).getTime();
@@ -36,51 +43,67 @@ export function buildVariants(shift: IShift, now: Date) {
           return `${h}h ${m}m elapsed`;
         })();
 
-  const minimal = (
-    <Voltra.View
-      style={{
-        backgroundColor: BG,
-        borderRadius: Radii.full,
-        paddingHorizontal: 6,
-        paddingVertical: 2,
-      }}
-    >
-      <Voltra.Text
-        style={{ color: "#70C601", fontSize: 12, fontWeight: "700" }}
-      >
+  const isComplete = remainingDiff <= 0;
+
+  /** Native countdown to the shift end (ticks on its own); "Completed" after. */
+  const countdown = (fontSize: number, color: string) =>
+    isComplete ? (
+      <Voltra.Text style={{ color, fontSize, fontWeight: "700" }}>
         {timeRemaining}
       </Voltra.Text>
-    </Voltra.View>
+    ) : (
+      <Voltra.Timer
+        endAtMs={shiftEnd}
+        direction="down"
+        textStyle="timer"
+        showHours
+        style={{
+          color,
+          fontSize,
+          fontWeight: "700",
+          fontVariant: ["tabular-nums"],
+        }}
+      />
+    );
+
+  // Dynamic Island, minimal: a progress ring for the shift.
+  const minimal = (
+    <Voltra.CircularProgressView
+      startAtMs={shiftStart}
+      endAtMs={shiftEnd}
+      progressColor={BRAND}
+      trackColor={TRACK}
+      lineWidth={3}
+      style={{ width: 20, height: 20 }}
+    />
   );
 
+  // Dynamic Island, compact: icon + countdown.
   const compact = (
     <Voltra.HStack
       style={{
         alignItems: "center",
-        gap: 8,
+        gap: 6,
         paddingHorizontal: 8,
-        backgroundColor: BG_COMPACT,
+        backgroundColor: BG,
       }}
     >
-      <Voltra.Text style={{ fontSize: 11 }}>🟢</Voltra.Text>
-      <Voltra.Text
-        style={{ color: "#ffffff", fontSize: 12, fontWeight: "600" }}
-      >
-        {shift.facility?.name}
-      </Voltra.Text>
-      <Voltra.Text
-        style={{ color: "#70C601", fontSize: 12, fontWeight: "700" }}
-      >
-        {timeRemaining}
-      </Voltra.Text>
+      <Voltra.Symbol
+        name="stethoscope"
+        size={14}
+        weight="semibold"
+        tintColor={BRAND}
+      />
+      {countdown(13, BRAND)}
     </Voltra.HStack>
   );
 
+  // Dynamic Island expanded + lock screen.
   const expanded = (
     <Voltra.VStack
       style={{
         padding: 18,
-        paddingVertical: 20,
+        paddingVertical: 18,
         alignItems: "flex-start",
         gap: 0,
         backgroundColor: BG,
@@ -90,28 +113,26 @@ export function buildVariants(shift: IShift, now: Date) {
         style={{
           width: "100%",
           justifyContent: "space-between",
-          alignItems: "flex-start",
+          alignItems: "center",
           gap: 12,
           marginBottom: 12,
         }}
       >
         <Voltra.HStack
           style={{
-            // backgroundColor: "rgba(112,198,1,0.18)",
             width: "100%",
-            borderRadius: Radii.full,
             paddingHorizontal: 0,
             paddingVertical: 4,
-            alignItems: "flex-start",
-            gap: 5,
+            alignItems: "center",
+            gap: 6,
             flex: 1,
             marginLeft: -50,
           }}
         >
-          <Voltra.Text style={{ fontSize: 11 }}>🟢</Voltra.Text>
+          <Voltra.Symbol name="circle.fill" size={8} tintColor={BRAND} />
           <Voltra.Text
             style={{
-              color: "#70C601",
+              color: BRAND,
               fontSize: 11,
               fontWeight: "700",
               letterSpacing: 0.8,
@@ -124,90 +145,90 @@ export function buildVariants(shift: IShift, now: Date) {
           </Voltra.Text>
         </Voltra.HStack>
 
-        <Voltra.Text
-          style={{
-            color: "#ffffff",
-            fontSize: 13,
-            fontWeight: "700",
-            textAlign: "right",
-            fontVariant: ["tabular-nums"],
-            letterSpacing: 0.3,
-          }}
-        >
-          {timeRemaining}
-        </Voltra.Text>
+        {countdown(15, TEXT)}
       </Voltra.HStack>
 
-      <Voltra.Text
-        style={{
-          color: "#ffffff",
-          fontSize: 17,
-          fontWeight: "800",
-          textAlign: "left",
-          letterSpacing: 0.1,
-          marginBottom: 10,
-          width: "100%",
-        }}
+      <Voltra.HStack
+        style={{ alignItems: "center", gap: 8, width: "100%", marginBottom: 6 }}
       >
-        🏢 {shift.facility?.name}
-      </Voltra.Text>
+        <Voltra.Symbol
+          name="building.2.fill"
+          size={15}
+          weight="semibold"
+          tintColor={TEXT}
+        />
+        <Voltra.Text
+          style={{
+            color: TEXT,
+            fontSize: 17,
+            fontWeight: "800",
+            textAlign: "left",
+            letterSpacing: 0.1,
+          }}
+        >
+          {shift.facility?.name}
+        </Voltra.Text>
+      </Voltra.HStack>
 
       <Voltra.HStack
         style={{
           alignItems: "flex-start",
           width: "100%",
-          gap: 4,
+          gap: 8,
           marginBottom: 14,
-          marginTop: 5,
         }}
       >
+        <Voltra.Symbol
+          name="mappin.and.ellipse"
+          size={12}
+          tintColor={TEXT_MUTED}
+        />
         <Voltra.Text
           style={{
-            color: "rgba(255,255,255,0.55)",
+            color: TEXT_MUTED,
             fontSize: 12,
             textAlign: "left",
             flex: 1,
           }}
         >
-          📍 {shift.facility?.address}
+          {shift.facility?.address}
         </Voltra.Text>
       </Voltra.HStack>
 
-      <Voltra.VStack style={{ width: "100%", gap: 6, marginBottom: 10 }}>
-        <Voltra.View
-          style={{
-            width: "100%",
-            height: 6,
-            borderRadius: Radii.full,
-            backgroundColor: "rgba(255,255,255,0.15)",
-            flexDirection: "row",
-            overflow: "hidden",
-          }}
+      <Voltra.VStack style={{ width: "100%", gap: 6, marginBottom: 12 }}>
+        <Voltra.LinearProgressView
+          startAtMs={shiftStart}
+          endAtMs={shiftEnd}
+          progressColor={BRAND}
+          trackColor={TRACK}
+          height={6}
+          cornerRadius={3}
+          style={{ width: "100%" }}
+        />
+        <Voltra.HStack
+          style={{ width: "100%", justifyContent: "space-between" }}
         >
-          <Voltra.View
+          <Voltra.Text style={{ color: TEXT_FAINT, fontSize: 11 }}>
+            {timeElapsed}
+          </Voltra.Text>
+          <Voltra.Spacer />
+          <Voltra.Text
             style={{
-              flex: progressPercent / 100,
-              borderRadius: Radii.full,
-              height: "100%",
-              backgroundColor: "#70C601",
+              color: TEXT_FAINT,
+              fontSize: 11,
+              fontVariant: ["tabular-nums"],
             }}
-          />
-
-          <Voltra.View
-            style={{
-              flex: 1 - progressPercent / 100,
-              borderRadius: Radii.full,
-              height: "100%",
-            }}
-          />
-        </Voltra.View>
+          >
+            {progressPercent}%
+          </Voltra.Text>
+        </Voltra.HStack>
       </Voltra.VStack>
 
       <Voltra.View
         style={{
           width: "100%",
           height: 1,
-          backgroundColor: "rgba(255,255,255,0.08)",
+          backgroundColor: HAIRLINE,
           marginBottom: 10,
         }}
       />
@@ -216,28 +237,33 @@ export function buildVariants(shift: IShift, now: Date) {
         style={{
           width: "100%",
           justifyContent: "space-between",
-          alignItems: "flex-start",
+          alignItems: "center",
         }}
       >
-        <Voltra.HStack style={{ alignItems: "center", gap: 4 }}>
-          <Voltra.Text style={{ fontSize: 11 }}>👤</Voltra.Text>
+        <Voltra.HStack style={{ alignItems: "center", gap: 5 }}>
+          <Voltra.Symbol name="person.fill" size={11} tintColor={TEXT_MUTED} />
           <Voltra.Text
             style={{
-              color: "rgba(255,255,255,0.5)",
+              color: TEXT_MUTED,
               fontSize: 11,
               textAlign: "left",
-              flex: 1,
             }}
           >
             {shift.hcp?.first_name} {shift.hcp?.last_name}
           </Voltra.Text>
         </Voltra.HStack>
 
-        <Voltra.HStack style={{ alignItems: "center", gap: 4 }}>
-          <Voltra.Text style={{ fontSize: 11 }}>💼</Voltra.Text>
+        <Voltra.Spacer />
+
+        <Voltra.HStack style={{ alignItems: "center", gap: 5 }}>
+          <Voltra.Symbol
+            name="briefcase.fill"
+            size={11}
+            tintColor={TEXT_MUTED}
+          />
           <Voltra.Text
             style={{
-              color: "rgba(255,255,255,0.5)",
+              color: TEXT_MUTED,
               fontSize: 11,
               textAlign: "right",
             }}

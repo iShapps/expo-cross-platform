@@ -9,7 +9,7 @@ export async function sendTestNotification(
   hcpId: number,
 ): Promise<TestNotificationResponse> {
   return postResource<Record<string, never>, TestNotificationResponse>(
-    `/v2/hcps/${hcpId}/test-notification`,
+    `/hcps/${hcpId}/test-notification`,
     {},
   );
 }

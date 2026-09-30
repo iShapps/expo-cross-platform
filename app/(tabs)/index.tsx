@@ -1,13 +1,22 @@
-import { NotificationCard } from "@/components/notification-card";
 import {
-  CurrentPayrunSkeleton,
-  DashboardAnalyticsSkeleton,
-  NotificationCardSkeleton,
-} from "@/components/skeletons";
+  AppText,
+  Avatar,
+  EmptyState,
+  GradientFill,
+  Icon,
+  IconBadge,
+  IconButton,
+  OrgLogo,
+  PressableCard,
+  SectionHeader,
+  type IconName,
+} from "@/components/design";
+import { NotificationCard } from "@/components/notification-card";
+import { NotificationCardSkeleton, SkeletonBase } from "@/components/skeletons";
 import { useProfileData } from "@/data-store/use-account-store";
+import { useTenantStore } from "@/data-store/use-tenant-store";
 import { DashboardResponse } from "@/data-types/dashboard";
 import { useLocation } from "@/hooks/use-location";
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useFocusEffect, useIsFocused } from "@react-navigation/native";
 import {
   useInfiniteQuery,
@@ -16,29 +25,27 @@ import {
 } from "@tanstack/react-query";
 import { format, parse } from "date-fns";
 import { router } from "expo-router";
-import { useCallback, useEffect } from "react";
+import { setStatusBarStyle } from "expo-status-bar";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { getHCPDashboard } from "@/api-queries/dashboard";
 import { getNotifications } from "@/api-queries/notifcations";
-import { Colors, Radii } from "@/constants/theme";
-import { useConfigSettings } from "@/data-store/config-store";
+import {
+  Radius,
+  Space,
+  Touch,
+  type AppColors,
+  type Tone,
+} from "@/constants/design";
 import { User } from "@/data-types/auth";
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useAppTheme } from "@/hooks/use-app-theme";
 import { useFirstVisitTour } from "@/hooks/use-first-visit-tour";
 import { useOneSignalSubscriptionStatus } from "@/hooks/use-one-signal";
 import { getAvatarImageSource } from "@/utils/auth";
 import { getRegistrationStatus, TokenStorage } from "@/utils/auth-api";
-import { FontAwesome6, MaterialCommunityIcons } from "@expo/vector-icons";
-import {
-  FlatList,
-  Image,
-  Pressable,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Animated, StyleSheet, View } from "react-native";
 import { CopilotStep, walkthroughable } from "react-native-copilot";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSession } from "../ctx";
 
 const WalkthroughableView = walkthroughable(View);
@@ -48,13 +55,14 @@ export default function HomeScreen() {
   const { retryNotificationSetup, updateHcp } = useSession();
   const { isChecking, isSetup, refresh } = useOneSignalSubscriptionStatus();
   const { requestPermission } = useLocation();
-  const colorScheme = useColorScheme() || "light";
-  const theme = Colors[colorScheme];
-  const styles = getStyles(theme);
+  const { colors, isDark } = useAppTheme();
+  const styles = getStyles(colors, isDark);
+  const insets = useSafeAreaInsets();
   const profileStore = useProfileData();
   const userDetails = profileStore.userDetails;
+  const organizationName = useTenantStore((state) => state.tenant?.name);
+  const organizationLogoUrl = useTenantStore((state) => state.tenant?.logoUrl);
   const queryClient = useQueryClient();
-  const configSettings = useConfigSettings();
 
   const {
     data: dashboard,
@@ -203,16 +211,14 @@ export default function HomeScreen() {
   const periodLabel =
     dashboardData?.payroll_frequency === "fortnightly" ? "Fortnight" : "Week";
 
-  const dashboardPayrunLabel =
+  const payrunRange =
     periodStart && periodEnd
-      ? `Payrun: ${periodLabel} of ${format(
-          new Date(periodStart),
-          "dd MMM",
-        )} - ${format(new Date(periodEnd), "dd MMM yyyy")}`
-      : null;
-  const payrunLabel = dashboardPayrunLabel
-    ? dashboardPayrunLabel
-    : "Payrun: --";
+      ? `${format(new Date(periodStart), "d MMM")} – ${format(
+          new Date(periodEnd),
+          "d MMM yyyy",
+        )}`
+      : "Not available yet";
+  const payrunPeriod = periodLabel === "Fortnight" ? "Fortnightly" : "Weekly";
 
   const cutoffTimeRaw = dashboardData?.payroll_cutoff_time;
   const formattedCutoffTime = cutoffTimeRaw
@@ -223,8 +229,8 @@ export default function HomeScreen() {
   const formattedCutoffDay = cutoffDayRaw
     ? cutoffDayRaw.charAt(0).toUpperCase() + cutoffDayRaw.slice(1).toLowerCase()
     : periodEnd
-      ? format(new Date(periodEnd), "dd MMM")
-      : null;
+    ? format(new Date(periodEnd), "dd MMM")
+    : null;
 
   const payrunDisclaimer = formattedCutoffDay
     ? `Only shifts completed by ${formattedCutoffTime} on ${formattedCutoffDay} are included.`
@@ -246,550 +252,481 @@ export default function HomeScreen() {
     }
   };
 
-  // ...styles now come from getStyles(theme)
+  // ─── Presentation only below this line ──────────────────────────────────
+
+  const hour = new Date().getHours();
+  const greeting =
+    hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+  const firstName = userDetails?.name?.trim().split(/\s+/)[0] ?? "there";
+  const avatarUri = userDetails?.hcp
+    ? getAvatarImageSource(userDetails.hcp)
+    : undefined;
+
+  useFocusEffect(
+    useCallback(() => {
+      setStatusBarStyle("light");
+      return () => setStatusBarStyle(isDark ? "light" : "dark");
+    }, [isDark]),
+  );
+
+  // A solid bar fades in behind the status bar once the hero scrolls away.
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const [heroHeight, setHeroHeight] = useState(0);
+  const fadeEnd = Math.max(1, heroHeight - insets.top);
+  const statusBackdropOpacity = scrollY.interpolate({
+    inputRange: [Math.max(0, fadeEnd - 48), fadeEnd],
+    outputRange: [0, 1],
+    extrapolate: "clamp",
+  });
+
+  const stats: {
+    key: string;
+    label: string;
+    value: number;
+    icon: IconName;
+    tone: Tone;
+    onPress: () => void;
+  }[] = [
+    {
+      key: "available",
+      label: "Available",
+      value: availableShifts,
+      icon: "flash-outline",
+      tone: "primary",
+      onPress: () => router.push("/(tabs)/shifts"),
+    },
+    {
+      key: "upcoming",
+      label: "Upcoming",
+      value: upcomingShifts,
+      icon: "time-outline",
+      tone: "amber",
+      onPress: () =>
+        router.push({
+          pathname: "/(tabs)/schedules",
+          params: { activeTab: "scheduled" },
+        }),
+    },
+    {
+      key: "mine",
+      label: "My Shifts",
+      value: scheduledShifts,
+      icon: "calendar-outline",
+      tone: "blue",
+      onPress: () => router.push("/(tabs)/schedules"),
+    },
+  ];
+
+  const header = (
+    <View>
+      {/* HERO */}
+      <View
+        style={styles.heroWrap}
+        onLayout={(e) => setHeroHeight(e.nativeEvent.layout.height)}
+      >
+        {/* Fills the iOS pull-down bounce area above the hero */}
+        <View style={styles.heroOverscroll} />
+        <View style={[styles.hero, { paddingTop: insets.top + Space.sm }]}>
+          <GradientFill colors={colors.heroGradient} />
+          <View style={[styles.heroOrb, styles.heroOrbLarge]} />
+          <View style={[styles.heroOrb, styles.heroOrbSmall]} />
+
+          <View style={styles.heroTopRow}>
+            <Avatar name={userDetails?.name} uri={avatarUri} size={52} ring />
+            <View style={styles.heroGreeting}>
+              <AppText variant="footnote" style={styles.onHeroMuted}>
+                {greeting},
+              </AppText>
+              <AppText variant="title2" style={styles.onHero} numberOfLines={1}>
+                {firstName}
+              </AppText>
+            </View>
+            <CopilotStep
+              name="dashboard-notifications"
+              order={2}
+              active={isFocused}
+              text="This is where shift updates, approvals, and reminders land. The dot means something's waiting for you."
+            >
+              <WalkthroughableView>
+                <IconButton
+                  icon="notifications-outline"
+                  accessibilityLabel="Notifications"
+                  variant="glass"
+                  badge={notifications.length > 0}
+                  onPress={() => router.push("/(main)/notifications")}
+                />
+              </WalkthroughableView>
+            </CopilotStep>
+          </View>
+
+          <View style={styles.orgPill}>
+            {organizationLogoUrl ? (
+              // Only for a real logo — OrgLogo's own no-image fallback tile
+              // is brand-green, which would nearly disappear against this
+              // same-toned hero. The plain icon below covers that case.
+              <OrgLogo
+                name={organizationName}
+                uri={organizationLogoUrl}
+                size={16}
+              />
+            ) : (
+              <Icon name="business-outline" size={14} color={colors.onHero} />
+            )}
+            <AppText variant="caption" style={styles.onHero} numberOfLines={1}>
+              {organizationName ?? "—"}
+            </AppText>
+          </View>
+
+          {/* PAYRUN */}
+          <View style={styles.payrunCard}>
+            <View style={styles.payrunRow}>
+              <View style={styles.payrunIcon}>
+                <Icon name="wallet-outline" size={20} color={colors.onHero} />
+              </View>
+              <View style={styles.payrunText}>
+                <AppText variant="overline" style={styles.onHeroMuted}>
+                  Current payrun · {payrunPeriod}
+                </AppText>
+                {dashboardLoading ? (
+                  <View style={styles.heroPlaceholder} />
+                ) : (
+                  <AppText variant="title3" style={styles.onHero}>
+                    {payrunRange}
+                  </AppText>
+                )}
+              </View>
+            </View>
+            {!!payrunDisclaimer && !dashboardLoading && (
+              <View style={styles.payrunFooter}>
+                <Icon
+                  name="alarm-outline"
+                  size={14}
+                  color={colors.onHeroMuted}
+                />
+                <AppText
+                  variant="caption"
+                  style={[styles.onHeroMuted, styles.payrunDisclaimer]}
+                >
+                  {payrunDisclaimer}
+                </AppText>
+              </View>
+            )}
+          </View>
+        </View>
+      </View>
+
+      {/* STATS — overlap the hero's bottom edge */}
+      <CopilotStep
+        name="dashboard-stats"
+        order={1}
+        active={isFocused}
+        text={
+          '"Available" shows open shifts you can pick up, "Upcoming" shows shifts starting soon, and "My Shifts" is everything on your schedule. Tap any card to jump straight there.'
+        }
+      >
+        <WalkthroughableView style={styles.statsRow}>
+          {stats.map((stat) => (
+            <PressableCard
+              key={stat.key}
+              onPress={stat.onPress}
+              accessibilityRole="button"
+              accessibilityLabel={`${stat.label}: ${stat.value}`}
+              padding={Space.sm + 2}
+              raised
+              style={styles.statTile}
+            >
+              <IconBadge icon={stat.icon} tone={stat.tone} size={36} />
+              {dashboardLoading ? (
+                <SkeletonBase
+                  width={44}
+                  height={34}
+                  borderRadius={Radius.xs}
+                  style={styles.statValue}
+                />
+              ) : (
+                <AppText variant="display" style={styles.statValue}>
+                  {stat.value}
+                </AppText>
+              )}
+              <AppText
+                variant="subhead"
+                color="textSecondary"
+                numberOfLines={1}
+              >
+                {stat.label}
+              </AppText>
+            </PressableCard>
+          ))}
+        </WalkthroughableView>
+      </CopilotStep>
+
+      {userDetails?.hcp?.status === "pending-approval" && (
+        <CopilotStep
+          name="dashboard-pending-approval"
+          order={3}
+          active={isFocused}
+          text="You're almost set up — once your documents are reviewed and your account's approved, you'll be able to accept shifts."
+        >
+          <WalkthroughableView style={styles.pendingCard}>
+            <IconBadge icon="hourglass-outline" tone="warning" size={40} />
+            <View style={styles.pendingText}>
+              <AppText variant="headline">Account pending approval</AppText>
+              <AppText variant="footnote" color="textSecondary">
+                You&apos;ll be notified once it has been reviewed.
+              </AppText>
+            </View>
+          </WalkthroughableView>
+        </CopilotStep>
+      )}
+
+      <SectionHeader
+        title="Recent activity"
+        actionLabel="See all"
+        onAction={() => router.push("/(main)/notifications")}
+        style={styles.sectionHeader}
+      />
+    </View>
+  );
 
   return (
     <View style={styles.mainContainer}>
-      {/* HEADER */}
-      <View style={styles.containerTop}>
-        <View
-          style={{
-            display: "flex",
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 10,
-          }}
-        >
-          <View
-            style={{
-              display: "flex",
-              flexDirection: "row",
-              gap: 8,
-              flex: 1,
-              marginRight: 5,
-            }}
-          >
-            {userDetails && (
-              <Image
-                source={{
-                  uri: getAvatarImageSource(
-                    userDetails.hcp,
-                    configSettings?.configSettings?.image_path?.hcp_path ?? "",
-                  ),
-                }}
-                style={styles.avatarImage}
-              />
-            )}
-            <View
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                flex: 1,
-              }}
-            >
-              <Text style={styles.headerTitle}>{userDetails?.name}</Text>
-              <View style={{ display: "flex", flexDirection: "row", gap: 5 }}>
-                <FontAwesome6 name="briefcase" size={16} color="#FFC107" />
-                <Text
-                  style={styles.headerSubtitle}
-                  numberOfLines={2}
-                  ellipsizeMode="tail"
-                >
-                  {userDetails?.hcp?.hcp_professions
-                    ?.map((prfession) => prfession?.profession?.name ?? "—")
-                    .join(" | ") ?? "—"}
-                </Text>
-              </View>
+      <Animated.FlatList
+        data={notificationsLoading ? [...Array(6)] : notifications}
+        renderItem={
+          notificationsLoading
+            ? () => (
+                <View style={styles.gutter}>
+                  <NotificationCardSkeleton />
+                </View>
+              )
+            : ({ item }) => (
+                <View style={styles.gutter}>
+                  <NotificationCard notification={item} />
+                </View>
+              )
+        }
+        keyExtractor={
+          notificationsLoading
+            ? (_, idx) => `skeleton-${idx}`
+            : (item) => String(item.id)
+        }
+        ListHeaderComponent={header}
+        ItemSeparatorComponent={ItemGap}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.listContent}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: true },
+        )}
+        scrollEventThrottle={16}
+        refreshing={isFetchingNextPage}
+        onRefresh={handlePullToRefresh}
+        onEndReached={handleLoadMore}
+        onEndReachedThreshold={0.6}
+        ListFooterComponent={
+          !notificationsLoading && isFetchingNextPage ? (
+            <View style={[styles.gutter, styles.footer]}>
+              <NotificationCardSkeleton />
+              <NotificationCardSkeleton />
             </View>
-          </View>
-          <CopilotStep
-            name="dashboard-notifications"
-            order={2}
-            active={isFocused}
-            text="This is where shift updates, approvals, and reminders land. The dot means something's waiting for you."
-          >
-            <WalkthroughableView>
-              <Pressable
-                onPress={() => router.push("/(main)/notifications")}
-                style={styles.notificationContainer}
-              >
-                <MaterialIcons name="notifications" size={20} color="#fff" />
-
-                {notifications.length > 0 && (
-                  <View style={styles.notificationDot} />
-                )}
-              </Pressable>
-            </WalkthroughableView>
-          </CopilotStep>
-        </View>
-
-        {userDetails?.hcp?.status === "pending-approval" && (
-          <CopilotStep
-            name="dashboard-pending-approval"
-            order={3}
-            active={isFocused}
-            text="You're almost set up — once your documents are reviewed and your account's approved, you'll be able to accept shifts."
-          >
-            <WalkthroughableView style={styles.pendingApprovalBanner}>
-              <MaterialCommunityIcons
-                name="clock-alert-outline"
-                size={18}
-                color={theme.white}
-              />
-              <Text style={styles.pendingApprovalText}>
-                Your account is pending approval. You&apos;ll be notified once
-                it has been reviewed.
-              </Text>
-            </WalkthroughableView>
-          </CopilotStep>
-        )}
-      </View>
-
-      {/* CONTENT */}
-
-      <View style={styles.dashboardContainer}>
-        <View style={styles.dashboardHeader}>
-          <Text style={styles.overviewLabel}>Overview</Text>
-          <View style={styles.sectionUnderline} />
-        </View>
-        {dashboardLoading ? (
-          <DashboardAnalyticsSkeleton />
-        ) : (
-          <CopilotStep
-            name="dashboard-stats"
-            order={1}
-            active={isFocused}
-            text={
-              '"Available" shows open shifts you can pick up, "Upcoming" shows shifts starting soon, and "My Shifts" is everything on your schedule. Tap any card to jump straight there.'
-            }
-          >
-            <WalkthroughableView style={styles.dashboardRow}>
-              <TouchableOpacity
-                onPress={() => router.push("/(tabs)/shifts")}
-                style={[styles.dashboardCard, theme.dashboardCardAvailable]}
-              >
-                <View style={styles.dashboardTopRow}>
-                  <View style={[styles.iconPill, styles.iconPillAvailable]}>
-                    <MaterialIcons
-                      name="event-available"
-                      size={16}
-                      color={theme.primary}
-                    />
-                  </View>
-                  <Text style={styles.dashboardValue}>{availableShifts}</Text>
-                </View>
-                <Text style={styles.dashboardTitle}>Available</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={() =>
-                  router.push({
-                    pathname: "/(tabs)/schedules",
-                    params: { activeTab: "scheduled" },
-                  })
-                }
-                style={[styles.dashboardCard, theme.dashboardCardUpcoming]}
-              >
-                <View style={styles.dashboardTopRow}>
-                  <View style={[styles.iconPill, styles.iconPillUpcoming]}>
-                    <MaterialIcons name="schedule" size={16} color="#FFC107" />
-                  </View>
-                  <Text style={styles.dashboardValue}>{upcomingShifts}</Text>
-                </View>
-                <Text style={styles.dashboardTitle}>Upcoming</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => router.push("/(tabs)/schedules")}
-                style={[styles.dashboardCard, theme.dashboardCardMy]}
-              >
-                <View style={styles.dashboardTopRow}>
-                  <View style={[styles.iconPill, styles.iconPillMy]}>
-                    <MaterialIcons
-                      name="assignment-ind"
-                      size={16}
-                      color="#4A90E2"
-                    />
-                  </View>
-                  <Text style={styles.dashboardValue}>{scheduledShifts}</Text>
-                </View>
-                <Text style={styles.dashboardTitle}>My Shifts</Text>
-              </TouchableOpacity>
-            </WalkthroughableView>
-          </CopilotStep>
-        )}
-
-        {dashboardLoading ? (
-          <CurrentPayrunSkeleton />
-        ) : (
-          <View style={styles.payrunCard}>
-            <View style={styles.payrunHeader}>
-              <View style={styles.iconPillPayrun}>
-                <MaterialIcons
-                  name="date-range"
-                  size={16}
-                  color={theme.primary}
-                />
-              </View>
-              <Text style={styles.payrunValue}>{payrunLabel}</Text>
-              {/* <Text style={styles.payrunLabel}>Current Payrun</Text> */}
-            </View>
-            <Text style={styles.payrunDisclaimer}>{payrunDisclaimer}</Text>
-          </View>
-        )}
-
-        {/* <ActiveCard payrun={sample_payruns[0]} /> */}
-      </View>
-      <View style={styles.mainLandingContainer}>
-        <View style={styles.notificationsHeader}>
-          <View style={styles.sectionTitleWrap}>
-            <Text style={styles.sectionLabel}>Notifications</Text>
-          </View>
-          <TouchableOpacity
-            onPress={() => router.push("/(main)/notifications")}
-            style={styles.seeAllButton}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.seeAllText}>See all</Text>
-            <MaterialIcons
-              name="chevron-right"
-              size={18}
-              color={theme.activeText}
+          ) : null
+        }
+        ListEmptyComponent={
+          !notificationsLoading && !isError && notifications.length === 0 ? (
+            <EmptyState
+              icon="notifications-outline"
+              title="You're all caught up"
+              message="Shift updates, approvals and reminders will show up here."
             />
-          </TouchableOpacity>
-        </View>
+          ) : null
+        }
+      />
 
-        <FlatList
-          data={notificationsLoading ? [...Array(6)] : notifications}
-          renderItem={
-            notificationsLoading
-              ? () => <NotificationCardSkeleton />
-              : ({ item }) => <NotificationCard notification={item} />
-          }
-          keyExtractor={
-            notificationsLoading
-              ? (_, idx) => `skeleton-${idx}`
-              : (item) => String(item.id)
-          }
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{
-            paddingBottom: 120,
-            paddingTop: 10,
-            flexGrow: 1,
-            gap: 10,
-          }}
-          refreshing={isFetchingNextPage}
-          onRefresh={handlePullToRefresh}
-          onEndReached={handleLoadMore}
-          onEndReachedThreshold={0.6}
-          ListFooterComponent={
-            !notificationsLoading && isFetchingNextPage ? (
-              <View style={{ gap: 10, paddingTop: 10 }}>
-                <NotificationCardSkeleton />
-                <NotificationCardSkeleton />
-              </View>
-            ) : null
-          }
-          ListEmptyComponent={
-            !notificationsLoading && !isError && notifications.length === 0 ? (
-              <View
-                style={{
-                  flex: 1,
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <MaterialCommunityIcons
-                  name="calendar-remove-outline"
-                  size={72}
-                  color={theme.mutedText}
-                  style={{ marginBottom: 16 }}
-                />
-                <Text
-                  style={{
-                    fontSize: 20,
-                    fontWeight: "700",
-                    color: theme.activeText,
-                    marginBottom: 8,
-                  }}
-                >
-                  No Notifications Yet
-                </Text>
-                <Text
-                  style={{
-                    fontSize: 15,
-                    color: theme.secondaryText,
-                    textAlign: "center",
-                    maxWidth: 260,
-                  }}
-                >
-                  There&apos;s no notifications for this the moment. Check back
-                  later
-                </Text>
-              </View>
-            ) : null
-          }
-        />
-      </View>
+      <Animated.View
+        pointerEvents="none"
+        style={[
+          styles.statusBackdrop,
+          { height: insets.top, opacity: statusBackdropOpacity },
+        ]}
+      />
     </View>
   );
 }
 
-const getStyles = (theme: typeof Colors.light) =>
+const ItemGap = () => <View style={{ height: Space.sm }} />;
+
+const getStyles = (colors: AppColors, isDark: boolean) =>
   StyleSheet.create({
     mainContainer: {
-      backgroundColor: theme.whiteBackground,
-      width: "100%",
       flex: 1,
-      justifyContent: "flex-start",
-      alignItems: "center",
+      backgroundColor: colors.background,
     },
-    header: {
-      backgroundColor: theme.primary,
-      paddingTop: 55,
-      paddingBottom: 10,
-      alignItems: "center",
-    },
-    containerTop: {
-      backgroundColor: theme.background,
-      minHeight: "12%",
-      width: "100%",
-      paddingTop: 55,
-      paddingBottom: 2,
-      display: "flex",
-      flexDirection: "column",
-      paddingHorizontal: 10,
-      gap: 10,
-      borderBottomColor: theme.whiteBackground,
-      borderBottomWidth: 0.5,
-    },
-    pendingApprovalBanner: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 8,
-      width: "100%",
-      backgroundColor: "rgba(255,140,26,0.35)",
-      borderWidth: 1,
-      borderColor: "rgba(255,140,26,0.6)",
-      borderRadius: Radii.sm,
-      marginTop: 10,
-      paddingVertical: 8,
-      paddingHorizontal: 10,
-    },
-    pendingApprovalText: {
-      flex: 1,
-      fontSize: 12.5,
-      lineHeight: 17,
-      color: theme.white,
-    },
-    dashboardContainer: {
-      display: "flex",
-      flexDirection: "column",
-      gap: 8,
-      width: "100%",
-      backgroundColor: theme.background,
-      paddingHorizontal: 10,
-      paddingBottom: 20,
-      marginBottom: 5,
-    },
-    mainLandingContainer: {
-      flex: 1,
-      backgroundColor: theme.whiteBackground,
-      width: "100%",
-      paddingHorizontal: 10,
-      overflow: "hidden",
-    },
-    mainLandingContent: {
+    listContent: {
+      flexGrow: 1,
       paddingBottom: 120,
-      paddingTop: 4,
-      gap: 8,
     },
-    headerTitle: {
-      fontSize: 20,
-      fontWeight: "700",
-      color: theme.white,
+    gutter: {
+      paddingHorizontal: Space.gutter,
     },
-    headerSubtitle: {
-      fontSize: 12.5,
-      color: theme.white,
-      flexWrap: "wrap", // allow wrapping
-      flexShrink: 1, // prevent overflow
-      maxWidth: "96%",
+    footer: {
+      gap: Space.sm,
+      paddingTop: Space.sm,
     },
-    notificationContainer: {
-      backgroundColor: theme.notificationFaint,
-      display: "flex",
-      justifyContent: "center",
-      alignItems: "center",
-      alignContent: "center",
-      flexDirection: "row",
-      borderRadius: Radii.sm,
-      padding: 8,
+    statusBackdrop: {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      backgroundColor: colors.heroGradient[1],
+    },
+
+    // Hero
+    heroWrap: {
       position: "relative",
     },
-    notificationDot: {
+    heroOverscroll: {
       position: "absolute",
-      top: 7,
-      right: 11,
-      width: 6,
-      height: 6,
-      borderRadius: Radii.full,
-      backgroundColor: theme.danger,
+      top: -600,
+      left: 0,
+      right: 0,
+      height: 600,
+      backgroundColor: colors.heroGradient[0],
     },
-    sectionLabel: {
-      fontSize: 15,
-      fontWeight: "600",
-      color: theme.secondaryText,
-      textTransform: "uppercase",
-      letterSpacing: 0.5,
+    hero: {
+      overflow: "hidden",
+      borderBottomLeftRadius: Radius.md,
+      borderBottomRightRadius: Radius.md,
+      paddingHorizontal: Space.gutter,
+      // room for the stat tiles that overlap the bottom edge
+      paddingBottom: Space.xxl + 44,
+      gap: Space.md,
     },
-    overviewLabel: {
-      fontSize: 15,
-      fontWeight: "600",
-      color: theme.white,
-      textTransform: "uppercase",
-      letterSpacing: 0.5,
+    heroOrb: {
+      position: "absolute",
+      borderRadius: Radius.full,
+      backgroundColor: "rgba(255,255,255,0.07)",
     },
-    dashboardHeader: {
-      marginTop: 16,
-      marginBottom: 8,
+    heroOrbLarge: {
+      width: 260,
+      height: 260,
+      top: -90,
+      right: -80,
     },
-    dashboardRow: {
+    heroOrbSmall: {
+      width: 140,
+      height: 140,
+      bottom: 30,
+      left: -60,
+    },
+    heroTopRow: {
       flexDirection: "row",
-      // flexWrap: "wrap",
-      gap: 10,
+      alignItems: "center",
+      gap: Space.sm,
+      minHeight: Touch.min,
     },
-    dashboardCard: {
-      display: "flex",
-      alignItems: "flex-start",
-      justifyContent: "space-between",
-      borderRadius: Radii.md,
-      padding: 12,
-      borderWidth: 1,
-      width: "31%",
-      minHeight: 110,
+    heroGreeting: {
+      flex: 1,
+    },
+    onHero: {
+      color: colors.onHero,
+    },
+    onHeroMuted: {
+      color: colors.onHeroMuted,
+    },
+    orgPill: {
+      flexDirection: "row",
+      alignItems: "center",
+      alignSelf: "flex-start",
+      maxWidth: "100%",
       gap: 6,
-    },
-    dashboardTitle: {
-      fontSize: 15,
-      fontWeight: "600",
-      color: theme.secondaryText,
-      marginTop: 8,
-    },
-    dashboardValue: {
-      fontSize: 32,
-      fontWeight: "700",
-      color: theme.primaryText,
-    },
-    dashboardTopRow: {
-      width: "100%",
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-    },
-    iconPill: {
-      width: 28,
-      height: 28,
-      borderRadius: Radii.full,
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: theme.heroIconBg,
-    },
-    iconPillAvailable: {
-      backgroundColor: theme.heroIconBg,
-    },
-    iconPillMy: {
-      backgroundColor: theme.heroIconBg,
-    },
-    iconPillUpcoming: {
-      backgroundColor: theme.heroIconBg,
+      paddingHorizontal: Space.sm,
+      paddingVertical: 6,
+      borderRadius: Radius.full,
+      backgroundColor: colors.heroGlass,
+      borderWidth: 1,
+      borderColor: colors.heroGlassBorder,
     },
     payrunCard: {
-      marginTop: 5,
-      borderRadius: Radii.md,
-      padding: 12,
+      borderRadius: Radius.xl,
+      padding: Space.md,
+      backgroundColor: colors.heroGlass,
       borderWidth: 1,
-      borderColor: theme.heroBorder,
-      backgroundColor: theme.heroBg,
-      shadowColor: theme.background,
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.08,
-      shadowRadius: 10,
-      elevation: 3,
+      borderColor: colors.heroGlassBorder,
+      gap: Space.sm,
     },
-    payrunHeader: {
+    payrunRow: {
       flexDirection: "row",
       alignItems: "center",
-      width: "100%",
-      gap: 8,
+      gap: Space.sm,
     },
-    iconPillPayrun: {
-      width: 28,
-      height: 28,
-      borderRadius: Radii.full,
+    payrunIcon: {
+      width: Touch.min,
+      height: Touch.min,
+      borderRadius: Radius.full,
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: theme.heroIconBg,
+      backgroundColor: colors.heroGlass,
     },
-    payrunLabel: {
-      fontSize: 13,
-      flexGrow: 1,
-      fontWeight: "700",
-      color: theme.primaryText,
-      marginBottom: 4,
-      letterSpacing: 0.2,
-      textTransform: "uppercase",
+    payrunText: {
+      flex: 1,
+      gap: 2,
     },
-    payrunValue: {
-      fontSize: 14,
-      fontWeight: "600",
-      color: theme.primaryText,
+    payrunFooter: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      gap: 6,
+      paddingTop: Space.sm,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: colors.heroGlassBorder,
     },
     payrunDisclaimer: {
-      marginTop: 8,
-      fontSize: 12,
-      lineHeight: 18,
-      color: theme.secondaryText,
-      fontStyle: "italic",
+      flex: 1,
     },
-    notificationsHeader: {
-      marginTop: 8,
-      marginBottom: 8,
+    heroPlaceholder: {
+      height: 22,
+      width: "60%",
+      marginTop: 2,
+      borderRadius: Radius.xs,
+      backgroundColor: colors.heroGlass,
+    },
+
+    // Stats
+    statsRow: {
       flexDirection: "row",
-      alignItems: "center",
+      gap: Space.sm,
+      paddingHorizontal: Space.gutter,
+      marginTop: -44,
+    },
+    statTile: {
+      flex: 1,
+      minHeight: 132,
       justifyContent: "space-between",
     },
-    sectionTitleWrap: {
-      flexDirection: "column",
-      gap: 6,
+    statValue: {
+      marginTop: Space.sm,
     },
-    sectionUnderline: {
-      height: 1,
-      width: 48,
-      marginTop: 8,
-      borderRadius: Radii.full,
-      backgroundColor: theme.whiteBackground,
-      opacity: 0.8,
-    },
-    seeAllButton: {
+
+    // Pending approval
+    pendingCard: {
       flexDirection: "row",
       alignItems: "center",
+      gap: Space.sm,
+      marginTop: Space.md,
+      marginHorizontal: Space.gutter,
+      padding: Space.md,
+      borderRadius: Radius.xl,
+      backgroundColor: colors.warningSoft,
+      borderWidth: isDark ? 1 : 0,
+      borderColor: colors.border,
+    },
+    pendingText: {
+      flex: 1,
       gap: 2,
-      paddingVertical: 4,
-      paddingHorizontal: 6,
     },
-    seeAllText: {
-      fontSize: 12,
-      fontWeight: "600",
-      color: theme.activeText,
-      textTransform: "uppercase",
-      letterSpacing: 0.4,
-    },
-    avatarImage: {
-      height: 50,
-      width: 50,
-      borderRadius: Radii.full,
-      borderWidth: 1,
-      borderColor: theme.white,
+
+    sectionHeader: {
+      marginTop: Space.lg,
+      marginBottom: Space.xs,
+      paddingHorizontal: Space.gutter,
     },
   });
