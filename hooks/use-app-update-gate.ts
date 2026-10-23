@@ -99,7 +99,7 @@ export const useAppUpdateGate = () => {
     };
   }, []);
 
-  const { data: configResponse } = useQuery<IConfigResponse>({
+  const { data: configResponse, refetch } = useQuery<IConfigResponse>({
     queryKey: ["config-settings"],
     queryFn: () => getGeneralAppConfigs(),
     enabled: bootstrapReady && AppState.currentState === "active",
@@ -147,5 +147,6 @@ export const useAppUpdateGate = () => {
     openStore,
     requiredAppVersion,
     storeLink,
+    refetch,
   };
 };
