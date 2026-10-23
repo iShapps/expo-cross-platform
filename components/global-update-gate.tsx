@@ -3,7 +3,8 @@ import { Radius, Space } from "@/constants/design";
 import { useAppTheme } from "@/hooks/use-app-theme";
 import { useAppUpdateGate } from "@/hooks/use-app-update-gate";
 import { BlurView } from "expo-blur";
-import React from "react";
+import { usePathname } from "expo-router";
+import React, { useEffect } from "react";
 import { Modal, Platform, StyleSheet, View } from "react-native";
 
 export function GlobalUpdateGate() {
@@ -14,7 +15,16 @@ export function GlobalUpdateGate() {
     openStore,
     requiredAppVersion,
     storeLink,
+    refetch,
   } = useAppUpdateGate();
+
+  // Re-checks on every screen change too, not just app-foreground/cold
+  // start — so a user who never backgrounds the app, just taps around,
+  // still gets caught as soon as a required version is set.
+  const pathname = usePathname();
+  useEffect(() => {
+    refetch();
+  }, [pathname, refetch]);
 
   if (!isUpdateRequired) return null;
 
