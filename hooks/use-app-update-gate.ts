@@ -109,7 +109,8 @@ export const useAppUpdateGate = () => {
     refetchIntervalInBackground: false,
     retry: false,
     refetchOnReconnect: false,
-    refetchOnWindowFocus: false,
+    // re-checks every time the app comes to the foreground
+    refetchOnWindowFocus: "always",
   });
 
   useEffect(() => {
