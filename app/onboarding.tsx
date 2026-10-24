@@ -28,7 +28,12 @@ import {
   TokenStorage,
 } from "@/utils/auth-api";
 import { FileTooLargeError } from "@/utils/compress-file";
-import { pickDocument } from "@/utils/file-pickers";
+import {
+  pickDocument,
+  pickImageFromCamera,
+  pickImageFromLibrary,
+  PermissionDeniedError,
+} from "@/utils/file-pickers";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 
@@ -39,6 +44,7 @@ import {
   Animated,
   Easing,
   KeyboardAvoidingView,
+  Linking,
   Modal,
   Platform,
   Pressable,
@@ -579,23 +585,62 @@ export default function OnboardingScreen() {
     setProfessionalDetails((curr) => ({ ...curr, cv: picked }));
   };
 
-  const handlePickDocument = async (
+  const handlePickDocument = (
     requirement: DocumentRequirement,
     collection: "professional" | "mandatory",
   ) => {
+    Alert.alert("Upload document", undefined, [
+      {
+        text: "Take Photo",
+        onPress: () => pickAndSetDocument(requirement, collection, pickImageFromCamera),
+      },
+      {
+        text: "Choose Photo",
+        onPress: () => pickAndSetDocument(requirement, collection, pickImageFromLibrary),
+      },
+      {
+        text: "Choose File",
+        onPress: () => pickAndSetDocument(requirement, collection, pickDocument),
+      },
+      { text: "Cancel", style: "cancel" },
+    ]);
+  };
+
+  const pickAndSetDocument = async (
+    requirement: DocumentRequirement,
+    collection: "professional" | "mandatory",
+    pick: () =>
+      | ReturnType<typeof pickDocument>
+      | ReturnType<typeof pickImageFromCamera>
+      | ReturnType<typeof pickImageFromLibrary>,
+  ) => {
     let file;
     try {
-      file = await pickDocument();
+      file = await pick();
     } catch (err) {
+      if (err instanceof PermissionDeniedError) {
+        Alert.alert("Permission needed", err.message, [
+          { text: "Cancel", style: "cancel" },
+          { text: "Open Settings", onPress: () => Linking.openSettings() },
+        ]);
+        return;
+      }
       Alert.alert(
         "Error",
         err instanceof FileTooLargeError
           ? err.message
-          : "Could not open the file picker. Please try again.",
+          : "Could not open the picker. Please try again.",
       );
       return;
     }
     if (!file) return;
+
+    // pickDocument() assets already have a real file name; camera assets
+    // don't, so fall back to a generic one from the mime type.
+    const name =
+      "name" in file
+        ? file.name
+        : `document.${file.mimeType?.split("/")[1] ?? "jpg"}`;
 
     const setter =
       collection === "professional"
@@ -607,10 +652,10 @@ export default function OnboardingScreen() {
       [requirement.id]: {
         ...current[requirement.id],
         file: {
-          name: file.name,
+          name,
           uri: file.uri,
           mimeType: file.mimeType,
-          size: file.size,
+          size: "size" in file ? file.size : undefined,
         },
       },
     }));
@@ -1918,7 +1963,7 @@ function DocumentRequirementList({
   onPick: (
     requirement: DocumentRequirement,
     collection: "professional" | "mandatory",
-  ) => Promise<void>;
+  ) => void;
   onExpiryChange: (
     requirement: DocumentRequirement,
     collection: "professional" | "mandatory",

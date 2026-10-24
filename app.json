@@ -95,8 +95,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow $(PRODUCT_NAME) to access your photos to select images for document uploads.",
-          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera to take a profile photo.",
+          "photosPermission": "Allow $(PRODUCT_NAME) to access your photos to choose images for your profile photo and documents.",
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera to take photos for your profile photo and documents.",
           "colors": {
             "cropToolbarColor": "#000000"
           },
