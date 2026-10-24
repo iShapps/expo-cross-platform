@@ -510,17 +510,14 @@ export default function Login() {
           active={isFocused}
           text="Forgot your password? Tap here to reset it via email."
         >
-          <WalkthroughableView style={styles.forgotWrap}>
+          <WalkthroughableView>
             <Link href="/(open)/forgot-password" asChild>
-              <Pressable
-                accessibilityRole="link"
-                hitSlop={8}
-                style={styles.inlineLink}
-              >
-                <AppText variant="subhead" color="primaryStrong">
-                  Forgot password?
-                </AppText>
-              </Pressable>
+              <AppButton
+                title="Forgot password?"
+                variant="ghost"
+                icon="help-circle-outline"
+                fullWidth
+              />
             </Link>
           </WalkthroughableView>
         </CopilotStep>
@@ -612,10 +609,6 @@ const styles = StyleSheet.create({
   },
   actions: {
     gap: Space.xs,
-  },
-  forgotWrap: {
-    alignSelf: "flex-end",
-    marginTop: -Space.xs,
   },
   termsRow: {
     flexDirection: "row",
