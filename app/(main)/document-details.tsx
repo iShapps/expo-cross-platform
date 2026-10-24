@@ -14,13 +14,19 @@ import { Radius, Space, type Tone } from "@/constants/design";
 import { useAppTheme } from "@/hooks/use-app-theme";
 import { FileTooLargeError } from "@/utils/compress-file";
 import { formatMediumDate, isExpired } from "@/utils/date-time";
-import { pickDocument } from "@/utils/file-pickers";
+import {
+  pickDocument,
+  pickImageFromCamera,
+  pickImageFromLibrary,
+  PermissionDeniedError,
+} from "@/utils/file-pickers";
 import { error } from "@/utils/logger";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Linking,
   Modal,
   ScrollView,
   StyleSheet,
@@ -189,17 +195,38 @@ const DocumentDetails = () => {
     setConfirmVisible(true);
   };
 
-  const handleReplace = async () => {
+  const handleReplace = () => {
+    if (!document || isPickingDocumentRef.current) return;
+
+    Alert.alert("Update document", undefined, [
+      { text: "Take Photo", onPress: () => pickAndStage(pickImageFromCamera) },
+      { text: "Choose Photo", onPress: () => pickAndStage(pickImageFromLibrary) },
+      { text: "Choose File", onPress: () => pickAndStage(pickDocument) },
+      { text: "Cancel", style: "cancel" },
+    ]);
+  };
+
+  const pickAndStage = async (
+    pick: () =>
+      | ReturnType<typeof pickDocument>
+      | ReturnType<typeof pickImageFromCamera>
+      | ReturnType<typeof pickImageFromLibrary>,
+  ) => {
     if (!document || isPickingDocumentRef.current) return;
 
     isPickingDocumentRef.current = true;
     try {
-      const picked = await pickDocument();
+      const picked = await pick();
       if (!picked) return;
 
+      // pickDocument() assets already have a real file name; camera/library
+      // assets don't, so fall back to a generic one from the mime type.
       const file = {
         uri: picked.uri,
-        name: picked.name,
+        name:
+          "name" in picked
+            ? picked.name
+            : `document.${picked.mimeType?.split("/")[1] ?? "jpg"}`,
         mimeType: picked.mimeType,
       };
 
@@ -213,11 +240,18 @@ const DocumentDetails = () => {
       openConfirm(file);
     } catch (err) {
       error("Re-upload document picker failed:", err);
+      if (err instanceof PermissionDeniedError) {
+        Alert.alert("Permission needed", err.message, [
+          { text: "Cancel", style: "cancel" },
+          { text: "Open Settings", onPress: () => Linking.openSettings() },
+        ]);
+        return;
+      }
       Alert.alert(
         "Error",
         err instanceof FileTooLargeError
           ? err.message
-          : "Could not open the file picker. Please try again.",
+          : "Could not open the picker. Please try again.",
       );
     } finally {
       isPickingDocumentRef.current = false;
@@ -254,8 +288,8 @@ const DocumentDetails = () => {
     try {
       const { completion, cancel } = await startBackgroundDocumentUpload(
         {
-          hcp_id: document.hcp_id,
           document_id: document.document_id,
+          document_name: file.name,
           file,
           expiry_date: expiryDate,
         },

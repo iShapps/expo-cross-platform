@@ -130,8 +130,8 @@ export async function getDocumentFileUrl(
 }
 
 export type UpdateDocumentPayload = {
-  hcp_id: number;
   document_id: number;
+  document_name: string;
   file: { uri: string; name: string; mimeType?: string };
   expiry_date?: string;
 };
@@ -159,7 +159,7 @@ export async function startBackgroundDocumentUpload(
   payload: UpdateDocumentPayload,
   onProgress?: (progress: DocumentUploadProgress) => void,
 ): Promise<BackgroundDocumentUpload> {
-  const endpoint = `/hcps/${payload.hcp_id}/documents`;
+  const endpoint = `/hcp/add-update-document`;
   const token = await TokenStorage.getToken();
 
   const headers: Record<string, string> = {
@@ -170,6 +170,7 @@ export async function startBackgroundDocumentUpload(
 
   const parameters: Record<string, string> = {
     document_id: String(payload.document_id),
+    document_name: payload.document_name,
   };
   if (payload.expiry_date) parameters.expiry_date = payload.expiry_date;
 
@@ -179,7 +180,7 @@ export async function startBackgroundDocumentUpload(
     {
       httpMethod: "POST",
       uploadType: FileSystemUploadType.MULTIPART,
-      fieldName: "file",
+      fieldName: "document_file",
       mimeType: payload.file.mimeType ?? "application/octet-stream",
       parameters,
       headers,

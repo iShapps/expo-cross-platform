@@ -43,7 +43,7 @@ import { useFirstVisitTour } from "@/hooks/use-first-visit-tour";
 import { useOneSignalSubscriptionStatus } from "@/hooks/use-one-signal";
 import { getAvatarImageSource } from "@/utils/auth";
 import { getRegistrationStatus, TokenStorage } from "@/utils/auth-api";
-import { Animated, StyleSheet, View } from "react-native";
+import { Animated, Pressable, StyleSheet, View } from "react-native";
 import { CopilotStep, walkthroughable } from "react-native-copilot";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSession } from "../ctx";
@@ -332,7 +332,14 @@ export default function HomeScreen() {
           <View style={[styles.heroOrb, styles.heroOrbSmall]} />
 
           <View style={styles.heroTopRow}>
-            <Avatar name={userDetails?.name} uri={avatarUri} size={52} ring />
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Open your account"
+              hitSlop={8}
+              onPress={() => router.push("/(main)/profile")}
+            >
+              <Avatar name={userDetails?.name} uri={avatarUri} size={52} ring />
+            </Pressable>
             <View style={styles.heroGreeting}>
               <AppText variant="footnote" style={styles.onHeroMuted}>
                 {greeting},
