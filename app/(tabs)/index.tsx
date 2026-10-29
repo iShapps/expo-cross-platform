@@ -483,7 +483,9 @@ export default function HomeScreen() {
         </WalkthroughableView>
       </CopilotStep>
 
-      {userDetails?.hcp?.status === "pending-approval" && (
+      {/* "pending-approval" is the pre-rename status (older sessions). */}
+      {(userDetails?.hcp?.status === "onboarding" ||
+        userDetails?.hcp?.status === "pending-approval") && (
         <CopilotStep
           name="dashboard-pending-approval"
           order={3}
@@ -493,13 +495,36 @@ export default function HomeScreen() {
           <WalkthroughableView style={styles.pendingCard}>
             <IconBadge icon="hourglass-outline" tone="warning" size={40} />
             <View style={styles.pendingText}>
-              <AppText variant="headline">Account pending approval</AppText>
+              <AppText variant="headline">Almost there</AppText>
               <AppText variant="footnote" color="textSecondary">
-                You&apos;ll be notified once it has been reviewed.
+                We&apos;re reviewing your profile and documents. You&apos;ll be notified once you&apos;re approved.
               </AppText>
             </View>
           </WalkthroughableView>
         </CopilotStep>
+      )}
+
+      {/* Was active; a document expired, was rejected or is newly required. Back to active once it's approved. */}
+      {userDetails?.hcp?.status === "on-hold" && (
+        <PressableCard
+          onPress={() =>
+            router.navigate({ pathname: "/(tabs)/documents", params: { tab: "missing" } })
+          }
+          accessibilityRole="button"
+          accessibilityLabel="Your account is on hold. Update your documents."
+          radius={Radius.xl}
+          padding={Space.md}
+          style={styles.missingCard}
+        >
+          <IconBadge icon="pause-circle-outline" tone="warning" size={40} />
+          <View style={styles.pendingText}>
+            <AppText variant="headline">Your account is on hold</AppText>
+            <AppText variant="footnote" color="textSecondary">
+              A document needs updating. Upload it and you&apos;ll be back to work once it&apos;s approved.
+            </AppText>
+          </View>
+          <Icon name="chevron-forward" size={18} color={colors.textTertiary} />
+        </PressableCard>
       )}
 
       {missingDocuments > 0 && (
