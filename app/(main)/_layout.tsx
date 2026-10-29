@@ -18,7 +18,9 @@ export default function MainLayout() {
       <Stack.Screen name="notifications" options={{ headerShown: false }} />
       <Stack.Screen name="notification-test" options={{ headerShown: false }} />
       <Stack.Screen name="profile" options={{ headerShown: false }} />
+      <Stack.Screen name="edit-profile" options={{ headerShown: false }} />
       <Stack.Screen name="document-details" options={{ headerShown: false }} />
+      <Stack.Screen name="missing-document" options={{ headerShown: false }} />
 
       <Stack.Screen
         name="transfer-shift"

@@ -40,6 +40,7 @@ import {
 import { User } from "@/data-types/auth";
 import { useAppTheme } from "@/hooks/use-app-theme";
 import { useFirstVisitTour } from "@/hooks/use-first-visit-tour";
+import { useMissingDocuments } from "@/hooks/use-missing-documents";
 import { useOneSignalSubscriptionStatus } from "@/hooks/use-one-signal";
 import { getAvatarImageSource } from "@/utils/auth";
 import { getRegistrationStatus, TokenStorage } from "@/utils/auth-api";
@@ -108,7 +109,22 @@ export default function HomeScreen() {
     ) {
       updateHcp({ status: freshStatus });
     }
+
+    // The onboarding gate follows the server: an HCP still onboarding who
+    // gets new requirements goes back to onboarding now, not at next login.
+    // Registered HCPs stay "0" on the server, so this never locks them out
+    // (new documents show in Documents → Missing instead).
+    const freshScreen = hcpStatusSync?.data?.registration_screen;
+    if (
+      freshScreen != null &&
+      userDetails?.hcp &&
+      String(freshScreen) !== String(userDetails.hcp.app_registration_screen)
+    ) {
+      updateHcp({ app_registration_screen: String(freshScreen) });
+    }
   }, [hcpStatusSync, userDetails, updateHcp]);
+
+  const { actionCount: missingDocuments } = useMissingDocuments();
 
   const isFocused = useIsFocused();
 
@@ -467,7 +483,9 @@ export default function HomeScreen() {
         </WalkthroughableView>
       </CopilotStep>
 
-      {userDetails?.hcp?.status === "pending-approval" && (
+      {/* "pending-approval" is the pre-rename status (older sessions). */}
+      {(userDetails?.hcp?.status === "onboarding" ||
+        userDetails?.hcp?.status === "pending-approval") && (
         <CopilotStep
           name="dashboard-pending-approval"
           order={3}
@@ -477,13 +495,62 @@ export default function HomeScreen() {
           <WalkthroughableView style={styles.pendingCard}>
             <IconBadge icon="hourglass-outline" tone="warning" size={40} />
             <View style={styles.pendingText}>
-              <AppText variant="headline">Account pending approval</AppText>
+              <AppText variant="headline">Almost there</AppText>
               <AppText variant="footnote" color="textSecondary">
-                You&apos;ll be notified once it has been reviewed.
+                We&apos;re reviewing your profile and documents. You&apos;ll be notified once you&apos;re approved.
               </AppText>
             </View>
           </WalkthroughableView>
         </CopilotStep>
+      )}
+
+      {/* Was active; a document expired, was rejected or is newly required. Back to active once it's approved. */}
+      {userDetails?.hcp?.status === "on-hold" && (
+        <PressableCard
+          onPress={() =>
+            router.navigate({ pathname: "/(tabs)/documents", params: { tab: "missing" } })
+          }
+          accessibilityRole="button"
+          accessibilityLabel="Your account is on hold. Update your documents."
+          radius={Radius.xl}
+          padding={Space.md}
+          style={styles.missingCard}
+        >
+          <IconBadge icon="pause-circle-outline" tone="warning" size={40} />
+          <View style={styles.pendingText}>
+            <AppText variant="headline">Your account is on hold</AppText>
+            <AppText variant="footnote" color="textSecondary">
+              A document needs updating. Upload it and you&apos;ll be back to work once it&apos;s approved.
+            </AppText>
+          </View>
+          <Icon name="chevron-forward" size={18} color={colors.textTertiary} />
+        </PressableCard>
+      )}
+
+      {missingDocuments > 0 && (
+        <PressableCard
+          onPress={() =>
+            router.navigate({ pathname: "/(tabs)/documents", params: { tab: "missing" } })
+          }
+          accessibilityRole="button"
+          accessibilityLabel={`${missingDocuments} documents need your attention`}
+          radius={Radius.xl}
+          padding={Space.md}
+          style={styles.missingCard}
+        >
+          <IconBadge icon="document-attach-outline" tone="danger" size={40} />
+          <View style={styles.pendingText}>
+            <AppText variant="headline">
+              {missingDocuments === 1
+                ? "1 document needs your attention"
+                : `${missingDocuments} documents need your attention`}
+            </AppText>
+            <AppText variant="footnote" color="textSecondary">
+              Upload them to keep working every profession you hold.
+            </AppText>
+          </View>
+          <Icon name="chevron-forward" size={18} color={colors.textTertiary} />
+        </PressableCard>
       )}
 
       <SectionHeader
@@ -729,6 +796,16 @@ const getStyles = (colors: AppColors, isDark: boolean) =>
     pendingText: {
       flex: 1,
       gap: 2,
+    },
+
+    missingCard: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: Space.sm,
+      marginTop: Space.md,
+      marginHorizontal: Space.gutter,
+      backgroundColor: colors.dangerSoft,
+      borderColor: isDark ? colors.border : colors.dangerSoft,
     },
 
     sectionHeader: {

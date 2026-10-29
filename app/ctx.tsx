@@ -5,6 +5,7 @@ import {
 import { useProfileData } from "@/data-store/use-account-store";
 import { useTenantStore } from "@/data-store/use-tenant-store";
 import LoginCredentials, { Hcp, User } from "@/data-types/auth";
+import { TenantSummary } from "@/data-types/tenancy";
 import {
   ensureOneSignalSubscriptionId,
   onLoginSuccess,
@@ -52,6 +53,7 @@ const AuthContext = React.createContext<{
   setSess: (data: string) => void;
   signOut: () => Promise<void>;
   updateHcp: (patch: Partial<Hcp>) => void;
+  switchTenant: (tenant: TenantSummary) => Promise<boolean>;
   session?: string | null;
   user?: User | null;
   isLoading: boolean;
@@ -61,10 +63,38 @@ const AuthContext = React.createContext<{
   setSess: () => null,
   signOut: () => Promise.resolve(),
   updateHcp: () => null,
+  switchTenant: () => Promise.resolve(false),
   session: null,
   user: null,
   isLoading: false,
 });
+
+type TenantSwitchHandler = (tenant: TenantSummary) => Promise<boolean>;
+let tenantSwitchHandler: TenantSwitchHandler | null = null;
+
+export function registerTenantSwitchHandler(handler: TenantSwitchHandler) {
+  tenantSwitchHandler = handler;
+
+  return () => {
+    if (tenantSwitchHandler === handler) {
+      tenantSwitchHandler = null;
+    }
+  };
+}
+
+/**
+ * Lets code outside the component tree (the OneSignal notification-click
+ * listener) trigger the same silent tenant switch + re-login that
+ * switch-organization.tsx uses via useSession().switchTenant, instead of
+ * swapping the active tenant and leaving the old tenant's auth token behind
+ * — that token is only valid in the tenant DB it was issued from, so the
+ * next request against the new tenant 401s and the app signs itself out.
+ */
+export async function requestTenantSwitch(
+  tenant: TenantSummary,
+): Promise<boolean> {
+  return (await tenantSwitchHandler?.(tenant)) ?? false;
+}
 
 // hook to access the user info.
 export function useSession() {
@@ -410,13 +440,95 @@ export function SessionProvider(props: React.PropsWithChildren) {
     }
   }, [profileStore, queryClient, setSession, setUserJson]);
 
+  // Swaps the active tenant and silently re-authenticates against it with
+  // the user's stored credentials, instead of just pointing X-Tenant-Code
+  // at the new tenant and keeping the old token — that token lives in the
+  // old tenant's database and isn't valid in the new one, so the next
+  // request would 401 and the app would sign itself out.
+  const handleSwitchTenant = React.useCallback(
+    async (tenant: TenantSummary): Promise<boolean> => {
+      const currentTenant = useTenantStore.getState().tenant;
+      if (!currentTenant?.email) return false;
+
+      const credentials = await getLoginCredentials();
+      if (!credentials.email || !credentials.password) {
+        Alert.alert(
+          "Sign in required",
+          "Please sign in again to switch organizations.",
+        );
+        await handleSignOut();
+        return false;
+      }
+
+      await stopBackgroundTracking();
+
+      // Point the login call (and every request after it) at the new
+      // tenant's database before we try to authenticate against it.
+      useTenantStore.getState().setTenant(tenant, currentTenant.email);
+      profileStore.clearDetails();
+      queryClient.clear();
+
+      try {
+        const result = await apiLogin({
+          email: credentials.email,
+          password: credentials.password,
+        });
+
+        if (!("access_token" in result.data)) {
+          Alert.alert(
+            "Can't switch organizations",
+            "Your account in this organization isn't set up yet.",
+          );
+          await handleSignOut();
+          return false;
+        }
+
+        setSession(result.data.access_token);
+        await setAuthToken(result.data.access_token);
+        setUserJson(JSON.stringify(result.data.user));
+        profileStore.setToken(result.data.access_token);
+        profileStore.setUserDetails(result.data.user);
+        queryClient.setQueryData(["profile-details"], result.data.user);
+
+        await onLoginSuccess(result.data.user.id.toString());
+
+        if (needsForcedPasswordReset(result.data.user)) {
+          router.replace("/force-password-reset");
+        }
+
+        return true;
+      } catch (err) {
+        logApiErrorToSentry(err, { endpoint: "/login", method: "POST" });
+        Alert.alert(
+          "Couldn't switch organizations",
+          "Please try again, or sign in again if this keeps happening.",
+        );
+        await handleSignOut();
+        return false;
+      }
+    },
+    [profileStore, queryClient, router, setSession, setUserJson, handleSignOut],
+  );
+
+  useEffect(() => {
+    return registerTenantSwitchHandler(handleSwitchTenant);
+  }, [handleSwitchTenant]);
+
   const handleUpdateHcp = React.useCallback(
     (patch: Partial<Hcp>) => {
       const currentUser = user;
       if (!currentUser) return;
+      const mergedHcp = { ...currentUser.hcp, ...patch };
       const updatedUser: User = {
         ...currentUser,
-        hcp: { ...currentUser.hcp, ...patch },
+        // The profile header/list show `user.name`, a separate top-level
+        // field the backend derives as trim(first_name + ' ' + last_name) —
+        // keep it in sync here too, or it stays stale until the next login.
+        name:
+          patch.first_name !== undefined || patch.last_name !== undefined
+            ? `${mergedHcp.first_name} ${mergedHcp.last_name}`.trim()
+            : currentUser.name,
+        hcp: mergedHcp,
       };
       setUserJson(JSON.stringify(updatedUser));
       profileStore.setUserDetails(updatedUser);
@@ -440,6 +552,7 @@ export function SessionProvider(props: React.PropsWithChildren) {
         setSess: handleSetSession,
         signOut: handleSignOut,
         updateHcp: handleUpdateHcp,
+        switchTenant: handleSwitchTenant,
         session,
         user,
         isLoading: isHydrating || isHydratingUser || authLoading,

@@ -159,7 +159,94 @@ export async function startBackgroundDocumentUpload(
   payload: UpdateDocumentPayload,
   onProgress?: (progress: DocumentUploadProgress) => void,
 ): Promise<BackgroundDocumentUpload> {
-  const endpoint = `/hcp/add-update-document`;
+  const parameters: Record<string, string> = {
+    document_id: String(payload.document_id),
+    document_name: payload.document_name,
+  };
+  if (payload.expiry_date) parameters.expiry_date = payload.expiry_date;
+
+  return startMultipartUpload(
+    `/hcp/add-update-document`,
+    payload.file,
+    parameters,
+    onProgress,
+    { fallbackError: "Could not update document.", rejectStatusFalse: false },
+  );
+}
+
+// ── Missing documents (backend docs/mobile-missing-documents.md) ─────────
+
+export type MissingDocumentState = "missing" | "rejected" | "expired" | "expiring";
+
+export type MissingDocument = {
+  document_id: number;
+  name: string;
+  type: "general" | "profession";
+  state: MissingDocumentState;
+  /** Ready to show under the document name. */
+  message: string;
+  /** The current copy's expiry date (YYYY-MM-DD), if any. */
+  expiry_date: string | null;
+  expiry_date_mandatory: "yes" | "no" | null;
+  /** The HCP's professions that need it (profession documents). */
+  required_by: string[];
+};
+
+export type MissingDocumentsResponse = {
+  status: true;
+  message: string;
+  data: {
+    documents: MissingDocument[];
+    counts: Record<MissingDocumentState, number>;
+  };
+};
+
+/** The required documents the HCP has to act on, most urgent first. */
+export async function getMissingDocuments(): Promise<MissingDocumentsResponse> {
+  return postResource<Record<string, never>, MissingDocumentsResponse>(
+    "/hcp/missing-documents",
+    {},
+  );
+}
+
+export type RequiredDocumentUploadPayload = {
+  document_id: number;
+  file: { uri: string; name: string; mimeType?: string };
+  /** YYYY-MM-DD; required when the document's expiry_date_mandatory is "yes". */
+  expiry_date?: string;
+};
+
+/** Uploads a missing / rejected / expired document (general or profession alike). */
+export async function startRequiredDocumentUpload(
+  payload: RequiredDocumentUploadPayload,
+  onProgress?: (progress: DocumentUploadProgress) => void,
+): Promise<BackgroundDocumentUpload> {
+  const parameters: Record<string, string> = {
+    document_id: String(payload.document_id),
+  };
+  if (payload.expiry_date) parameters.expiry_date = payload.expiry_date;
+
+  return startMultipartUpload(
+    `/hcp/upload-required-document`,
+    payload.file,
+    parameters,
+    onProgress,
+    { fallbackError: "Could not upload document.", rejectStatusFalse: true },
+  );
+}
+
+/**
+ * Native background multipart upload with progress (keeps running if the app
+ * is backgrounded on iOS). `rejectStatusFalse` also treats the API's HTTP 200
+ * `{status:false, message}` business failures as errors.
+ */
+async function startMultipartUpload(
+  endpoint: string,
+  file: { uri: string; name: string; mimeType?: string },
+  parameters: Record<string, string>,
+  onProgress: ((progress: DocumentUploadProgress) => void) | undefined,
+  options: { fallbackError: string; rejectStatusFalse: boolean },
+): Promise<BackgroundDocumentUpload> {
   const token = await TokenStorage.getToken();
 
   const headers: Record<string, string> = {
@@ -168,11 +255,7 @@ export async function startBackgroundDocumentUpload(
   };
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
-  const parameters: Record<string, string> = {
-    document_id: String(payload.document_id),
-    document_name: payload.document_name,
-  };
-  if (payload.expiry_date) parameters.expiry_date = payload.expiry_date;
+  const payload = { file };
 
   const task = createUploadTask(
     getApiUrl(endpoint),
@@ -222,14 +305,22 @@ export async function startBackgroundDocumentUpload(
     }
 
     if (result.status < 200 || result.status >= 300) {
-      const message = extractApiErrorMessage(
-        json,
-        "Could not update document.",
-      );
+      const message = extractApiErrorMessage(json, options.fallbackError);
       if (isUnauthorizedStatus(result.status)) {
         await notifyAuthExpired({ message, statusCode: result.status });
       }
       throw new DocumentsQueryError(message, result.status, json);
+    }
+
+    if (
+      options.rejectStatusFalse &&
+      (json as { status?: unknown } | null)?.status === false
+    ) {
+      throw new DocumentsQueryError(
+        extractApiErrorMessage(json, options.fallbackError),
+        result.status,
+        json,
+      );
     }
 
     return json as UpdateDocumentResponse;
