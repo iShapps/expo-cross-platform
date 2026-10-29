@@ -62,7 +62,8 @@ const navigateForNotification = (data: NotificationAdditionalData) => {
       router.navigate(`/${data.shift_id.toString()}`);
       break;
     case "documents":
-      router.navigate("/documents");
+      // Document reminders / paused professions: straight to what needs uploading.
+      router.navigate({ pathname: "/documents", params: { tab: "missing" } });
       break;
     case "test":
       router.navigate("/notification-test");

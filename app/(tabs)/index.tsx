@@ -40,6 +40,7 @@ import {
 import { User } from "@/data-types/auth";
 import { useAppTheme } from "@/hooks/use-app-theme";
 import { useFirstVisitTour } from "@/hooks/use-first-visit-tour";
+import { useMissingDocuments } from "@/hooks/use-missing-documents";
 import { useOneSignalSubscriptionStatus } from "@/hooks/use-one-signal";
 import { getAvatarImageSource } from "@/utils/auth";
 import { getRegistrationStatus, TokenStorage } from "@/utils/auth-api";
@@ -108,7 +109,22 @@ export default function HomeScreen() {
     ) {
       updateHcp({ status: freshStatus });
     }
+
+    // The onboarding gate follows the server: an HCP still onboarding who
+    // gets new requirements goes back to onboarding now, not at next login.
+    // Registered HCPs stay "0" on the server, so this never locks them out
+    // (new documents show in Documents → Missing instead).
+    const freshScreen = hcpStatusSync?.data?.registration_screen;
+    if (
+      freshScreen != null &&
+      userDetails?.hcp &&
+      String(freshScreen) !== String(userDetails.hcp.app_registration_screen)
+    ) {
+      updateHcp({ app_registration_screen: String(freshScreen) });
+    }
   }, [hcpStatusSync, userDetails, updateHcp]);
+
+  const { actionCount: missingDocuments } = useMissingDocuments();
 
   const isFocused = useIsFocused();
 
@@ -486,6 +502,32 @@ export default function HomeScreen() {
         </CopilotStep>
       )}
 
+      {missingDocuments > 0 && (
+        <PressableCard
+          onPress={() =>
+            router.navigate({ pathname: "/(tabs)/documents", params: { tab: "missing" } })
+          }
+          accessibilityRole="button"
+          accessibilityLabel={`${missingDocuments} documents need your attention`}
+          radius={Radius.xl}
+          padding={Space.md}
+          style={styles.missingCard}
+        >
+          <IconBadge icon="document-attach-outline" tone="danger" size={40} />
+          <View style={styles.pendingText}>
+            <AppText variant="headline">
+              {missingDocuments === 1
+                ? "1 document needs your attention"
+                : `${missingDocuments} documents need your attention`}
+            </AppText>
+            <AppText variant="footnote" color="textSecondary">
+              Upload them to keep working every profession you hold.
+            </AppText>
+          </View>
+          <Icon name="chevron-forward" size={18} color={colors.textTertiary} />
+        </PressableCard>
+      )}
+
       <SectionHeader
         title="Recent activity"
         actionLabel="See all"
@@ -729,6 +771,16 @@ const getStyles = (colors: AppColors, isDark: boolean) =>
     pendingText: {
       flex: 1,
       gap: 2,
+    },
+
+    missingCard: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: Space.sm,
+      marginTop: Space.md,
+      marginHorizontal: Space.gutter,
+      backgroundColor: colors.dangerSoft,
+      borderColor: isDark ? colors.border : colors.dangerSoft,
     },
 
     sectionHeader: {

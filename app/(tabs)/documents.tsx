@@ -5,15 +5,18 @@ import {
 } from "@/api-queries/documents";
 import { EmptyState, SegmentedTabs } from "@/components/design";
 import DocumentCard from "@/components/document-card";
+import MissingDocumentCard from "@/components/missing-document-card";
 import TabsHeader from "@/components/shared/tabs-header";
 import { DocumentCardSkeleton } from "@/components/skeletons";
 import { Space } from "@/constants/design";
 import { IDocument } from "@/data-types/documents";
 import { useAppTheme } from "@/hooks/use-app-theme";
 import { useFirstVisitTour } from "@/hooks/use-first-visit-tour";
+import { useMissingDocuments } from "@/hooks/use-missing-documents";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useIsFocused } from "@react-navigation/native";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   FlatList,
   ScrollView,
@@ -49,10 +52,19 @@ const useShiftInfiniteQuery = (
   });
 };
 
+const documentTabs = ["Missing", "General", "Professional", "Others"] as const;
+
 export default function DocumentsScreen() {
-  const documentTabs = ["General", "Professional", "Others"] as const;
   const [activeStatus, setActiveStatus] =
-    useState<(typeof documentTabs)[number]>("General");
+    useState<(typeof documentTabs)[number]>("Missing");
+
+  // Documents to upload — first, so the HCP sees what's needed straight away.
+  const missingQuery = useMissingDocuments();
+  const tabLabels = documentTabs.map((tab) =>
+    tab === "Missing" && missingQuery.actionCount > 0
+      ? `Missing (${missingQuery.actionCount})`
+      : tab,
+  );
 
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const contentScrollRef = useRef<ScrollView>(null);
@@ -114,6 +126,20 @@ export default function DocumentsScreen() {
     [screenWidth, scrollTabIntoView],
   );
 
+  // Links (push notifications, Home banner) open a tab with ?tab=missing.
+  // Cleared once handled: tab screens stay mounted, so the next link with
+  // the same value has to register as a change.
+  const router = useRouter();
+  const { tab: tabParam } = useLocalSearchParams<{ tab?: string }>();
+  useEffect(() => {
+    if (!tabParam) return;
+    const index = documentTabs.findIndex((t) => t.toLowerCase() === tabParam.toLowerCase());
+    if (index >= 0) {
+      // After layout, so the paging ScrollView can scroll.
+      requestAnimationFrame(() => handleTabPress(index));
+    }
+    router.setParams({ tab: undefined });
+  }, [tabParam, handleTabPress, router]);
 
   const isFocused = useIsFocused();
 
@@ -129,11 +155,11 @@ export default function DocumentsScreen() {
           name="documents-tabs"
           order={1}
           active={isFocused}
-          text="Documents are grouped into General, Professional, and Others — switch tabs to see what's required in each category."
+          text="Missing lists what you still need to upload. General, Professional and Others hold the documents you've already uploaded."
         >
           <WalkthroughableView style={styles.tabsWrap}>
             <SegmentedTabs
-              tabs={documentTabs}
+              tabs={tabLabels}
               activeIndex={documentTabs.indexOf(activeStatus)}
               onTabPress={handleTabPress}
               onTabLayout={(index, layout) => {
@@ -161,7 +187,45 @@ export default function DocumentsScreen() {
               key={status}
               style={{ width: screenWidth - 16, paddingHorizontal: 12 }}
             >
-              {(() => {
+              {status === "Missing" ? (
+                <FlatList
+                  data={missingQuery.isLoading ? [] : missingQuery.documents}
+                  renderItem={({ item }) => <MissingDocumentCard document={item} />}
+                  keyExtractor={(item) => String(item.document_id)}
+                  showsVerticalScrollIndicator={false}
+                  contentContainerStyle={listContent(screenHeight)}
+                  refreshing={missingQuery.isRefetching}
+                  onRefresh={() => void missingQuery.refetch()}
+                  ListHeaderComponent={
+                    missingQuery.isLoading ? (
+                      <View style={styles.footer}>
+                        <DocumentCardSkeleton />
+                        <DocumentCardSkeleton />
+                      </View>
+                    ) : null
+                  }
+                  ListEmptyComponent={
+                    missingQuery.isLoading ? null : missingQuery.isError ? (
+                      <EmptyState
+                        icon="cloud-offline-outline"
+                        tone="danger"
+                        title="Couldn't check your documents"
+                        message="Pull to refresh or try again later."
+                        actionLabel="Retry"
+                        onAction={() => void missingQuery.refetch()}
+                        style={{ marginTop: screenHeight * 0.1 }}
+                      />
+                    ) : (
+                      <EmptyState
+                        icon="checkmark-circle-outline"
+                        title="You're all set"
+                        message="Every document you need is uploaded. New requirements will show up here."
+                        style={{ marginTop: screenHeight * 0.1 }}
+                      />
+                    )
+                  }
+                />
+              ) : (() => {
                 let isLoading = false;
                 let data: IDocument[] = [];
                 let refetchFn = undefined as undefined | (() => Promise<any>);
