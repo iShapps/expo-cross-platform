@@ -13,6 +13,7 @@ import {
   Card,
   Icon,
   IconBadge,
+  IconButton,
   InfoRow,
   ListGroup,
   ListRow,
@@ -209,7 +210,17 @@ export default function ProfileScreen() {
       style={[styles.safeArea, { backgroundColor: colors.background }]}
       edges={["top"]}
     >
-      <ScreenHeader title="Profile" onBack={() => router.back()} />
+      <ScreenHeader
+        title="Profile"
+        onBack={() => router.back()}
+        right={
+          <IconButton
+            icon="create-outline"
+            accessibilityLabel="Edit account details"
+            onPress={() => router.push("/(main)/edit-profile")}
+          />
+        }
+      />
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
@@ -331,12 +342,15 @@ export default function ProfileScreen() {
           <InfoRow label="City" value={hcp?.city_name ?? "—"} />
           <InfoRow
             label="State"
-            value={hcp?.state_id ? String(hcp?.state_id) : "—"}
+            value={hcp?.state?.name ?? (hcp?.state_id ? String(hcp.state_id) : "—")}
           />
           <InfoRow label="Post code" value={hcp?.post_code ?? "—"} />
           <InfoRow
             label="Country"
-            value={hcp?.country_id ? String(hcp?.country_id) : "—"}
+            value={
+              hcp?.country?.name ??
+              (hcp?.country_id ? String(hcp.country_id) : "—")
+            }
             isLast
           />
         </Section>
