@@ -1,14 +1,11 @@
-import { useSession } from "@/app/ctx";
-import { useProfileData } from "@/data-store/use-account-store";
+import { requestTenantSwitch, useSession } from "@/app/ctx";
 import { useSettingsStore } from "@/data-store/use-settings-store";
 import { useTenantStore } from "@/data-store/use-tenant-store";
 import {
   AppNotification,
   NotificationAdditionalData,
 } from "@/data-types/notifications";
-import { stopBackgroundTracking } from "@/task-services/locationTask";
 import { debug, error, warn } from "@/utils/logger";
-import { queryClient } from "@/utils/query-client";
 import {
   decrementOneSignalListeners,
   incrementOneSignalListeners,
@@ -62,7 +59,8 @@ const navigateForNotification = (data: NotificationAdditionalData) => {
       router.navigate(`/${data.shift_id.toString()}`);
       break;
     case "documents":
-      router.navigate("/documents");
+      // Document reminders / paused professions: straight to what needs uploading.
+      router.navigate({ pathname: "/documents", params: { tab: "missing" } });
       break;
     case "test":
       router.navigate("/notification-test");
@@ -74,20 +72,17 @@ const navigateForNotification = (data: NotificationAdditionalData) => {
 };
 
 const switchTenantAndNavigate = async (data: NotificationAdditionalData) => {
-  const currentTenant = useTenantStore.getState().tenant;
-  if (!data.tenant_id || !currentTenant?.email) return;
+  if (!data.tenant_id) return;
 
-  await stopBackgroundTracking();
-  useProfileData.getState().clearDetails();
-  queryClient.clear();
-  useTenantStore.getState().setTenant(
-    {
-      tenantId: data.tenant_id,
-      name: data.tenant_name ?? null,
-      logoUrl: null,
-    },
-    currentTenant.email,
-  );
+  const switched = await requestTenantSwitch({
+    tenantId: data.tenant_id,
+    name: data.tenant_name ?? null,
+    logoUrl: null,
+  });
+
+  // On failure, requestTenantSwitch has already signed the user out and
+  // shown why — nothing left to navigate to here.
+  if (!switched) return;
 
   navigateForNotification(data);
 };

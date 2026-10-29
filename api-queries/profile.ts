@@ -53,25 +53,15 @@ export type ProfilePhotoUpdatePayload = {
   existing: ProfilePersonalDetails;
 };
 
-export async function updateProfilePhoto(
-  payload: ProfilePhotoUpdatePayload,
+// hcp/personal-details always wants the full set of required fields, even
+// when only one thing (a photo, or a single field) is actually changing —
+// shared by updateProfilePhoto and updatePersonalDetails below so the
+// request/error handling isn't duplicated between them.
+async function postPersonalDetailsForm(
+  form: FormData,
 ): Promise<{ status: boolean; message: string }> {
   const endpoint = "/hcp/personal-details";
   const token = await TokenStorage.getToken();
-
-  const form = new FormData();
-  form.append("first_name", payload.existing.first_name);
-  form.append("last_name", payload.existing.last_name);
-  form.append("country", String(payload.existing.country_id));
-  form.append("state", String(payload.existing.state_id));
-  form.append("address", payload.existing.address);
-  form.append("latitude", String(payload.existing.latitude));
-  form.append("longitude", String(payload.existing.longitude));
-  form.append("image", {
-    uri: payload.image.uri,
-    name: payload.image.name,
-    type: payload.image.mimeType ?? "image/jpeg",
-  } as unknown as Blob);
 
   const headers: Record<string, string> = {
     Accept: "application/json",
@@ -100,10 +90,7 @@ export async function updateProfilePhoto(
   }
 
   if (!response.ok) {
-    const message = extractApiErrorMessage(
-      json,
-      "Could not update your photo.",
-    );
+    const message = extractApiErrorMessage(json, "Could not save your details.");
     if (isUnauthorizedStatus(response.status)) {
       await notifyAuthExpired({ message, statusCode: response.status });
     }
@@ -111,6 +98,107 @@ export async function updateProfilePhoto(
   }
 
   return json as { status: boolean; message: string };
+}
+
+export async function updateProfilePhoto(
+  payload: ProfilePhotoUpdatePayload,
+): Promise<{ status: boolean; message: string }> {
+  const form = new FormData();
+  form.append("first_name", payload.existing.first_name);
+  form.append("last_name", payload.existing.last_name);
+  form.append("country", String(payload.existing.country_id));
+  form.append("state", String(payload.existing.state_id));
+  form.append("address", payload.existing.address);
+  form.append("latitude", String(payload.existing.latitude));
+  form.append("longitude", String(payload.existing.longitude));
+  form.append("image", {
+    uri: payload.image.uri,
+    name: payload.image.name,
+    type: payload.image.mimeType ?? "image/jpeg",
+  } as unknown as Blob);
+
+  return postPersonalDetailsForm(form);
+}
+
+export type UpdatePersonalDetailsPayload = {
+  first_name: string;
+  last_name: string;
+  // Preserved from the existing hcp record, not user-editable — there's no
+  // country picker anywhere in this app (see onboarding.tsx, which hardcodes
+  // country and never even sends it).
+  country_id: number;
+  state_id: number;
+  address: string;
+  latitude: string;
+  longitude: string;
+  city?: string;
+  suburb?: string;
+  post_code?: string;
+  gender?: string;
+  // Not declared in the backend's ValidatePersonalDetails rules, but
+  // date_of_birth/contact_number are both in the Hcp model's $fillable list
+  // and the controller passes the raw request body straight into a mass
+  // update — so they're accepted even without a validation rule for them.
+  date_of_birth?: string;
+  // Only send this right after a successful hcp/verify-mobile — that OTP
+  // pair only confirms the code, it never persists the number itself.
+  contact_number?: string;
+  maximum_distance?: number;
+  image?: { uri: string; name: string; mimeType?: string };
+};
+
+export async function updatePersonalDetails(
+  payload: UpdatePersonalDetailsPayload,
+): Promise<{ status: boolean; message: string }> {
+  const form = new FormData();
+  form.append("first_name", payload.first_name);
+  form.append("last_name", payload.last_name);
+  form.append("country", String(payload.country_id));
+  form.append("state", String(payload.state_id));
+  form.append("address", payload.address);
+  form.append("latitude", payload.latitude);
+  form.append("longitude", payload.longitude);
+  if (payload.city) form.append("city", payload.city);
+  if (payload.suburb) form.append("suburb", payload.suburb);
+  if (payload.post_code) form.append("post_code", payload.post_code);
+  if (payload.gender) form.append("gender", payload.gender);
+  if (payload.date_of_birth) {
+    form.append("date_of_birth", payload.date_of_birth);
+  }
+  if (payload.contact_number) {
+    form.append("contact_number", payload.contact_number);
+  }
+  if (payload.maximum_distance !== undefined) {
+    form.append("maximum_distance", String(payload.maximum_distance));
+  }
+  if (payload.image) {
+    form.append("image", {
+      uri: payload.image.uri,
+      name: payload.image.name,
+      type: payload.image.mimeType ?? "image/jpeg",
+    } as unknown as Blob);
+  }
+
+  return postPersonalDetailsForm(form);
+}
+
+export async function sendMobileVerification(
+  contactNumber: string,
+): Promise<{ status: boolean; message: string; data?: { request_token: string } }> {
+  return postResource<
+    { contact_number: string },
+    { status: boolean; message: string; data?: { request_token: string } }
+  >("/hcp/send-mobile-verification", { contact_number: contactNumber });
+}
+
+export async function verifyMobile(
+  otp: string,
+  requestToken: string,
+): Promise<{ status: boolean; message: string }> {
+  return postResource<
+    { otp: string; request_token: string },
+    { status: boolean; message: string }
+  >("/hcp/verify-mobile", { otp, request_token: requestToken });
 }
 
 export async function updateAvailability(

@@ -2,6 +2,7 @@ import {
   resolveTenantsByEmail,
   TenancyQueryError,
 } from "@/api-queries/tenancy";
+import { useSession } from "@/app/ctx";
 import {
   AppButton,
   AppText,
@@ -10,12 +11,9 @@ import {
 } from "@/components/design";
 import { OrganizationPicker } from "@/components/organization-picker";
 import { Space } from "@/constants/design";
-import { useProfileData } from "@/data-store/use-account-store";
 import { useTenantStore } from "@/data-store/use-tenant-store";
 import { TenantSummary } from "@/data-types/tenancy";
 import { useAppTheme } from "@/hooks/use-app-theme";
-import { stopBackgroundTracking } from "@/task-services/locationTask";
-import { useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
@@ -23,8 +21,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function SwitchOrganization() {
   const { colors } = useAppTheme();
-  const queryClient = useQueryClient();
-  const profileStore = useProfileData();
+  const { switchTenant } = useSession();
 
   const currentTenant = useTenantStore((state) => state.tenant);
 
@@ -33,6 +30,7 @@ export default function SwitchOrganization() {
     currentTenant?.tenantId ?? null,
   );
   const [isLoading, setIsLoading] = useState(true);
+  const [isSwitching, setIsSwitching] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -75,11 +73,15 @@ export default function SwitchOrganization() {
     const chosen = tenants.find((t) => t.tenantId === selectedTenantId);
     if (!chosen || !currentTenant?.email || selectionUnchanged) return;
 
-    await stopBackgroundTracking();
-    profileStore.clearDetails();
-    queryClient.clear();
-    useTenantStore.getState().setTenant(chosen, currentTenant.email);
-    router.back();
+    setIsSwitching(true);
+    try {
+      const switched = await switchTenant(chosen);
+      // On failure, switchTenant has already signed the user out and shown
+      // why — nothing left to do here.
+      if (switched) router.back();
+    } finally {
+      setIsSwitching(false);
+    }
   };
 
   return (
@@ -119,6 +121,8 @@ export default function SwitchOrganization() {
               title="Switch organization"
               icon="swap-horizontal"
               onPress={handleSwitch}
+              loading={isSwitching}
+              disabled={isSwitching}
               fullWidth
             />
           )}

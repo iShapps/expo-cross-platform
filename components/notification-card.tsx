@@ -55,7 +55,7 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
         };
 
       case "documents":
-        return "/(tabs)/documents";
+        return { pathname: "/(tabs)/documents", params: { tab: "missing" } };
 
       default:
         return "/(main)/notifications";

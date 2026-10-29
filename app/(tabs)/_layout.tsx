@@ -3,6 +3,7 @@ import { HapticTab } from "@/components/haptic-tab";
 import { FontFamily, Palette } from "@/constants/design";
 import { Radii } from "@/constants/theme";
 import { useAppTheme } from "@/hooks/use-app-theme";
+import { useMissingDocuments } from "@/hooks/use-missing-documents";
 import { useIsFetching } from "@tanstack/react-query";
 import { BlurView } from "expo-blur";
 import { Tabs } from "expo-router";
@@ -68,6 +69,8 @@ const tabIcon = (focusedName: IconName, name: IconName) =>
 export default function TabLayout() {
   const { colors, isDark } = useAppTheme();
   const insets = useSafeAreaInsets();
+  // Documents to upload (missing / rejected / expired).
+  const { actionCount: missingDocuments } = useMissingDocuments();
 
   // iOS: translucent blurred bar floating over content (screens already pad
   // their lists for it). Android: solid bar.
@@ -139,6 +142,8 @@ export default function TabLayout() {
         options={{
           title: "Documents",
           tabBarIcon: tabIcon("document-text", "document-text-outline"),
+          tabBarBadge: missingDocuments > 0 ? missingDocuments : undefined,
+          tabBarBadgeStyle: { backgroundColor: colors.danger, fontFamily: FontFamily.semibold, fontSize: 11 },
         }}
       />
       <Tabs.Screen
