@@ -158,8 +158,10 @@ export interface Hcp {
   city_name: string;
   suburb_name: string;
   state_id: number;
+  state?: { id: number; name: string } | null;
   city_id: null;
   country_id: number;
+  country?: { id: number; name: string } | null;
   post_code: string;
   latitude: string;
   longitude: string;
