@@ -25,6 +25,8 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
         return "cash-outline";
       case "documents":
         return "document-text-outline";
+      case "agreements":
+        return "create-outline";
       default:
         return "notifications-outline";
     }
@@ -38,6 +40,8 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
         return "blue";
       case "documents":
         return "violet";
+      case "agreements":
+        return "blue";
       default:
         return "primary";
     }
@@ -56,6 +60,9 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
 
       case "documents":
         return { pathname: "/(tabs)/documents", params: { tab: "missing" } };
+
+      case "agreements":
+        return "/(main)/agreements";
 
       default:
         return "/(main)/notifications";

@@ -41,6 +41,7 @@ import { User } from "@/data-types/auth";
 import { useAppTheme } from "@/hooks/use-app-theme";
 import { useFirstVisitTour } from "@/hooks/use-first-visit-tour";
 import { useMissingDocuments } from "@/hooks/use-missing-documents";
+import { useAgreements } from "@/hooks/use-agreements";
 import { useOneSignalSubscriptionStatus } from "@/hooks/use-one-signal";
 import { getAvatarImageSource } from "@/utils/auth";
 import { getRegistrationStatus, TokenStorage } from "@/utils/auth-api";
@@ -125,6 +126,7 @@ export default function HomeScreen() {
   }, [hcpStatusSync, userDetails, updateHcp]);
 
   const { actionCount: missingDocuments } = useMissingDocuments();
+  const { toSignCount: agreementsToSign } = useAgreements();
 
   const isFocused = useIsFocused();
 
@@ -547,6 +549,28 @@ export default function HomeScreen() {
             </AppText>
             <AppText variant="footnote" color="textSecondary">
               Upload them to keep working every profession you hold.
+            </AppText>
+          </View>
+          <Icon name="chevron-forward" size={18} color={colors.textTertiary} />
+        </PressableCard>
+      )}
+
+      {agreementsToSign > 0 && (
+        <PressableCard
+          onPress={() => router.push("/(main)/agreements")}
+          accessibilityRole="button"
+          accessibilityLabel={`${agreementsToSign} agreements to sign`}
+          radius={Radius.xl}
+          padding={Space.md}
+          style={styles.missingCard}
+        >
+          <IconBadge icon="create-outline" tone="blue" size={40} />
+          <View style={styles.pendingText}>
+            <AppText variant="headline">
+              {agreementsToSign === 1 ? "1 agreement to sign" : `${agreementsToSign} agreements to sign`}
+            </AppText>
+            <AppText variant="footnote" color="textSecondary">
+              Read it in the app and sign with your finger.
             </AppText>
           </View>
           <Icon name="chevron-forward" size={18} color={colors.textTertiary} />

@@ -17,6 +17,7 @@ import { Radius, Space } from "@/constants/design";
 import { useProfileData } from "@/data-store/use-account-store";
 import { useTenantStore } from "@/data-store/use-tenant-store";
 import { User } from "@/data-types/auth";
+import { useAgreements } from "@/hooks/use-agreements";
 import { useAppTheme } from "@/hooks/use-app-theme";
 import { useFirstVisitTour } from "@/hooks/use-first-visit-tour";
 import { useIsFocused } from "@react-navigation/native";
@@ -115,6 +116,7 @@ export default function More() {
   };
 
   const { colors } = useAppTheme();
+  const { toSignCount: agreementsToSign } = useAgreements();
   const professions = userDetails?.hcp?.hcp_professions ?? [];
 
   return (
@@ -204,6 +206,12 @@ export default function More() {
                 icon="person-circle-outline"
                 title="Your profile"
                 onPress={() => router.push("/(main)/account")}
+              />
+              <ListRow
+                icon="create-outline"
+                title="Agreements"
+                value={agreementsToSign ? `${agreementsToSign} to sign` : undefined}
+                onPress={() => router.push("/(main)/agreements")}
               />
               <ListRow
                 icon="map-outline"
