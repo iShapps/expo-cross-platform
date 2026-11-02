@@ -79,6 +79,15 @@ const DocumentCard: React.FC<DocumentCardProps> = ({ document }) => {
             : `Uploaded on ${formatMediumDate(document.created_at)}`}
         </AppText>
         <View style={styles.chipRow}>
+          {/* General (everyone) or the profession it was uploaded for. */}
+          <Chip
+            label={
+              document.document.doc_type === "profession"
+                ? (document.profession as { name?: string } | null)?.name ?? "Profession"
+                : "General"
+            }
+            tone="blue"
+          />
           {expired ? (
             <Chip label="Expired" tone="danger" icon="alert-circle-outline" />
           ) : pendingApproval ? (

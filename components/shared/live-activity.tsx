@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Alert, Pressable, Text, View } from "react-native";
 import { Voltra } from "voltra";
 import { startLiveActivity, updateLiveActivity } from "voltra/client";
+import { shiftRecipient } from "@/utils/shift-recipient";
 
 // MANUAL LIVE ACTIVITY COMPONENT FOR TESTING PURPOSES - NOT USED IN PRODUCTION
 interface Props {
@@ -56,7 +57,7 @@ function buildVariants(shift: IShift, now: Date) {
       <Voltra.Text
         style={{ color: "#ffffff", fontSize: 12, fontWeight: "600" }}
       >
-        {shift.facility?.name}
+        {shiftRecipient(shift)?.name}
       </Voltra.Text>
       <Voltra.Text
         style={{ color: "#70C601", fontSize: 12, fontWeight: "700" }}
@@ -137,7 +138,7 @@ function buildVariants(shift: IShift, now: Date) {
           width: "100%",
         }}
       >
-        🏢 {shift.facility?.name}
+        🏢 {shiftRecipient(shift)?.name}
       </Voltra.Text>
 
       {/* Address */}
@@ -158,7 +159,7 @@ function buildVariants(shift: IShift, now: Date) {
             flex: 1,
           }}
         >
-          📍 {shift.facility?.address}
+          📍 {shiftRecipient(shift)?.address}
         </Voltra.Text>
       </Voltra.HStack>
 

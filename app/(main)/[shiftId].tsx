@@ -55,6 +55,7 @@ import {
 } from "react-native";
 import { CopilotStep, walkthroughable } from "react-native-copilot";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { isParticipantShift, shiftRecipient } from "@/utils/shift-recipient";
 
 const WalkthroughableView = walkthroughable(View);
 
@@ -229,7 +230,7 @@ export default function ShiftDetails() {
   const trackingMutation = useMutation({
     mutationFn: (params: {
       shift_id: number;
-      facility_id: number;
+      facility_id?: number;
       latitude: number;
       longitude: number;
     }) => postShiftTracking(params),
@@ -245,7 +246,7 @@ export default function ShiftDetails() {
   const isBusy = isAccepting || isAcceptingTransfer || isStarting || isEnding;
 
   const openMaps = async () => {
-    const address = shift?.address;
+    const address = shift?.address || shiftRecipient(shift)?.address;
 
     if (!address) return;
 
@@ -398,21 +399,12 @@ export default function ShiftDetails() {
         showAlert("Location Error", errorMsg || "Unable to fetch location.");
         return;
       }
-      const facilityId = shift?.facility?.id ?? shift?.facility_id;
-      if (!facilityId) {
-        showAlert("Error", "Missing facility information.");
-        return;
-      }
-      console.log({
-        shift_id: shift.id,
-        facility_id: facilityId,
-        latitude: currentLocation.coords.latitude,
-        longitude: currentLocation.coords.longitude,
-      });
+      // A participant shift has no facility: the API takes the site from the shift.
+      const facilityId = shift?.facility?.id ?? shift?.facility_id ?? undefined;
 
       const trackingResponse = await trackingMutation.mutateAsync({
         shift_id: shift.id,
-        facility_id: facilityId,
+        ...(facilityId ? { facility_id: facilityId } : {}),
         latitude: currentLocation.coords.latitude,
         longitude: currentLocation.coords.longitude,
       });
@@ -602,13 +594,22 @@ export default function ShiftDetails() {
               style={styles.heroCard}
             >
               <View style={styles.heroRow}>
-                <IconBadge icon="business-outline" tone="primary" size={52} />
+                <IconBadge
+                  icon={isParticipantShift(shift) ? "person-outline" : "business-outline"}
+                  tone="primary"
+                  size={52}
+                />
                 <View style={styles.heroText}>
                   <AppText variant="title3">
-                    {shift?.facility?.name ?? "—"}
+                    {shiftRecipient(shift)?.name ?? "—"}
                   </AppText>
+                  {isParticipantShift(shift) && (
+                    <AppText variant="caption" color="textTertiary">
+                      Participant
+                    </AppText>
+                  )}
                   <AppText variant="footnote" color="textSecondary">
-                    {shift?.facility?.address ?? "—"}
+                    {shiftRecipient(shift)?.address ?? "—"}
                   </AppText>
                   <AppText variant="caption" color="textTertiary">
                     {shift?.state?.name ?? "—"}

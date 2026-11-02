@@ -58,9 +58,17 @@ const navigateForNotification = (data: NotificationAdditionalData) => {
     case "shifts":
       router.navigate(`/${data.shift_id.toString()}`);
       break;
+    case "agreements":
+      // A policy to read and sign: straight to it.
+      router.navigate(
+        data.agreement_id
+          ? { pathname: "/agreement", params: { id: String(data.agreement_id) } }
+          : { pathname: "/documents", params: { tab: "agreements" } },
+      );
+      break;
     case "documents":
       // Document reminders / paused professions: straight to what needs uploading.
-      router.navigate({ pathname: "/documents", params: { tab: "missing" } });
+      router.navigate({ pathname: "/documents", params: { tab: "certifications" } });
       break;
     case "test":
       router.navigate("/notification-test");

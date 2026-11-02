@@ -156,11 +156,29 @@ export interface IShift {
   category: ICategory;
   profession: IProfession;
   level: ILevel | null;
+  /** On a participant shift the API fills this with the participant (id null). Prefer shiftRecipient(). */
   facility: IFacility;
+  /** Who the shift is for, facility or participant (API Shift::recipientSummary). */
+  recipient?: IShiftRecipient | null;
+  client_id?: number | null;
   cancelled_shift: any | null;
   shift_transfer_from: any | null;
   shift_transfer_to: IShiftTransferTo | null;
   state: IState;
+}
+
+export interface IShiftRecipient {
+  type: "facility" | "participant";
+  id: number;
+  reference: string | null;
+  name: string;
+  address: string | null;
+  suburb: string | null;
+  state: string | null;
+  latitude: number | string | null;
+  longitude: number | string | null;
+  contact_person: string | null;
+  contact_number: string | null;
 }
 
 export interface IShiftTransferTo {
