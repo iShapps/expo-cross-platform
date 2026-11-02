@@ -510,7 +510,7 @@ export default function HomeScreen() {
       {userDetails?.hcp?.status === "on-hold" && (
         <PressableCard
           onPress={() =>
-            router.navigate({ pathname: "/(tabs)/documents", params: { tab: "missing" } })
+            router.navigate({ pathname: "/(tabs)/documents", params: { tab: "certifications" } })
           }
           accessibilityRole="button"
           accessibilityLabel="Your account is on hold. Update your documents."
@@ -532,7 +532,7 @@ export default function HomeScreen() {
       {missingDocuments > 0 && (
         <PressableCard
           onPress={() =>
-            router.navigate({ pathname: "/(tabs)/documents", params: { tab: "missing" } })
+            router.navigate({ pathname: "/(tabs)/documents", params: { tab: "certifications" } })
           }
           accessibilityRole="button"
           accessibilityLabel={`${missingDocuments} documents need your attention`}
@@ -557,7 +557,7 @@ export default function HomeScreen() {
 
       {agreementsToSign > 0 && (
         <PressableCard
-          onPress={() => router.push("/(main)/agreements")}
+          onPress={() => router.navigate({ pathname: "/(tabs)/documents", params: { tab: "agreements" } })}
           accessibilityRole="button"
           accessibilityLabel={`${agreementsToSign} agreements to sign`}
           radius={Radius.xl}

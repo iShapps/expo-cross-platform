@@ -4,6 +4,7 @@ import { FontFamily, Palette } from "@/constants/design";
 import { Radii } from "@/constants/theme";
 import { useAppTheme } from "@/hooks/use-app-theme";
 import { useMissingDocuments } from "@/hooks/use-missing-documents";
+import { useAgreements } from "@/hooks/use-agreements";
 import { useIsFetching } from "@tanstack/react-query";
 import { BlurView } from "expo-blur";
 import { Tabs } from "expo-router";
@@ -71,6 +72,9 @@ export default function TabLayout() {
   const insets = useSafeAreaInsets();
   // Documents to upload (missing / rejected / expired).
   const { actionCount: missingDocuments } = useMissingDocuments();
+  // Documents holds contracts and policies too: what is left to sign counts.
+  const { toSignCount: agreementsToSign } = useAgreements();
+  const documentsBadge = missingDocuments + agreementsToSign;
 
   // iOS: translucent blurred bar floating over content (screens already pad
   // their lists for it). Android: solid bar.
@@ -142,7 +146,7 @@ export default function TabLayout() {
         options={{
           title: "Documents",
           tabBarIcon: tabIcon("document-text", "document-text-outline"),
-          tabBarBadge: missingDocuments > 0 ? missingDocuments : undefined,
+          tabBarBadge: documentsBadge > 0 ? documentsBadge : undefined,
           tabBarBadgeStyle: { backgroundColor: colors.danger, fontFamily: FontFamily.semibold, fontSize: 11 },
         }}
       />

@@ -13,6 +13,7 @@ import {
   Card,
   Chip,
   EmptyState,
+  IconButton,
   ScreenHeader,
   TextField,
 } from "@/components/design";
@@ -64,6 +65,8 @@ export default function AgreementScreen() {
   const [pdfError, setPdfError] = useState<string | null>(null);
   const [reachedEnd, setReachedEnd] = useState(false);
   const [signOpen, setSignOpen] = useState(false);
+  const [fullScreen, setFullScreen] = useState(false);
+  const [page, setPage] = useState<{ index: number; count: number } | null>(null);
   const viewedSent = useRef(false);
 
   // Opening it counts as viewed (once).
@@ -116,14 +119,35 @@ export default function AgreementScreen() {
           tone="danger"
           title="This agreement isn't available"
           message={query.error instanceof Error ? query.error.message : undefined}
-          actionLabel="Back to agreements"
-          onAction={() => router.replace("/(main)/agreements")}
+          actionLabel="Back to documents"
+          onAction={() => router.replace({ pathname: "/(tabs)/documents", params: { tab: "agreements" } })}
         />
       </Screen>
     );
   }
 
   const signed = agreement.status === "signed";
+
+  // Fit to width: the page fills the screen's width and starts at the top
+  // (fitting the whole page shrank it and centred it, leaving a gap above).
+  const pdf = localPdf ? (
+    <PdfView
+      uri={localPdf}
+      style={StyleSheet.absoluteFill}
+      fitMode="width"
+      doubleTapToZoom
+      pageGap={8}
+      onLoadComplete={({ pageCount }) => {
+        setPage({ index: 0, count: pageCount });
+        if (pageCount <= 1) setReachedEnd(true);
+      }}
+      onPageChanged={({ pageIndex, pageCount }) => {
+        setPage({ index: pageIndex, count: pageCount });
+        if (pageIndex >= pageCount - 1) setReachedEnd(true);
+      }}
+      onError={({ message }) => setPdfError(message || "The document couldn't be shown.")}
+    />
+  ) : null;
 
   return (
     <Screen title={agreement.title}>
@@ -146,15 +170,21 @@ export default function AgreementScreen() {
         {pdfError ? (
           <EmptyState icon="cloud-offline-outline" tone="danger" title="Couldn't open the document" message={pdfError}
             actionLabel="Try again" onAction={() => query.refetch()} />
-        ) : localPdf ? (
-          <PdfView
-            uri={localPdf}
-            style={StyleSheet.absoluteFill}
-            onLoadComplete={({ pageCount }) => pageCount <= 1 && setReachedEnd(true)}
-            onPageChanged={({ pageIndex, pageCount }) => pageIndex >= pageCount - 1 && setReachedEnd(true)}
-            onError={({ message }) => setPdfError(message || "The document couldn't be shown.")}
-          />
-        ) : (
+        ) : pdf && !fullScreen ? (
+          <>
+            {pdf}
+            <View style={styles.viewerTools} pointerEvents="box-none">
+              {page && page.count > 1 && (
+                <View style={[styles.pagePill, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                  <AppText variant="caption" color="textSecondary">
+                    {page.index + 1} / {page.count}
+                  </AppText>
+                </View>
+              )}
+              <IconButton icon="expand-outline" accessibilityLabel="Read full screen" onPress={() => setFullScreen(true)} />
+            </View>
+          </>
+        ) : fullScreen ? null : (
           <ActivityIndicator style={{ marginTop: Space.xxl }} color={colors.primary} />
         )}
       </View>
@@ -180,6 +210,24 @@ export default function AgreementScreen() {
           </>
         )}
       </View>
+
+      {/* Full screen reading: only the document, its page count and Close. */}
+      <Modal visible={fullScreen} animationType="slide" onRequestClose={() => setFullScreen(false)}>
+        <SafeAreaView edges={["top", "bottom"]} style={[styles.safeArea, { backgroundColor: colors.background }]}>
+          <View style={[styles.fullBar, { borderColor: colors.border }]}>
+            <AppText variant="headline" numberOfLines={1} style={{ flex: 1 }}>
+              {agreement.title}
+            </AppText>
+            {page && page.count > 1 && (
+              <AppText variant="footnote" color="textSecondary">
+                {page.index + 1} / {page.count}
+              </AppText>
+            )}
+            <IconButton icon="close" accessibilityLabel="Close full screen" onPress={() => setFullScreen(false)} />
+          </View>
+          <View style={{ flex: 1, backgroundColor: colors.surfaceMuted }}>{fullScreen && pdf}</View>
+        </SafeAreaView>
+      </Modal>
 
       <SignSheet
         visible={signOpen}
@@ -320,7 +368,11 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   meta: { flexDirection: "row", gap: Space.xs, paddingHorizontal: Space.gutter, flexWrap: "wrap" },
   description: { paddingHorizontal: Space.gutter, marginTop: Space.xs },
-  viewer: { flex: 1, marginHorizontal: Space.gutter, marginTop: Space.sm, borderRadius: Radius.lg, borderWidth: 1, overflow: "hidden" },
+  // Edge to edge: the page gets the screen's full width to be readable.
+  viewer: { flex: 1, marginTop: Space.sm, borderTopWidth: StyleSheet.hairlineWidth, overflow: "hidden" },
+  viewerTools: { position: "absolute", top: Space.sm, right: Space.sm, flexDirection: "row", alignItems: "center", gap: Space.xs },
+  pagePill: { paddingHorizontal: Space.sm, paddingVertical: Space.xxs, borderRadius: Radius.full, borderWidth: StyleSheet.hairlineWidth },
+  fullBar: { flexDirection: "row", alignItems: "center", gap: Space.sm, paddingHorizontal: Space.gutter, paddingVertical: Space.xs, borderBottomWidth: StyleSheet.hairlineWidth },
   footer: { paddingHorizontal: Space.gutter, paddingTop: Space.sm, paddingBottom: Space.sm, gap: Space.xs, borderTopWidth: StyleSheet.hairlineWidth },
   backdrop: { flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.35)" },
   sheet: { borderTopLeftRadius: Radius.xl, borderTopRightRadius: Radius.xl, maxHeight: "92%" },

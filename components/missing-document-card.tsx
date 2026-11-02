@@ -46,10 +46,18 @@ export default function MissingDocumentCard({ document }: { document: MissingDoc
           {document.message}
         </AppText>
         <View style={styles.chipRow}>
+          {/* General (everyone) or the professions that need it. */}
+          <Chip
+            label={
+              document.type === "general"
+                ? "General"
+                : document.required_by.length > 0
+                  ? document.required_by.join(", ")
+                  : "Profession"
+            }
+            tone="blue"
+          />
           <Chip label={state.label} tone={state.tone} icon={state.icon} />
-          {document.required_by.length > 0 && (
-            <Chip label={`For ${document.required_by.join(", ")}`} />
-          )}
           {document.expiry_date_mandatory === "yes" && <Chip label="Expiry required" />}
         </View>
       </View>
