@@ -1,5 +1,6 @@
 import { IShift } from "@/data-types/shifts";
 import { ShiftCalendarEvent } from "@/hooks/use-calendar-and-reminders";
+import { shiftRecipient } from "@/utils/shift-recipient";
 
 /**
  * Convert IShift to ShiftCalendarEvent for calendar operations
@@ -29,9 +30,9 @@ export const shiftToCalendarEvent = (shift: IShift): ShiftCalendarEvent => {
   }
 
   const profession = shift.profession?.name || "Unknown Profession";
-  const facilityName = shift.facility?.name || "Unknown Facility";
+  const facilityName = shiftRecipient(shift)?.name || "Unknown Facility";
   const location =
-    shift.address || shift.facility?.address || "No location provided";
+    shift.address || shiftRecipient(shift)?.address || "No location provided";
 
   // Build detailed notes with shift information
   const notes = [
