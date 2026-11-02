@@ -163,7 +163,8 @@ export async function postAcceptShiftTransfer(
 
 export async function postShiftTracking(params: {
   shift_id: number;
-  facility_id: number;
+  /** Optional: the API takes the site from the shift (a participant shift has no facility). */
+  facility_id?: number;
   latitude: number;
   longitude: number;
 }): Promise<IShiftActionResponse> {

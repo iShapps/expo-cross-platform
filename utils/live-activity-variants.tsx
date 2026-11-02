@@ -1,6 +1,7 @@
 import { IShift } from "@/data-types/shifts";
 import React from "react";
 import { Voltra } from "voltra";
+import { shiftRecipient } from "@/utils/shift-recipient";
 
 // Live Activity palette — the design system's dark theme (constants/design.ts).
 // Live Activities render natively (SwiftUI), so they use the system font and
@@ -166,7 +167,7 @@ export function buildVariants(shift: IShift, now: Date) {
             letterSpacing: 0.1,
           }}
         >
-          {shift.facility?.name}
+          {shiftRecipient(shift)?.name}
         </Voltra.Text>
       </Voltra.HStack>
 
@@ -191,7 +192,7 @@ export function buildVariants(shift: IShift, now: Date) {
             flex: 1,
           }}
         >
-          {shift.facility?.address}
+          {shiftRecipient(shift)?.address}
         </Voltra.Text>
       </Voltra.HStack>
 

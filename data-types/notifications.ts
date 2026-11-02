@@ -1,4 +1,5 @@
 export type NotificationType =
+  | "agreements"
   | "documents"
   | "statement-details"
   | "shifts"
@@ -68,6 +69,8 @@ export interface NotificationAdditionalData {
   hcp_id: number | null;
   swap_request_id: number | null;
   document_type: string | null;
+  /** notification_type "agreements": the agreement to open. */
+  agreement_id?: number | string;
   tenant_id?: string;
   tenant_name?: string | null;
 }

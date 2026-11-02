@@ -7,6 +7,7 @@ import { Link } from "expo-router";
 import React from "react";
 import { StyleSheet, View } from "react-native";
 import { ShiftType, ShiftTypePill } from "./shift-type-pill";
+import { shiftRecipient } from "@/utils/shift-recipient";
 
 interface ShiftCardProps {
   shift: IShift;
@@ -56,7 +57,7 @@ export const ShiftCardBase: React.FC<ShiftCardProps> = ({ shift }) => {
               {shift?.id ?? "—"} · {format(startDate, "EEEE")}
             </AppText>
             <AppText variant="headline" numberOfLines={2}>
-              {shift?.facility?.name}
+              {shiftRecipient(shift)?.name}
             </AppText>
             {!!shift?.profession?.name && (
               <AppText variant="footnote" color="textSecondary" numberOfLines={1}>
@@ -88,7 +89,7 @@ export const ShiftCardBase: React.FC<ShiftCardProps> = ({ shift }) => {
           </View>
         </View>
 
-        {!!shift?.facility?.address && (
+        {!!shiftRecipient(shift)?.address && (
           <View style={styles.metaRow}>
             <Icon name="location-outline" size={16} color={colors.primaryStrong} />
             <AppText
@@ -97,7 +98,7 @@ export const ShiftCardBase: React.FC<ShiftCardProps> = ({ shift }) => {
               style={styles.metaText}
               numberOfLines={2}
             >
-              {shift.facility.address}
+              {shiftRecipient(shift)?.address}
             </AppText>
           </View>
         )}
