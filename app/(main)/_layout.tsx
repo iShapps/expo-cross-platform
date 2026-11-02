@@ -21,6 +21,7 @@ export default function MainLayout() {
       <Stack.Screen name="edit-profile" options={{ headerShown: false }} />
       <Stack.Screen name="document-details" options={{ headerShown: false }} />
       <Stack.Screen name="missing-document" options={{ headerShown: false }} />
+      <Stack.Screen name="agreement" options={{ headerShown: false }} />
 
       <Stack.Screen
         name="transfer-shift"
