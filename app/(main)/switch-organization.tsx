@@ -84,7 +84,9 @@ export default function SwitchOrganization() {
     try {
       const result = await switchTenant(chosen);
       if (result === "switched") {
-        router.back();
+        // Land on the dashboard for the org just switched into, not
+        // wherever this screen happened to be opened from (e.g. More).
+        router.replace("/(tabs)");
       } else if (result === "needs-login") {
         router.replace("/(open)/login");
       }
