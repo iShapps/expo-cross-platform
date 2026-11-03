@@ -1,6 +1,7 @@
 import {
   logApiErrorToSentry,
   registerAuthExpiredHandler,
+  setAuthExpiredSuppressed,
 } from "@/api-actions/error-utils";
 import { useProfileData } from "@/data-store/use-account-store";
 import { useTenantStore } from "@/data-store/use-tenant-store";
@@ -32,6 +33,11 @@ import {
   getLoginCredentials,
   saveLoginCredentials,
 } from "@/utils/secure-login-credentials";
+import {
+  clearTenantSession,
+  getTenantSession,
+  saveTenantSession,
+} from "@/utils/tenant-session-archive";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useQueryClient } from "@tanstack/react-query";
 import { usePathname, useRouter, useSegments } from "expo-router";
@@ -45,6 +51,13 @@ import { useStorageState } from "./useStorageState";
 // install, so reinstalling always starts from a clean, logged-out state.
 const FRESH_INSTALL_MARKER_KEY = "ishapps-has-launched";
 
+// "switched": restored an already-cached session for that tenant, instant,
+// no login needed. "needs-login": no cached session for that tenant on this
+// device — the tenant is now active and the existing Stack.Protected guards
+// in app/_layout.tsx will route to /(open)/login for it. "failed": a
+// transient error (e.g. network) during the switch — nothing was changed.
+export type TenantSwitchResult = "switched" | "needs-login" | "failed";
+
 const AuthContext = React.createContext<{
   signIn: (
     data: LoginCredentials,
@@ -53,7 +66,10 @@ const AuthContext = React.createContext<{
   setSess: (data: string) => void;
   signOut: () => Promise<void>;
   updateHcp: (patch: Partial<Hcp>) => void;
-  switchTenant: (tenant: TenantSummary) => Promise<boolean>;
+  switchTenant: (
+    tenant: TenantSummary,
+    email?: string,
+  ) => Promise<TenantSwitchResult>;
   session?: string | null;
   user?: User | null;
   isLoading: boolean;
@@ -63,13 +79,15 @@ const AuthContext = React.createContext<{
   setSess: () => null,
   signOut: () => Promise.resolve(),
   updateHcp: () => null,
-  switchTenant: () => Promise.resolve(false),
+  switchTenant: () => Promise.resolve("failed"),
   session: null,
   user: null,
   isLoading: false,
 });
 
-type TenantSwitchHandler = (tenant: TenantSummary) => Promise<boolean>;
+type TenantSwitchHandler = (
+  tenant: TenantSummary,
+) => Promise<TenantSwitchResult>;
 let tenantSwitchHandler: TenantSwitchHandler | null = null;
 
 export function registerTenantSwitchHandler(handler: TenantSwitchHandler) {
@@ -84,16 +102,16 @@ export function registerTenantSwitchHandler(handler: TenantSwitchHandler) {
 
 /**
  * Lets code outside the component tree (the OneSignal notification-click
- * listener) trigger the same silent tenant switch + re-login that
- * switch-organization.tsx uses via useSession().switchTenant, instead of
- * swapping the active tenant and leaving the old tenant's auth token behind
- * — that token is only valid in the tenant DB it was issued from, so the
- * next request against the new tenant 401s and the app signs itself out.
+ * listener) trigger the same tenant switch that switch-organization.tsx
+ * uses via useSession().switchTenant — restoring a cached session for that
+ * tenant if this device has one, or pointing the app at that tenant's own
+ * login screen if it doesn't. Each tenant has its own password, so there is
+ * never a silent cross-tenant login attempt.
  */
 export async function requestTenantSwitch(
   tenant: TenantSummary,
-): Promise<boolean> {
-  return (await tenantSwitchHandler?.(tenant)) ?? false;
+): Promise<TenantSwitchResult> {
+  return (await tenantSwitchHandler?.(tenant)) ?? "failed";
 }
 
 // hook to access the user info.
@@ -237,10 +255,7 @@ export function SessionProvider(props: React.PropsWithChildren) {
 
         setSession(null);
         setUserJson(null);
-        await Promise.all([
-          TokenStorage.removeToken(),
-          clearLoginCredentials(),
-        ]);
+        await TokenStorage.removeToken();
         await AsyncStorage.setItem(FRESH_INSTALL_MARKER_KEY, "1");
         debug(
           "[Session] Fresh install detected — cleared stale Keychain session",
@@ -268,7 +283,31 @@ export function SessionProvider(props: React.PropsWithChildren) {
       setSession(result.data.access_token);
       await setAuthToken(result.data.access_token);
       setUserJson(JSON.stringify(result.data.user));
-      await saveLoginCredentials(credentials.email, credentials.password);
+
+      // Cache this tenant's session so switching back to it later (via
+      // switchTenant) can restore it instantly instead of logging in again.
+      const activeTenant = useTenantStore.getState().tenant;
+      const accessToken = result.data.access_token;
+      const cacheSession = async (user: User) => {
+        if (!activeTenant) return;
+        await Promise.all([
+          saveLoginCredentials(
+            activeTenant.tenantId,
+            credentials.email,
+            credentials.password,
+          ),
+          saveTenantSession(activeTenant.tenantId, {
+            accessToken,
+            userJson: JSON.stringify(user),
+          }),
+        ]);
+        useTenantStore.getState().markSessionCached(activeTenant.tenantId, {
+          name: activeTenant.name,
+          logoUrl: activeTenant.logoUrl,
+          email: credentials.email,
+        });
+      };
+      await cacheSession(result.data.user);
 
       // Update profile store if needed
       profileStore.setToken(result.data.access_token);
@@ -299,6 +338,7 @@ export function SessionProvider(props: React.PropsWithChildren) {
           setUserJson(JSON.stringify(completedUser));
           profileStore.setUserDetails(completedUser);
           queryClient.setQueryData(["profile-details"], completedUser);
+          await cacheSession(completedUser);
 
           Alert.alert("Success", "Login successful!", [{ text: "OK" }]);
           return "authenticated";
@@ -317,6 +357,7 @@ export function SessionProvider(props: React.PropsWithChildren) {
         setUserJson(JSON.stringify(updatedUser));
         profileStore.setUserDetails(updatedUser);
         queryClient.setQueryData(["profile-details"], updatedUser);
+        await cacheSession(updatedUser);
 
         return "onboarding";
       } catch {
@@ -382,7 +423,10 @@ export function SessionProvider(props: React.PropsWithChildren) {
       return false;
     }
 
-    const credentials = await getLoginCredentials();
+    const activeTenant = useTenantStore.getState().tenant;
+    if (!activeTenant) return false;
+
+    const credentials = await getLoginCredentials(activeTenant.tenantId);
 
     if (!credentials.email || !credentials.password) {
       return false;
@@ -408,6 +452,10 @@ export function SessionProvider(props: React.PropsWithChildren) {
     profileStore.setToken(result.data.access_token);
     profileStore.setUserDetails(result.data.user);
     queryClient.setQueryData(["profile-details"], result.data.user);
+    await saveTenantSession(activeTenant.tenantId, {
+      accessToken: result.data.access_token,
+      userJson: JSON.stringify(result.data.user),
+    });
     await onLoginSuccess(result.data.user.id.toString());
 
     const onboardingParams = getOnboardingRouteParams(result.data.user);
@@ -437,77 +485,153 @@ export function SessionProvider(props: React.PropsWithChildren) {
       removeToken();
       profileStore.clearDetails();
       queryClient.clear();
+
+      // Only drop THIS tenant's cached session — every other tenant on
+      // this device stays instant-switchable via switchTenant, since each
+      // has its own independent password and signing out of one doesn't
+      // affect the others.
+      const activeTenant = useTenantStore.getState().tenant;
+      if (activeTenant) {
+        await clearTenantSession(activeTenant.tenantId);
+        await clearLoginCredentials(activeTenant.tenantId);
+        useTenantStore.getState().removeCachedSession(activeTenant.tenantId);
+      }
     }
   }, [profileStore, queryClient, setSession, setUserJson]);
 
-  // Swaps the active tenant and silently re-authenticates against it with
-  // the user's stored credentials, instead of just pointing X-Tenant-Code
-  // at the new tenant and keeping the old token — that token lives in the
-  // old tenant's database and isn't valid in the new one, so the next
-  // request would 401 and the app would sign itself out.
+  // Each tenant has its own password and its own self-onboarding — there is
+  // no shared credential to silently reuse across tenants. So switching
+  // either restores a session this device already cached for that tenant
+  // (instant, no network login), or points the app at that tenant and lets
+  // it show that tenant's own login screen via the existing Stack.Protected
+  // guards in app/_layout.tsx — the same mechanism an ordinary sign-out
+  // already uses, just pointed at a different tenant.
   const handleSwitchTenant = React.useCallback(
-    async (tenant: TenantSummary): Promise<boolean> => {
+    async (
+      tenant: TenantSummary,
+      emailOverride?: string,
+    ): Promise<TenantSwitchResult> => {
       const currentTenant = useTenantStore.getState().tenant;
-      if (!currentTenant?.email) return false;
+      // emailOverride covers login.tsx's inline switcher, where the typed
+      // email can differ from whichever tenant is currently persisted
+      // (e.g. no session yet) — everywhere else switches within the same
+      // email's organizations, so the persisted tenant's email is right.
+      const targetEmail = emailOverride ?? currentTenant?.email;
+      if (!targetEmail) return "failed";
+      if (currentTenant?.tenantId === tenant.tenantId) return "switched";
 
-      const credentials = await getLoginCredentials();
-      if (!credentials.email || !credentials.password) {
-        Alert.alert(
-          "Sign in required",
-          "Please sign in again to switch organizations.",
-        );
-        await handleSignOut();
-        return false;
-      }
-
-      await stopBackgroundTracking();
-
-      // Point the login call (and every request after it) at the new
-      // tenant's database before we try to authenticate against it.
-      useTenantStore.getState().setTenant(tenant, currentTenant.email);
-      profileStore.clearDetails();
-      queryClient.clear();
+      // Everything below briefly sends the new tenant's X-Tenant-Code
+      // alongside the still-old token/no token — any other screen's
+      // in-flight or background-refetching query can 401 on that mismatch
+      // and would otherwise trip the global auth-expired handler and force
+      // a sign-out out from under us. Suppress it and be the sole
+      // authority on success/failure here.
+      setAuthExpiredSuppressed(true);
 
       try {
-        const result = await apiLogin({
-          email: credentials.email,
-          password: credentials.password,
-        });
+        // Stop anything already in flight under the old tenant/token from
+        // resolving into that mismatch after we've moved on.
+        await queryClient.cancelQueries();
 
-        if (!("access_token" in result.data)) {
-          Alert.alert(
-            "Can't switch organizations",
-            "Your account in this organization isn't set up yet.",
-          );
-          await handleSignOut();
-          return false;
+        // Archive the outgoing tenant's live session first — even if the
+        // target isn't cached and we're about to show its login screen,
+        // this tenant must still be instant-switchable when coming back.
+        if (currentTenant && session && userJson) {
+          await saveTenantSession(currentTenant.tenantId, {
+            accessToken: session,
+            userJson,
+          });
+          useTenantStore
+            .getState()
+            .markSessionCached(currentTenant.tenantId, {
+              name: currentTenant.name,
+              logoUrl: currentTenant.logoUrl,
+              email: currentTenant.email,
+            });
         }
 
-        setSession(result.data.access_token);
-        await setAuthToken(result.data.access_token);
-        setUserJson(JSON.stringify(result.data.user));
-        profileStore.setToken(result.data.access_token);
-        profileStore.setUserDetails(result.data.user);
-        queryClient.setQueryData(["profile-details"], result.data.user);
+        const archived = await getTenantSession(tenant.tenantId);
 
-        await onLoginSuccess(result.data.user.id.toString());
+        if (archived) {
+          try {
+            const cachedUser = JSON.parse(archived.userJson) as User;
+            const hcpId = cachedUser?.hcp?.id;
+            if (!hcpId) throw new Error("Cached session has no hcp id");
 
-        if (needsForcedPasswordReset(result.data.user)) {
-          router.replace("/force-password-reset");
+            // Confirms the archived token still works (it may have been
+            // revoked/expired server-side) and refreshes onboarding status
+            // in one call, before committing to the swap.
+            const regStatus = await getRegistrationStatus(
+              archived.accessToken,
+              hcpId,
+            );
+
+            const refreshedUser: User = {
+              ...cachedUser,
+              hcp: {
+                ...cachedUser.hcp,
+                app_registration_screen:
+                  regStatus.data.registration_screen === "0"
+                    ? "0"
+                    : String(computeOnboardingStep(regStatus.data.steps)),
+              },
+            };
+
+            await stopBackgroundTracking();
+            useTenantStore.getState().setTenant(tenant, targetEmail);
+            profileStore.clearDetails();
+            queryClient.clear();
+
+            setSession(archived.accessToken);
+            await setAuthToken(archived.accessToken);
+            setUserJson(JSON.stringify(refreshedUser));
+            profileStore.setToken(archived.accessToken);
+            profileStore.setUserDetails(refreshedUser);
+            queryClient.setQueryData(["profile-details"], refreshedUser);
+            await saveTenantSession(tenant.tenantId, {
+              accessToken: archived.accessToken,
+              userJson: JSON.stringify(refreshedUser),
+            });
+            await onLoginSuccess(refreshedUser.id.toString());
+
+            if (needsForcedPasswordReset(refreshedUser)) {
+              router.replace("/force-password-reset");
+            }
+
+            return "switched";
+          } catch (err) {
+            // Stale/revoked cached token — drop the archive and fall
+            // through to a fresh login for this tenant instead.
+            logApiErrorToSentry(err, {
+              endpoint: "/hcps/{hcpId}/onboarding-status",
+              method: "GET",
+            });
+            await clearTenantSession(tenant.tenantId);
+            useTenantStore.getState().removeCachedSession(tenant.tenantId);
+          }
         }
 
-        return true;
+        // No usable cached session for this tenant — point the app at it
+        // and let it show that tenant's own login screen (and onboarding,
+        // if that HCP hasn't completed it there yet).
+        await stopBackgroundTracking();
+        useTenantStore.getState().setTenant(tenant, targetEmail);
+        profileStore.clearDetails();
+        queryClient.clear();
+        setSession(null);
+        setUserJson(null);
+        await removeToken();
+
+        return "needs-login";
       } catch (err) {
         logApiErrorToSentry(err, { endpoint: "/login", method: "POST" });
-        Alert.alert(
-          "Couldn't switch organizations",
-          "Please try again, or sign in again if this keeps happening.",
-        );
-        await handleSignOut();
-        return false;
+        Alert.alert("Couldn't switch organizations", "Please try again.");
+        return "failed";
+      } finally {
+        setAuthExpiredSuppressed(false);
       }
     },
-    [profileStore, queryClient, router, setSession, setUserJson, handleSignOut],
+    [profileStore, queryClient, router, session, setSession, setUserJson, userJson],
   );
 
   useEffect(() => {

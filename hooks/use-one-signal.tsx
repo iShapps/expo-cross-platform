@@ -82,15 +82,17 @@ const navigateForNotification = (data: NotificationAdditionalData) => {
 const switchTenantAndNavigate = async (data: NotificationAdditionalData) => {
   if (!data.tenant_id) return;
 
-  const switched = await requestTenantSwitch({
+  const result = await requestTenantSwitch({
     tenantId: data.tenant_id,
     name: data.tenant_name ?? null,
     logoUrl: null,
   });
 
-  // On failure, requestTenantSwitch has already signed the user out and
-  // shown why — nothing left to navigate to here.
-  if (!switched) return;
+  // Only an instant, already-cached switch lands somewhere navigable right
+  // away. "needs-login" shows that tenant's own login screen instead (no
+  // shared password to silently reuse), and "failed" already surfaced its
+  // own alert — neither has anywhere to navigate to yet.
+  if (result !== "switched") return;
 
   navigateForNotification(data);
 };
