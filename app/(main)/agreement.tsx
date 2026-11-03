@@ -54,6 +54,19 @@ import {
 // center within. Multi-page documents keep the full flex:1 reading area.
 const A4_ASPECT_RATIO = 297 / 210;
 
+/** Typed date, masked as YYYY-MM-DD (as on the missing-document screen). */
+function formatDateInput(raw: string): string {
+  const digits = raw.replace(/D/g, "").slice(0, 8);
+  const parts = [digits.slice(0, 4), digits.slice(4, 6), digits.slice(6, 8)];
+  return parts.filter(Boolean).join("-");
+}
+
+function isValidIsoDate(value: string): boolean {
+  if (!/^d{4}-d{2}-d{2}$/.test(value)) return false;
+  const parsed = new Date(`${value}T00:00:00Z`);
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+}
+
 /**
  * One agreement: read the PDF in the app (to the last page), agree to sign
  * electronically the first time, then type your name and sign with your
@@ -300,7 +313,7 @@ function Screen({ title, children }: { title: string; children: React.ReactNode 
   );
 }
 
-/** Consent (first time), then typed name + drawn signature + "I've read it". */
+/** Consent (first time), then the contract's own questions, typed name + drawn signature + "I've read it". */
 function SignSheet({
   visible,
   agreement,
@@ -322,13 +335,26 @@ function SignSheet({
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
   const [drawing, setDrawing] = useState(false);
+  const inputs = agreement.inputs ?? [];
+  const [values, setValues] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (visible) {
       setConsented(agreement.consent.given);
       setProblem(null);
+      setValues(Object.fromEntries((agreement.inputs ?? []).map((i) => [i.key, i.value ?? ""])));
     }
-  }, [visible, agreement.consent.given]);
+  }, [visible, agreement.consent.given, agreement.inputs]);
+
+  const inputError = (input: (typeof inputs)[number]): string | null => {
+    const value = (values[input.key] ?? "").trim();
+    if (!value) return null;
+    return input.type === "date" && !isValidIsoDate(value) ? "Enter a valid date as YYYY-MM-DD." : null;
+  };
+  const inputsReady = inputs.every((i) => {
+    const value = (values[i.key] ?? "").trim();
+    return (value ? !inputError(i) : !i.required);
+  });
 
   const agree = async () => {
     setBusy(true);
@@ -344,7 +370,7 @@ function SignSheet({
   };
 
   const points = strokes.reduce((n, s) => n + s.length, 0);
-  const canSign = name.trim().length >= 2 && points >= 5 && confirmRead && !busy;
+  const canSign = name.trim().length >= 2 && points >= 5 && confirmRead && inputsReady && !busy;
 
   const sign = async () => {
     setBusy(true);
@@ -355,6 +381,9 @@ function SignSheet({
         strokes,
         pad,
         confirm_read: true,
+        inputs: inputs
+          .map((i) => ({ key: i.key, value: (values[i.key] ?? "").trim() }))
+          .filter((i) => i.value !== ""),
         device: {
           platform: Platform.OS,
           model: Device.modelName ?? undefined,
@@ -394,6 +423,31 @@ function SignSheet({
               </>
             ) : (
               <>
+                {inputs.length > 0 && (
+                  <View style={{ gap: Space.sm }}>
+                    <AppText variant="subhead">Your details</AppText>
+                    <AppText variant="footnote" color="textSecondary">
+                      These go on your contract with your signature.
+                    </AppText>
+                    {inputs.map((input) => (
+                      <TextField
+                        key={input.key}
+                        label={input.required ? input.label : `${input.label} (optional)`}
+                        value={values[input.key] ?? ""}
+                        onChangeText={(text) =>
+                          setValues((prev) => ({
+                            ...prev,
+                            [input.key]: input.type === "date" ? formatDateInput(text) : text,
+                          }))
+                        }
+                        {...(input.type === "date"
+                          ? { placeholder: "YYYY-MM-DD", keyboardType: "number-pad" as const, maxLength: 10, icon: "calendar-outline" as const }
+                          : { maxLength: 300 })}
+                        error={inputError(input)}
+                      />
+                    ))}
+                  </View>
+                )}
                 <TextField label="Your full name" value={name} onChangeText={setName} autoCapitalize="words" autoComplete="name" />
                 <View style={{ gap: Space.xs }}>
                   <AppText variant="subhead">Your signature</AppText>
