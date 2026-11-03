@@ -87,20 +87,6 @@ export async function postRunningShifts(
   return postResource("/shift", body);
 }
 
-export async function postTransferredShifts(
-  page = 1,
-  startDate?: string,
-  endDate?: string,
-): Promise<IShiftResponse> {
-  const body: any = {
-    shift_status: "transferred",
-    page,
-  };
-  if (startDate) body.filter_start_date = startDate;
-  if (endDate) body.filter_end_date = endDate;
-  return postResource("/shift", body);
-}
-
 export async function postPastShifts(
   page = 1,
   startDate?: string,
@@ -148,15 +134,6 @@ export async function postAcceptShift(
 ): Promise<IShiftActionResponse> {
   return postResource<{ shift_id: number }, IShiftActionResponse>(
     "/shift/accept",
-    { shift_id },
-  );
-}
-
-export async function postAcceptShiftTransfer(
-  shift_id: number,
-): Promise<IShiftActionResponse> {
-  return postResource<{ shift_id: number }, IShiftActionResponse>(
-    "/shift/accept-transfer-request",
     { shift_id },
   );
 }

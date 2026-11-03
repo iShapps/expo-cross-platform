@@ -29,7 +29,6 @@ import {
   incrementProviderUnmount,
 } from "@/utils/runtime-diagnostics";
 import {
-  clearLoginCredentials,
   getLoginCredentials,
   saveLoginCredentials,
 } from "@/utils/secure-login-credentials";
@@ -486,16 +485,12 @@ export function SessionProvider(props: React.PropsWithChildren) {
       profileStore.clearDetails();
       queryClient.clear();
 
-      // Only drop THIS tenant's cached session — every other tenant on
-      // this device stays instant-switchable via switchTenant, since each
-      // has its own independent password and signing out of one doesn't
-      // affect the others.
-      const activeTenant = useTenantStore.getState().tenant;
-      if (activeTenant) {
-        await clearTenantSession(activeTenant.tenantId);
-        await clearLoginCredentials(activeTenant.tenantId);
-        useTenantStore.getState().removeCachedSession(activeTenant.tenantId);
-      }
+      // Deliberately leave the active tenant's cached session/credentials/
+      // archive in place — signing out is just leaving the live slots
+      // empty (the standard "no session" state the Stack.Protected guards
+      // route to /(open)/login from). Clearing the archive here would mean
+      // the very next switch into this tenant has to log in again, which
+      // is the same "logged out" experience this feature exists to avoid.
     }
   }, [profileStore, queryClient, setSession, setUserJson]);
 
@@ -558,6 +553,28 @@ export function SessionProvider(props: React.PropsWithChildren) {
             const hcpId = cachedUser?.hcp?.id;
             if (!hcpId) throw new Error("Cached session has no hcp id");
 
+            // getTenantHeaders() (used inside getRegistrationStatus) reads
+            // whichever tenant is CURRENTLY active from the store — point
+            // it at the target tenant first, or this validation call sends
+            // the new tenant's archived token with the old tenant's
+            // X-Tenant-Code header, the backend 401s on that mismatch, and
+            // the cached session gets wrongly treated as stale/revoked on
+            // every single switch.
+            useTenantStore.getState().setTenant(tenant, targetEmail);
+
+            // Every real API call (every GET fetcher, every mutation) reads
+            // its Authorization token from TokenStorage's "access_token"
+            // SecureStore key, NOT from `session`/setAuthToken's
+            // "authToken-ishapps" key — those only drive route-gating.
+            // Updating this as early as possible (before the validation
+            // call, let alone the rest of the commit below) closes the
+            // window where any other in-flight or background-refetching
+            // request would otherwise pair the new tenant's header with the
+            // previous tenant's stale token and 401, which is what was
+            // forcing a sign-out right after an apparently-successful
+            // instant switch.
+            await TokenStorage.saveToken(archived.accessToken);
+
             // Confirms the archived token still works (it may have been
             // revoked/expired server-side) and refreshes onboarding status
             // in one call, before committing to the swap.
@@ -578,7 +595,6 @@ export function SessionProvider(props: React.PropsWithChildren) {
             };
 
             await stopBackgroundTracking();
-            useTenantStore.getState().setTenant(tenant, targetEmail);
             profileStore.clearDetails();
             queryClient.clear();
 
@@ -621,6 +637,7 @@ export function SessionProvider(props: React.PropsWithChildren) {
         setSession(null);
         setUserJson(null);
         await removeToken();
+        await TokenStorage.removeToken();
 
         return "needs-login";
       } catch (err) {

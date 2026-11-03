@@ -1,7 +1,6 @@
 import { isAuthError } from "@/api-actions/error-utils";
 import {
   postAcceptShift,
-  postAcceptShiftTransfer,
   postEndShift,
   postShiftTracking,
   postStartShift,
@@ -223,10 +222,6 @@ export default function ShiftDetails() {
     mutationFn: (id: number) => postEndShift(id),
   });
 
-  const acceptShiftTransferMutation = useMutation({
-    mutationFn: (id: number) => postAcceptShiftTransfer(id),
-  });
-
   const trackingMutation = useMutation({
     mutationFn: (params: {
       shift_id: number;
@@ -237,13 +232,12 @@ export default function ShiftDetails() {
   });
 
   const isAccepting = acceptShiftMutation.isPending;
-  const isAcceptingTransfer = acceptShiftTransferMutation.isPending;
   const isStarting =
     locationLoading ||
     trackingMutation.isPending ||
     startShiftMutation.isPending;
   const isEnding = endShiftMutation.isPending;
-  const isBusy = isAccepting || isAcceptingTransfer || isStarting || isEnding;
+  const isBusy = isAccepting || isStarting || isEnding;
 
   const openMaps = async () => {
     const address = shift?.address || shiftRecipient(shift)?.address;
@@ -309,7 +303,6 @@ export default function ShiftDetails() {
         queryClient.invalidateQueries({ queryKey: ["scheduled-shifts"] }),
         queryClient.invalidateQueries({ queryKey: ["running-shifts"] }),
         queryClient.invalidateQueries({ queryKey: ["cancelled-shifts"] }),
-        queryClient.invalidateQueries({ queryKey: ["transferred-shifts"] }),
         queryClient.invalidateQueries({ queryKey: ["completed-shifts"] }),
         queryClient.invalidateQueries({ queryKey: ["pending-shifts"] }),
         queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
@@ -320,62 +313,6 @@ export default function ShiftDetails() {
       showAlert(
         "Error",
         error instanceof Error ? error.message : "Failed to accept shift.",
-      );
-    }
-  };
-
-  const handleAcceptShiftTransfer = async () => {
-    if (!shift?.id) return;
-    try {
-      const response = await acceptShiftTransferMutation.mutateAsync(shift.id);
-      if (!response.status) {
-        showAlert("Shift transfer not accepted", response.message);
-        return;
-      }
-
-      // Add shift to calendar and set up reminders
-      try {
-        console.log("calendarEvent", shift);
-
-        const calendarEvent = shiftToCalendarEvent(shift);
-        const result = await addShiftToCalendar(calendarEvent);
-
-        // Store the eventId linked to this shift
-        await AsyncStorage.setItem(
-          `calendar_event_${shift.id}`,
-          result.eventId,
-        );
-      } catch (calendarError) {
-        console.error("Failed to add shift to calendar:", calendarError);
-        // Don't fail the entire shift acceptance if calendar fails
-        Alert.alert(
-          "Info",
-          "Shift transfer accepted but calendar/reminder setup failed. You can set reminders manually.",
-        );
-      }
-
-      showAlert("Success", response.message);
-      profileStore.setAcceptedShift(shift); // Store accepted shift in global state
-      await refetch();
-
-      // invalidate caches
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["scheduled-shifts"] }),
-        queryClient.invalidateQueries({ queryKey: ["running-shifts"] }),
-        queryClient.invalidateQueries({ queryKey: ["cancelled-shifts"] }),
-        queryClient.invalidateQueries({ queryKey: ["transferred-shifts"] }),
-        queryClient.invalidateQueries({ queryKey: ["completed-shifts"] }),
-        queryClient.invalidateQueries({ queryKey: ["pending-shifts"] }),
-        queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
-        queryClient.invalidateQueries({ queryKey: ["notifications"] }),
-      ]);
-    } catch (error) {
-      if (isAuthError(error)) return;
-      showAlert(
-        "Error",
-        error instanceof Error
-          ? error.message
-          : "Failed to accept shift transfer.",
       );
     }
   };
@@ -429,7 +366,6 @@ export default function ShiftDetails() {
         queryClient.invalidateQueries({ queryKey: ["scheduled-shifts"] }),
         queryClient.invalidateQueries({ queryKey: ["running-shifts"] }),
         queryClient.invalidateQueries({ queryKey: ["cancelled-shifts"] }),
-        queryClient.invalidateQueries({ queryKey: ["transferred-shifts"] }),
         queryClient.invalidateQueries({ queryKey: ["completed-shifts"] }),
         queryClient.invalidateQueries({ queryKey: ["pending-shifts"] }),
         queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
@@ -463,7 +399,6 @@ export default function ShiftDetails() {
         queryClient.invalidateQueries({ queryKey: ["scheduled-shifts"] }),
         queryClient.invalidateQueries({ queryKey: ["running-shifts"] }),
         queryClient.invalidateQueries({ queryKey: ["cancelled-shifts"] }),
-        queryClient.invalidateQueries({ queryKey: ["transferred-shifts"] }),
         queryClient.invalidateQueries({ queryKey: ["completed-shifts"] }),
         queryClient.invalidateQueries({ queryKey: ["pending-shifts"] }),
         queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
@@ -830,52 +765,24 @@ export default function ShiftDetails() {
               </CopilotStep>
             )}
 
-            {shiftStatus === 1 &&
-              shift?.shift_transfer_to &&
-              shift.shift_transfer_to.status === "pending" && (
-                <SwipeButton
-                  text="Swipe to Accept Transfer"
-                  onSwipeComplete={async () => {
-                    try {
-                      await handleAcceptShiftTransfer();
-                    } catch {
-                    } finally {
-                      setTimeout(
-                        () => acceptShiftTransferMutation.reset(),
-                        1500,
-                      );
-                    }
-                  }}
-                  disabled={isBusy}
-                  tone="primary"
-                  processing={isAccepting}
-                  completed={acceptShiftTransferMutation.isSuccess}
-                />
-              )}
-            {shiftStatus === 1 &&
-              (!shift?.shift_transfer_to ||
-                shift.shift_transfer_to.status !== "pending") && (
-                <SwipeButton
-                  text="Swipe to Start"
-                  onSwipeComplete={async () => {
-                    // await handleStartShift();
-                    // startShiftMutation.reset();
-                    // trackingMutation.reset();
-
-                    try {
-                      await handleStartShift();
-                    } catch {
-                    } finally {
-                      setTimeout(() => startShiftMutation.reset(), 1500);
-                      trackingMutation.reset();
-                    }
-                  }}
-                  disabled={isBusy}
-                  tone="primary"
-                  processing={isStarting}
-                  completed={startShiftMutation.isSuccess}
-                />
-              )}
+            {shiftStatus === 1 && (
+              <SwipeButton
+                text="Swipe to Start"
+                onSwipeComplete={async () => {
+                  try {
+                    await handleStartShift();
+                  } catch {
+                  } finally {
+                    setTimeout(() => startShiftMutation.reset(), 1500);
+                    trackingMutation.reset();
+                  }
+                }}
+                disabled={isBusy}
+                tone="primary"
+                processing={isStarting}
+                completed={startShiftMutation.isSuccess}
+              />
+            )}
             {shiftStatus === 2 && (
               <SwipeButton
                 text="Swipe to End"
@@ -913,8 +820,6 @@ export default function ShiftDetails() {
                 ? "Starting shift..."
                 : isEnding
                 ? "Ending shift..."
-                : isAcceptingTransfer
-                ? "Accepting shift transfer..."
                 : "Processing shift action..."}
             </AppText>
           </View>
