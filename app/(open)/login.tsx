@@ -38,7 +38,7 @@ import * as Sentry from "@sentry/react-native";
 import { Checkbox } from "expo-checkbox";
 import * as Device from "expo-device";
 import { Link, useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Alert, Platform, Pressable, StyleSheet, View } from "react-native";
 import { CopilotStep, walkthroughable } from "react-native-copilot";
 import { useSession } from "../ctx";
@@ -73,6 +73,11 @@ export default function Login() {
   const organizationLogoUrl = useTenantStore((state) => state.tenant?.logoUrl);
   const persistedTenantEmail = useTenantStore((state) => state.tenant?.email);
   const hasPersistedTenant = useTenantStore((state) => !!state.tenant);
+  const cachedSessions = useTenantStore((state) => state.cachedSessions);
+  const cachedTenantIds = useMemo(
+    () => new Set(Object.keys(cachedSessions)),
+    [cachedSessions],
+  );
   const router = useRouter();
 
   const isFocused = useIsFocused();
@@ -93,12 +98,13 @@ export default function Login() {
   const [email, setEmail] = useState(knownEmail);
   const [password, setPassword] = useState("");
   const [isTermsChecked, setIsTermsChecked] = useState(true);
-  const { signIn, isLoading } = useSession();
+  const { signIn, isLoading, switchTenant } = useSession();
   const [isSubmittingLogin, setIsSubmittingLogin] = useState(false);
   const isLoginBusy = isLoading || isSubmittingLogin;
 
   const [orgSwitcherOpen, setOrgSwitcherOpen] = useState(false);
   const [isLoadingOrgs, setIsLoadingOrgs] = useState(false);
+  const [isSwitchingOrg, setIsSwitchingOrg] = useState(false);
   const [switchableTenants, setSwitchableTenants] = useState<TenantSummary[]>(
     [],
   );
@@ -256,8 +262,10 @@ export default function Login() {
         });
       }
 
-      if (biometricSupported && biometricAllowed) {
-        await saveLoginCredentials(email, password);
+      const loggedInTenantId = useTenantStore.getState().tenant?.tenantId;
+
+      if (biometricSupported && biometricAllowed && loggedInTenantId) {
+        await saveLoginCredentials(loggedInTenantId, email, password);
       }
 
       // Ask for biometric consent after successful login if supported but not yet allowed
@@ -269,7 +277,9 @@ export default function Login() {
             {
               text: "Yes",
               onPress: async () => {
-                await saveLoginCredentials(email, password);
+                if (loggedInTenantId) {
+                  await saveLoginCredentials(loggedInTenantId, email, password);
+                }
                 Alert.alert(
                   "Biometric login enabled",
                   "You can now use biometrics to sign in.",
@@ -313,8 +323,12 @@ export default function Login() {
         );
         return;
       }
-      // Retrieve stored credentials
-      const creds = await getLoginCredentials();
+      // Retrieve stored credentials for whichever org this login screen
+      // is currently showing — each org has its own password.
+      const tenantId = useTenantStore.getState().tenant?.tenantId;
+      const creds = tenantId
+        ? await getLoginCredentials(tenantId)
+        : { email: null, password: null };
       if (!creds.email || !creds.password) {
         Alert.alert(
           "No credentials",
@@ -365,15 +379,30 @@ export default function Login() {
     }
   };
 
-  const handleConfirmOrgSwitch = () => {
+  const handleConfirmOrgSwitch = async () => {
     const chosen = switchableTenants.find(
       (t) => t.tenantId === switchSelectedTenantId,
     );
     if (!chosen) return;
-    setPassword("");
-    setEmail(switchLookupEmail);
-    useTenantStore.getState().setTenant(chosen, switchLookupEmail);
-    setOrgSwitcherOpen(false);
+
+    setIsSwitchingOrg(true);
+    try {
+      // If this device already has a cached session for the chosen org,
+      // this restores it instantly and the root navigator's guards take
+      // over from there. Otherwise it just points the app at that org —
+      // same as picking it used to do — and the screen below falls
+      // through to its own empty password form.
+      const result = await switchTenant(chosen, switchLookupEmail);
+      if (result === "switched") {
+        setOrgSwitcherOpen(false);
+        return;
+      }
+      setPassword("");
+      setEmail(switchLookupEmail);
+      setOrgSwitcherOpen(false);
+    } finally {
+      setIsSwitchingOrg(false);
+    }
   };
 
   if (orgSwitcherOpen) {
@@ -387,6 +416,8 @@ export default function Login() {
             tenants={switchableTenants}
             selectedTenantId={switchSelectedTenantId}
             onSelect={(tenant) => setSwitchSelectedTenantId(tenant.tenantId)}
+            cachedTenantIds={cachedTenantIds}
+            disabled={isSwitchingOrg}
           />
 
           <View style={styles.actions}>
@@ -395,6 +426,8 @@ export default function Login() {
               icon="arrow-forward"
               iconPosition="right"
               onPress={handleConfirmOrgSwitch}
+              loading={isSwitchingOrg}
+              disabled={isSwitchingOrg}
               fullWidth
             />
             <AppButton
@@ -402,6 +435,7 @@ export default function Login() {
               variant="ghost"
               icon="arrow-back"
               onPress={() => setOrgSwitcherOpen(false)}
+              disabled={isSwitchingOrg}
               fullWidth
             />
           </View>
