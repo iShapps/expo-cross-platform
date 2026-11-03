@@ -196,19 +196,6 @@ export const ASSISTANT_KNOWLEDGE_BASE: AssistantKnowledgeEntry[] = [
     action: { label: "Open Shifts", route: "/(tabs)/shifts" },
   },
   {
-    id: "transfer-shift",
-    keywords: [
-      "transfer shift",
-      "hand off shift",
-      "give away shift",
-      "reassign shift",
-      "swap my shift",
-    ],
-    answer:
-      "Open the shift you want to hand off from the Schedule tab, then tap \"Transfer\" on its detail screen.",
-    action: { label: "Open Schedule", route: "/(tabs)/schedules" },
-  },
-  {
     id: "shift-rating",
     keywords: [
       "rate a shift",

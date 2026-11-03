@@ -269,10 +269,6 @@ export interface IChangePasswordResponse {
   errors?: Record<string, string[]> | string[];
 }
 
-export interface IShiftTransferRequest {
-  shift_id: number;
-  transfer_hcp_id: number;
-}
 export interface IShiftTransferResponse {
   status: boolean;
   message: string;
