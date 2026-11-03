@@ -1,4 +1,4 @@
-import { AppText, Icon, OrgLogo } from "@/components/design";
+import { AppText, Chip, Icon, OrgLogo } from "@/components/design";
 import { Radius, Space } from "@/constants/design";
 import { TenantSummary } from "@/data-types/tenancy";
 import { useAppTheme } from "@/hooks/use-app-theme";
@@ -9,11 +9,16 @@ export function OrganizationPicker({
   selectedTenantId,
   onSelect,
   disabled,
+  cachedTenantIds,
 }: {
   tenants: TenantSummary[];
   selectedTenantId: string | null;
   onSelect: (tenant: TenantSummary) => void;
   disabled?: boolean;
+  // Tenants NOT in this set show a "Sign in required" badge — each
+  // organization has its own password, so only a tenant this device has
+  // already logged into can be switched to instantly.
+  cachedTenantIds?: Set<string>;
 }) {
   const { colors } = useAppTheme();
 
@@ -21,6 +26,8 @@ export function OrganizationPicker({
     <View style={styles.orgList} accessibilityRole="radiogroup">
       {tenants.map((tenant) => {
         const isSelected = tenant.tenantId === selectedTenantId;
+        const needsSignIn =
+          !!cachedTenantIds && !cachedTenantIds.has(tenant.tenantId);
         return (
           <Pressable
             key={tenant.tenantId}
@@ -38,9 +45,14 @@ export function OrganizationPicker({
             disabled={disabled}
           >
             <OrgLogo name={tenant.name} uri={tenant.logoUrl} size={44} />
-            <AppText variant="headline" numberOfLines={2} style={styles.orgName}>
-              {tenant.name ?? "Untitled organization"}
-            </AppText>
+            <View style={styles.orgInfo}>
+              <AppText variant="headline" numberOfLines={2}>
+                {tenant.name ?? "Untitled organization"}
+              </AppText>
+              {needsSignIn && (
+                <Chip label="Sign in required" tone="neutral" icon="key-outline" style={styles.orgChip} />
+              )}
+            </View>
             <Icon
               name={isSelected ? "checkmark-circle" : "ellipse-outline"}
               size={24}
@@ -67,7 +79,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: Space.sm,
   },
-  orgName: {
+  orgInfo: {
     flex: 1,
+    gap: Space.xxs,
+  },
+  orgChip: {
+    alignSelf: "flex-start",
   },
 });

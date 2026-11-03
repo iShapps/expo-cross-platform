@@ -15,7 +15,7 @@ import { useTenantStore } from "@/data-store/use-tenant-store";
 import { TenantSummary } from "@/data-types/tenancy";
 import { useAppTheme } from "@/hooks/use-app-theme";
 import { router } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -24,6 +24,11 @@ export default function SwitchOrganization() {
   const { switchTenant } = useSession();
 
   const currentTenant = useTenantStore((state) => state.tenant);
+  const cachedSessions = useTenantStore((state) => state.cachedSessions);
+  const cachedTenantIds = useMemo(
+    () => new Set(Object.keys(cachedSessions)),
+    [cachedSessions],
+  );
 
   const [tenants, setTenants] = useState<TenantSummary[]>([]);
   const [selectedTenantId, setSelectedTenantId] = useState<string | null>(
@@ -69,16 +74,21 @@ export default function SwitchOrganization() {
   const hasOtherOrganizations = tenants.length > 1;
   const selectionUnchanged = selectedTenantId === currentTenant?.tenantId;
 
+  const chosen = tenants.find((t) => t.tenantId === selectedTenantId);
+  const chosenNeedsLogin = !!chosen && !cachedTenantIds.has(chosen.tenantId);
+
   const handleSwitch = async () => {
-    const chosen = tenants.find((t) => t.tenantId === selectedTenantId);
     if (!chosen || !currentTenant?.email || selectionUnchanged) return;
 
     setIsSwitching(true);
     try {
-      const switched = await switchTenant(chosen);
-      // On failure, switchTenant has already signed the user out and shown
-      // why — nothing left to do here.
-      if (switched) router.back();
+      const result = await switchTenant(chosen);
+      if (result === "switched") {
+        router.back();
+      } else if (result === "needs-login") {
+        router.replace("/(open)/login");
+      }
+      // "failed" already shows its own alert inside switchTenant — stay put.
     } finally {
       setIsSwitching(false);
     }
@@ -114,12 +124,13 @@ export default function SwitchOrganization() {
             tenants={tenants}
             selectedTenantId={selectedTenantId}
             onSelect={(tenant) => setSelectedTenantId(tenant.tenantId)}
+            cachedTenantIds={cachedTenantIds}
           />
 
           {!selectionUnchanged && (
             <AppButton
-              title="Switch organization"
-              icon="swap-horizontal"
+              title={chosenNeedsLogin ? "Sign in to organization" : "Switch organization"}
+              icon={chosenNeedsLogin ? "log-in-outline" : "swap-horizontal"}
               onPress={handleSwitch}
               loading={isSwitching}
               disabled={isSwitching}

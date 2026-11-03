@@ -287,11 +287,6 @@ export default function OnboardingScreen() {
     updateHcpRef.current = updateHcp;
   }, [updateHcp]);
 
-  const signOutRef = useRef(signOut);
-  useEffect(() => {
-    signOutRef.current = signOut;
-  }, [signOut]);
-
   const refreshStatus = React.useCallback(async () => {
     const token = await TokenStorage.getToken();
     if (!token || !hcpId) return null;
@@ -299,10 +294,10 @@ export default function OnboardingScreen() {
     if (!status) return null;
 
     if (status.data.steps.registration_complete) {
+      // Already signed in with a valid session — no need to log out and
+      // back in just to pick this up. The dashboard shows its own
+      // "pending approval" state once hcp.status reflects it.
       updateHcpRef.current({ app_registration_screen: "0" });
-      void signOutRef.current().then(() => {
-        router.replace("/(open)/login");
-      });
       return null;
     }
 
@@ -311,7 +306,7 @@ export default function OnboardingScreen() {
       app_registration_screen: String(resolveOnboardingStep(status.data)),
     });
     return status.data;
-  }, [router, hcpId]);
+  }, [hcpId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -325,12 +320,11 @@ export default function OnboardingScreen() {
         if (cancelled || !statusResponse) return;
         // Registration fully done via some other path (e.g. an admin
         // finishing document upload while the user was still on this
-        // screen) — sign out and force a fresh login
+        // screen) — already signed in, so just drop straight into the
+        // dashboard instead of forcing a fresh login.
         if (statusResponse.data.steps.registration_complete) {
           updateHcpRef.current({ app_registration_screen: "0" });
-          void signOutRef.current().then(() => {
-            router.replace("/(open)/login");
-          });
+          router.replace("/(tabs)");
           return;
         }
         setRegistrationStatus(statusResponse.data);
@@ -1330,9 +1324,7 @@ export default function OnboardingScreen() {
               fullWidth
               style={styles.successButton}
               onPress={() => {
-                void signOut().then(() => {
-                  router.replace("/(open)/login");
-                });
+                router.replace("/(tabs)");
               }}
             />
           </View>

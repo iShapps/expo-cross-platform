@@ -1,8 +1,8 @@
 import { resolveTenantsByEmail, TenancyQueryError } from "@/api-queries/tenancy";
+import { useSession } from "@/app/ctx";
 import { AppButton, AuthLayout, TextField } from "@/components/design";
 import { OrganizationPicker } from "@/components/organization-picker";
 import { Space } from "@/constants/design";
-import { useTenantStore } from "@/data-store/use-tenant-store";
 import { TenantSummary } from "@/data-types/tenancy";
 import { useRouter } from "expo-router";
 import { useState } from "react";
@@ -12,6 +12,7 @@ type Step = "email" | "picker";
 
 export default function TenantCode() {
   const router = useRouter();
+  const { switchTenant } = useSession();
 
   const [step, setStep] = useState<Step>("email");
   const [email, setEmail] = useState("");
@@ -22,8 +23,15 @@ export default function TenantCode() {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const proceedToLogin = (tenant: TenantSummary, forEmail: string) => {
-    useTenantStore.getState().setTenant(tenant, forEmail);
+  // If this device already has a cached session for the chosen tenant
+  // (e.g. the user picked "use a different email" and then re-entered one
+  // they'd already logged into), this restores it instantly and the root
+  // navigator's guards take over. Otherwise it just points the app at that
+  // tenant and sends them to its own login screen, same as always.
+  const proceedToLogin = async (tenant: TenantSummary, forEmail: string) => {
+    const result = await switchTenant(tenant, forEmail);
+    if (result === "switched") return;
+
     router.replace({
       pathname: "/(open)/login",
       params: { email: forEmail },
@@ -48,7 +56,7 @@ export default function TenantCode() {
       }
 
       if (matches.length === 1) {
-        proceedToLogin(matches[0], trimmed);
+        await proceedToLogin(matches[0], trimmed);
         return;
       }
 
@@ -66,10 +74,15 @@ export default function TenantCode() {
     }
   };
 
-  const handleConfirmSelection = () => {
+  const handleConfirmSelection = async () => {
     const chosen = tenants.find((t) => t.tenantId === selectedTenantId);
     if (!chosen) return;
-    proceedToLogin(chosen, email.trim());
+    setIsSubmitting(true);
+    try {
+      await proceedToLogin(chosen, email.trim());
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
 
