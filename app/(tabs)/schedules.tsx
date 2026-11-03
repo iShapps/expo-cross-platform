@@ -4,7 +4,6 @@ import {
   postPendingApprovalShifts,
   postRunningShifts,
   postScheduledShifts,
-  postTransferredShifts,
 } from "@/api-queries/post-pending-shifts";
 import { EmptyState, IconButton, SegmentedTabs } from "@/components/design";
 import { ShiftCardBase } from "@/components/pay-run";
@@ -53,7 +52,6 @@ export default function Schedules() {
         "Pending Approval",
         "Approved",
         "Cancelled",
-        "Transferred",
       ] as const,
     [],
   );
@@ -121,14 +119,6 @@ export default function Schedules() {
     endDate,
   );
 
-  // transfered shifts
-  const transferredQuery = useShiftInfiniteQuery(
-    "transferred-shifts",
-    postTransferredShifts,
-    startDate,
-    endDate,
-  );
-
   // past shifts
   const pastQuery = useShiftInfiniteQuery(
     "past-shifts",
@@ -149,7 +139,6 @@ export default function Schedules() {
   // running -- > running
   // scheduled -- > scheduled
   // cancelled -- > cancelled
-  // transfered -- > transfered
   // pending payment -- > completed
   // 10-15 mins shift tracking
 
@@ -269,7 +258,7 @@ export default function Schedules() {
           name="my-shifts-tabs"
           order={2}
           active={isFocused}
-          text="Running, Scheduled, Pending Approval, Approved, Cancelled, and Transferred — track every stage of your shifts here."
+          text="Running, Scheduled, Pending Approval, Approved, and Cancelled — track every stage of your shifts here."
         >
           <WalkthroughableView style={styles.tabsWrap}>
             <SegmentedTabs
@@ -369,20 +358,6 @@ export default function Schedules() {
                     hasNextPage = !!cancelledQuery.hasNextPage;
                     fetchNextPage = cancelledQuery.fetchNextPage;
                     isRefetching = cancelledQuery.isRefetching;
-                    break;
-                  case "Transferred":
-                    isLoading = transferredQuery.isLoading;
-                    data =
-                      transferredQuery.data?.pages.flatMap(
-                        (page) => page?.data?.shifts?.data ?? [],
-                      ) || [];
-                    isError = transferredQuery.isError;
-                    shiftError = transferredQuery.error;
-                    refetchFn = transferredQuery.refetch;
-                    isFetchingNextPage = transferredQuery.isFetchingNextPage;
-                    hasNextPage = !!transferredQuery.hasNextPage;
-                    fetchNextPage = transferredQuery.fetchNextPage;
-                    isRefetching = transferredQuery.isRefetching;
                     break;
                   case "Pending Approval":
                     isLoading = completedQuery.isLoading;
@@ -503,7 +478,6 @@ const EMPTY_ICONS: Record<string, React.ComponentProps<typeof EmptyState>["icon"
   "Pending Approval": "hourglass-outline",
   Approved: "checkmark-done-outline",
   Cancelled: "close-circle-outline",
-  Transferred: "swap-horizontal-outline",
 };
 
 const styles = {
