@@ -17,6 +17,17 @@ export type AgreementSummary = {
   signed_at: string | null;
 };
 
+/** A contract field the worker fills in before signing; printed on the contract with their signature. */
+export type AgreementInput = {
+  key: string;
+  label: string;
+  /** Dates are sent as YYYY-MM-DD. */
+  type: "text" | "date";
+  required: boolean;
+  /** What they entered, once signed. */
+  value: string | null;
+};
+
 export type AgreementDetail = AgreementSummary & {
   description: string | null;
   /** A short-lived signed link to the PDF. */
@@ -24,6 +35,8 @@ export type AgreementDetail = AgreementSummary & {
   /** Once signed: the signed contract (both signatures + certificate), or a policy's certificate. */
   certificate_url: string | null;
   consent: { version: string; text: string; given: boolean };
+  /** Contracts only; empty for policies. */
+  inputs?: AgreementInput[];
 };
 
 type Envelope<T> = { status: boolean; message: string; data: T };
@@ -35,6 +48,8 @@ export type SignPayload = {
   pad: { width: number; height: number };
   confirm_read: true;
   device?: { platform?: string; model?: string; os_version?: string; app_version?: string };
+  /** The contract's worker fields (AgreementDetail.inputs), as a list: keys contain dots. */
+  inputs?: { key: string; value: string }[];
 };
 
 /** Throws the server's message when it answers {status:false}. */
