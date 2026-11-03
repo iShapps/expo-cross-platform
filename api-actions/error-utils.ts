@@ -9,6 +9,7 @@ type AuthExpiredHandler = (payload: AuthExpiredPayload) => void | Promise<void>;
 
 let authExpiredHandler: AuthExpiredHandler | null = null;
 let isHandlingAuthExpired = false;
+let isAuthExpiredSuppressed = false;
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -183,8 +184,20 @@ export function registerAuthExpiredHandler(handler: AuthExpiredHandler) {
   };
 }
 
+/**
+ * Switching tenants briefly points every request's X-Tenant-Code at the new
+ * tenant before the matching new token has replaced the old one in storage
+ * — in that window, any other screen's in-flight or background-refetching
+ * query can 401 on that mismatch. That's an artifact of the switch, not a
+ * real session expiry, so ctx.tsx's handleSwitchTenant suppresses this
+ * handler for the duration and is the sole authority on success/failure.
+ */
+export function setAuthExpiredSuppressed(suppressed: boolean) {
+  isAuthExpiredSuppressed = suppressed;
+}
+
 export async function notifyAuthExpired(payload: AuthExpiredPayload) {
-  if (isHandlingAuthExpired) return;
+  if (isHandlingAuthExpired || isAuthExpiredSuppressed) return;
 
   isHandlingAuthExpired = true;
 
