@@ -29,5 +29,8 @@ export function useMissingDocuments() {
   const actionCount =
     (counts?.missing ?? 0) + (counts?.rejected ?? 0) + (counts?.expired ?? 0);
 
-  return { ...query, documents, actionCount, expiringCount: counts?.expiring ?? 0 };
+  // Good to have, never counted in the badge.
+  const optional = (query.data?.data?.optional ?? []).map((d) => ({ ...d, optional: true }));
+
+  return { ...query, documents, optional, actionCount, expiringCount: counts?.expiring ?? 0 };
 }
