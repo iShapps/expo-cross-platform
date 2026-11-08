@@ -1,23 +1,19 @@
+/** A worker's copy of a certification: one per certification (held per person, not per profession). */
 export interface IDocument {
   id: number;
   document_id: number;
   hcp_id: number;
-  profession_id: number;
-  level_id: number;
   document_name: string;
   start_date: string;
   expiry_date: string;
-  send_notification_date: string;
   document_approval: string;
-  show_in_document_approval: string;
-  show_in_notification: string;
   created_by: number;
   updated_by: number;
   created_at: string;
   updated_at: string;
   deleted_at: string;
-  profession: null;
-  level: null;
+  /** The worker's professions that require it (one copy counts for all of them). */
+  required_by?: string[];
   document: IDocumentDetails;
 }
 
