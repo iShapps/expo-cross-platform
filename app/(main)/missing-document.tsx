@@ -9,7 +9,7 @@ import {
   TextField,
 } from "@/components/design";
 import { documentIcon } from "@/components/document-card";
-import { MISSING_STATE } from "@/components/missing-document-card";
+import { stateStyle } from "@/components/missing-document-card";
 import { Radius, Space } from "@/constants/design";
 import { useAppTheme } from "@/hooks/use-app-theme";
 import { MISSING_DOCUMENTS_QUERY_KEY } from "@/hooks/use-missing-documents";
@@ -93,7 +93,7 @@ export default function MissingDocumentScreen() {
     );
   }
 
-  const state = MISSING_STATE[document.state];
+  const state = stateStyle(document);
   const needsExpiry = document.expiry_date_mandatory === "yes";
 
   const chooseSource = () => {
@@ -270,7 +270,7 @@ export default function MissingDocumentScreen() {
         <Card radius={Radius.xl} padding={Space.md} style={styles.infoCard}>
           <InfoRow label="Type" value={document.type === "profession" ? "Professional" : "General"} />
           {document.required_by.length > 0 && (
-            <InfoRow label="Needed for" value={document.required_by.join(", ")} />
+            <InfoRow label={document.optional ? "For" : "Needed for"} value={document.required_by.join(", ")} />
           )}
           {document.expiry_date && (
             <InfoRow
