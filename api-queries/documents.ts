@@ -190,6 +190,8 @@ export type MissingDocument = {
   expiry_date_mandatory: "yes" | "no" | null;
   /** The HCP's professions that need it (profession documents). */
   required_by: string[];
+  /** Not mandatory: offered for upload, never counted (from the response's `optional` list). */
+  optional?: boolean;
 };
 
 export type MissingDocumentsResponse = {
@@ -198,6 +200,8 @@ export type MissingDocumentsResponse = {
   data: {
     documents: MissingDocument[];
     counts: Record<MissingDocumentState, number>;
+    /** Optional certifications not uploaded yet: listed after the required ones, never counted. */
+    optional?: MissingDocument[];
   };
 };
 

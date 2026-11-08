@@ -7,19 +7,29 @@ import { useRouter } from "expo-router";
 import React from "react";
 import { StyleSheet, View } from "react-native";
 
-export const MISSING_STATE: Record<MissingDocumentState, { label: string; tone: Tone; icon: React.ComponentProps<typeof Chip>["icon"] }> = {
-  missing: { label: "Missing", tone: "warning", icon: "cloud-upload-outline" },
+type StateStyle = { label: string; tone: Tone; icon: React.ComponentProps<typeof Chip>["icon"] };
+
+// Red is "blocks your shifts": missing, rejected and expired. Rejected/expired also fill the card
+// (something they had stopped counting); missing keeps a plain card with a red chip.
+export const MISSING_STATE: Record<MissingDocumentState, StateStyle> = {
+  missing: { label: "Missing", tone: "danger", icon: "cloud-upload-outline" },
   rejected: { label: "Rejected", tone: "danger", icon: "close-circle-outline" },
   expired: { label: "Expired", tone: "danger", icon: "alert-circle-outline" },
   expiring: { label: "Expiring soon", tone: "amber", icon: "time-outline" },
 };
 
-/** One document the HCP has to upload — opens the upload screen. */
+/** An optional certification not uploaded yet: good to have, never required. */
+export const OPTIONAL_STATE: StateStyle = { label: "Optional", tone: "warning", icon: "add-circle-outline" };
+
+export const stateStyle = (document: MissingDocument): StateStyle =>
+  document.optional ? OPTIONAL_STATE : MISSING_STATE[document.state];
+
+/** One document the HCP has to (or, if optional, may) upload — opens the upload screen. */
 export default function MissingDocumentCard({ document }: { document: MissingDocument }) {
   const { colors } = useAppTheme();
   const router = useRouter();
-  const state = MISSING_STATE[document.state];
-  const urgent = document.state === "rejected" || document.state === "expired";
+  const state = stateStyle(document);
+  const urgent = !document.optional && (document.state === "rejected" || document.state === "expired");
 
   return (
     <PressableCard

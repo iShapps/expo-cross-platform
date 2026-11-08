@@ -69,19 +69,21 @@ export default function DocumentsScreen() {
 
   // Needs action first (missing, rejected, expired, expiring), then everything uploaded and in order.
   const certificationRows = useMemo<CertificationRow[]>(() => {
-    const actionIds = new Set(missing.documents.map((d) => d.document_id));
+    const actionIds = new Set([...missing.documents, ...missing.optional].map((d) => d.document_id));
     const uploaded = [...(general.data ?? []), ...(profession.data ?? [])].filter((d) => !actionIds.has(d.document_id));
     const rows: CertificationRow[] = [];
-    if (missing.documents.length) {
-      rows.push({ kind: "heading", key: "h-action", title: "Needs action" });
+    // Required ones first, then optional ones (same list, marked Optional, never counted).
+    if (missing.documents.length || missing.optional.length) {
+      rows.push({ kind: "heading", key: "h-action", title: missing.documents.length ? "Needs action" : "To upload" });
       missing.documents.forEach((doc) => rows.push({ kind: "action", key: `a-${doc.document_id}`, doc }));
+      missing.optional.forEach((doc) => rows.push({ kind: "action", key: `o-${doc.document_id}`, doc }));
     }
     if (uploaded.length) {
       rows.push({ kind: "heading", key: "h-ok", title: "Up to date" });
       uploaded.forEach((doc) => rows.push({ kind: "uploaded", key: `u-${doc.id}`, doc }));
     }
     return rows;
-  }, [missing.documents, general.data, profession.data]);
+  }, [missing.documents, missing.optional, general.data, profession.data]);
 
   const certificationsLoading = missing.isLoading || general.isLoading || profession.isLoading;
   const certificationsRefreshing = missing.isRefetching || general.isRefetching || profession.isRefetching;
