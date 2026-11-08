@@ -79,11 +79,11 @@ const DocumentCard: React.FC<DocumentCardProps> = ({ document }) => {
             : `Uploaded on ${formatMediumDate(document.created_at)}`}
         </AppText>
         <View style={styles.chipRow}>
-          {/* General (everyone) or the profession it was uploaded for. */}
+          {/* General (everyone) or the professions that require it. */}
           <Chip
             label={
               document.document.doc_type === "profession"
-                ? (document.profession as { name?: string } | null)?.name ?? "Profession"
+                ? document.required_by?.length ? document.required_by.join(", ") : "Profession"
                 : "General"
             }
             tone="blue"
