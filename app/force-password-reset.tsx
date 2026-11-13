@@ -7,6 +7,7 @@ import {
   Card,
   Icon,
   IconBadge,
+  IconButton,
   TextField,
 } from "@/components/design";
 import { Radius, Space } from "@/constants/design";
@@ -68,6 +69,21 @@ export default function ForcePasswordResetScreen() {
     },
   });
 
+  const handleSignOut = () => {
+    Alert.alert("Logout", "Are you sure you want to logout?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Yes, Logout",
+        style: "destructive",
+        onPress: () => {
+          void signOut().then(() => {
+            router.replace("/(open)/login");
+          });
+        },
+      },
+    ]);
+  };
+
   const handleSubmit = () => {
     setFormError(null);
 
@@ -115,7 +131,15 @@ export default function ForcePasswordResetScreen() {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.header}>
-            <IconBadge icon="shield-checkmark-outline" tone="primary" size={64} />
+            <View style={styles.headerTopRow}>
+              <IconBadge icon="shield-checkmark-outline" tone="primary" size={64} />
+              <IconButton
+                icon="log-out-outline"
+                accessibilityLabel="Log out"
+                variant="plain"
+                onPress={handleSignOut}
+              />
+            </View>
             <AppText variant="overline" color="primaryStrong">
               Security
             </AppText>
@@ -205,6 +229,12 @@ const styles = StyleSheet.create({
   header: {
     gap: Space.xs,
     alignItems: "flex-start",
+  },
+  headerTopRow: {
+    flexDirection: "row",
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   form: {
     gap: Space.md,
