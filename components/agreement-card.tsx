@@ -7,16 +7,17 @@ import { router } from "expo-router";
 import React from "react";
 import { StyleSheet, View } from "react-native";
 
-/** One contract or policy (Documents → Contracts / Policies): opens it to read and sign. */
+/** One contract, form or policy (Documents → Contracts / Forms / Policies): opens it to read (fill in) and sign. */
 export default function AgreementCard({ item }: { item: AgreementSummary }) {
   const { colors } = useAppTheme();
   const signed = item.status === "signed";
+  const action = item.kind === "form" ? "to fill in" : "to sign";
 
   return (
     <PressableCard
       onPress={() => router.push({ pathname: "/(main)/agreement", params: { id: String(item.id) } })}
       accessibilityRole="button"
-      accessibilityLabel={`${item.title}, ${signed ? "signed" : "to sign"}`}
+      accessibilityLabel={`${item.title}, ${signed ? "signed" : action}`}
       radius={Radius.lg}
       padding={Space.md}
       style={styles.row}
@@ -34,7 +35,7 @@ export default function AgreementCard({ item }: { item: AgreementSummary }) {
             <Chip label="Signed" tone="success" icon="checkmark-circle-outline" />
           ) : (
             <Chip
-              label={item.status === "viewed" ? "Opened · to sign" : "To sign"}
+              label={item.status === "viewed" ? `Opened · ${action}` : action.charAt(0).toUpperCase() + action.slice(1)}
               tone="warning"
               icon="create-outline"
             />
