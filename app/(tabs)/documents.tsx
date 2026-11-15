@@ -22,8 +22,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 const WalkthroughableView = walkthroughable(View);
 
-/** Same names as the web: Documents → Certifications | Contracts | Policies. */
-type Segment = "certifications" | "contracts" | "policies";
+/** Same names as the web: Documents → Certifications | Contracts | Forms | Policies (Forms only once one is sent). */
+type Segment = "certifications" | "contracts" | "forms" | "policies";
 
 /** Uploaded documents of one kind. The API returns them all on one page (200 a page). */
 const useUploadedDocuments = (key: string, fetchPage: () => Promise<any>) =>
@@ -55,15 +55,20 @@ export default function DocumentsScreen() {
 
   // Contracts and Policies are the HR module's: without it the agreements call fails, so they're not shown.
   const hasAgreements = !agreements.isError || !!agreements.data;
-  const segments: Segment[] = hasAgreements ? ["certifications", "contracts", "policies"] : ["certifications"];
   const [active, setActive] = useState<Segment>("certifications");
 
   const contracts = useMemo(() => split(agreements.toSign, agreements.signed, "contract"), [agreements.toSign, agreements.signed]);
+  const forms = useMemo(() => split(agreements.toSign, agreements.signed, "form"), [agreements.toSign, agreements.signed]);
   const policies = useMemo(() => split(agreements.toSign, agreements.signed, "policy"), [agreements.toSign, agreements.signed]);
+  // Forms get their own tab only once the agency has sent one: most workers keep three tabs.
+  const hasForms = forms.toSign.length + forms.signed.length > 0;
+  const segments: Segment[] = hasAgreements
+    ? ["certifications", "contracts", ...(hasForms ? (["forms"] as const) : []), "policies"]
+    : ["certifications"];
 
   const labels = segments.map((s) => {
-    const count = s === "certifications" ? missing.actionCount : s === "contracts" ? contracts.toSign.length : policies.toSign.length;
-    const name = s === "certifications" ? "Certifications" : s === "contracts" ? "Contracts" : "Policies";
+    const count = s === "certifications" ? missing.actionCount : s === "contracts" ? contracts.toSign.length : s === "forms" ? forms.toSign.length : policies.toSign.length;
+    const name = s === "certifications" ? "Certifications" : s === "contracts" ? "Contracts" : s === "forms" ? "Forms" : "Policies";
     return count > 0 ? `${name} (${count})` : name;
   });
 
@@ -113,15 +118,15 @@ export default function DocumentsScreen() {
     if (!tab) return;
     const wanted = tab.toLowerCase();
     const segment: Segment =
-      wanted === "contracts" || wanted === "policies"
+      wanted === "contracts" || wanted === "policies" || (wanted === "forms" && hasForms)
         ? (wanted as Segment)
         : wanted === "agreements"
-          ? contracts.toSign.length || !policies.toSign.length ? "contracts" : "policies"
+          ? contracts.toSign.length ? "contracts" : forms.toSign.length ? "forms" : policies.toSign.length ? "policies" : "contracts"
           : "certifications";
     // After layout, so the pager can scroll.
     requestAnimationFrame(() => goTo(segment));
     router.setParams({ tab: undefined });
-  }, [tab, goTo, router, contracts.toSign.length, policies.toSign.length]);
+  }, [tab, goTo, router, contracts.toSign.length, forms.toSign.length, policies.toSign.length, hasForms]);
 
   useFirstVisitTour("documents", isFocused && !certificationsLoading);
 
@@ -224,6 +229,17 @@ export default function DocumentsScreen() {
             refreshing={agreements.isRefetching}
             onRefresh={() => void agreements.refetch()}
             empty={{ title: "No contracts yet", message: "When your agency sends you a contract to sign, it appears here." }}
+          />
+        )}
+        {hasAgreements && hasForms && (
+          <AgreementsPage
+            width={screenWidth}
+            screenHeight={screenHeight}
+            groups={forms}
+            loading={agreements.isLoading}
+            refreshing={agreements.isRefetching}
+            onRefresh={() => void agreements.refetch()}
+            empty={{ title: "No forms yet", message: "When your agency sends you a form to fill in, it appears here." }}
           />
         )}
         {hasAgreements && (
