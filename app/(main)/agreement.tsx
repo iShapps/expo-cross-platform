@@ -18,6 +18,7 @@ import {
   TextField,
 } from "@/components/design";
 import { SignaturePad, type Stroke } from "@/components/signature-pad";
+import { answersReady, answersToSend, FormInputs, type Answers } from "@/components/form-inputs";
 import { Radius, Space } from "@/constants/design";
 import { useProfileData } from "@/data-store/use-account-store";
 import { useAppTheme } from "@/hooks/use-app-theme";
@@ -54,24 +55,13 @@ import {
 // center within. Multi-page documents keep the full flex:1 reading area.
 const A4_ASPECT_RATIO = 297 / 210;
 
-/** Typed date, masked as YYYY-MM-DD (as on the missing-document screen). */
-function formatDateInput(raw: string): string {
-  const digits = raw.replace(/D/g, "").slice(0, 8);
-  const parts = [digits.slice(0, 4), digits.slice(4, 6), digits.slice(6, 8)];
-  return parts.filter(Boolean).join("-");
-}
-
-function isValidIsoDate(value: string): boolean {
-  if (!/^d{4}-d{2}-d{2}$/.test(value)) return false;
-  const parsed = new Date(`${value}T00:00:00Z`);
-  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
-}
-
 /**
  * One agreement: read the PDF in the app (to the last page), agree to sign
- * electronically the first time, then type your name and sign with your
- * finger. Once signed, the signed record (certificate) can be opened here.
+ * electronically the first time, answer its questions (contracts and forms),
+ * then type your name and sign with your finger. Once signed, the signed
+ * record (contract, form or certificate) can be opened here.
  */
+const KIND_LABEL = { policy: "Policy", contract: "Contract", form: "Form" } as const;
 export default function AgreementScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const agreementId = Number(id);
@@ -186,12 +176,12 @@ export default function AgreementScreen() {
   return (
     <Screen title={agreement.title}>
       <View style={styles.meta}>
-        <Chip label={agreement.kind === "contract" ? "Contract" : "Policy"} tone="blue" />
+        <Chip label={KIND_LABEL[agreement.kind] ?? "Policy"} tone="blue" />
         <Chip label={`Version ${agreement.version}`} />
         {signed ? (
           <Chip label={`Signed ${agreement.signed_at ? formatMediumDate(agreement.signed_at) : ""}`} tone="success" icon="checkmark-circle-outline" />
         ) : (
-          <Chip label="To sign" tone="warning" />
+          <Chip label={agreement.kind === "form" ? "To fill in" : "To sign"} tone="warning" />
         )}
       </View>
       {!!agreement.description && (
@@ -232,7 +222,7 @@ export default function AgreementScreen() {
       <View style={[styles.footer, { borderColor: colors.border, backgroundColor: colors.background }]}>
         {signed ? (
           <AppButton
-            title={agreement.kind === "contract" ? "View my signed contract" : "View my signed record"}
+            title={agreement.kind === "contract" ? "View my signed contract" : agreement.kind === "form" ? "View my signed form" : "View my signed record"}
             icon="ribbon-outline"
             variant="outline"
             fullWidth
@@ -243,10 +233,10 @@ export default function AgreementScreen() {
           <>
             {!reachedEnd && (
               <AppText variant="footnote" color="textSecondary" align="center">
-                Read to the last page to sign.
+                {agreement.kind === "form" ? "Read to the last page to fill it in." : "Read to the last page to sign."}
               </AppText>
             )}
-            <AppButton title="Sign" icon="create-outline" fullWidth disabled={!reachedEnd} onPress={() => setSignOpen(true)} />
+            <AppButton title={agreement.kind === "form" ? "Fill in and sign" : "Sign"} icon="create-outline" fullWidth disabled={!reachedEnd} onPress={() => setSignOpen(true)} />
           </>
         )}
       </View>
@@ -336,7 +326,7 @@ function SignSheet({
   const [problem, setProblem] = useState<string | null>(null);
   const [drawing, setDrawing] = useState(false);
   const inputs = agreement.inputs ?? [];
-  const [values, setValues] = useState<Record<string, string>>({});
+  const [values, setValues] = useState<Answers>({});
 
   useEffect(() => {
     if (visible) {
@@ -346,15 +336,7 @@ function SignSheet({
     }
   }, [visible, agreement.consent.given, agreement.inputs]);
 
-  const inputError = (input: (typeof inputs)[number]): string | null => {
-    const value = (values[input.key] ?? "").trim();
-    if (!value) return null;
-    return input.type === "date" && !isValidIsoDate(value) ? "Enter a valid date as YYYY-MM-DD." : null;
-  };
-  const inputsReady = inputs.every((i) => {
-    const value = (values[i.key] ?? "").trim();
-    return (value ? !inputError(i) : !i.required);
-  });
+  const inputsReady = answersReady(inputs, values);
 
   const agree = async () => {
     setBusy(true);
@@ -381,9 +363,7 @@ function SignSheet({
         strokes,
         pad,
         confirm_read: true,
-        inputs: inputs
-          .map((i) => ({ key: i.key, value: (values[i.key] ?? "").trim() }))
-          .filter((i) => i.value !== ""),
+        inputs: answersToSend(inputs, values),
         device: {
           platform: Platform.OS,
           model: Device.modelName ?? undefined,
@@ -425,27 +405,17 @@ function SignSheet({
               <>
                 {inputs.length > 0 && (
                   <View style={{ gap: Space.sm }}>
-                    <AppText variant="subhead">Your details</AppText>
+                    <AppText variant="subhead">{agreement.kind === "form" ? "Your answers" : "Your details"}</AppText>
                     <AppText variant="footnote" color="textSecondary">
-                      These go on your contract with your signature.
+                      {agreement.kind === "form"
+                        ? "Some are filled in from your profile: check them. They go on the form with your signature."
+                        : "These go on your contract with your signature."}
                     </AppText>
-                    {inputs.map((input) => (
-                      <TextField
-                        key={input.key}
-                        label={input.required ? input.label : `${input.label} (optional)`}
-                        value={values[input.key] ?? ""}
-                        onChangeText={(text) =>
-                          setValues((prev) => ({
-                            ...prev,
-                            [input.key]: input.type === "date" ? formatDateInput(text) : text,
-                          }))
-                        }
-                        {...(input.type === "date"
-                          ? { placeholder: "YYYY-MM-DD", keyboardType: "number-pad" as const, maxLength: 10, icon: "calendar-outline" as const }
-                          : { maxLength: 300 })}
-                        error={inputError(input)}
-                      />
-                    ))}
+                    <FormInputs
+                      inputs={inputs}
+                      answers={values}
+                      onChange={(key, value) => setValues((prev) => ({ ...prev, [key]: value }))}
+                    />
                   </View>
                 )}
                 <TextField label="Your full name" value={name} onChangeText={setName} autoCapitalize="words" autoComplete="name" />
@@ -456,7 +426,9 @@ function SignSheet({
                 <View style={styles.confirm}>
                   <AppSwitch value={confirmRead} onValueChange={setConfirmRead} />
                   <AppText variant="callout" style={{ flex: 1 }}>
-                    I have read {agreement.title} (version {agreement.version}) and agree to it.
+                    {agreement.kind === "form"
+                      ? `I declare that the information I have given in ${agreement.title} is true and correct.`
+                      : `I have read ${agreement.title} (version ${agreement.version}) and agree to it.`}
                   </AppText>
                 </View>
                 {!!problem && <AppText variant="footnote" color="danger">{problem}</AppText>}
